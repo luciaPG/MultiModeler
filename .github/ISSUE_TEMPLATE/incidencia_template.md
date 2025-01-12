@@ -34,8 +34,8 @@ Incluye información sobre el ambiente donde ocurrió la incidencia:
 
 ### Requisitos relacionados
 Lista los requisitos que podrían estar afectados por esta incidencia:
-- [ ] **FR-0001**: [Descripción del requisito funcional relacionado]
-- [ ] **NFR-0002**: [Descripción del requisito no funcional relacionado]
+-  **FR-0001**: [Descripción del requisito funcional relacionado]
+-  **NFR-0002**: [Descripción del requisito no funcional relacionado]
 
 ### Contexto adicional
 Incluye cualquier otra información que consideres útil:
