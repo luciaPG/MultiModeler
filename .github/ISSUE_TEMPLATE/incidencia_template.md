@@ -2,7 +2,7 @@
 name: Incidencia
 about: Describe una incidencia
 title: 'Incidencia_XX: '
-labels: bug
+labels: incidence
 assignees: ''
 
 ---
