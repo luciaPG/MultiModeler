@@ -1,0 +1,23 @@
+name: Prevent Pull Requests to the Original Repo
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if the PR is trying to merge into the original repo
+        run: |
+          # Obtener el repositorio base (donde se quiere hacer la PR) y el repositorio de origen (de donde proviene la PR)
+          BASE_REPO="${{ github.event.pull_request.base.repo.full_name }}"
+          HEAD_REPO="${{ github.event.pull_request.head.repo.full_name }}"
+
+          # Verificar si la PR está dirigida al repositorio original de los profesores
+          if [[ "$BASE_REPO" == "isa-group/ppinot-visual" && "$HEAD_REPO" == "tu-usuario/tu-fork" ]]; then
+            echo "Error: No puedes hacer PR hacia el repositorio original 'isa-group/ppinot-visual' desde tu fork."
+            exit 1
+          fi
+
+          echo "La Pull Request está dirigida a un repositorio permitido."
