@@ -45,9 +45,9 @@
         "webpack-dev-server": "^4.15.1"
     },
     "dependencies": {
-        "bpmn-js": "^5.1.1",
+        "bpmn-js": "^10.3.0",
         "bpmn-moddle": "latest",
-        "diagram-js": "^5.1.1",
+        "diagram-js": "^10.0.0",
         "inherits": "latest",
         "jquery": "^3.4.1",
         "min-dash": "latest",
