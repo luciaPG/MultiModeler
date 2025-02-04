@@ -45,12 +45,13 @@
         "webpack-dev-server": "^4.15.1"
     },
     "dependencies": {
-        "bpmn-js": "^10.3.0",
+        "bpmn-js": "^14.2.0",
         "bpmn-moddle": "latest",
-        "diagram-js": "^10.0.0",
+        "diagram-js": "^14.11.3",
         "inherits": "latest",
         "jquery": "^3.4.1",
         "min-dash": "latest",
+        "ppinot-visual": "file:",
         "tiny-svg": "latest"
     }
 }
