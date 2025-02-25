@@ -42,15 +42,15 @@
         "raw-loader": "^4.0.2",
         "webpack": "^5.88.0",
         "webpack-cli": "^5.1.4",
-        "webpack-dev-server": "^4.15.1"
+        "webpack-dev-server": "^4.15.2"
     },
     "dependencies": {
-        "bpmn-js": "^14.2.0",
+        "bpmn-js": "^18.2.0",
         "bpmn-moddle": "latest",
-        "diagram-js": "^14.11.3",
+        "diagram-js": "latest",
         "inherits": "latest",
         "jquery": "^3.4.1",
-        "min-dash": "latest",
+        "min-dash": "^4.2.2",
         "ppinot-visual": "file:",
         "tiny-svg": "latest"
     }

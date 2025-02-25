@@ -8,31 +8,34 @@ const body = $('body');
 
 const modeler = new PPINOTModeler({
   container: '#js-canvas',
-  keyboard: {
-    bindTo: document
-  }
 });
 
-const createNewDiagram = async () => {
-  try {
-    await modeler.clear();
-    await modeler.createDiagram();
+async function createNewDiagram() {
+    try {
+        // Ensure modeler.clear() returns a promise
+        if (typeof modeler.clear === 'function') {
+            await modeler.clear();
+        } else {
+            throw new Error('modeler.clear is not a function or does not return a promise');
+        }
 
-    container
-      .removeClass('with-error')
-      .addClass('with-diagram');
+        await modeler.createDiagram();
 
-    modeler.setModelOpen(true);
-    body.addClass('shown');
-  } catch (err) {
-    container
-      .removeClass('with-diagram')
-      .addClass('with-error');
+        container
+            .removeClass('with-error')
+            .addClass('with-diagram');
 
-    modeler.setModelOpen(false);
-    container.find('.error pre').text(err.message);
-  }
-};
+        modeler.setModelOpen(true);
+        body.addClass('shown');
+    } catch (err) {
+        container
+            .removeClass('with-diagram')
+            .addClass('with-error');
+
+        modeler.setModelOpen(false);
+        container.find('.error pre').text(err.message);
+    }
+}
 
 const openDiagram = async (xml, cbpmn) => {
   try {

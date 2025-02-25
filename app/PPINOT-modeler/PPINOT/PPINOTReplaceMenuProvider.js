@@ -243,7 +243,7 @@ if (is(businessObject, 'bpmn:Transaction')) {
 }
 
 // expanded event sub processes
-if (isEventSubProcess(businessObject) && isExpanded(businessObject)) {
+if (isEventSubProcess(businessObject) && isExpanded(element)) {
 
   entries = filter(replaceOptions.EVENT_SUB_PROCESS, differentType);
 
@@ -251,7 +251,7 @@ if (isEventSubProcess(businessObject) && isExpanded(businessObject)) {
 }
 
 // expanded sub processes
-if (is(businessObject, 'bpmn:SubProcess') && isExpanded(businessObject)) {
+if (is(businessObject, 'bpmn:SubProcess') && isExpanded(element)) {
 
   entries = filter(replaceOptions.SUBPROCESS_EXPANDED, differentType);
 
@@ -259,7 +259,7 @@ if (is(businessObject, 'bpmn:SubProcess') && isExpanded(businessObject)) {
 }
 
 // collapsed ad hoc sub processes
-if (is(businessObject, 'bpmn:AdHocSubProcess') && !isExpanded(businessObject)) {
+if (is(businessObject, 'bpmn:AdHocSubProcess') && !isExpanded(element)) {
 
   entries = filter(replaceOptions.TASK, function(entry) {
 
@@ -285,7 +285,7 @@ if (is(businessObject, 'bpmn:FlowNode')) {
   entries = filter(replaceOptions.TASK, differentType);
 
   // collapsed SubProcess can not be replaced with itself
-  if (is(businessObject, 'bpmn:SubProcess') && !isExpanded(businessObject)) {
+  if (is(businessObject, 'bpmn:SubProcess') && !isExpanded(element)) {
     entries = filter(entries, function(entry) {
       return entry.label !== 'Sub Process (collapsed)';
     });
