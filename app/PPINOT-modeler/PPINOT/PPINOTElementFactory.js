@@ -8,7 +8,6 @@ import { isPPINOTShape } from './Types';
 export default function PPINOTElementFactory(bpmnFactory, moddle, translate) {
   BpmnElementFactory.call(this, bpmnFactory, moddle, translate);
 
-  this._bpmnFactory = bpmnFactory;
   this._moddle = moddle;
   this._translate = translate;
 }
@@ -25,7 +24,7 @@ PPINOTElementFactory.prototype.baseCreate = BaseElementFactory.prototype.create;
 
 PPINOTElementFactory.prototype.create = function(elementType, attrs) {
   if (attrs.type1) return;
-  var type = attrs.type;
+  const type = attrs.type;
 
   if (elementType === 'label') {
     return this.baseCreate(elementType, assign({ type: 'label' }, DEFAULT_LABEL_SIZE, attrs));
@@ -41,87 +40,60 @@ PPINOTElementFactory.prototype.createBpmnElement = function(elementType, attrs) 
 };
 
 PPINOTElementFactory.prototype.createPPINOTElement = function(elementType, attrs) {
-  var size, translate = this._translate;
-
+  const translate = this._translate;
   attrs = attrs || {};
 
-  var businessObject = attrs.businessObject;
+  let businessObject = attrs.businessObject;
 
   if (!businessObject) {
     if (!attrs.type) {
       throw new Error(translate('no shape type specified'));
     }
+    
     businessObject = this._createPPINOTBO(attrs.type, attrs);
-  } else {
-    businessObject = this._initBO(businessObject);
   }
 
-  attrs = assign({
-    businessObject: businessObject,
-    id: businessObject.id
-  }, size ? size : {}, attrs);
+  const size = this._getPPINOTElementSize(attrs.type);
 
-  return this.baseCreate(elementType, attrs);
+  // Create DI element with proper bounds
+  const di = this._moddle.create('bpmndi:BPMNShape', {
+    bounds: this._moddle.create('dc:Bounds', {
+      width: size.width,
+      height: size.height
+    })
+  });
+
+  return this.baseCreate(elementType, assign({
+    businessObject: businessObject,
+    id: businessObject.id,
+    di: di
+  }, size, attrs));
 };
 
 PPINOTElementFactory.prototype._createPPINOTBO = function(elementType, attrs) {
-  let businessObject = this._moddle.create(elementType, attrs); // Cambiado de this._bpmnFactory.create a this._moddle.create
-  if (!businessObject.type) businessObject.type = elementType;
-
-  if (!attrs.id) this._ensureId(attrs);
-
-  if (attrs.id && !businessObject.id) {
-    assign(businessObject, {
-      id: attrs.id
-    });
+  const businessObject = this._moddle.create(elementType, attrs);
+  
+  // Set type for XML serialization
+  if (!businessObject.$type) {
+    businessObject.$type = elementType;
   }
 
+  // Generate unique ID if missing
+  if (!businessObject.id) {
+    const prefix = elementType.replace('PPINOT:', '') + '_';
+    businessObject.id = this._moddle.ids.nextPrefixed(prefix, businessObject);
+  }
+
+  // Add custom dimensions
   if (isPPINOTShape(elementType)) {
-    assign(attrs, this._getPPINOTElementSize(elementType));
     assign(businessObject, this._getPPINOTElementSize(elementType));
   }
 
-  businessObject = this._initBO(businessObject);
-
   return businessObject;
 };
 
-PPINOTElementFactory.prototype._ensureId = function(element) {
-  if (!element.id) {
-    let prefix = (element.type || '').replace(/^[^:]*:/g, '') + '_';
-    element.id = this._moddle.ids.nextPrefixed(prefix, element);
-  }
-};
-
-PPINOTElementFactory.prototype._initBO = function(businessObject) {
-  Object.defineProperty(businessObject, '$model', {
-    value: this._moddle
-  });
-
-  Object.defineProperty(businessObject, '$instanceOf', {
-    value: function(type) {
-      return this.type === type;
-    }
-  });
-
-  Object.defineProperty(businessObject, 'get', {
-    value: function(key) {
-      return this[key];
-    }
-  });
-
-  Object.defineProperty(businessObject, 'set', {
-    value: function(key, value) {
-      return this[key] = value;
-    }
-  });
-
-  return businessObject;
-};
-
-// Aquí puedes definir las dimensiones de tus elementos personalizados
 PPINOTElementFactory.prototype._getPPINOTElementSize = function(type) {
-  var shapes = {
+  const shapes = {
     __default: { width: 100, height: 80 },
     'PPINOT:AggregatedMeasure': { width: 120, height: 100 },
     'PPINOT:AggregatedMeasureMAX': { width: 120, height: 100 },

@@ -1,13 +1,18 @@
 import $ from 'jquery';
 import PPINOTModeler from './PPINOT-modeler';
 import BpmnModdle from 'bpmn-moddle';
-
-const moddle = new BpmnModdle();
+import PPINOTDescriptor from './PPINOT-modeler/PPINOT/PPINOT.json'; 
+const moddle = new BpmnModdle({
+});
 const container = $('#js-drop-zone');
 const body = $('body');
 
 const modeler = new PPINOTModeler({
   container: '#js-canvas',
+  moddleExtensions: {
+    PPINOT: PPINOTDescriptor 
+  }
+
 });
 
 async function createNewDiagram() {

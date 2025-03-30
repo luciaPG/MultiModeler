@@ -14,7 +14,7 @@ import {
 } from 'min-dash';
 import {isLabel} from "./utils/LabelUtil";
 
-import {myConnectionElements, aggreagatedElements, baseMeasureElements} from "./Types";
+import {myConnectionElements, aggregatedElements, baseMeasureElements} from "./Types";
 import { remove, replace } from 'tiny-svg';
 import {
     isDifferentType
@@ -22,6 +22,7 @@ import {
 import PPINOTModeling from './PPINOTModeling' ;
 
 
+// This module is used to show buttons in the menu of element in the diagram
 export default class PPINOTContextPadProvider extends ContextPadProvider {
   constructor(
     config,         
@@ -63,12 +64,16 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
     this._connect = connect;
     this._create = create;
     this._translate = translate;
+    this._contextPad = contextPad;
+    this._popupMenu = popupMenu;
+    this._canvas = canvas;
 
     // Enable autoPlace, if configured
     this._autoPlace =
-      config?.autoPlace !== false ? injector.get('autoPlace', false) : null;
+      (config && config.autoPlace !== false) ? injector.get('autoPlace', false) : null;
   }
 
+  // With this function you can append some elements to other element in the diagram automatically
   appendStart(event, element) {
     const shape = this._elementFactory.createShape(assign({ type: 'bpmn:Task' }, {}));
     this._create.start(event, shape, {
@@ -81,6 +86,7 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
     this._autoPlace.append(element, shape);
   }
 
+  // With this function you can append some elements to other element in the diagram automatically
   appendAction(type, className, title, options) {
     if (typeof title !== 'string') {
       options = title;
@@ -110,6 +116,7 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
     };
   }
 
+  // With this function you can append some connections to an element in the diagram automatically
   appendConnectAction(type, className, title) {
     if (typeof title !== 'string') {
       title = this._translate('Append {type}', { type: type.replace(/^PPINOT:/, '') });
@@ -135,14 +142,17 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
     const actions = super.getContextPadEntries(element);
     const businessObject = element.businessObject;
 
-    if (isAny(businessObject, aggreagatedElements) && element.type !== 'label') {
+    // In this case, if the element (businessObject) is any of aggregatedElements and it is not a label
+    // the corresponding buttons appear in the element when you click on it
+    // ---- Note: The elements included in aggregatedElements are defined in Types.js 
+    if (isAny(businessObject, aggregatedElements) && element.type !== 'label') {
       assign(actions, {
         'connect1': this.appendConnectAction(
-          'PPINOT:AggregatedConnection',
-          'icon-aggregates',
-          'Connect using aggregates connection'
+          'PPINOT:AggregatedConnection', // Connection type that you want to append to element
+          'icon-aggregates', // Icon displayed on element as button
+          'Connect using aggregates connection' // Description that appears if you put the mouse over the button
         ),
-        'connect2': this.appendConnectAction(
+        'connect2': this.appendConnectAction( // Append second connection to element
           'PPINOT:IsGroupedBy',
           'icon-isGroupedBy',
           'Connect using isGroupedBy connection'
@@ -150,6 +160,8 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
       });
     }
 
+    // In this case, if the element (businessObject) is some of these and it is not a label,
+    // the follow button appear in the element when you click on it
     if (
       (is(businessObject, 'PPINOT:StateConditionAggregatedMeasure') ||
        is(businessObject, 'PPINOT:StateCondAggMeasureNumber') ||
@@ -246,6 +258,28 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
         )
       });
     }
+
+    // The following conditions defines buttons to replace elements
+    // In this case, the menu button is only in aggregated measures and its function is replace these elements 
+    // by derived multi instance measure
+    /*
+    if (isAny(businessObject, aggreagatedElements)) {
+      assign(actions, {
+        'replaceDerivedMulti': {
+          className: 'icon-derivedMulti-menu',
+          title: this._translate('Replace with Derived Multi Instance Measure'),
+          action: {
+            click: (event, element) => {
+              let newElementData = this._elementFactory.createShape({ type: 'PPINOT:DerivedMultiInstanceMeasure'});
+              newElementData.x = element.x + (newElementData.width || element.width) / 2;
+              newElementData.y = element.y + (newElementData.height || element.height) / 2;
+              this._modeling.replaceShape(element, newElementData);
+            }
+          }
+        }   
+      });
+    }
+    */
 
     return actions;
   }

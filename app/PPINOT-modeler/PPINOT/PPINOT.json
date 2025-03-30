@@ -1,0 +1,503 @@
+{
+    "name": "PPINOT",
+    "prefix": "PPINOT",
+    "uri": "http://ppinot.org",
+    "xml": {
+      "tagAlias": "lowerCase"
+    },
+    "types": [
+      {
+        "name": "Resource",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "ResourceAbsence",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "Role",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "RoleAbsence",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "Group",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "GroupAbsence",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "Clock",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "TimeSlot",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "Avion",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "AggregatedMeasure",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "TimeAggregatedMeasure",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "CyclicTimeAggregatedMeasure",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "CountAggregatedMeasure",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "CountMeasure",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "DataAggregatedMeasure",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "DataMeasure",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "DataPropertyConditionAggregatedMeasure",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "DataPropertyConditionMeasure",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "DerivedMultiInstanceMeasure",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "DerivedSingleInstanceMeasure",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "TimeMeasure",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "CyclicTimeMeasure",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "BaseMeasure",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "Ppi",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "StateConditionMeasure",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "StateConditionAggregatedMeasure",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "Target",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "Scope",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "StateCondAggMeasureNumber",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "StateCondAggMeasurePercentage",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "StateCondAggMeasureAll",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "StateCondAggMeasureAtLeastOne",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "StateCondAggMeasureNo",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "CyclicTimeAggregatedMeasureMAX",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "CyclicTimeAggregatedMeasureSUM",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "CyclicTimeAggregatedMeasureMIN",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "CyclicTimeAggregatedMeasureAVG",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "CyclicTimeMeasureSUM",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "CyclicTimeMeasureMAX",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "CyclicTimeMeasureMIN",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "CyclicTimeMeasureAVG",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "TimeAggregatedMeasureSUM",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "TimeAggregatedMeasureMAX",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "TimeAggregatedMeasureMIN",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "TimeAggregatedMeasureAVG",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "CountAggregatedMeasureSUM",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "CountAggregatedMeasureMAX",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "CountAggregatedMeasureMIN",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "CountAggregatedMeasureAVG",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "DataAggregatedMeasureSUM",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "DataAggregatedMeasureMAX",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "DataAggregatedMeasureMIN",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "DataAggregatedMeasureAVG",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "AggregatedMeasureSUM",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "AggregatedMeasureMAX",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "AggregatedMeasureMIN",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "AggregatedMeasureAVG",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": []
+      },
+      {
+        "name": "ResourceArc",
+        "superClass": ["bpmn:Association"],
+        "properties": [
+          {
+            "name": "source",
+            "isReference": true,
+            "type": "Element"
+          },
+          {
+            "name": "target",
+            "isReference": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "ConsequenceFlow",
+        "superClass": ["bpmn:Association"],
+        "properties": [
+          {
+            "name": "source",
+            "isReference": true,
+            "type": "Element"
+          },
+          {
+            "name": "target",
+            "isReference": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "TimeDistanceArcStart",
+        "superClass": ["bpmn:Association"],
+        "properties": [
+          {
+            "name": "source",
+            "isReference": true,
+            "type": "Element"
+          },
+          {
+            "name": "target",
+            "isReference": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "TimeDistanceArcEnd",
+        "superClass": ["bpmn:Association"],
+        "properties": [
+          {
+            "name": "source",
+            "isReference": true,
+            "type": "Element"
+          },
+          {
+            "name": "target",
+            "isReference": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "RFCStateConnection",
+        "superClass": ["bpmn:Association"],
+        "properties": [
+          {
+            "name": "source",
+            "isReference": true,
+            "type": "Element"
+          },
+          {
+            "name": "target",
+            "isReference": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "MyConnection",
+        "superClass": ["bpmn:Association"],
+        "properties": [
+          {
+            "name": "source",
+            "isReference": true,
+            "type": "Element"
+          },
+          {
+            "name": "target",
+            "isReference": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "DashedLine",
+        "superClass": ["bpmn:Association"],
+        "properties": [
+          {
+            "name": "source",
+            "isReference": true,
+            "type": "Element"
+          },
+          {
+            "name": "target",
+            "isReference": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "AggregatedConnection",
+        "superClass": ["bpmn:Association"],
+        "properties": [
+          {
+            "name": "source",
+            "isReference": true,
+            "type": "Element"
+          },
+          {
+            "name": "target",
+            "isReference": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "GroupedBy",
+        "superClass": ["bpmn:Association"],
+        "properties": [
+          {
+            "name": "source",
+            "isReference": true,
+            "type": "Element"
+          },
+          {
+            "name": "target",
+            "isReference": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "ToConnection",
+        "superClass": ["bpmn:Association"],
+        "properties": [
+          {
+            "name": "source",
+            "isReference": true,
+            "type": "Element"
+          },
+          {
+            "name": "target",
+            "isReference": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "FromConnection",
+        "superClass": ["bpmn:Association"],
+        "properties": [
+          {
+            "name": "source",
+            "isReference": true,
+            "type": "Element"
+          },
+          {
+            "name": "target",
+            "isReference": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "StartConnection",
+        "superClass": ["bpmn:Association"],
+        "properties": [
+          {
+            "name": "source",
+            "isReference": true,
+            "type": "Element"
+          },
+          {
+            "name": "target",
+            "isReference": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "EndConnection",
+        "superClass": ["bpmn:Association"],
+        "properties": [
+          {
+            "name": "source",
+            "isReference": true,
+            "type": "Element"
+          },
+          {
+            "name": "target",
+            "isReference": true,
+            "type": "Element"
+          }
+        ]
+      }
+    ]
+  }

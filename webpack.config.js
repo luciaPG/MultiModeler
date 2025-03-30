@@ -10,17 +10,29 @@ module.exports = {
         publicPath: '/'
     },
     module: {
-        rules: [{
-            test: /\.js$/,
-            exclude: /node_modules/,
-            use: {
-                loader: 'babel-loader'
+        rules: [
+        
+            {
+                test: /\.js$/,
+                exclude: /node_modules/,
+                use: {
+                    loader: 'babel-loader'
+                }
+            },
+         
+            {
+                test: /\.json$/,
+                type: 'javascript/auto', 
+                use: {
+                    loader: 'json-loader'
+                }
             }
-        }]
+        ]
     },
     plugins: [
         new CopyWebpackPlugin({
-            patterns: [{
+            patterns: [
+                {
                     from: 'app/index.html',
                     to: 'index.html'
                 },
@@ -32,6 +44,10 @@ module.exports = {
                     from: 'app/css',
                     to: 'css'
                 },
+                {
+                    from: 'app/PPINOT-modeler/PPINOT/PPINOT.json',
+                    to: 'PPINOT.json'
+                }
             ]
         })
     ],
