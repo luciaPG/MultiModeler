@@ -9,287 +9,629 @@
       {
         "name": "Resource",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "ResourceAbsence",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "Role",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "RoleAbsence",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "Group",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "GroupAbsence",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "Clock",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "TimeSlot",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "Avion",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "AggregatedMeasure",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "TimeAggregatedMeasure",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "CyclicTimeAggregatedMeasure",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "CountAggregatedMeasure",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "CountMeasure",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "DataAggregatedMeasure",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "DataMeasure",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "DataPropertyConditionAggregatedMeasure",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "DataPropertyConditionMeasure",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "DerivedMultiInstanceMeasure",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "DerivedSingleInstanceMeasure",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "TimeMeasure",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "CyclicTimeMeasure",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "BaseMeasure",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "Ppi",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "StateConditionMeasure",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "StateConditionAggregatedMeasure",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "Target",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "Scope",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "StateCondAggMeasureNumber",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "StateCondAggMeasurePercentage",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "StateCondAggMeasureAll",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "StateCondAggMeasureAtLeastOne",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "StateCondAggMeasureNo",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "CyclicTimeAggregatedMeasureMAX",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "CyclicTimeAggregatedMeasureSUM",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "CyclicTimeAggregatedMeasureMIN",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "CyclicTimeAggregatedMeasureAVG",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "CyclicTimeMeasureSUM",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "CyclicTimeMeasureMAX",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "CyclicTimeMeasureMIN",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "CyclicTimeMeasureAVG",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "TimeAggregatedMeasureSUM",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "TimeAggregatedMeasureMAX",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "TimeAggregatedMeasureMIN",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "TimeAggregatedMeasureAVG",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "CountAggregatedMeasureSUM",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "CountAggregatedMeasureMAX",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "CountAggregatedMeasureMIN",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "CountAggregatedMeasureAVG",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "DataAggregatedMeasureSUM",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "DataAggregatedMeasureMAX",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "DataAggregatedMeasureMIN",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "DataAggregatedMeasureAVG",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "AggregatedMeasureSUM",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "AggregatedMeasureMAX",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "AggregatedMeasureMIN",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "AggregatedMeasureAVG",
         "superClass": ["bpmn:FlowNode"],
-        "properties": []
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
       },
       {
         "name": "ResourceArc",
