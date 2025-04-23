@@ -5,6 +5,7 @@ import PPINOTPalette from './PPINOTPalette';
 import PPINOTRenderer from './PPINOTRenderer';
 import PPINOTRules from './PPINOTRules';
 import PPINOTUpdater from './PPINOTUpdater';
+import PPINOTBpmnUpdater from './PPINOTBpmnUpdater';
 import PPINOTLabelEditingProvider from "./PPINOTLabelEditingProvider";
 import PPINOTModeling from "./PPINOTModeling";
 import PPINOTConnect from "./PPINOTConnect";
@@ -25,8 +26,7 @@ export default {
     'connect',
     'replaceConnectionBehavior',
     'replaceMenuProvider',
-   
-  
+    'bpmnUpdater'
   ],
   contextPadProvider: [ 'type', PPINOTContextPadProvider ],
   PPINOTOrderingProvider: [ 'type', PPINOTOrderingProvider ],
@@ -39,7 +39,6 @@ export default {
   modeling: [ 'type', PPINOTModeling ],
   connect: [ 'type', PPINOTConnect],
   replaceConnectionBehavior: [ 'type', PPINOTReplaceConnectionBehavior],
-  replaceMenuProvider: ['type', PPINOTReplaceMenuProvider]
-  
-
+  replaceMenuProvider: ['type', PPINOTReplaceMenuProvider],
+  bpmnUpdater: [ 'type', PPINOTBpmnUpdater ]
 };
