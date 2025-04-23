@@ -63,18 +63,22 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
       collectionAdd(PPINOTElements, businessObject);
     }
 
-    // update waypoints
-    assign(businessObject, {
-      waypoints: copyWaypoints(connection)
-    });
+    // update waypoints and preserve them
+    if (connection.waypoints) {
+      assign(businessObject, {
+        waypoints: connection.waypoints.map(function(p) {
+          return { x: p.x, y: p.y };
+        })
+      });
+    }
 
+    // update source and target references
     if (source && target) {
       assign(businessObject, {
         source: source.id,
         target: target.id
       });
     }
-
   }
 
   this.executed([

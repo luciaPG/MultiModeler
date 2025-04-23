@@ -9,6 +9,7 @@ import inherits from 'inherits';
 import CommandInterceptor from 'diagram-js/lib/command/CommandInterceptor';
 
 import {is} from "bpmn-js/lib/util/ModelUtil";
+import {isPPINOTConnection} from "../Types";
 
 
 export default function ReplaceConnectionBehavior(eventBus, modeling, bpmnRules, PPINOTRules, injector) {
@@ -18,7 +19,6 @@ export default function ReplaceConnectionBehavior(eventBus, modeling, bpmnRules,
     var dragging = injector.get('dragging', false);
 
     function fixConnection(connection) {
-
         var source = connection.source,
             target = connection.target,
             parent = connection.parent;
@@ -27,6 +27,17 @@ export default function ReplaceConnectionBehavior(eventBus, modeling, bpmnRules,
         // is already deleted (may happen due to other
         // behaviors plugged-in before)
         if (!parent) {
+            return;
+        }
+
+        // For PPINOT connections, we want to preserve them
+        if (isPPINOTConnection(connection.type)) {
+            // Ensure waypoints are preserved
+            if (connection.waypoints) {
+                connection.businessObject.waypoints = connection.waypoints.map(function(p) {
+                    return { x: p.x, y: p.y };
+                });
+            }
             return;
         }
 
