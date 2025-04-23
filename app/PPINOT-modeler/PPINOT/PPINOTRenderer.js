@@ -327,11 +327,11 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
   function drawBaseMeasure(element){
     var baseMeasure = svgCreate('image', {
       // Ajustamos el posicionamiento para centrar mejor la imagen
-      x: 2,
-      y: 2,
+      x: 6,
+      y: 4,
       // Reducimos ligeramente el tamaño para darle menos margen
-      width: element.width - 4,
-      height: element.height - 4,
+      width: element.width*0.8,
+      height: element.height*0.8,
       href: Svg.dataURLbaseMeasure
     })
     return baseMeasure;
@@ -339,10 +339,10 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
 
   function drawTarget(element){
     var target = svgCreate('image', {
-      x: 0,
-      y: 0,
-      width: element.width,
-      height: element.height,
+      x: 10,
+      y: 5,
+      width: element.width * 0.85,
+      height: element.height * 0.85,
       href: Svg.dataURLtarget
     })
     return target;
@@ -350,10 +350,10 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
 
   function drawScope(element){
     var scope = svgCreate('image', {
-      x: 0,
-      y: 0,
-      width: element.width,
-      height: element.height,
+      x: 10,
+      y: 5,
+      width: element.width * 0.85,
+      height: element.height * 0.85,
       href: Svg.dataURLscope
     })
     return scope;
@@ -892,18 +892,26 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
           width = element.width,
           height = element.height;
           
-
-      var borderRadius = 10; // Reducido de 20 para disminuir los márgenes
+      // Ajustamos las coordenadas y tamaño del path para que coincida con la imagen reducida
+      var offsetX = 6; // Mismo offset que en drawBaseMeasure
+      var offsetY = 4; // Mismo offset que en drawBaseMeasure
+      var scaledWidth = width * 0.8; // Mismo factor que en drawBaseMeasure
+      var scaledHeight = height * 0.8; // Mismo factor que en drawBaseMeasure
+      
+      var adjustedX = x + offsetX;
+      var adjustedY = y + offsetY;
+      
+      var borderRadius = 10;
          
       var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
+        ['M', adjustedX + borderRadius, adjustedY],
+        ['l', scaledWidth - borderRadius * 2, 0],
         ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
+        ['l', 0, scaledHeight - borderRadius * 2],
         ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
+        ['l', borderRadius * 2 - scaledWidth, 0],
         ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
+        ['l', 0, borderRadius * 2 - scaledHeight],
         ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
         ['z']
       ];
@@ -916,13 +924,13 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
           width = element.width,
           height = element.height;
           
-
+      // Usamos las dimensiones completas del elemento para el área seleccionable
       var d = [
-        ['M', x , y],
-        ['h', 50 ],
-        ['v', 50 ],
-        ['h', -50 ],
-        ['v', -50 ],
+        ['M', x, y],
+        ['h', width],
+        ['v', height],
+        ['h', -width],
+        ['v', -height],
         ['z']
       ]
 
@@ -935,13 +943,13 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
           width = element.width,
           height = element.height;
           
-
+      // Usamos las dimensiones completas del elemento para el área seleccionable
       var d = [
-        ['M', x , y],
-        ['h', 50 ],
-        ['v', 50 ],
-        ['h', -50 ],
-        ['v', -50 ],
+        ['M', x, y],
+        ['h', width],
+        ['v', height],
+        ['h', -width],
+        ['v', -height],
         ['z']
       ]
 

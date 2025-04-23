@@ -123,7 +123,7 @@ PPINOTElementFactory.prototype._getPPINOTElementSize = function(type) {
     'PPINOT:Ppi': { width: 300, height: 250 },
     'PPINOT:StateConditionMeasure': { width: 110, height: 90 },
     'PPINOT:StateConditionAggregatedMeasure': { width: 120, height: 100 },
-    'PPINOT:Target': { width: 100, height: 40 },
+    'PPINOT:Target': { width: 120, height: 60 },
     'PPINOT:Scope': { width: 100, height: 35 },
     'PPINOT:BaseMeasure': { width: 110, height: 90 },
     'PPINOT:StateCondAggMeasureNumber': { width: 120, height: 100 },
