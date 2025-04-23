@@ -2,8 +2,8 @@ import {
     asTRBL,
     getMid
 } from 'diagram-js/lib/layout/LayoutUtil';
-import {getNewShapePosition} from "bpmn-js/lib/features/auto-place/AutoPlaceUtil";
-import {assign} from "min-dash";
+import { getNewShapePosition } from "bpmn-js/lib/features/auto-place/BpmnAutoPlaceUtil";
+import { assign } from "min-dash";
 
 
 export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
@@ -37,7 +37,7 @@ export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
         context.target = hover;
     });
 
-    eventBus.on([ 'connect.out', 'connect.cleanup' ], function(event) {
+    eventBus.on(['connect.out', 'connect.cleanup'], function(event) {
         var context = event.context;
 
         context.target = null;
@@ -69,20 +69,19 @@ export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
 
         // Here, you must to define your connection
         if (typeof canExecute === 'object') {
-            if(canExecute.type1) {
+            if (canExecute.type1) {
 
                 hints = {
                     connectionStart: pos,
                     connectionEnd: targetPosition
                 }
-                attrs = { type: canExecute.type2}
+                attrs = { type: canExecute.type2 }
                 modeling.connect(newShape, target, attrs, hints);
                 return;
-            }
-            else
+            } else
                 attrs = canExecute;
         }
-        if(!canExecute.type1)
+        if (!canExecute.type1)
             modeling.connect(source, target, attrs, hints);
     });
 

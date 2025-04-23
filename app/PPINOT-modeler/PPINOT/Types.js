@@ -267,7 +267,7 @@ export const myConnectionElements = [
 
 // The elements which are included in "aggregatedElements" could be connect by the connections of 
 // the aggregated measures
-export const aggreagatedElements = [
+export const aggregatedElements = [
     'PPINOT:AggregatedMeasure',
     'PPINOT:TimeAggregatedMeasure',
     'PPINOT:CyclicTimeAggregatedMeasure',
@@ -483,7 +483,7 @@ export function isPPINOTAggregatedElement(type) {
     if (typeof type === 'object') {
         type = type.type
     }
-    return aggreagatedElements.includes(type)
+    return aggregatedElements.includes(type)
 }
 
 export function isPPINOTBaseMeasureElement(type) {

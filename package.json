@@ -1,50 +1,58 @@
 {
-  "name": "ppinot-visual",
-  "version": "0.5.0",
-  "description": "A visual modeler of Process Performance Indicators based on PPINOT and built with bpmn-js",
-  "scripts": {
-    "all": "run-s lint build",
-    "build": "webpack --mode production",
-    "dev": "webpack-dev-server --content-base=public --open",
-    "lint": "eslint .",
-    "start": "run-s dev"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/isa-group/ppinot-visual"
-  },
-  "keywords": [
-    "ppinot", "visual ppinot", "bpmn", "ppis"
-  ],
-  "author": {
-    "name": "ISA Group",
-    "url": "https://github.com/isa-group"
-  },
-  "contributors": [
-    {
-      "name": "ISA Group contributors",
-      "url": "https://github.com/isa-group"
+    "name": "ppinot-visual",
+    "version": "0.5.0",
+    "description": "A visual modeler of Process Performance Indicators based on PPINOT and built with bpmn-js",
+    "scripts": {
+        "all": "run-s lint build",
+        "build": "webpack --mode production",
+        "dev": "webpack-dev-server --open",
+        "lint": "eslint .",
+        "start": "run-s dev"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/isa-group/ppinot-visual"
+    },
+    "keywords": [
+        "ppinot",
+        "visual ppinot",
+        "bpmn",
+        "ppis"
+    ],
+    "author": {
+        "name": "ISA Group",
+        "url": "https://github.com/isa-group"
+    },
+    "contributors": [
+        {
+            "name": "ISA Group contributors",
+            "url": "https://github.com/isa-group"
+        }
+    ],
+    "license": "MIT",
+    "devDependencies": {
+        "@babel/core": "^7.26.7",
+        "@babel/preset-env": "^7.26.7",
+        "babel-loader": "^9.2.1",
+        "copy-webpack-plugin": "^11.0.0",
+        "eslint": "^6.5.1",
+        "eslint-plugin-bpmn-io": "^0.10.0",
+        "ids": "latest",
+        "json-loader": "^0.5.7",
+        "npm-run-all": "^4.1.5",
+        "raw-loader": "^4.0.2",
+        "webpack": "^5.88.0",
+        "webpack-cli": "^5.1.4",
+        "webpack-dev-server": "^4.15.2"
+    },
+    "dependencies": {
+        "bpmn-js": "latest",
+        "bpmn-moddle": "latest",
+        "diagram-js": "latest",
+        "inherits": "latest",
+        "jquery": "^3.4.1",
+        "min-dash": "^4.2.2",
+        "ppinot-visual": "file:",
+        "tiny-svg": "latest"
     }
-  ],
-  "license": "MIT",
-  "devDependencies": {
-    "copy-webpack-plugin": "^5.0.4",
-    "eslint": "^6.5.1",
-    "eslint-plugin-bpmn-io": "^0.10.0",
-    "npm-run-all": "^4.1.5",
-    "raw-loader": "^3.1.0",
-    "webpack": "^4.41.2",
-    "webpack-cli": "^3.3.9",
-    "webpack-dev-server": "^3.9.0",
-    "ids": "latest"
-  },
-  "dependencies": {
-    "bpmn-js": "^5.1.1",
-    "diagram-js": "^5.1.1",
-    "jquery": "^3.4.1",
-    "tiny-svg": "latest",
-    "min-dash": "latest",
-    "inherits": "latest",
-    "bpmn-moddle": "latest"
-  }
 }

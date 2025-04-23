@@ -12,6 +12,7 @@ import {
   remove as collectionRemove
 } from 'diagram-js/lib/util/Collections';
 
+import { is } from 'bpmn-js/lib/util/ModelUtil';
 
 /**
  * A handler responsible for updating the PPINOT element's businessObject
@@ -43,6 +44,30 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
 
     // save PPINOT element position
     assign(businessObject, pick(shape, [ 'x', 'y' ]));
+    
+    // Special handling for pool creation
+    if (is(parent, 'bpmn:Participant') || is(parent, 'bpmn:Collaboration')) {
+      // Ensure proper containment for PPINOT elements in pools
+      var process = parent.businessObject.processRef;
+      if (process) {
+        // Initialize children array if it doesn't exist
+        if (!process.children) {
+          process.children = [];
+        }
+        
+        // If process exists, ensure PPINOT element is in the process
+        if (businessObject.$parent !== process) {
+          // Remove from current parent
+          if (businessObject.$parent && businessObject.$parent.children) {
+            collectionRemove(businessObject.$parent.children, businessObject);
+          }
+          
+          // Add to process
+          process.children.push(businessObject);
+          businessObject.$parent = process;
+        }
+      }
+    }
   }
 
   function updatePPINOTConnection(e) {
@@ -63,19 +88,67 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
       collectionAdd(PPINOTElements, businessObject);
     }
 
-    // update waypoints
-    assign(businessObject, {
-      waypoints: copyWaypoints(connection)
-    });
+    // update waypoints and preserve them
+    if (connection.waypoints) {
+      assign(businessObject, {
+        waypoints: connection.waypoints.map(function(p) {
+          return { x: p.x, y: p.y };
+        })
+      });
+    }
 
+    // update source and target references
     if (source && target) {
       assign(businessObject, {
         source: source.id,
         target: target.id
       });
     }
-
   }
+
+  // Handle parent updates directly
+  eventBus.on('element.updateParent', function(event) {
+    var context = event.context;
+    var element = context.element;
+    var oldParent = context.oldParent;
+    var newParent = context.newParent;
+    
+    if (!isPPINOT(element)) {
+      return;
+    }
+    
+    var businessObject = element.businessObject;
+    
+    // Handle parent change
+    if (newParent) {
+      var newParentBO = newParent.businessObject;
+      
+      // Handle pools specially
+      if (is(newParent, 'bpmn:Participant') && newParentBO.processRef) {
+        newParentBO = newParentBO.processRef;
+      }
+      
+      // Ensure children array exists
+      if (!newParentBO.children) {
+        newParentBO.children = [];
+      }
+      
+      // Remove from old parent
+      if (businessObject.$parent && businessObject.$parent.children) {
+        collectionRemove(businessObject.$parent.children, businessObject);
+      }
+      
+      // Add to new parent
+      newParentBO.children.push(businessObject);
+      businessObject.$parent = newParentBO;
+    } else if (oldParent && businessObject.$parent) {
+      // Remove from old parent only
+      if (businessObject.$parent.children) {
+        collectionRemove(businessObject.$parent.children, businessObject);
+      }
+      businessObject.$parent = null;
+    }
+  });
 
   this.executed([
     'shape.create',
@@ -136,12 +209,6 @@ PPINOTUpdater.$inject = [ 'eventBus', 'modeling', 'bpmnjs' ];
 
 
 /////// helpers ///////////////////////////////////
-
-function copyWaypoints(connection) {
-  return connection.waypoints.map(function(p) {
-    return { x: p.x, y: p.y };
-  });
-}
 
 function isPPINOT(element) {
   return element && /PPINOT:/.test(element.type);

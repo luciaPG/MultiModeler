@@ -1,213 +1,183 @@
 import $ from 'jquery';
-
 import PPINOTModeler from './PPINOT-modeler';
-
 import BpmnModdle from 'bpmn-moddle';
+import PPINOTDescriptor from './PPINOT-modeler/PPINOT/PPINOT.json'; 
+const moddle = new BpmnModdle({
+});
+const container = $('#js-drop-zone');
+const body = $('body');
 
-var moddle = new BpmnModdle();
-
-var container = $('#js-drop-zone');
-let body =$('body')
-
-var modeler = new PPINOTModeler({
+const modeler = new PPINOTModeler({
   container: '#js-canvas',
-  keyboard: {
-    bindTo: document
+  moddleExtensions: {
+    PPINOT: PPINOTDescriptor 
   }
+
 });
 
-function createNewDiagram() {
-	modeler.clear()
-	modeler.createDiagram(function(err) {
+async function createNewDiagram() {
+    try {
+        // Ensure modeler.clear() returns a promise
+        if (typeof modeler.clear === 'function') {
+            await modeler.clear();
+        } else {
+            throw new Error('modeler.clear is not a function or does not return a promise');
+        }
 
-	if (err) {
-		container
-			.removeClass('with-diagram')
-			.addClass('with-error');
+        await modeler.createDiagram();
 
-		modeler.setModelOpen(false)
-		container.find('.error pre').text(err.message);
-	} else {
-		container
-			.removeClass('with-error')
-			.addClass('with-diagram');
+        container
+            .removeClass('with-error')
+            .addClass('with-diagram');
 
-		modeler.setModelOpen(true)
-		body.addClass('shown')
-	}
-})
+        modeler.setModelOpen(true);
+        body.addClass('shown');
+    } catch (err) {
+        container
+            .removeClass('with-diagram')
+            .addClass('with-error');
 
-}
-
-
-function openDiagram(xml, cbpmn) {
-  modeler.clear()
-  modeler.importXML(xml, function(err) {
-    if (err) {
-      container
-        .removeClass('with-diagram')
-        .addClass('with-error');
-
-      modeler.addPPINOTElements(PPINOT);
-      modeler.setModelOpen(false);
-      container.find('.error pre').text(err.message);
-
-      console.error(err);
+        modeler.setModelOpen(false);
+        container.find('.error pre').text(err.message);
     }
-    else {
-      container
-        .removeClass('with-error')
-        .addClass('with-diagram');
+}
 
-      if(cbpmn != null)
-        modeler.addPPINOTElements(cbpmn);
+const openDiagram = async (xml, cbpmn) => {
+  try {
+    await modeler.clear();
+    await modeler.importXML(xml);
 
-      modeler.setModelOpen(true);
-      body.addClass('shown')
+    container
+      .removeClass('with-error')
+      .addClass('with-diagram');
+
+    if (cbpmn) {
+      modeler.addPPINOTElements(cbpmn);
     }
-  });
-}
 
-function saveSVG(done) {
-  modeler.saveSVG(done);
-}
+    modeler.setModelOpen(true);
+    body.addClass('shown');
+  } catch (err) {
+    container
+      .removeClass('with-diagram')
+      .addClass('with-error');
 
-function fixTaskData(task) {
-  if(task.dataInputAssociations || task.dataOutputAssociations) {
-    // Create ioSpecification
-    let ioSpecification = moddle.create('bpmn:InputOutputSpecification', {id: 'io_'+task.get('id')})
-    if(task.dataInputAssociations)
-      task.dataInputAssociations.forEach((obj) => {
-        let dataInput = moddle.create('bpmn:DataInput', {id:'input_'+ obj.get('id')})
-        ioSpecification.get('dataInputs').push(dataInput)
-        obj.set('targetRef', dataInput)
-        let name = obj.get('name')
-        if(!name)
-          obj.set('name', "")
-      })
-    if(task.dataOutputAssociations)
-      task.dataOutputAssociations.forEach((obj) => {
-        let dataOutput = moddle.create('bpmn:DataOutput', {id:'output_'+ obj.get('id')})
-        ioSpecification.get('dataOutputs').push(dataOutput)
-        obj.set('sourceRef', [dataOutput])
-        let name = obj.get('name')
-        if(!name)
-          obj.set('name', "")
-     })
-    task.set("ioSpecification", ioSpecification)
-
-    // Remove properties for data
+    modeler.setModelOpen(false);
+    container.find('.error pre').text(err.message);
   }
-  let name = task.get('name')
-  if(!name)
-    task.set('name', "")
-  return task
-}
+};
 
-function saveDiagram(done) {
+const saveSVG = (done) => {
+  modeler.saveSVG(done);
+};
 
-  modeler.saveXML({ format: true }, function(err, xml) {
+const fixTaskData = (task) => {
+  if (task.dataInputAssociations || task.dataOutputAssociations) {
+    const ioSpecification = moddle.create('bpmn:InputOutputSpecification', { id: `io_${task.get('id')}` });
+    if (task.dataInputAssociations) {
+      task.dataInputAssociations.forEach((obj) => {
+        const dataInput = moddle.create('bpmn:DataInput', { id: `input_${obj.get('id')}` });
+        ioSpecification.get('dataInputs').push(dataInput);
+        obj.set('targetRef', dataInput);
+        if (!obj.get('name')) obj.set('name', '');
+      });
+    }
+    if (task.dataOutputAssociations) {
+      task.dataOutputAssociations.forEach((obj) => {
+        const dataOutput = moddle.create('bpmn:DataOutput', { id: `output_${obj.get('id')}` });
+        ioSpecification.get('dataOutputs').push(dataOutput);
+        obj.set('sourceRef', [dataOutput]);
+        if (!obj.get('name')) obj.set('name', '');
+      });
+    }
+    task.set('ioSpecification', ioSpecification);
+  }
+  if (!task.get('name')) task.set('name', '');
+  return task;
+};
+
+const saveDiagram = (done) => {
+  modeler.saveXML({ format: true }, (err, xml) => {
     moddle.fromXML(xml, (err, def) => {
       def.getPPINOTElements();
-      def.get("rootElements").forEach((obj) => {
-        if(obj.$type.includes('Process')) {
+      def.get('rootElements').forEach((obj) => {
+        if (obj.$type.includes('Process')) {
           obj.get('flowElements').forEach((el) => {
-            if(el.$type.includes('Task'))
-              fixTaskData(el)
-            else if(el.$type === 'bpmn:DataObjectReference') {
-              let name = el.get('name')
-              if(!name)
-                el.set('name', "")
-
+            if (el.$type.includes('Task')) {
+              fixTaskData(el);
+            } else if (el.$type === 'bpmn:DataObjectReference') {
+              if (!el.get('name')) el.set('name', '');
             }
-
-          })
+          });
         }
-      })
-      moddle.toXML(def,{ format: true }, (err, res) => {
+      });
+      moddle.toXML(def, { format: true }, (err, res) => {
         done(err, res, modeler.getPPINOTElements());
-      })
-    })
+      });
+    });
     done(err, xml);
-    // console.log(modeler.getJson())
   });
-}
+};
 
-function handleFiles(files, callback) {
-  var bpmn, cbpmnFile;
-  if(files[0].name.includes(".bpmn")) {
-    bpmn = files[0]
-    if(files[1] && files[1].name.includes(".cbpmn"))
-      cbpmnFile = files[1]
-    else if(files[1] )
-      window.alert("second file is not a cbpmn file")
-  }
-  else if(files[1] != null && files[1].name.includes(".bpmn")) {
-    bpmn = files[1]
-    if(files[0] && files[0].name.includes(".cbpmn"))
-      cbpmnFile = files[0]
-    else if(files[0] )
-      window.alert("second file is not a cbpmn file")
-  }
-  else if(files[0].name.includes(".cbpmn"))
-    cbpmnFile = files[0]
+const handleFiles = (files, callback) => {
+  let bpmn, cbpmnFile;
+  if (files[0].name.includes('.bpmn')) {
+    bpmn = files[0];
+    if (files[1] && files[1].name.includes('.cbpmn')) cbpmnFile = files[1];
+    else if (files[1]) window.alert('second file is not a cbpmn file');
+  } else if (files[1] && files[1].name.includes('.bpmn')) {
+    bpmn = files[1];
+    if (files[0] && files[0].name.includes('.cbpmn')) cbpmnFile = files[0];
+    else if (files[0]) window.alert('second file is not a cbpmn file');
+  } else if (files[0].name.includes('.cbpmn')) cbpmnFile = files[0];
 
-  var reader = new FileReader();
+  const reader = new FileReader();
 
+  if (bpmn) {
+    reader.onload = (e) => {
+      const xml = e.target.result;
+      const reader1 = new FileReader();
 
-
-  if(bpmn != null) {
-    reader.onload = function(e) {
-      var xml = e.target.result;
-      let reader1 = new FileReader();
-
-      if(cbpmnFile) {
-        reader1.onload = function(e) {
-          let cbpmn = JSON.parse(e.target.result);
+      if (cbpmnFile) {
+        reader1.onload = (e) => {
+          const cbpmn = JSON.parse(e.target.result);
           callback(xml, cbpmn);
         };
 
         reader1.readAsText(cbpmnFile);
-      }
-      else
-        callback(xml, null);
+      } else callback(xml, null);
     };
 
     reader.readAsText(bpmn);
-  }
-  else if(cbpmnFile != null && modeler.isModelOpen()) {
-    reader.onload = function(e) {
-      var cbpmn = JSON.parse(e.target.result);
-
-      modeler.addPPINOTElements(cbpmn)
+  } else if (cbpmnFile && modeler.isModelOpen()) {
+    reader.onload = (e) => {
+      const cbpmn = JSON.parse(e.target.result);
+      modeler.addPPINOTElements(cbpmn);
     };
 
     reader.readAsText(cbpmnFile);
   }
+};
 
-}
-
-function registerFileDrop(container, callback) {
-
-  function handleFileSelect(e) {
+const registerFileDrop = (container, callback) => {
+  const handleFileSelect = (e) => {
     e.stopPropagation();
     e.preventDefault();
 
-    var files = e.dataTransfer.files;
-    handleFiles(files, callback)
-  }
+    const files = e.dataTransfer.files;
+    handleFiles(files, callback);
+  };
 
-  function handleDragOver(e) {
+  const handleDragOver = (e) => {
     e.stopPropagation();
     e.preventDefault();
 
     e.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
-  }
+  };
 
   container.get(0).addEventListener('dragover', handleDragOver, false);
   container.get(0).addEventListener('drop', handleFileSelect, false);
-}
-
+};
 
 // file drag / drop ///////////////////////
 
@@ -215,101 +185,92 @@ function registerFileDrop(container, callback) {
 if (!window.FileList || !window.FileReader) {
   window.alert(
     'Looks like you use an older browser that does not support drag and drop. ' +
-    'Try using Chrome, Firefox or the Internet Explorer > 10.');
+    'Try using Chrome, Firefox or the Internet Explorer > 10.'
+  );
 } else {
   registerFileDrop(container, openDiagram);
 }
 
 // bootstrap diagram functions
-
-$(function() {
-
-  $('#js-open-diagram').click(function(e) {
+$(() => {
+  $('#js-open-diagram').click((e) => {
     e.stopPropagation();
     e.preventDefault();
 
-    let input = document.createElement('input')
-    input.type = 'file'
-    input.multiple = true
-    input.click()
-    input.addEventListener('input', function (evt) {
-      handleFiles(evt.target.files, openDiagram)
-    })
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.click();
+    input.addEventListener('input', (evt) => {
+      handleFiles(evt.target.files, openDiagram);
+    });
   });
 
-  $('.js-create-diagram').click(function(e) {
+  $('.js-create-diagram').click((e) => {
     e.stopPropagation();
     e.preventDefault();
 
     createNewDiagram();
   });
 
-  var downloadLink = $('#js-download-diagram');
-  var downloadSvgLink = $('#js-download-svg');
+  const downloadLink = $('#js-download-diagram');
+  const downloadSvgLink = $('#js-download-svg');
 
-  $('#js-add-colors').click(function(e) {
+  $('#js-add-colors').click((e) => {
     e.stopPropagation();
     e.preventDefault();
 
-    let input = document.createElement('input')
-    input.type = 'file'
-    input.multiple = false
-    input.click()
-    input.addEventListener('input', function (evt) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = false;
+    input.click();
+    input.addEventListener('input', (evt) => {
+      const reader = new FileReader();
 
-      var reader = new FileReader();
-
-      reader.onload = function(e) {
-        modeler.setColors(JSON.parse(e.target.result))
+      reader.onload = (e) => {
+        modeler.setColors(JSON.parse(e.target.result));
       };
 
       reader.readAsText(evt.target.files[0]);
-    })
+    });
   });
 
-  $('.buttons a').click(function(e) {
+  $('.buttons a').click((e) => {
     if (!$(this).is('.active')) {
       e.preventDefault();
       e.stopPropagation();
     }
   });
 
-  function setEncoded(link, name, data) {
-    var encodedData = encodeURIComponent(data);
+  const setEncoded = (link, name, data) => {
+    const encodedData = encodeURIComponent(data);
     if (data) {
       link.addClass('active').attr({
-        'href': 'data:application/bpmn20-xml;charset=UTF-8,' + encodedData,
-        'download': name
+        href: `data:application/bpmn20-xml;charset=UTF-8,${encodedData}`,
+        download: name
       });
     } else {
       link.removeClass('active');
     }
-  }
+  };
 
-  function setMultipleEncoded(link, name, data) {
-
-
+  const setMultipleEncoded = (link, name, data) => {
     if (data) {
-      let urls = []
-      window.localStorage.setItem("diagram", encodeURIComponent(data[0]))
-      window.localStorage.setItem("PPINOT", encodeURIComponent(JSON.stringify(data[1])))
+      window.localStorage.setItem('diagram', encodeURIComponent(data[0]));
+      window.localStorage.setItem('PPINOT', encodeURIComponent(JSON.stringify(data[1])));
     } else {
       link.removeClass('active');
     }
-  }
+  };
 
-  var exportArtifacts = debounce(function() {
-
-    saveSVG(function(err, svg) {
+  const exportArtifacts = debounce(() => {
+    saveSVG((err, svg) => {
       setEncoded(downloadSvgLink, 'diagram.svg', err ? null : svg);
     });
 
-    saveDiagram(function(err, xml) {
-      // setEncoded(downloadLink, 'PPINOT.elements', err ? null : json)
-      // setEncoded(downloadLink, 'diagram.bpmn', err ? null : xml)
-      // console.log("what?")
-      let cbpmn = modeler.getJson()
-      setMultipleEncoded(downloadLink, 'diagram.bpmn', err ? null : [xml, cbpmn])
+    saveDiagram((err, xml) => {
+      const cbpmn = modeler.getJson();
+      setMultipleEncoded(downloadLink, 'diagram.bpmn', err ? null : [xml, cbpmn]);
     });
   }, 500);
 
@@ -318,15 +279,14 @@ $(function() {
 
 // helpers //////////////////////
 
-function debounce(fn, timeout) {
+const debounce = (fn, timeout) => {
+  let timer;
 
-  var timer;
-
-  return function() {
+  return () => {
     if (timer) {
       clearTimeout(timer);
     }
 
     timer = setTimeout(fn, timeout);
   };
-}
+};

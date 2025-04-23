@@ -8,7 +8,7 @@ import * as labelUtils from "bpmn-js/lib/util/LabelUtil"
 import {isAny} from "bpmn-js/lib/features/modeling/util/ModelingUtil";
 import {assign} from "min-dash";
 import {DEFAULT_LABEL_SIZE, FLOW_LABEL_INDENT} from "bpmn-js/lib/util/LabelUtil";
-
+import {getDi} from "bpmn-js/lib/util/ModelUtil";
 import {label, externalLabel} from "../Types";
 
 export function getLabel(element) {
@@ -88,7 +88,8 @@ export function getExternalLabelMid(element) {
  * @param {djs.model.Base} element
  */
 export function getExternalLabelBounds(semantic, element) {
-    if(semantic.di)
+    const di= getDi(semantic)
+    if(di)
         return labelUtils.getExternalLabelBounds(semantic, element)
     else {
         let mid = getExternalLabelMid(element);
