@@ -188,11 +188,11 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
 
     //this is to draw a unfilled arrow and large blades
     if (type === 'timedistance-start') {
-      var sequenceflowEnd = svgCreate('path');
-      svgAttr(sequenceflowEnd, { d: 'M -10 -5 L 20 10 L -10 25 L 20 10  Z' });
+      var timedistanceStart = svgCreate('path');
+      svgAttr(timedistanceStart, { d: 'M -10 -5 L 20 10 L -10 25 L 20 10  Z' });
 
       addMarker(id, {
-        element: sequenceflowEnd,
+        element: timedistanceStart,
         ref: { x: 5, y: 10 },
         scale: 0.8,
         attrs: {
@@ -206,11 +206,11 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
 
     //this is to draw an arrow with ony two blades
     if (type === 'timedistance-end') {
-      var sequenceflowEnd = svgCreate('path');
-      svgAttr(sequenceflowEnd, { d: 'M 35 0 L 0 15 L 35 30 L 0 15  Z' });
+      var timedistanceEnd = svgCreate('path');
+      svgAttr(timedistanceEnd, { d: 'M 35 0 L 0 15 L 35 30 L 0 15  Z' });
 
       addMarker(id, {
-        element: sequenceflowEnd,
+        element: timedistanceEnd,
         ref: { x: 14, y: 15 },
         scale: 0.8,
         attrs: {
@@ -326,10 +326,12 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
   // --> href is the svg element defined in svg -> index.js
   function drawBaseMeasure(element){
     var baseMeasure = svgCreate('image', {
-      x: 0,
-      y: 0,
-      width: element.width,
-      height: element.height,
+      // Ajustamos el posicionamiento para centrar mejor la imagen
+      x: 2,
+      y: 2,
+      // Reducimos ligeramente el tamaño para darle menos margen
+      width: element.width - 4,
+      height: element.height - 4,
       href: Svg.dataURLbaseMeasure
     })
     return baseMeasure;
@@ -838,15 +840,6 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       };
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
-    'PPINOT:GroupedBy': (p, element) => {
-      var attrs = {
-        stroke: BLACK, 
-        strokeWidth: 1.5, 
-        strokeDasharray: [8,5],
-        markerStart: marker('conditional-flow-marker', 'white',BLACK),
-      };
-      return svgAppend(p, createLine(element.waypoints, attrs));
-    },
     'PPINOT:ToConnection': (p, element) => {
       var attrs = {
         stroke: BLACK, 
@@ -900,7 +893,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
           height = element.height;
           
 
-      var borderRadius = 20;
+      var borderRadius = 10; // Reducido de 20 para disminuir los márgenes
          
       var d = [
         ['M', x + borderRadius, y],
@@ -2046,7 +2039,42 @@ PPINOTRenderer.prototype.drawShape = function(p, element) {
 
 PPINOTRenderer.prototype.getShapePath = function(shape) {
   var type = shape.type;
+  
+  // Para conexiones, tenemos que generar un path válido a partir de los waypoints
+  if (isPPINOTConnection(type)) {
+    // Si es una conexión PPINOT con waypoints, usarlos para generar el path
+    var waypoints = shape.waypoints || [];
+    if (waypoints.length < 2) {
+      return 'M0,0 L0,0';
+    }
+    
+    var connectionPath = [
+      ['M', waypoints[0].x, waypoints[0].y]
+    ];
+
+    for (var i = 1; i < waypoints.length; i++) {
+      connectionPath.push(['L', waypoints[i].x, waypoints[i].y]);
+    }
+
+    return componentsToPath(connectionPath);
+  }
+  
+  // Para otros elementos, usar el path definido
   var h = this.paths[type];
+  
+  if (!h) {
+    // Si no hay un path definido, devolver un rectángulo básico
+    var x = shape.x || 0;
+    var y = shape.y || 0;
+    var width = shape.width || 50;
+    var height = shape.height || 50;
+    
+    return 'M' + x + ',' + y + 
+           ' L' + (x + width) + ',' + y + 
+           ' L' + (x + width) + ',' + (y + height) + 
+           ' L' + x + ',' + (y + height) + 
+           ' Z';
+  }
 
   /* jshint -W040 */
   return h(shape);

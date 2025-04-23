@@ -1,6 +1,7 @@
 import inherits from 'inherits';
 import { is } from 'bpmn-js/lib/util/ModelUtil';
 import BpmnUpdater from 'bpmn-js/lib/features/modeling/BpmnUpdater';
+import { getDi } from 'bpmn-js/lib/util/ModelUtil';
 
 /**
  * A handler responsible for updating the BPMN elements and
@@ -50,6 +51,40 @@ export default function PPINOTBpmnUpdater(eventBus, bpmnFactory, connectionDocki
     
     // Call the original method for non-PPINOT elements
     BpmnUpdater.prototype.updateSemanticParent.call(this, businessObject, newParent, visualParent);
+  };
+  
+  // Override the _getLabel method to handle cases when DI is undefined for PPINOT elements
+  this._getLabel = function(di) {
+    // Check if DI is undefined or null
+    if (!di) {
+      // Create a new label for PPINOT elements
+      return this._bpmnFactory.createDiLabel();
+    }
+    
+    // For existing DI elements, use the original logic
+    if (!di.label) {
+      di.label = this._bpmnFactory.createDiLabel();
+    }
+    
+    return di.label;
+  };
+  
+  // Override the updateBounds method to handle PPINOT elements
+  this.updateBounds = function(shape) {
+    var businessObject = shape.businessObject;
+    
+    // Special handling for PPINOT elements
+    if (isPPINOT(businessObject)) {
+      // For PPINOT elements, we need to check if they have a DI
+      // but we can't directly access it from businessObject
+      if (!shape.di) {
+        // If there's no DI, we can't update bounds
+        return;
+      }
+    }
+    
+    // Call original implementation for standard elements and PPINOT elements with DI
+    BpmnUpdater.prototype.updateBounds.call(this, shape);
   };
 }
 
