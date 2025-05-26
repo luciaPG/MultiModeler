@@ -147,17 +147,15 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
     }
     const businessObject = element.businessObject;
 
-    // In this case, if the element (businessObject) is any of aggregatedElements and it is not a label
-    // the corresponding buttons appear in the element when you click on it
-    // ---- Note: The elements included in aggregatedElements are defined in Types.js 
+ 
     if (isAny(businessObject, aggregatedElements) && element.type !== 'label') {
       assign(actions, {
         'connect1': this.appendConnectAction(
-          'PPINOT:AggregatedConnection', // Connection type that you want to append to element
-          'icon-aggregates', // Icon displayed on element as button
-          'Connect using aggregates connection' // Description that appears if you put the mouse over the button
+          'PPINOT:AggregatedConnection', 
+          'icon-aggregates', 
+          'Connect using aggregates connection' 
         ),
-        'connect2': this.appendConnectAction( // Append second connection to element
+        'connect2': this.appendConnectAction( 
           'PPINOT:GroupedBy',
           'icon-isGroupedBy',
           'Connect using isGroupedBy connection'
@@ -165,8 +163,7 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
       });
     }
 
-    // In this case, if the element (businessObject) is some of these and it is not a label,
-    // the follow button appear in the element when you click on it
+
     if (
       (is(businessObject, 'PPINOT:StateConditionAggregatedMeasure') ||
         is(businessObject, 'PPINOT:StateCondAggMeasureNumber') ||
