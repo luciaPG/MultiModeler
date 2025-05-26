@@ -2,7 +2,7 @@ import inherits from 'inherits';
 
 import ContextPadProvider from 'bpmn-js/lib/features/context-pad/ContextPadProvider';
 
-import {is} from "bpmn-js/lib/util/ModelUtil";
+import { is } from "bpmn-js/lib/util/ModelUtil";
 
 import {
   isAny
@@ -12,32 +12,32 @@ import {
   assign,
   bind
 } from 'min-dash';
-import {isLabel} from "./utils/LabelUtil";
+import { isLabel } from "./utils/LabelUtil";
 
-import {myConnectionElements, aggregatedElements, baseMeasureElements} from "./Types";
+import { myConnectionElements, aggregatedElements, baseMeasureElements } from "./Types";
 import { remove, replace } from 'tiny-svg';
 import {
-    isDifferentType
-  } from "bpmn-js/lib/features/popup-menu/util/TypeUtil"; 
-import PPINOTModeling from './PPINOTModeling' ;
+  isDifferentType
+} from "bpmn-js/lib/features/popup-menu/util/TypeUtil";
+import PPINOTModeling from './PPINOTModeling';
 
 
 // This module is used to show buttons in the menu of element in the diagram
 export default class PPINOTContextPadProvider extends ContextPadProvider {
   constructor(
-    config,         
-    injector,       
-    eventBus,       
-    contextPad,     
-    modeling,       
-    elementFactory, 
-    connect,        
-    create,         
-    popupMenu,      
-    canvas,         
-    rules,          
-    translate,      
-    appendPreview   
+    config,
+    injector,
+    eventBus,
+    contextPad,
+    modeling,
+    elementFactory,
+    connect,
+    create,
+    popupMenu,
+    canvas,
+    rules,
+    translate,
+    appendPreview
   ) {
     super(
       config,
@@ -140,6 +140,11 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
   getContextPadEntries(element) {
     // Call the parent class's getContextPadEntries method
     const actions = super.getContextPadEntries(element);
+
+    // This is used to not get duplicated normal arrows 
+    if (actions['connect']) {
+      delete actions['connect'];
+    }
     const businessObject = element.businessObject;
 
     // In this case, if the element (businessObject) is any of aggregatedElements and it is not a label
@@ -164,18 +169,18 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
     // the follow button appear in the element when you click on it
     if (
       (is(businessObject, 'PPINOT:StateConditionAggregatedMeasure') ||
-       is(businessObject, 'PPINOT:StateCondAggMeasureNumber') ||
-       is(businessObject, 'PPINOT:StateCondAggMeasurePercentage') ||
-       is(businessObject, 'PPINOT:StateCondAggMeasureAll') ||
-       is(businessObject, 'PPINOT:StateCondAggMeasureAtLeastOne') ||
-       is(businessObject, 'PPINOT:StateCondAggMeasureNo') ||
-       is(businessObject, 'PPINOT:StateConditionMeasure') ||
-       is(businessObject, 'PPINOT:CountMeasure') ||
-       is(businessObject, 'PPINOT:CountAggregatedMeasure') ||
-       is(businessObject, 'PPINOT:TimeMeasure') ||
-       is(businessObject, 'PPINOT:TimeAggregatedMeasure') ||
-       is(businessObject, 'PPINOT:DataMeasure') ||
-       is(businessObject, 'PPINOT:DataAggregatedMeasure')) &&
+        is(businessObject, 'PPINOT:StateCondAggMeasureNumber') ||
+        is(businessObject, 'PPINOT:StateCondAggMeasurePercentage') ||
+        is(businessObject, 'PPINOT:StateCondAggMeasureAll') ||
+        is(businessObject, 'PPINOT:StateCondAggMeasureAtLeastOne') ||
+        is(businessObject, 'PPINOT:StateCondAggMeasureNo') ||
+        is(businessObject, 'PPINOT:StateConditionMeasure') ||
+        is(businessObject, 'PPINOT:CountMeasure') ||
+        is(businessObject, 'PPINOT:CountAggregatedMeasure') ||
+        is(businessObject, 'PPINOT:TimeMeasure') ||
+        is(businessObject, 'PPINOT:TimeAggregatedMeasure') ||
+        is(businessObject, 'PPINOT:DataMeasure') ||
+        is(businessObject, 'PPINOT:DataAggregatedMeasure')) &&
       element.type !== 'label'
     ) {
       assign(actions, {
@@ -189,17 +194,17 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
 
     if (
       (is(businessObject, 'PPINOT:TimeMeasure') ||
-       is(businessObject, 'PPINOT:TimeAggregatedMeasure') ||
-       is(businessObject, 'PPINOT:CyclicTimeMeasure') ||
-       is(businessObject, 'PPINOT:CyclicTimeMeasureSUM') ||
-       is(businessObject, 'PPINOT:CyclicTimeMeasureMAX') ||
-       is(businessObject, 'PPINOT:CyclicTimeMeasureMIN') ||
-       is(businessObject, 'PPINOT:CyclicTimeMeasureAVG') ||
-       is(businessObject, 'PPINOT:CyclicTimeAggregatedMeasure') ||
-       is(businessObject, 'PPINOT:CyclicTimeAggregatedMeasureSUM') ||
-       is(businessObject, 'PPINOT:CyclicTimeAggregatedMeasureMAX') ||
-       is(businessObject, 'PPINOT:CyclicTimeAggregatedMeasureMIN') ||
-       is(businessObject, 'PPINOT:CyclicTimeAggregatedMeasureAVG')) &&
+        is(businessObject, 'PPINOT:TimeAggregatedMeasure') ||
+        is(businessObject, 'PPINOT:CyclicTimeMeasure') ||
+        is(businessObject, 'PPINOT:CyclicTimeMeasureSUM') ||
+        is(businessObject, 'PPINOT:CyclicTimeMeasureMAX') ||
+        is(businessObject, 'PPINOT:CyclicTimeMeasureMIN') ||
+        is(businessObject, 'PPINOT:CyclicTimeMeasureAVG') ||
+        is(businessObject, 'PPINOT:CyclicTimeAggregatedMeasure') ||
+        is(businessObject, 'PPINOT:CyclicTimeAggregatedMeasureSUM') ||
+        is(businessObject, 'PPINOT:CyclicTimeAggregatedMeasureMAX') ||
+        is(businessObject, 'PPINOT:CyclicTimeAggregatedMeasureMIN') ||
+        is(businessObject, 'PPINOT:CyclicTimeAggregatedMeasureAVG')) &&
       element.type !== 'label'
     ) {
       assign(actions, {
@@ -218,11 +223,11 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
 
     if (
       (is(businessObject, 'PPINOT:CountMeasure') ||
-       is(businessObject, 'PPINOT:CountAggregatedMeasure') ||
-       is(businessObject, 'PPINOT:CountAggregatedMeasureSUM') ||
-       is(businessObject, 'PPINOT:CountAggregatedMeasureMAX') ||
-       is(businessObject, 'PPINOT:CountAggregatedMeasureMIN') ||
-       is(businessObject, 'PPINOT:CountAggregatedMeasureAVG')) &&
+        is(businessObject, 'PPINOT:CountAggregatedMeasure') ||
+        is(businessObject, 'PPINOT:CountAggregatedMeasureSUM') ||
+        is(businessObject, 'PPINOT:CountAggregatedMeasureMAX') ||
+        is(businessObject, 'PPINOT:CountAggregatedMeasureMIN') ||
+        is(businessObject, 'PPINOT:CountAggregatedMeasureAVG')) &&
       element.type !== 'label'
     ) {
       assign(actions, {
