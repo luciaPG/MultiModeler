@@ -2,17 +2,15 @@ import inherits from 'inherits';
 
 import ContextPadProvider from 'bpmn-js/lib/features/context-pad/ContextPadProvider';
 
-import {is} from "bpmn-js/lib/util/ModelUtil";
+import { is } from "./utils/CompatibilityUtil";
 
-import {
-  isAny
-} from 'bpmn-js/lib/features/modeling/util/ModelingUtil';
+import { isAny } from './utils/CompatibilityUtil';
 
 import {
   assign,
   bind
 } from 'min-dash';
-import {isLabel} from "./utils/LabelUtil";
+import { isLabel } from "./utils/CompatibilityUtil";
 
 import {myConnectionElements, aggregatedElements, baseMeasureElements} from "./Types";
 import { remove, replace } from 'tiny-svg';
@@ -138,30 +136,41 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
   }
 
   getContextPadEntries(element) {
-    // Call the parent class's getContextPadEntries method
     const actions = super.getContextPadEntries(element);
+  
+  // This is used to not get duplicated normal arrows 
+  if (actions['connect']) {
+    delete actions['connect']; 
+  }
     const businessObject = element.businessObject;
 
-    // In this case, if the element (businessObject) is any of aggregatedElements and it is not a label
-    // the corresponding buttons appear in the element when you click on it
-    // ---- Note: The elements included in aggregatedElements are defined in Types.js 
+     if (isAny(businessObject, myConnectionElements) && element.type !== 'label') {
+      assign(actions, {
+        'connect13': this.appendConnectAction(
+          'PPINOT:MyConnection',
+          'bpmn-icon-connection',
+          'Connection between PPINOT elements'
+        )
+      });
+    }
+
+    
     if (isAny(businessObject, aggregatedElements) && element.type !== 'label') {
       assign(actions, {
         'connect1': this.appendConnectAction(
-          'PPINOT:AggregatedConnection', // Connection type that you want to append to element
-          'icon-aggregates', // Icon displayed on element as button
-          'Connect using aggregates connection' // Description that appears if you put the mouse over the button
+          'PPINOT:AggregatedConnection', 
+          'icon-aggregates', 
+          'Connect using aggregates connection' 
         ),
-        'connect2': this.appendConnectAction( // Append second connection to element
-          'PPINOT:IsGroupedBy',
+        'connect2': this.appendConnectAction( 
+          'PPINOT:GroupedBy',
           'icon-isGroupedBy',
           'Connect using isGroupedBy connection'
         )
       });
     }
 
-    // In this case, if the element (businessObject) is some of these and it is not a label,
-    // the follow button appear in the element when you click on it
+   
     if (
       (is(businessObject, 'PPINOT:StateConditionAggregatedMeasure') ||
        is(businessObject, 'PPINOT:StateCondAggMeasureNumber') ||
@@ -239,25 +248,17 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
       });
     }
 
-    if (is(businessObject, 'bpmn:DataObjectReference') && element.type !== 'label') {
-      assign(actions, {
-        'connect12': this.appendConnectAction(
-          'PPINOT:RFCStateConnection',
-          'icon-dashed-line',
-          'Connect using RFC state connection'
-        )
-      });
-    }
+    // if (is(businessObject, 'bpmn:DataObjectReference') && element.type !== 'label') {
+    //   assign(actions, {
+    //     'connect12': this.appendConnectAction(
+    //       'PPINOT:RFCStateConnection',
+    //       'icon-dashed-line',
+    //       'Connect using RFC state connection'
+    //     )
+    //   });
+    // }
 
-    if (isAny(businessObject, myConnectionElements) && element.type !== 'label') {
-      assign(actions, {
-        'connect13': this.appendConnectAction(
-          'PPINOT:MyConnection',
-          'bpmn-icon-connection',
-          'Connection between PPINOT elements'
-        )
-      });
-    }
+   
 
     // The following conditions defines buttons to replace elements
     // In this case, the menu button is only in aggregated measures and its function is replace these elements 
