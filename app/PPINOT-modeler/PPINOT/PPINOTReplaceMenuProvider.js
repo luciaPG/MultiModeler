@@ -1,7 +1,7 @@
 import {
   getBusinessObject,
   is
-} from "./utils/CompatibilityUtil";
+} from "bpmn-js/lib/util/ModelUtil";
 
 import {
   isEventSubProcess,
@@ -20,7 +20,7 @@ import {
 } from 'min-dash';
 
 import * as replaceOptions from './PPINOTReplaceOptions';
-import { isLabel, isLabelExternal } from "./utils/CompatibilityUtil";
+import { isLabel, isLabelExternal } from "bpmn-js/lib/util/LabelUtil";
 import { isPPINOTShape, label } from "./Types";
 import Replace from 'diagram-js/lib/features/replace/Replace';
 import { replace } from "tiny-svg";
