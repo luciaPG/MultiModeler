@@ -3,7 +3,7 @@ import {
     getMid
 } from 'diagram-js/lib/layout/LayoutUtil';
 import { getNewShapePosition } from "bpmn-js/lib/features/auto-place/BpmnAutoPlaceUtil";
-import {assign} from "min-dash";
+import { assign } from "min-dash";
 
 
 export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
@@ -20,7 +20,7 @@ export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
 
     // event handlers
 
-    eventBus.on('connect.hover', function(event) {
+    eventBus.on('connect.hover', function (event) {
         var context = event.context,
             source = context.source,
             type = context.type,
@@ -37,7 +37,7 @@ export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
         context.target = hover;
     });
 
-    eventBus.on([ 'connect.out', 'connect.cleanup' ], function(event) {
+    eventBus.on(['connect.out', 'connect.cleanup'], function (event) {
         var context = event.context;
 
         context.target = null;
@@ -45,7 +45,7 @@ export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
     });
 
     // This is util if you want to create a connection that includes an element 
-    eventBus.on('connect.end', function(event) {
+       eventBus.on('connect.end', function (event) {
         var context = event.context,
             source = context.source,
             sourcePosition = context.sourcePosition,
@@ -55,50 +55,26 @@ export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
                 x: event.x,
                 y: event.y
             },
-            connectionType = context.type,
+            connectionType = context.type, // This is the correct connection type
             canExecute = context.canExecute || canConnect(source, target, connectionType);
-
+    
         console.log('Connect end handler with type:', connectionType);
-
+    
         if (!canExecute) {
             return false;
         }
-
-        var attrs = null,
-            hints = {
-                connectionStart: sourcePosition,
-                connectionEnd: targetPosition
-            };
-
-        // Special handling for GroupedBy connections
-        if (connectionType === 'PPINOT:GroupedBy') {
-            attrs = { type: 'PPINOT:GroupedBy' };
-            modeling.connect(source, target, attrs, hints);
-            return;
-        }
-
-        // Original logic for other connection types
-        if (typeof canExecute === 'object') {
-            if(canExecute.type1) {
-                hints = {
-                    connectionStart: sourcePosition, // Fixed 'pos' to 'sourcePosition'
-                    connectionEnd: targetPosition
-                }
-                attrs = { type: canExecute.type2 }
-                modeling.connect(source, target, attrs, hints); // Fixed 'newShape' to 'source'
-                return;
-            }
-            else {
-                attrs = canExecute;
-            }
-        } else {
-            // Default case: use the connection type from context
-            attrs = { type: connectionType };
-        }
+    
+        // This ensures GroupedBy connections are correctly created
+        var attrs = {
+            type: connectionType  
+        };
         
-        if(!canExecute.type1 || typeof canExecute !== 'object') {
-            modeling.connect(source, target, attrs, hints);
-        }
+        var hints = {
+            connectionStart: sourcePosition,
+            connectionEnd: targetPosition
+        };
+    
+        modeling.connect(source, target, attrs, hints);
     });
 
 
@@ -112,7 +88,7 @@ export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
      * @param {Point} [sourcePosition]
      * @param {Boolean} [autoActivate=false]
      */
-    this.start = function(event, source, sourcePosition, autoActivate) {
+    this.start = function (event, source, sourcePosition, autoActivate) {
         if (typeof sourcePosition !== 'object') {
             autoActivate = sourcePosition;
             sourcePosition = getMid(source);
@@ -130,10 +106,11 @@ export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
         });
     };
 
-    this.PPINOTStart = function(event, source, type, elementFactory, autoActivate) {
+    this.PPINOTStart = function (event, source, type, elementFactory, autoActivate) {
         let sourcePosition = getMid(source);
         if (typeof sourcePosition !== 'object') {
             autoActivate = sourcePosition;
+
         }
 
         dragging.init(event, 'connect', {
@@ -149,8 +126,7 @@ export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
             }
         });
     };
-
-    this.PPINOTStart2 = function(event, source, type, elementFactory, sourcePosition, autoActivate) {
+    this.PPINOTStart2 = function (event, source, type, elementFactory, sourcePosition, autoActivate) {
         if (typeof sourcePosition !== 'object') {
             autoActivate = sourcePosition;
             sourcePosition = getMid(source);
