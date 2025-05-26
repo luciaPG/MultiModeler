@@ -9,9 +9,9 @@ import {
 } from 'bpmn-js/lib/util/ModelUtil';
 
 import RuleProvider from 'diagram-js/lib/features/rules/RuleProvider';
-import {isAny} from "bpmn-js/lib/features/modeling/util/ModelingUtil";
+import { isAny } from 'bpmn-js/lib/util/ModelUtil';
 import {isPPINOTResourceArcElement, isPPINOTShape, isPPINOTAggregatedElement, isPPINOTConnection} from "./Types";
-import {isLabel} from "bpmn-js/lib/util/LabelUtil";
+import { isLabel } from './utils/CompatibilityUtil';
 
 // This module defines the rules of connection for the different types of connectors and elements created
 
