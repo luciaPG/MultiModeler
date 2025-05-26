@@ -153,7 +153,7 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
           'Connect using aggregates connection' // Description that appears if you put the mouse over the button
         ),
         'connect2': this.appendConnectAction( // Append second connection to element
-          'PPINOT:IsGroupedBy',
+          'PPINOT:GroupedBy',
           'icon-isGroupedBy',
           'Connect using isGroupedBy connection'
         )
