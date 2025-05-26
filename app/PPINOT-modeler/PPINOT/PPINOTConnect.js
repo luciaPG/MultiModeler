@@ -1,7 +1,7 @@
 import {
     asTRBL,
     getMid
-} from 'diagram-js/lib/layout/LayoutUtil';
+} from './utils/CompatibilityUtil';
 import { getNewShapePosition } from "bpmn-js/lib/features/auto-place/BpmnAutoPlaceUtil";
 import {assign} from "min-dash";
 

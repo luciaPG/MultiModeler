@@ -2,7 +2,7 @@ import { assign } from 'min-dash';
 import inherits from 'inherits';
 import BpmnElementFactory from 'bpmn-js/lib/features/modeling/ElementFactory';
 import BaseElementFactory from 'diagram-js/lib/core/ElementFactory';
-import { DEFAULT_LABEL_SIZE } from 'bpmn-js/lib/util/LabelUtil';
+import { DEFAULT_LABEL_SIZE } from './utils/CompatibilityUtil';
 import { isPPINOTShape } from './Types';
 
 export default function PPINOTElementFactory(bpmnFactory, moddle, translate) {

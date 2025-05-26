@@ -1,6 +1,6 @@
 import Modeling from 'bpmn-js/lib/features/modeling/Modeling';
-import {is} from "bpmn-js/lib/util/ModelUtil";
-import { isAny } from 'bpmn-js/lib/features/modeling/util/ModelingUtil';
+import { is } from "./utils/CompatibilityUtil";
+import { isAny } from './utils/CompatibilityUtil';
 
 import {label} from "./Types";
 
