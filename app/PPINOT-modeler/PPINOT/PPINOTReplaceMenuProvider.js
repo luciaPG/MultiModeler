@@ -14,17 +14,11 @@ import {
 
 import {
   forEach,
-  filter,
-  assign,
-  pick
+  filter
 } from 'min-dash';
 
 import * as replaceOptions from './PPINOTReplaceOptions';
-import { isLabel, isLabelExternal } from "bpmn-js/lib/util/LabelUtil";
-import { isPPINOTShape, label } from "./Types";
-import Replace from 'diagram-js/lib/features/replace/Replace';
-import { replace } from "tiny-svg";
-
+import { isPPINOTShape } from "./Types";
 
 /**
  * This module is an element agnostic replace menu provider for the popup menu.
@@ -88,6 +82,18 @@ var differentType = isDifferentType(element);
 // The elements which will have the popmuo menu with the options included in PPINOTReplaceOptions.js 
 // are defined here.
 
+// Robust check for all PPINOT function variants (SUM, MAX, MIN, AVG)
+if (/^PPINOT:.*(SUM|MAX|MIN|AVG)$/.test(businessObject.$type || businessObject.type)) {
+  entries = filter(replaceOptions.AGGREGATED_MEASURE, differentType);
+  return this._createEntries(element, entries);
+}
+
+// Robust check for all DataAggregatedMeasure variants
+if (/^PPINOT:DataAggregatedMeasure/.test(businessObject.$type || businessObject.type)) {
+  entries = filter(replaceOptions.AGGREGATED_MEASURE, differentType);
+  return this._createEntries(element, entries);
+}
+
 // In this case, if the element is one of these, the options of MEASURE will appear in the popup menu
 // of these elements
 if (is(businessObject, 'PPINOT:BaseMeasure') 
@@ -130,14 +136,20 @@ if (is(businessObject, 'PPINOT:CountAggregatedMeasure')
 || is(businessObject, 'PPINOT:StateCondAggMeasurePercentage') 
 || is(businessObject, 'PPINOT:StateCondAggMeasureAtLeastOne') 
 || is(businessObject, 'PPINOT:StateCondAggMeasureAll') 
-|| is(businessObject, 'PPINOT:StateCondAggMeasureNo')
-|| is(businessObject, 'PPINOT:DataAggregatedMeasure')
-|| is(businessObject, 'PPINOT:DataAggregatedMeasureSUM')
-|| is(businessObject, 'PPINOT:DataAggregatedMeasureMIN')
-|| is(businessObject, 'PPINOT:DataAggregatedMeasureMAX')
-|| is(businessObject, 'PPINOT:DataAggregatedMeasureAVG')
-|| is(businessObject, 'PPINOT:DerivedMultiInstanceMeasure')) {
+|| is(businessObject, 'PPINOT:StateCondAggMeasureNo')){
   entries = filter(replaceOptions.AGGREGATED_MEASURE, differentType);
+  return this._createEntries(element, entries);
+}
+
+// Add support for DerivedMultiInstanceMeasure, PPITarget, PPIScope, and PPI (robust type check)
+const boType = businessObject.$type || businessObject.type;
+if (
+  boType === 'PPINOT:DerivedMultiInstanceMeasure' ||
+  boType === 'PPINOT:PPITarget' ||
+  boType === 'PPINOT:PPIScope' ||
+  boType === 'PPINOT:PPI'
+) {
+  entries = filter(replaceOptions.MEASURE, differentType);
   return this._createEntries(element, entries);
 }
 
@@ -1051,7 +1063,7 @@ var adHocEntry = {
   className: 'bpmn-icon-ad-hoc-marker',
   title: translate('Ad-hoc'),
   active: isAdHoc,
-  action: function(event, entry) {
+  action: function() {
     if (isAdHoc) {
       return replaceElement(element, { type: 'bpmn:SubProcess' });
     } else {
