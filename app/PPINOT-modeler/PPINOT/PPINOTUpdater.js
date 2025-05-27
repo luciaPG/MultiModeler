@@ -12,7 +12,7 @@ import {
   remove as collectionRemove
 } from 'diagram-js/lib/util/Collections';
 
-import { is } from './utils/CompatibilityUtil';
+import { is } from 'bpmn-js/lib/util/ModelUtil';
 
 /**
  * A handler responsible for updating the PPINOT element's businessObject

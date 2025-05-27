@@ -3,7 +3,7 @@ import { assign, isArray, isObject } from 'min-dash';
 import inherits from 'inherits';
 import { isPPINOTConnection } from './PPINOT/Types';
 import PPINOTModule from './PPINOT';
-import { isLabelExternal, getExternalLabelBounds, getLabel } from './PPINOT/utils/CompatibilityUtil';
+import { isLabelExternal, getExternalLabelBounds, getLabel } from './PPINOT/utils/LabelUtil';
 
 class PPINOTModeler extends Modeler {
   constructor(options) {

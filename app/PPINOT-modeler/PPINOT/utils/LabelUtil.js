@@ -1,118 +1,107 @@
-import { getBusinessObject, isAny } from 'bpmn-js/lib/util/ModelUtil';
-import * as LabelUtil from 'bpmn-js/lib/util/LabelUtil';
+import {is} from "bpmn-js/lib/util/ModelUtil";
+import {
+    getLabel as basicGetLabel,
+    setLabel as basicSetLabel,
+} from "bpmn-js/lib/features/label-editing/LabelUtil";
 
-// Import original functions if available
-let basicGetLabel, basicSetLabel;
+import * as labelUtils from "bpmn-js/lib/util/LabelUtil"
+import {isAny} from "bpmn-js/lib/features/modeling/util/ModelingUtil";
+import {assign} from "min-dash";
+import {DEFAULT_LABEL_SIZE, FLOW_LABEL_INDENT} from "bpmn-js/lib/util/LabelUtil";
+import {getDi} from "bpmn-js/lib/util/ModelUtil";
+import {label, externalLabel} from "../Types";
 
-try {
-    // Try to import from label-editing if available
-    const labelEditingUtil = require('bpmn-js/lib/features/label-editing/LabelUtil');
-    basicGetLabel = labelEditingUtil.getLabel;
-    basicSetLabel = labelEditingUtil.setLabel;
-} catch (e) {
-    // Fallback to default implementations
-    basicGetLabel = null;
-    basicSetLabel = null;
-}
-
-/**
- * Get the label of an element
- *
- * @param {Object} element
- *
- * @return {String}
- */
 export function getLabel(element) {
-    // Use imported function if available
-    if (basicGetLabel) {
-        return basicGetLabel(element);
-    }
-    
-    // Fallback implementation
-    const businessObject = getBusinessObject(element);
-    
-    if (!businessObject) {
-        return '';
-    }
+    let semantic = element.businessObject
 
-    // Return name if available
-    if (businessObject.name !== undefined) {
-        return businessObject.name || '';
+    if (isAny(semantic, label))
+        return semantic.text;
+    else
+        return basicGetLabel(element)
+}
+
+export function setLabel(element, text, isExternal) {
+    let semantic = element.businessObject
+    if (isAny(semantic, label)) {
+        semantic.text = text
+        return element
     }
-    
-    // Return text if available (for labels)
-    if (businessObject.text !== undefined) {
-        return businessObject.text || '';
-    }
-    
-    return '';
+    else
+        return basicSetLabel(element, text, isExternal)
 }
 
 /**
- * Set the label for an element
+ * Returns true if the given semantic is an external label
  *
- * @param {Object} element
- * @param {String} text
+ * @param {BpmnElement} semantic
+ * @return {Boolean} true if is label
  */
-export function setLabel(element, text) {
-    // Use imported function if available
-    if (basicSetLabel) {
-        return basicSetLabel(element, text);
-    }
-    
-    // Fallback implementation
-    const businessObject = getBusinessObject(element);
-    
-    if (!businessObject) {
-        return;
-    }
-    
-    // Set name if property exists
-    if ('name' in businessObject) {
-        businessObject.name = text;
-    }
-    
-    // Set text if property exists (for labels)
-    if ('text' in businessObject) {
-        businessObject.text = text;
-    }
-    
-    return element;
+export function isLabelExternal(semantic) {
+    return is(semantic, 'bpmn:Event') ||
+        is(semantic, 'bpmn:Gateway') ||
+        is(semantic, 'bpmn:DataStoreReference') ||
+        is(semantic, 'bpmn:DataObjectReference') ||
+        is(semantic, 'bpmn:DataInput') ||
+        is(semantic, 'bpmn:DataOutput') ||
+        is(semantic, 'bpmn:SequenceFlow') ||
+        is(semantic, 'bpmn:MessageFlow') ||
+        is(semantic, 'bpmn:Group') ||
+        isAny(semantic, externalLabel) ;
+}
+
+export function hasExternalLabel(element) {
+    return labelUtils.hasExternalLabel(element)
 }
 
 /**
- * Check if an element is a label
+ * Get the position for sequence flow labels
  *
- * @param {Object} element
- * @return {Boolean}
+ * @param  {Array<Point>} waypoints
+ * @return {Point} the label position
  */
+export function getFlowLabelPosition(waypoints) {
+    return labelUtils.getFlowLabelPosition(waypoints)
+}
+
+
+/**
+ * Get the middle of a number of waypoints
+ *
+ * @param  {Array<Point>} waypoints
+ * @return {Point} the mid point
+ */
+export function getWaypointsMid(waypoints) {
+    return labelUtils.getWaypointsMid(waypoints)
+}
+
+
+export function getExternalLabelMid(element) {
+    return labelUtils.getExternalLabelMid(element)
+}
+
+
+/**
+ * Returns the bounds of an elements label, parsed from the elements DI or
+ * generated from its bounds.
+ *
+ * @param {BpmnElement} semantic
+ * @param {djs.model.Base} element
+ */
+export function getExternalLabelBounds(semantic, element) {
+    const di= getDi(semantic)
+    if(di)
+        return labelUtils.getExternalLabelBounds(semantic, element)
+    else {
+        let mid = getExternalLabelMid(element);
+        let size = DEFAULT_LABEL_SIZE;
+
+        return assign({
+            x: mid.x - size.width / 2,
+            y: mid.y - size.height / 2
+        }, size);
+    }
+}
+
 export function isLabel(element) {
-    return element && element.type === 'label';
+    return element && !!element.labelTarget;
 }
-
-/**
- * Check if an element has an external label
- *
- * @param {Object} element
- * @return {Boolean}
- */
-export function isLabelExternal(element) {
-    return element && 
-           element.waypoints && 
-           isAny(element, [
-             'bpmn:SequenceFlow',
-             'bpmn:MessageFlow',
-             'bpmn:Association',
-             'bpmn:DataAssociation'
-           ]) ||
-           LabelUtil.isLabelExternal(element);
-}
-
-// Export other label-related utilities
-export const DEFAULT_LABEL_SIZE = LabelUtil.DEFAULT_LABEL_SIZE;
-export const FLOW_LABEL_INDENT = LabelUtil.FLOW_LABEL_INDENT;
-export const getExternalLabelBounds = LabelUtil.getExternalLabelBounds;
-export const getExternalLabelMid = LabelUtil.getExternalLabelMid;
-export const getFlowLabelPosition = LabelUtil.getFlowLabelPosition;
-export const getWaypointsMid = LabelUtil.getWaypointsMid;
-export const hasExternalLabel = LabelUtil.hasExternalLabel;

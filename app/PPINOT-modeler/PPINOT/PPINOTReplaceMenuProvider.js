@@ -1,7 +1,7 @@
 import {
   getBusinessObject,
   is
-} from "./utils/CompatibilityUtil";
+} from "bpmn-js/lib/util/ModelUtil";
 
 import {
   isEventSubProcess,
@@ -14,17 +14,11 @@ import {
 
 import {
   forEach,
-  filter,
-  assign,
-  pick
+  filter
 } from 'min-dash';
 
 import * as replaceOptions from './PPINOTReplaceOptions';
-import { isLabel, isLabelExternal } from "./utils/CompatibilityUtil";
-import { isPPINOTShape, label } from "./Types";
-import Replace from 'diagram-js/lib/features/replace/Replace';
-import { replace } from "tiny-svg";
-
+import { isPPINOTShape } from "./Types";
 
 /**
  * This module is an element agnostic replace menu provider for the popup menu.
@@ -71,6 +65,8 @@ this._popupMenu.registerProvider('bpmn-replace', this);
 *
 * @return {Array<Object>} a list of menu entry items
 */
+
+
 ReplaceMenuProvider.prototype.getEntries = function(element) {
 
 var businessObject = element.businessObject;
@@ -85,8 +81,45 @@ if (!rules.allowed('shape.replace', { element: element })) {
 
 var differentType = isDifferentType(element);
 
-// The elements which will have the popmuo menu with the options included in PPINOTReplaceOptions.js 
-// are defined here.
+
+const boType = businessObject.$type || businessObject.type;
+
+if (boType === 'PPINOT:Ppi') {
+  return [];
+}
+
+
+// Make sure this part looks exactly like this:
+
+// You can also change the labels directly in the simplified version:
+
+if (boType === 'PPINOT:Target' || boType === 'PPINOT:Scope') {
+  const targetType = boType === 'PPINOT:Target' ? 'PPINOT:Scope' : 'PPINOT:Target';
+  const label = boType === 'PPINOT:Target' ? '\xa0\xa0\xa0Scope' : '\xa0\xa0\xa0Target';
+  const className = boType === 'PPINOT:Target' ? 'icon-scope-mini' : 'icon-target-mini';
+  
+  return this._createEntries(element, [{
+    label: label,
+    actionName: `replace-with-${label.toLowerCase()}`,
+    className: className,
+    target: {
+      type: targetType
+    }
+  }]);
+}
+
+
+// Robust check for all PPINOT function variants (SUM, MAX, MIN, AVG)
+if (/^PPINOT:.*(SUM|MAX|MIN|AVG)$/.test(businessObject.$type || businessObject.type)) {
+  entries = filter(replaceOptions.AGGREGATED_MEASURE, differentType);
+  return this._createEntries(element, entries);
+}
+
+// Robust check for all DataAggregatedMeasure variants
+if (/^PPINOT:DataAggregatedMeasure/.test(businessObject.$type || businessObject.type)) {
+  entries = filter(replaceOptions.AGGREGATED_MEASURE, differentType);
+  return this._createEntries(element, entries);
+}
 
 // In this case, if the element is one of these, the options of MEASURE will appear in the popup menu
 // of these elements
@@ -130,14 +163,19 @@ if (is(businessObject, 'PPINOT:CountAggregatedMeasure')
 || is(businessObject, 'PPINOT:StateCondAggMeasurePercentage') 
 || is(businessObject, 'PPINOT:StateCondAggMeasureAtLeastOne') 
 || is(businessObject, 'PPINOT:StateCondAggMeasureAll') 
-|| is(businessObject, 'PPINOT:StateCondAggMeasureNo')
-|| is(businessObject, 'PPINOT:DataAggregatedMeasure')
-|| is(businessObject, 'PPINOT:DataAggregatedMeasureSUM')
-|| is(businessObject, 'PPINOT:DataAggregatedMeasureMIN')
-|| is(businessObject, 'PPINOT:DataAggregatedMeasureMAX')
-|| is(businessObject, 'PPINOT:DataAggregatedMeasureAVG')
-|| is(businessObject, 'PPINOT:DerivedMultiInstanceMeasure')) {
+|| is(businessObject, 'PPINOT:StateCondAggMeasureNo')){
   entries = filter(replaceOptions.AGGREGATED_MEASURE, differentType);
+  return this._createEntries(element, entries);
+}
+
+// Add support for DerivedMultiInstanceMeasure, PPITarget, PPIScope, and PPI (robust type check)
+if (
+  boType === 'PPINOT:DerivedMultiInstanceMeasure' ||
+  boType === 'PPINOT:PPITarget' ||
+  boType === 'PPINOT:PPIScope' ||
+  boType === 'PPINOT:PPI'
+) {
+  entries = filter(replaceOptions.MEASURE, differentType);
   return this._createEntries(element, entries);
 }
 
@@ -386,6 +424,14 @@ if (is(element, 'bpmn:SubProcess') &&
   headerEntries.push(this._getAdHocEntry(element));
 }
 
+// De-duplicate by id
+const seen = new Set();
+headerEntries = headerEntries.filter(entry => {
+  if (seen.has(entry.id)) return false;
+  seen.add(entry.id);
+  return true;
+});
+
 return headerEntries;
 };
 
@@ -631,23 +677,99 @@ return timeEntry;
 
 
 ReplaceMenuProvider.prototype._getFunctionsTimeAgg = function(element) {
-
   var translate = this._translate;
   var replace = this._replace;
+  var modeling = this._modeling;
+
+  function replacePreservingConnections(element, newType) {
+
+    var incoming = element.incoming ? element.incoming.slice() : [];
+    var outgoing = element.outgoing ? element.outgoing.slice() : [];
+    
+    console.log('Preserving connections for', element.id, 'type:', element.type);
+    console.log('Incoming connections:', incoming.length, 'Outgoing:', outgoing.length);
+    
+    var incomingData = incoming.map(function(connection) {
+      return {
+        source: connection.source,
+        target: element,
+        type: connection.type,
+        waypoints: connection.waypoints ? connection.waypoints.slice() : undefined
+      };
+    });
+    
+    var outgoingData = outgoing.map(function(connection) {
+      return {
+        source: element,
+        target: connection.target,
+        type: connection.type,
+        waypoints: connection.waypoints ? connection.waypoints.slice() : undefined
+      };
+    });
+    
+  
+    var newElement = replace.replaceElement(element, { type: newType });
+    
+
+    incomingData.forEach(function(data) {
+      try {
+       
+        if (data.source && newElement) {
+          console.log('Recreating incoming connection from', data.source.id, 'to', newElement.id);
+          
+          var connectionData = { type: data.type };
+          if (data.waypoints) {
+            connectionData.waypoints = data.waypoints;
+          }
+          
+          modeling.connect(data.source, newElement, connectionData);
+        } else {
+          console.warn('Invalid source or target for incoming connection');
+        }
+      } catch (error) {
+        console.error('Error recreating incoming connection:', error);
+      }
+    });
+    
+
+    outgoingData.forEach(function(data) {
+      try {
+      
+        if (newElement && data.target) {
+          console.log('Recreating outgoing connection from', newElement.id, 'to', data.target.id);
+          
+          var connectionData = { type: data.type };
+          if (data.waypoints) {
+            connectionData.waypoints = data.waypoints;
+          }
+          
+          modeling.connect(newElement, data.target, connectionData);
+        } else {
+          console.warn('Invalid source or target for outgoing connection');
+        }
+      } catch (error) {
+        console.error('Error recreating outgoing connection:', error);
+      }
+    });
+    
+    return newElement;
+  }
+  
+
   var replaceActionCyclic = function() {
-    return replace.replaceElement(element, { type: 'PPINOT:CyclicTimeAggregatedMeasure' });
+    return replacePreservingConnections(element, 'PPINOT:CyclicTimeAggregatedMeasure');
   };
   var replaceActionSUM = function() {
-    return replace.replaceElement(element, { type: 'PPINOT:TimeAggregatedMeasureSUM' });
+    return replacePreservingConnections(element, 'PPINOT:TimeAggregatedMeasureSUM');
   };
   var replaceActionMAX = function() {
-    return replace.replaceElement(element, { type: 'PPINOT:TimeAggregatedMeasureMAX' });
+    return replacePreservingConnections(element, 'PPINOT:TimeAggregatedMeasureMAX');
   };
   var replaceActionMIN = function() {
-    return replace.replaceElement(element, { type: 'PPINOT:TimeAggregatedMeasureMIN' });
+    return replacePreservingConnections(element, 'PPINOT:TimeAggregatedMeasureMIN');
   };
   var replaceActionAVG = function() {
-    return replace.replaceElement(element, { type: 'PPINOT:TimeAggregatedMeasureAVG' });
+    return replacePreservingConnections(element, 'PPINOT:TimeAggregatedMeasureAVG');
   };
   
   var timeEntry = [
@@ -680,7 +802,7 @@ ReplaceMenuProvider.prototype._getFunctionsTimeAgg = function(element) {
   ];
   
   return timeEntry;
-  };
+};
 
   ReplaceMenuProvider.prototype._getFunctionsAgg = function(element) {
 
@@ -975,7 +1097,7 @@ var adHocEntry = {
   className: 'bpmn-icon-ad-hoc-marker',
   title: translate('Ad-hoc'),
   active: isAdHoc,
-  action: function(event, entry) {
+  action: function() {
     if (isAdHoc) {
       return replaceElement(element, { type: 'bpmn:SubProcess' });
     } else {

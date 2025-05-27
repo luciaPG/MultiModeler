@@ -1,7 +1,7 @@
 import inherits from 'inherits';
-import { is } from './utils/CompatibilityUtil';
+import { is } from 'bpmn-js/lib/util/ModelUtil';
 import BpmnUpdater from 'bpmn-js/lib/features/modeling/BpmnUpdater';
-import { getDi } from './utils/CompatibilityUtil';
+import { getDi } from 'bpmn-js/lib/util/ModelUtil';
 
 /**
  * A handler responsible for updating the BPMN elements and
@@ -95,4 +95,4 @@ PPINOTBpmnUpdater.$inject = [ 'eventBus', 'bpmnFactory', 'connectionDocking', 't
 // Helper function to identify PPINOT elements
 function isPPINOT(element) {
   return element && element.$type && /^PPINOT:/.test(element.$type);
-}
+} 

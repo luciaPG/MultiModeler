@@ -9,9 +9,9 @@ import {
 } from 'bpmn-js/lib/util/ModelUtil';
 
 import RuleProvider from 'diagram-js/lib/features/rules/RuleProvider';
-import { isAny } from 'bpmn-js/lib/util/ModelUtil';
+import {isAny} from "bpmn-js/lib/features/modeling/util/ModelingUtil";
 import {isPPINOTResourceArcElement, isPPINOTShape, isPPINOTAggregatedElement, isPPINOTConnection} from "./Types";
-import { isLabel } from './utils/CompatibilityUtil';
+import {isLabel} from "bpmn-js/lib/util/LabelUtil";
 
 // This module defines the rules of connection for the different types of connectors and elements created
 
@@ -77,7 +77,8 @@ function connect(source, target, connection) {
     || is(source, 'PPINOT:CyclicTimeMeasureMIN') || is(source, 'PPINOT:CyclicTimeMeasureAVG')
     || is(source, 'PPINOT:CyclicTimeAggregatedMeasureSUM') || is(source, 'PPINOT:CyclicTimeAggregatedMeasureMAX')
     || is(source, 'PPINOT:CyclicTimeAggregatedMeasureMIN') || is(source, 'PPINOT:CyclicTimeAggregatedMeasureAVG')
-    || is(source, 'PPINOT:CyclicTimeAggregatedMeasure') || is(source, 'PPINOT:TimeAggregatedMeasure')))
+    || is(source, 'PPINOT:CyclicTimeAggregatedMeasure') || is(source, 'PPINOT:TimeAggregatedMeasure')
+    || is(source, 'PPINOT:TimeAggregatedMeasureMAX') || is(source, 'PPINOT:TimeAggregatedMeasureMIN') || is(source, 'PPINOT:TimeAggregatedMeasureAVG') || is(source, 'PPINOT:TimeAggregatedMeasureSUM')))
       return { type: connection }
     else
       return false
@@ -89,7 +90,8 @@ function connect(source, target, connection) {
     || is(source, 'PPINOT:CyclicTimeMeasureMIN') || is(source, 'PPINOT:CyclicTimeMeasureAVG')
     || is(source, 'PPINOT:CyclicTimeAggregatedMeasureSUM') || is(source, 'PPINOT:CyclicTimeAggregatedMeasureMAX')
     || is(source, 'PPINOT:CyclicTimeAggregatedMeasureMIN') || is(source, 'PPINOT:CyclicTimeAggregatedMeasureAVG')
-    || is(source, 'PPINOT:CyclicTimeAggregatedMeasure') || is(source, 'PPINOT:TimeAggregatedMeasure')))
+    || is(source, 'PPINOT:CyclicTimeAggregatedMeasure') || is(source, 'PPINOT:TimeAggregatedMeasure')
+    || is(source, 'PPINOT:TimeAggregatedMeasureMAX') || is(source, 'PPINOT:TimeAggregatedMeasureMIN') || is(source, 'PPINOT:TimeAggregatedMeasureAVG') || is(source, 'PPINOT:TimeAggregatedMeasureSUM')))
       return { type: connection }
     else
       return false

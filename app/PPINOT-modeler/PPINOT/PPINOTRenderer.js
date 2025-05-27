@@ -335,7 +335,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       href: Svg.dataURLbaseMeasure
     })
     return baseMeasure;
-  };
+  }
 
   function drawTarget(element){
     var target = svgCreate('image', {
@@ -346,7 +346,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       href: Svg.dataURLtarget
     })
     return target;
-  };
+  }
 
   function drawScope(element){
     var scope = svgCreate('image', {
@@ -357,7 +357,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       href: Svg.dataURLscope
     })
     return scope;
-  };
+  }
 
   function drawAggregatedMeasure(element){
     var aggregatedMeasure = svgCreate('image', {
@@ -368,7 +368,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       href: Svg.dataURLaggregatedMeasure
     })
     return aggregatedMeasure;
-  };
+  }
 
   function drawTimeAggregatedMeasure(element){
     var timeAggregatedMeasure = svgCreate('image', {
@@ -379,7 +379,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       href: Svg.dataURLtimeAggregatedMeasure
     })
     return timeAggregatedMeasure;
-  };
+  }
 
   function drawCyclicTimeAggregatedMeasure(element){
     var cyclicTimeAggregatedMeasure = svgCreate('image', {
@@ -390,7 +390,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       href: Svg.dataURLcyclicTimeAggregatedMeasure
     })
     return cyclicTimeAggregatedMeasure;
-  };
+  }
 
   function drawCountAggregatedMeasure(element){
     var countAggregatedMeasure = svgCreate('image', {
@@ -401,7 +401,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       href: Svg.dataURLcountAggregatedMeasure
     })
     return countAggregatedMeasure;
-  };
+  }
 
   function drawCountMeasure(element){
     var countMeasure = svgCreate('image', {
@@ -412,7 +412,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       href: Svg.dataURLcountMeasure
     })
     return countMeasure;
-  };
+  }
 
   function drawTimeMeasure(element){
     var countMeasure = svgCreate('image', {
@@ -423,7 +423,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       href: Svg.dataURLtimeMeasure
     })
     return countMeasure;
-  };
+  }
 
   function drawCyclicTimeMeasure(element){
     var cyclicTime = svgCreate('image', {
@@ -434,7 +434,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       href: Svg.dataURLcyclicTimeMeasure
     })
     return cyclicTime;
-  };
+  }
 
   function drawDataAggregatedMeasure(element){
     var dataAggregatedMeasure = svgCreate('image', {
@@ -445,7 +445,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       href: Svg.dataURLdataAggregatedMeasure
     })
     return dataAggregatedMeasure;
-  };
+  }
 
   function drawDataMeasure(element){
     var dataMeasure = svgCreate('image', {
@@ -456,7 +456,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       href: Svg.dataURLdataMeasure
     })
     return dataMeasure;
-  };
+  }
 
   function drawDataPropertyConditionAggregatedMeasure(element){
     var dataPropertyConditionAggregatedMeasure = svgCreate('image', {
@@ -467,7 +467,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       href: Svg.dataURLdataPropertyConditionAggregatedMeasure
     })
     return dataPropertyConditionAggregatedMeasure;
-  };
+  }
 
   function drawDataPropertyConditionMeasure(element){
     var dataPropertyConditionMeasure = svgCreate('image', {
@@ -478,7 +478,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       href: Svg.dataURLdataPropertyConditionMeasure
     })
     return dataPropertyConditionMeasure;
-  };
+  }
 
   function drawDerivedMultiInstanceMeasure(element){
     var derivedMultiInstanceMeasure = svgCreate('image', {
@@ -489,7 +489,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       href: Svg.dataURLderivedMultiInstanceMeasure
     })
     return derivedMultiInstanceMeasure;
-  };
+  }
 
   function drawDerivedSingleInstanceMeasure(element){
     var derivedSingleInstanceMeasure = svgCreate('image', {
@@ -500,7 +500,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       href: Svg.dataURLderivedSingleInstanceMeasure
     })
     return derivedSingleInstanceMeasure;
-  };
+  }
 
   function drawPpi(element){
     var ppi = svgCreate('image', {
@@ -511,7 +511,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       href: Svg.dataURLppi3
     })
     return ppi;
-  };
+  }
 
   function drawStateConditionMeasure(element){
     var stateConditionMeasure = svgCreate('image', {
@@ -522,7 +522,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       href: Svg.dataURLstateConditionMeasure
     })
     return stateConditionMeasure;
-  };
+  }
 
   function drawStateConditionAggregatedMeasure(element){
     var stateConditionAggregatedMeasure = svgCreate('image', {
@@ -533,7 +533,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       href: Svg.dataURLstateConditionAggregatedMeasure
     })
     return stateConditionAggregatedMeasure;
-  };
+  }
 
   function renderer(type) {
     return renderers[type];
@@ -836,6 +836,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
         stroke: BLACK, 
         strokeWidth: 1.5, 
         strokeDasharray: [8,5],
+        // i changed de marker name 
         markerStart: marker('conditional-flow-marker', 'white',BLACK),      
       };
       return svgAppend(p, createLine(element.waypoints, attrs));
@@ -846,7 +847,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
         strokeWidth: 1.5, 
         strokeDasharray: [8,5],
         markerStart: marker('messageflow-start', 'black',BLACK),
-        //markerEnd: marker('messageflow-start', 'black',BLACK),
+        markerEnd: marker('messageflow-start', 'black',BLACK),
       };
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
@@ -856,7 +857,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
         strokeWidth: 1.5, 
         strokeDasharray: [8,5],
         markerStart: marker('messageflow-start', 'white',BLACK),
-        //markerEnd: marker('messageflow-start', 'white',BLACK),
+        markerEnd: marker('messageflow-start', 'white',BLACK),
       };
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
