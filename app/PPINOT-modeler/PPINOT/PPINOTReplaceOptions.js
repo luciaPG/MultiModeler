@@ -947,3 +947,23 @@ export var PARTICIPANT = [
     }
   }
 ];
+
+
+ export var PPI_SCOPE_TARGET = [
+  {
+    label: 'Target',
+    actionName: 'replace-with-target',
+    className: 'icon-target-mini',
+    target: {
+      type: 'PPINOT:Target'
+    }
+  },
+  {
+    label: 'Scope',
+    actionName: 'replace-with-scope',
+    className: 'icon-scope',
+    target: {
+      type: 'PPINOT:Scope'
+    }
+  }
+];

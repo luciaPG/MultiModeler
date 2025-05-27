@@ -65,6 +65,8 @@ this._popupMenu.registerProvider('bpmn-replace', this);
 *
 * @return {Array<Object>} a list of menu entry items
 */
+
+
 ReplaceMenuProvider.prototype.getEntries = function(element) {
 
 var businessObject = element.businessObject;
@@ -79,8 +81,33 @@ if (!rules.allowed('shape.replace', { element: element })) {
 
 var differentType = isDifferentType(element);
 
-// The elements which will have the popmuo menu with the options included in PPINOTReplaceOptions.js 
-// are defined here.
+
+const boType = businessObject.$type || businessObject.type;
+
+if (boType === 'PPINOT:Ppi') {
+  return [];
+}
+
+
+// Make sure this part looks exactly like this:
+
+// You can also change the labels directly in the simplified version:
+
+if (boType === 'PPINOT:Target' || boType === 'PPINOT:Scope') {
+  const targetType = boType === 'PPINOT:Target' ? 'PPINOT:Scope' : 'PPINOT:Target';
+  const label = boType === 'PPINOT:Target' ? '\xa0\xa0\xa0Scope' : '\xa0\xa0\xa0Target';
+  const className = boType === 'PPINOT:Target' ? 'icon-scope' : 'icon-target-mini';
+  
+  return this._createEntries(element, [{
+    label: label,
+    actionName: `replace-with-${label.toLowerCase()}`,
+    className: className,
+    target: {
+      type: targetType
+    }
+  }]);
+}
+
 
 // Robust check for all PPINOT function variants (SUM, MAX, MIN, AVG)
 if (/^PPINOT:.*(SUM|MAX|MIN|AVG)$/.test(businessObject.$type || businessObject.type)) {
@@ -142,7 +169,6 @@ if (is(businessObject, 'PPINOT:CountAggregatedMeasure')
 }
 
 // Add support for DerivedMultiInstanceMeasure, PPITarget, PPIScope, and PPI (robust type check)
-const boType = businessObject.$type || businessObject.type;
 if (
   boType === 'PPINOT:DerivedMultiInstanceMeasure' ||
   boType === 'PPINOT:PPITarget' ||
@@ -397,6 +423,14 @@ if (is(element, 'bpmn:SubProcess') &&
     !isEventSubProcess(element)) {
   headerEntries.push(this._getAdHocEntry(element));
 }
+
+// De-duplicate by id
+const seen = new Set();
+headerEntries = headerEntries.filter(entry => {
+  if (seen.has(entry.id)) return false;
+  seen.add(entry.id);
+  return true;
+});
 
 return headerEntries;
 };

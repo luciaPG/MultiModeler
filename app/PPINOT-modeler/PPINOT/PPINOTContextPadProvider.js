@@ -20,6 +20,7 @@ import {
   isDifferentType
 } from "bpmn-js/lib/features/popup-menu/util/TypeUtil";
 import PPINOTModeling from './PPINOTModeling';
+import {PPI_SCOPE_TARGET} from './PPINOTReplaceOptions';
 
 
 // This module is used to show buttons in the menu of element in the diagram
@@ -295,18 +296,15 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
 
     const boType = businessObject.$type || businessObject.type;
 
+   
     // For Scope/Target: only allow swap between them
     if (boType === 'PPINOT:PPIScope' || boType === 'PPINOT:PPITarget') {
-      const entries = replaceOptions.PPI_SCOPE_TARGET.filter(entry => entry.target.type !== boType);
+      const entries = PPI_SCOPE_TARGET.filter(entry => entry.target.type !== boType);
       return this._createEntries(element, entries);
     }
 
     // For PPI: block or limit replace
     if (boType === 'PPINOT:PPI') {
-      // return []; // To block all replaces
-      // OR: return only specific allowed replaces
-      // entries = filter(replaceOptions.PPI, ...);
-      // return this._createEntries(element, entries);
       return [];
     }
 
