@@ -147,15 +147,15 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
     }
     const businessObject = element.businessObject;
 
- 
+
     if (isAny(businessObject, aggregatedElements) && element.type !== 'label') {
       assign(actions, {
         'connect1': this.appendConnectAction(
-          'PPINOT:AggregatedConnection', 
-          'icon-aggregates', 
-          'Connect using aggregates connection' 
+          'PPINOT:AggregatedConnection',
+          'icon-aggregates',
+          'Connect using aggregates connection'
         ),
-        'connect2': this.appendConnectAction( 
+        'connect2': this.appendConnectAction(
           'PPINOT:GroupedBy',
           'icon-isGroupedBy',
           'Connect using isGroupedBy connection'
@@ -192,6 +192,10 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
     if (
       (is(businessObject, 'PPINOT:TimeMeasure') ||
         is(businessObject, 'PPINOT:TimeAggregatedMeasure') ||
+        is(businessObject, 'PPINOT:TimeAggregatedMeasureMAX') || 
+        is(businessObject, 'PPINOT:TimeAggregatedMeasureMIN') ||
+        is(businessObject, 'PPINOT:TimeAggregatedMeasureAVG') ||
+        is(businessObject, 'PPINOT:TimeAggregatedMeasureSUM') ||
         is(businessObject, 'PPINOT:CyclicTimeMeasure') ||
         is(businessObject, 'PPINOT:CyclicTimeMeasureSUM') ||
         is(businessObject, 'PPINOT:CyclicTimeMeasureMAX') ||
