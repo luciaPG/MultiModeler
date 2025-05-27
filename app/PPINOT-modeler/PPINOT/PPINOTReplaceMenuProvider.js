@@ -96,7 +96,7 @@ if (boType === 'PPINOT:Ppi') {
 if (boType === 'PPINOT:Target' || boType === 'PPINOT:Scope') {
   const targetType = boType === 'PPINOT:Target' ? 'PPINOT:Scope' : 'PPINOT:Target';
   const label = boType === 'PPINOT:Target' ? '\xa0\xa0\xa0Scope' : '\xa0\xa0\xa0Target';
-  const className = boType === 'PPINOT:Target' ? 'icon-scope' : 'icon-target-mini';
+  const className = boType === 'PPINOT:Target' ? 'icon-scope-mini' : 'icon-target-mini';
   
   return this._createEntries(element, [{
     label: label,
