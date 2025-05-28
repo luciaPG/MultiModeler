@@ -20,7 +20,7 @@ import {
   isDifferentType
 } from "bpmn-js/lib/features/popup-menu/util/TypeUtil";
 import PPINOTModeling from './PPINOTModeling';
-import {PPI_SCOPE_TARGET} from './PPINOTReplaceOptions';
+import { PPI_SCOPE_TARGET } from './PPINOTReplaceOptions';
 
 
 // This module is used to show buttons in the menu of element in the diagram
@@ -139,15 +139,17 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
   }
 
   getContextPadEntries(element) {
-    // Call the parent class's getContextPadEntries method
     const actions = super.getContextPadEntries(element);
     console.log('PPINOTContextPadProvider getContextPadEntries', actions);
 
-    // This is used to not get duplicated normal arrows 
-    if (actions['connect']) {
-      delete actions['connect'];
+
+    // i dony want bpmn arrows to appear on ppinot elements
+    if (element.type && element.type.startsWith('PPINOT:')) {
+      if (actions['connect']) {
+        delete actions['connect'];
+      }
     }
-     
+
     const businessObject = element.businessObject;
 
 
@@ -199,7 +201,7 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
     if (
       (is(businessObject, 'PPINOT:TimeMeasure') ||
         is(businessObject, 'PPINOT:TimeAggregatedMeasure') ||
-        is(businessObject, 'PPINOT:TimeAggregatedMeasureMAX') || 
+        is(businessObject, 'PPINOT:TimeAggregatedMeasureMAX') ||
         is(businessObject, 'PPINOT:TimeAggregatedMeasureMIN') ||
         is(businessObject, 'PPINOT:TimeAggregatedMeasureAVG') ||
         is(businessObject, 'PPINOT:TimeAggregatedMeasureSUM') ||
@@ -296,7 +298,7 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
 
     const boType = businessObject.$type || businessObject.type;
 
-   
+
     // For Scope/Target: only allow swap between them
     if (boType === 'PPINOT:PPIScope' || boType === 'PPINOT:PPITarget') {
       const entries = PPI_SCOPE_TARGET.filter(entry => entry.target.type !== boType);
