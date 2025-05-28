@@ -6,7 +6,6 @@ import { is } from 'bpmn-js/lib/util/ModelUtil';
  * Automatically detects when entering/exiting subprocesses and shows navigation bar.
  * Allows navigation back to main process via breadcrumb links or Escape key.
  */
-
 export default class SubprocessNavigation {
     constructor(modeler) {
         this.modeler = modeler;
@@ -16,32 +15,65 @@ export default class SubprocessNavigation {
         
         this.subprocessStack = [];
         this.breadcrumbContainer = null;
+        this.checkViewTimeout = null;
+        
+        // Bind methods to preserve context
+        this._boundDrilldownHandler = this._handleDrilldownClick.bind(this);
+        this._boundKeydownHandler = this._handleKeydown.bind(this);
         
         this._setupEventListeners();
     }
 
     _setupEventListeners() {
+        // Canvas events automatically cleaned up when modeler is destroyed
         this.eventBus.on('canvas.rootElement.changed', (event) => {
             this._updateNavigation(event.element);
         });
 
         this.eventBus.on('canvas.viewbox.changed', () => {
-            setTimeout(() => this._checkCurrentView(), 100);
+            this._scheduleViewCheck();
         });
 
-        $(document).on('click', '.bjs-drilldown', () => {
-            setTimeout(() => this._checkCurrentView(), 100);
+        this.eventBus.on('import.done', () => {
+            this.reset();
         });
 
-        $(document).on('keydown.subprocess-nav', (event) => {
-            if (event.key === 'Escape' && this.subprocessStack.length > 0) {
-                event.preventDefault();
-                this.navigateToMain();
-            }
-        });
+        
+        $(document).on('click.subprocess-nav', '.bjs-drilldown', this._boundDrilldownHandler);
+        $(document).on('keydown.subprocess-nav', this._boundKeydownHandler);
 
-        this.eventBus.on('import.done', () => this.reset());
-        setTimeout(() => this._checkCurrentView(), 500);
+  
+        this._scheduleViewCheck();
+    }
+
+    _handleDrilldownClick() {
+        this._scheduleViewCheck();
+    }
+
+    _handleKeydown(event) {
+        if (event.key === 'Escape' && this.subprocessStack.length > 0) {
+            event.preventDefault();
+            this.navigateToMain();
+        }
+    }
+
+    _scheduleViewCheck() {
+        // Cancel any pending check to avoid multiple calls
+        if (this.checkViewTimeout) {
+            clearTimeout(this.checkViewTimeout);
+        }
+
+    
+        if (window.requestAnimationFrame) {
+            requestAnimationFrame(() => {
+                this._checkCurrentView();
+            });
+        } else {
+            this.checkViewTimeout = setTimeout(() => {
+                this._checkCurrentView();
+                this.checkViewTimeout = null;
+            }, 16); 
+        }
     }
 
     _checkCurrentView() {
@@ -66,7 +98,6 @@ export default class SubprocessNavigation {
                (element.businessObject && element.businessObject.$type === 'bpmn:SubProcess');
     }
 
-    
     _buildSubprocessStack(subprocessRoot) {
         this.subprocessStack = [];
         const id = subprocessRoot.id.replace('_plane', '');
@@ -161,10 +192,22 @@ export default class SubprocessNavigation {
     reset() {
         this.subprocessStack = [];
         this._removeBreadcrumb();
+        
+    
+        if (this.checkViewTimeout) {
+            clearTimeout(this.checkViewTimeout);
+            this.checkViewTimeout = null;
+        }
     }
 
     destroy() {
         this.reset();
-        $(document).off('keydown.subprocess-nav');
+        
+        // Clean up  event listeners
+        $(document).off('.subprocess-nav');
+        
+  
+        this._boundDrilldownHandler = null;
+        this._boundKeydownHandler = null;
     }
 }
