@@ -1,9 +1,10 @@
 import $ from 'jquery';
 import PPINOTModeler from './PPINOT-modeler';
 import BpmnModdle from 'bpmn-moddle';
-import PPINOTDescriptor from './PPINOT-modeler/PPINOT/PPINOT.json'; 
-const moddle = new BpmnModdle({
-});
+import PPINOTDescriptor from './PPINOT-modeler/PPINOT/PPINOT.json';
+import SubprocessNavigation from './PPINOT-modeler/PPINOT/utils/NavigationUtil';
+
+const moddle = new BpmnModdle({});
 const container = $('#js-drop-zone');
 const body = $('body');
 
@@ -12,12 +13,38 @@ const modeler = new PPINOTModeler({
   moddleExtensions: {
     PPINOT: PPINOTDescriptor 
   }
-
 });
+
+
+
+let subprocessNavigation = null;
+let navigationTimer = null;
+
+function initializeNavigation() {
+  if (subprocessNavigation) {
+    subprocessNavigation.destroy();
+  }
+  
+
+  if (navigationTimer) {
+    clearTimeout(navigationTimer);
+  }
+  
+  navigationTimer = setTimeout(() => {
+    try {
+      subprocessNavigation = new SubprocessNavigation(modeler);
+      navigationTimer = null; 
+    } catch (error) {
+      console.error('Error creating navigation:', error);
+      navigationTimer = null;
+    }
+  }, 100);
+}
+
+
 
 async function createNewDiagram() {
     try {
-        // Ensure modeler.clear() returns a promise
         if (typeof modeler.clear === 'function') {
             await modeler.clear();
         } else {
@@ -32,6 +59,9 @@ async function createNewDiagram() {
 
         modeler.setModelOpen(true);
         body.addClass('shown');
+        
+        // Initialize navigation after diagram is created
+        initializeNavigation();
     } catch (err) {
         container
             .removeClass('with-diagram')
@@ -57,6 +87,9 @@ const openDiagram = async (xml, cbpmn) => {
 
     modeler.setModelOpen(true);
     body.addClass('shown');
+    
+    // Initialize navigation after diagram is opened
+    initializeNavigation();
   } catch (err) {
     container
       .removeClass('with-diagram')
@@ -66,7 +99,6 @@ const openDiagram = async (xml, cbpmn) => {
     container.find('.error pre').text(err.message);
   }
 };
-
 const saveSVG = (done) => {
   modeler.saveSVG(done);
 };
