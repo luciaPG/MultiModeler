@@ -15,23 +15,17 @@ const modeler = new PPINOTModeler({
   }
 });
 
-// Navigation instance
 let subprocessNavigation = null;
 
 
 function initializeNavigation() {
-  console.log('initializeNavigation called');
-  
   if (subprocessNavigation) {
-    console.log('Destroying existing navigation');
     subprocessNavigation.destroy();
   }
   
   setTimeout(() => {
     try {
-      console.log('Creating new SubprocessNavigation with modeler:', modeler);
       subprocessNavigation = new SubprocessNavigation(modeler);
-      console.log('Navigation created successfully:', subprocessNavigation);
     } catch (error) {
       console.error('Error creating navigation:', error);
     }
