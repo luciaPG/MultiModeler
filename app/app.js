@@ -15,22 +15,33 @@ const modeler = new PPINOTModeler({
   }
 });
 
-let subprocessNavigation = null;
 
+
+let subprocessNavigation = null;
+let navigationTimer = null;
 
 function initializeNavigation() {
   if (subprocessNavigation) {
     subprocessNavigation.destroy();
   }
   
-  setTimeout(() => {
+
+  if (navigationTimer) {
+    clearTimeout(navigationTimer);
+  }
+  
+  navigationTimer = setTimeout(() => {
     try {
       subprocessNavigation = new SubprocessNavigation(modeler);
+      navigationTimer = null; 
     } catch (error) {
       console.error('Error creating navigation:', error);
+      navigationTimer = null;
     }
   }, 100);
 }
+
+
 
 async function createNewDiagram() {
     try {
