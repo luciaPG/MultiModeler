@@ -1,9 +1,10 @@
 import $ from 'jquery';
 import PPINOTModeler from './PPINOT-modeler';
 import BpmnModdle from 'bpmn-moddle';
-import PPINOTDescriptor from './PPINOT-modeler/PPINOT/PPINOT.json'; 
-const moddle = new BpmnModdle({
-});
+import PPINOTDescriptor from './PPINOT-modeler/PPINOT/PPINOT.json';
+import SubprocessNavigation from './PPINOT-modeler/PPINOT/utils/NavigationUtil';
+
+const moddle = new BpmnModdle({});
 const container = $('#js-drop-zone');
 const body = $('body');
 
@@ -12,12 +13,33 @@ const modeler = new PPINOTModeler({
   moddleExtensions: {
     PPINOT: PPINOTDescriptor 
   }
-
 });
+
+// Navigation instance
+let subprocessNavigation = null;
+
+
+function initializeNavigation() {
+  console.log('initializeNavigation called');
+  
+  if (subprocessNavigation) {
+    console.log('Destroying existing navigation');
+    subprocessNavigation.destroy();
+  }
+  
+  setTimeout(() => {
+    try {
+      console.log('Creating new SubprocessNavigation with modeler:', modeler);
+      subprocessNavigation = new SubprocessNavigation(modeler);
+      console.log('Navigation created successfully:', subprocessNavigation);
+    } catch (error) {
+      console.error('Error creating navigation:', error);
+    }
+  }, 100);
+}
 
 async function createNewDiagram() {
     try {
-        // Ensure modeler.clear() returns a promise
         if (typeof modeler.clear === 'function') {
             await modeler.clear();
         } else {
@@ -32,6 +54,9 @@ async function createNewDiagram() {
 
         modeler.setModelOpen(true);
         body.addClass('shown');
+        
+        // Initialize navigation after diagram is created
+        initializeNavigation();
     } catch (err) {
         container
             .removeClass('with-diagram')
@@ -57,6 +82,9 @@ const openDiagram = async (xml, cbpmn) => {
 
     modeler.setModelOpen(true);
     body.addClass('shown');
+    
+    // Initialize navigation after diagram is opened
+    initializeNavigation();
   } catch (err) {
     container
       .removeClass('with-diagram')
@@ -66,7 +94,6 @@ const openDiagram = async (xml, cbpmn) => {
     container.find('.error pre').text(err.message);
   }
 };
-
 const saveSVG = (done) => {
   modeler.saveSVG(done);
 };
