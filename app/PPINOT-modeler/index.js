@@ -4,17 +4,15 @@ import inherits from 'inherits';
 import { isPPINOTConnection } from './PPINOT/Types';
 import PPINOTModule from './PPINOT';
 import { isLabelExternal, getExternalLabelBounds, getLabel } from './PPINOT/utils/LabelUtil';
+import BaseModeler from '../baseModeler';
 
-class PPINOTModeler extends Modeler {
+class PPINOTModeler extends BaseModeler {
   constructor(options) {
     super(options);
-    this._PPINOTElements = [];
-    this._idMap = [];
-    this.modelOpen = false;
   }
 
   _addPPINOTShape(PPINOTElement) {
-    this._PPINOTElements.push(PPINOTElement);
+    this._customElements.push(PPINOTElement);
     const canvas = this.get('canvas');
     const elementFactory = this.get('elementFactory');
     const PPINOTAttrs = assign({ businessObject: PPINOTElement }, PPINOTElement);
@@ -45,21 +43,12 @@ class PPINOTModeler extends Modeler {
         modeling.setColor(element, {
           stroke: obj.fillColor !== '#ffffff' ? obj.fillColor : 'green',
           fill: '#fff'
-        });
-      }
+        });      }
     });
   }
 
-  setModelOpen(bool) {
-    this.modelOpen = bool;
-  }
-
-  isModelOpen() {
-    return this.modelOpen;
-  }
-
   _addPPINOTConnection(PPINOTElement) {
-    this._PPINOTElements.push(PPINOTElement);
+    this._customElements.push(PPINOTElement);
     const canvas = this.get('canvas');
     const elementFactory = this.get('elementFactory');
     const elementRegistry = this.get('elementRegistry');
@@ -71,9 +60,7 @@ class PPINOTModeler extends Modeler {
 
     if (isLabelExternal(PPINOTElement) && getLabel(connection)) {
       this.addLabel(PPINOTElement, connection);
-    }
-
-    return canvas.addConnection(connection);
+    }    return canvas.addConnection(connection);
   }
 
   addPPINOTElements(PPINOTElements) {
@@ -116,18 +103,16 @@ class PPINOTModeler extends Modeler {
       y: Math.round(bounds.y),
       width: Math.round(bounds.width),
       height: Math.round(bounds.height)
-    }));
-
-    return canvas.addShape(label, element.parent);
+    }));    return canvas.addShape(label, element.parent);
   }
 
   getPPINOTElements() {
-    return this._PPINOTElements;
+    return this.getCustomElements();
   }
 
   clear() {
-    this._PPINOTElements = [];
-    super.clear();
+    // Call parent clear which handles _customElements
+    return super.clear();
   }
 
   getJson() {
@@ -144,7 +129,7 @@ class PPINOTModeler extends Modeler {
       timeConnections: []
     };
 
-    obj = this._PPINOTElements.reduce((res, item) => {
+    obj = this.getCustomElements().reduce((res, item) => {
       if (isPPINOTConnection(item)) {
         if (item.source.includes('TimeSlot') || item.target.includes('TimeSlot')) {
           res.timeConnections.push(item);
@@ -242,18 +227,16 @@ class PPINOTModeler extends Modeler {
     });
 
     delete obj.timeSlots;
-    delete obj.timeConnections;
-
-    console.log(this._PPINOTElements);
+    delete obj.timeConnections;    console.log(this.getCustomElements());
     console.log({
       definitions: obj,
-      diagram: this._PPINOTElements,
+      diagram: this.getCustomElements(),
       idMap: idMap
     });
 
     return {
       definitions: obj,
-      diagram: this._PPINOTElements,
+      diagram: this.getCustomElements(),
       idMap: idMap
     };
   }
@@ -272,13 +255,6 @@ function elementData(semantic, attrs) {
     type: semantic.$type,
     businessObject: semantic
   }, attrs);
-}
-
-function parseTime2(time) {
-  let array = time.split(',').map(line => {
-    line = line.trim();
-    let ineq = line.substring(0, line.search(/[ |\d]/));
-  });
 }
 
 function getSide(text) {
