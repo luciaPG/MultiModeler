@@ -1,7 +1,7 @@
 import PPINOTContextPadProvider from './PPINOTContextPadProvider';
 import PPINOTElementFactory from './PPINOTElementFactory';
 import PPINOTOrderingProvider from './PPINOTOrderingProvider';
-import PPINOTPalette from './PPINOTPalette';
+import PPINOTPaletteProvider from './PPINOTPalette';
 import PPINOTRenderer from './PPINOTRenderer';
 import PPINOTRules from './PPINOTRules';
 import PPINOTUpdater from './PPINOTUpdater';
@@ -34,7 +34,7 @@ export default {
   PPINOTRules: [ 'type', PPINOTRules ],
   PPINOTUpdater: [ 'type', PPINOTUpdater ],
   elementFactory: [ 'type', PPINOTElementFactory ],
-  paletteProvider: [ 'type', PPINOTPalette ],
+  paletteProvider: [ 'type', PPINOTPaletteProvider ],
   PPINOTLabelEditingProvider: [ 'type', PPINOTLabelEditingProvider ],
   modeling: [ 'type', PPINOTModeling ],
   connect: [ 'type', PPINOTConnect],
