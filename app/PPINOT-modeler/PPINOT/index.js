@@ -11,6 +11,8 @@ import PPINOTModeling from "./PPINOTModeling";
 import PPINOTConnect from "./PPINOTConnect";
 import PPINOTReplaceConnectionBehavior from "./behaviour/ReplaceConnectionBehaviour";
 import PPINOTReplaceMenuProvider from "./PPINOTReplaceMenuProvider";
+import PPINOTReplace from "./PPINOTReplace";
+import PPINOTCustomTextEditor from "./PPINOTCustomTextEditor";
 
 
 export default {
@@ -26,7 +28,9 @@ export default {
     'connect',
     'replaceConnectionBehavior',
     'replaceMenuProvider',
-    'bpmnUpdater'
+    'replace',
+    'bpmnUpdater',
+    'customTextEditor'
   ],
   contextPadProvider: [ 'type', PPINOTContextPadProvider ],
   PPINOTOrderingProvider: [ 'type', PPINOTOrderingProvider ],
@@ -38,7 +42,8 @@ export default {
   PPINOTLabelEditingProvider: [ 'type', PPINOTLabelEditingProvider ],
   modeling: [ 'type', PPINOTModeling ],
   connect: [ 'type', PPINOTConnect],
-  replaceConnectionBehavior: [ 'type', PPINOTReplaceConnectionBehavior],
-  replaceMenuProvider: ['type', PPINOTReplaceMenuProvider],
-  bpmnUpdater: [ 'type', PPINOTBpmnUpdater ]
+  replaceConnectionBehavior: [ 'type', PPINOTReplaceConnectionBehavior],  replaceMenuProvider: ['type', PPINOTReplaceMenuProvider],
+  bpmnUpdater: [ 'type', PPINOTBpmnUpdater ],
+  replace: [ 'type', PPINOTReplace ],
+  customTextEditor: [ 'type', PPINOTCustomTextEditor ]
 };

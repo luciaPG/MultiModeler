@@ -1,5 +1,3 @@
-import inherits from 'inherits';
-
 import ContextPadProvider from 'bpmn-js/lib/features/context-pad/ContextPadProvider';
 
 import { is } from "bpmn-js/lib/util/ModelUtil";
@@ -9,17 +7,10 @@ import {
 } from 'bpmn-js/lib/features/modeling/util/ModelingUtil';
 
 import {
-  assign,
-  bind
+  assign
 } from 'min-dash';
-import { isLabel } from "./utils/LabelUtil";
 
-import { myConnectionElements, aggregatedElements, baseMeasureElements } from "./Types";
-import { remove, replace } from 'tiny-svg';
-import {
-  isDifferentType
-} from "bpmn-js/lib/features/popup-menu/util/TypeUtil";
-import PPINOTModeling from './PPINOTModeling';
+import { myConnectionElements, aggregatedElements } from "./Types";
 import { PPI_SCOPE_TARGET } from './PPINOTReplaceOptions';
 
 
@@ -137,13 +128,10 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
       }
     };
   }
-
   getContextPadEntries(element) {
     const actions = super.getContextPadEntries(element);
-    console.log('PPINOTContextPadProvider getContextPadEntries', actions);
 
-
-    // i dony want bpmn arrows to appear on ppinot elements
+    // Don't want BPMN arrows to appear on PPINOT elements
     if (element.type && element.type.startsWith('PPINOT:')) {
       if (actions['connect']) {
         delete actions['connect'];

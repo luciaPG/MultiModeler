@@ -1,11 +1,7 @@
-import {
-    assign
-} from 'min-dash';
-
+import { assign } from 'min-dash';
 import { is } from 'bpmn-js/lib/util/ModelUtil';
 import { isAny } from 'bpmn-js/lib/features/modeling/util/ModelingUtil';
 import { isExpanded } from 'bpmn-js/lib/util/DiUtil';
-
 import {
     getLabel,
     setLabel,
@@ -14,75 +10,166 @@ import {
     hasExternalLabel,
     isLabel
 } from './utils/LabelUtil';
-
 import { directEdit, label} from "./Types";
-
 import LabelEditingProvider from "bpmn-js/lib/features/label-editing/LabelEditingProvider";
 
-
-// This module is used to define properties of label text
 export default function PPINOTLabelEditingProvider(
     eventBus, canvas, directEditing,
     modeling, resizeHandles, textRenderer) {
-
-    this._canvas = canvas;
+      this._canvas = canvas;
     this._modeling = modeling;
     this._textRenderer = textRenderer;
+    this._eventBus = eventBus;
 
     directEditing.registerProvider(this);
 
-    // listen to dblclick on non-root elements
     eventBus.on('element.dblclick', function(event) {
-        activateDirectEdit(event.element, true);
-    }); 
-   
-    
-    // complete on followup canvas operation
+        setTimeout(function() {
+            activateDirectEdit(event.element, true);
+        }, 10);
+    });
+
     eventBus.on([
-        'element.mousedown',
-        'drag.init',
         'canvas.viewbox.changing',
         'autoPlace',
         'popupMenu.open'
-    ], function(event) {
-
+    ], function() {
         if (directEditing.isActive()) {
             directEditing.complete();
         }
     });
 
-    // cancel on command stack changes
-    eventBus.on([ 'commandStack.changed' ], function(e) {
+    eventBus.on(['drag.init'], function(event) {
         if (directEditing.isActive()) {
-            directEditing.cancel();
+            var editedElement = directEditing._active && directEditing._active.element;
+            var eventElement = event.element;
+            
+            if (!editedElement || (eventElement && editedElement.id !== eventElement.id)) {
+                directEditing.complete();
+            }
         }
     });
 
-
-    eventBus.on('directEditing.activate', function(event) {
+    eventBus.on('directEditing.activate', function() {
         resizeHandles.removeResizers();
     });
 
-    eventBus.on('create.end', 500, function(event) {
+    eventBus.on(['shape.move.start'], function(event) {
+        var element = event.context.shape;
+        if (element && isAny(element, label.concat(directEdit))) {
+            element._labelBeforeMove = getLabel(element);
+        }
+    });
 
+    eventBus.on(['shape.move.end'], function(event) {
+        var element = event.context.shape;
+        
+        if (element && isAny(element, label.concat(directEdit))) {
+            var storedLabel = element._labelBeforeMove;
+            if (storedLabel && storedLabel.trim() !== '') {
+                try {
+                    setLabel(element, storedLabel);
+                } catch (error) {
+                    // Silent fallback
+                }
+                
+                setTimeout(function() {
+                    try {
+                        setLabel(element, storedLabel);
+                    } catch (error) {
+                        // Silent fallback
+                    }
+                }, 10);
+                
+                delete element._labelBeforeMove;
+            }
+            
+            if (directEditing.isActive()) {
+                var activeElement = directEditing._active && directEditing._active.element;
+                if (activeElement && activeElement.id === element.id) {
+                    try {
+                        var newBounds = this.getEditingBBox(element);
+                        if (directEditing._active && newBounds) {
+                            var editingOverlay = directEditing._active.overlayId;
+                            if (editingOverlay) {
+                                var overlays = canvas.get('overlays');
+                                if (overlays && overlays.move) {
+                                    overlays.move(editingOverlay, {
+                                        x: newBounds.x,
+                                        y: newBounds.y
+                                    });
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        // Silent fallback
+                    }
+                }
+            }
+        }
+    }.bind(this));
+
+    eventBus.on(['shape.replace'], function(event) {
+        var oldElement = event.context.oldShape;
+        var newElement = event.context.newShape;
+        
+        if (oldElement && newElement && isAny(oldElement, label.concat(directEdit))) {
+            var originalText = getLabel(oldElement);
+            
+            if (originalText && originalText.trim() !== '') {
+                newElement._labelToRestore = originalText;
+                
+                try {
+                    setLabel(newElement, originalText);
+                } catch (error) {
+                    // Silent fallback
+                }
+            }
+        }
+    });
+    
+    eventBus.on(['commandStack.shape.replace.postExecuted'], function(event) {
+        var context = event.context;
+        var newElement = context.newShape;
+        
+        if (newElement && newElement._labelToRestore) {
+            var textToRestore = newElement._labelToRestore;
+            
+            setTimeout(function() {
+                try {
+                    if (!newElement.businessObject) {
+                        newElement.businessObject = {};
+                    }
+                    newElement.businessObject.text = textToRestore;
+                    setLabel(newElement, textToRestore);
+                } catch (error) {
+                    // Silent fallback
+                }
+            }, 25);
+            
+            setTimeout(function() {
+                try {
+                    if (!newElement.businessObject) {
+                        newElement.businessObject = {};
+                    }
+                    newElement.businessObject.text = textToRestore;
+                    setLabel(newElement, textToRestore);
+                    eventBus.fire('element.changed', { element: newElement });
+                    delete newElement._labelToRestore;
+                } catch (error) {
+                    // Silent fallback
+                }
+            }, 100);
+        }
+    });
+
+    eventBus.on('create.end', 500, function(event) {
         var context = event.context,
             element = context.shape,
             canExecute = event.context.canExecute,
             isTouch = event.isTouch;
 
-        // TODO(nikku): we need to find a way to support the
-        // direct editing on mobile devices; right now this will
-        // break for desworkflowediting on mobile devices
-        // as it breaks the user interaction workflow
-
-        // TODO(nre): we should temporarily focus the edited element
-        // here and release the focused viewport after the direct edit
-        // operation is finished
-        if (isTouch) {
-            return;
-        }
-
-        if (!canExecute) {
+        if (isTouch || !canExecute) {
             return;
         }
 
@@ -98,19 +185,12 @@ export default function PPINOTLabelEditingProvider(
     });
 
     function activateDirectEdit(element, force) {
-        let types = [
-            'bpmn:Task',
-            'bpmn:TextAnnotation',
-            'bpmn:Group'
-        ].concat(directEdit)
-        console.log(directEdit)
-        if (force ||
-            isAny(element, types) ||
-            isCollapsedSubProcess(element)) {
+        let types = ['bpmn:Task', 'bpmn:TextAnnotation', 'bpmn:Group'].concat(directEdit);
+        
+        if (force || isAny(element, types) || isCollapsedSubProcess(element)) {
             directEditing.activate(element);
         }
     }
-
 }
 
 PPINOTLabelEditingProvider.$inject = [
@@ -122,142 +202,117 @@ PPINOTLabelEditingProvider.$inject = [
     'textRenderer'
 ];
 
+PPINOTLabelEditingProvider.prototype.canEdit = function(element) {
+    if (isAny(element, directEdit)) {
+        return false; // Custom text editor handles PPINOT elements
+    }
 
-/**
- * Activate direct editing for activities and text annotations.
- *
- * @param  {djs.model.Base} element
- *
- * @return {Object} an object with properties bounds (position and size), text and options
- */
+    if (isAny(element, ['bpmn:Task', 'bpmn:TextAnnotation', 'bpmn:Group'])) {
+        return true;
+    }
+
+    if (isCollapsedSubProcess(element)) {
+        return true;
+    }
+
+    return false;
+};
+
 PPINOTLabelEditingProvider.prototype.activate = function(element) {
-
-    // text
-    let text = getLabel(element);
-
-    // PPINOT
-    if(isAny(element, label) && !text)
+    var text = getLabel(element);
+    
+    // Set default text for connection elements if no existing text
+    if (!text && isAny(element, label)) {
+        if(is(element, 'PPINOT:ToConnection')){
+            text = 'to';
+        } else if(is(element, 'PPINOT:FromConnection')){
+            text = 'from';
+        } else if(is(element, 'PPINOT:AggregatedConnection')){
+            text = 'aggregates';
+        } else if(is(element, 'PPINOT:GroupedBy')){
+            text = 'isGroupedBy';
+        } else if(is(element, 'PPINOT:StartConnection')){
+            text = 'start';
+        } else if(is(element, 'PPINOT:EndConnection')){
+            text = 'end';
+        } else {
+            text = '';
+        }
+    } else if (!text) {
         text = '';
-
-    // Here you can define default text for your elements, so when you draw the element in the diagram
-    // default text appears in the diagram
-    if(is(element, 'PPINOT:ToConnection')){ // in this case, for ToConnection 
-        text= 'to' // appears the text "to" when you click on the connection
-    }
-    if(is(element, 'PPINOT:FromConnection')){
-        text= 'from'
-    }
-    if(is(element, 'PPINOT:AggregatedConnection')){
-        text= 'aggregates'
-    }
-    if(is(element, 'PPINOT:GroupedBy')){
-        text= 'isGroupedBy'
-    }
-    if(is(element, 'PPINOT:StartConnection')){
-        text= 'start'
-    }
-    if(is(element, 'PPINOT:EndConnection')){
-        text= 'end'
     }
 
-    if (text === undefined) {
-        return;
+    var context = { text: text };
+    var boundsInfo = this.getEditingBBox(element);
+    
+    if (boundsInfo && boundsInfo.bounds) {
+        assign(context, boundsInfo.bounds);
+        if (boundsInfo.style) {
+            context.style = boundsInfo.style;
+        }
+    } else if (boundsInfo) {
+        assign(context, boundsInfo);
     }
 
-    var context = {
-        text: text
-    };
-
-    // bounds
-    var bounds = this.getEditingBBox(element);
-
-    assign(context, bounds);
-
-    var options = {};
-
-    // tasks
-    if (
-        isAny(element, [
-            'bpmn:Task',
-            'bpmn:Participant',
-            'bpmn:Lane',
-            'bpmn:CallActivity',
-            //PPINOT
-            //'PPINOT:resource' // interni?
-        ]) ||
-        isCollapsedSubProcess(element)
-    ) {
-        assign(options, {
-            centerVertically: true
-        });
+    var options = { text: text };
+    
+    if (isAny(element, [
+            'bpmn:Task', 'bpmn:Participant', 'bpmn:Lane', 'bpmn:CallActivity',
+            'PPINOT:Target', 'PPINOT:Scope', 'PPINOT:Ppi',
+            'PPINOT:DataPropertyConditionAggregatedMeasure',
+            'PPINOT:DataPropertyConditionMeasure',
+            'PPINOT:DerivedSingleInstanceMeasure',
+            'PPINOT:DerivedMultiInstanceMeasure',
+            'PPINOT:CountMeasure', 'PPINOT:TimeMeasure',
+            'PPINOT:CyclicTimeMeasure', 'PPINOT:DataMeasure',
+            'PPINOT:StateConditionMeasure'
+        ]) || isCollapsedSubProcess(element)) {
+        assign(options, { centerVertically: true });
     }
 
-    // external labels
     if (isLabelExternal(element)) {
-        assign(options, {
-            autoResize: true
-        });
+        assign(options, { autoResize: true });
     }
 
-    // text annotations
     if (is(element, 'bpmn:TextAnnotation')) {
-        assign(options, {
-            resizable: true,
-            autoResize: true
-        });
+        assign(options, { resizable: true, autoResize: true });
     }
 
-    assign(context, {
-        options: options
-    });
-
+    assign(context, { options: options });
     return context;
 };
 
-
-/**
- * Get the editing bounding box based on the element's size and position
- *
- * @param  {djs.model.Base} element
- *
- * @return {Object} an object containing information about position
- *                  and size (fixed or minimum and/or maximum)
- */
 PPINOTLabelEditingProvider.prototype.getEditingBBox = function(element) {
     var canvas = this._canvas;
-
     var target = element.label || element;
-
     var bbox = canvas.getAbsoluteBBox(target);
-    console.log(element)
-    console.log(bbox)
     var mid = {
         x: bbox.x + bbox.width / 2,
         y: bbox.y + bbox.height / 2
     };
 
-    // default position
-    var bounds = { x: bbox.x, y: bbox.y };
-
-    var zoom = canvas.zoom();
-
-    var defaultStyle = this._textRenderer.getDefaultStyle(),
-        externalStyle = this._textRenderer.getExternalStyle();
-
-    // take zoom into account
-    var externalFontSize = externalStyle.fontSize * zoom,
-        externalLineHeight = externalStyle.lineHeight,
-        defaultFontSize = defaultStyle.fontSize * zoom,
-        defaultLineHeight = defaultStyle.lineHeight;
-
-    var style = {
-        fontFamily: this._textRenderer.getDefaultStyle().fontFamily,
-        fontWeight: this._textRenderer.getDefaultStyle().fontWeight
+    var bounds = { 
+        x: bbox.x, 
+        y: bbox.y,
+        width: bbox.width,
+        height: bbox.height
     };
 
-    // adjust for expanded pools AND lanes
-    if (is(element, 'bpmn:Lane') || isExpandedPool(element)) {
+    var zoom = canvas.zoom();
+    var defaultStyle = this._textRenderer.getDefaultStyle();
+    var externalStyle = this._textRenderer.getExternalStyle();
+    var externalFontSize = externalStyle.fontSize * zoom;
+    var externalLineHeight = externalStyle.lineHeight;
+    var defaultFontSize = defaultStyle.fontSize * zoom;
+    var defaultLineHeight = defaultStyle.lineHeight;
 
+    var style = {
+        fontFamily: defaultStyle.fontFamily,
+        fontWeight: defaultStyle.fontWeight
+    };
+
+    // Expanded pools and lanes
+    if (is(element, 'bpmn:Lane') || isExpandedPool(element)) {
         assign(bounds, {
             width: bbox.height,
             height: 30 * zoom,
@@ -276,11 +331,8 @@ PPINOTLabelEditingProvider.prototype.getEditingBBox = function(element) {
         });
     }
 
-   
-
-    // internal labels for tasks and collapsed call activities,
-    // sub processes and participants
-    if (isAny(element, [ 'bpmn:Task', 'bpmn:CallActivity']) ||
+    // Tasks and collapsed elements
+    if (isAny(element, ['bpmn:Task', 'bpmn:CallActivity']) ||
         isCollapsedPool(element) ||
         isCollapsedSubProcess(element)) {
 
@@ -299,8 +351,41 @@ PPINOTLabelEditingProvider.prototype.getEditingBBox = function(element) {
         });
     }
 
+    // PPINOT elements
+    if (isAny(element, [
+        'PPINOT:Target', 'PPINOT:Scope', 'PPINOT:Ppi',
+        'PPINOT:DataPropertyConditionAggregatedMeasure',
+        'PPINOT:DataPropertyConditionMeasure',
+        'PPINOT:DerivedSingleInstanceMeasure',
+        'PPINOT:DerivedMultiInstanceMeasure',
+        'PPINOT:CountMeasure', 'PPINOT:TimeMeasure',
+        'PPINOT:CyclicTimeMeasure', 'PPINOT:DataMeasure',
+        'PPINOT:StateConditionMeasure'
+    ])) {
+        var centerX = bbox.x + bbox.width / 2;
+        var centerY = bbox.y + bbox.height / 2;
+        var editWidth = Math.max(bbox.width * 0.8, 60);
+        var editHeight = Math.max(bbox.height * 0.6, 30);
+        
+        assign(bounds, {
+            x: centerX - editWidth / 2,
+            y: centerY - editHeight / 2,
+            width: editWidth,
+            height: editHeight
+        });
 
-    // internal labels for expanded sub processes
+        assign(style, {
+            fontSize: defaultFontSize + 'px',
+            lineHeight: defaultLineHeight,
+            paddingTop: (7 * zoom) + 'px',
+            paddingBottom: (7 * zoom) + 'px',
+            paddingLeft: (5 * zoom) + 'px',
+            paddingRight: (5 * zoom) + 'px',
+            textAlign: 'center'
+        });
+    }
+
+    // Expanded sub processes
     if (isExpandedSubProcess(element)) {
         assign(bounds, {
             width: bbox.width,
@@ -317,14 +402,12 @@ PPINOTLabelEditingProvider.prototype.getEditingBBox = function(element) {
         });
     }
 
-    
+    var width = 90 * zoom;
+    var paddingTop = 7 * zoom;
+    var paddingBottom = 4 * zoom;
 
-    var width = 90 * zoom,
-        paddingTop = 7 * zoom,
-        paddingBottom = 4 * zoom;
-
-    // external labels for events, data elements, gateways and connections
-    if (target.labelTarget ) {
+    // External labels
+    if (target.labelTarget) {
         assign(bounds, {
             width: width,
             height: bbox.height + paddingTop + paddingBottom,
@@ -340,15 +423,9 @@ PPINOTLabelEditingProvider.prototype.getEditingBBox = function(element) {
         });
     }
 
-    
-
-    // external label not yet created
-    if (isLabelExternal(target)
-        && !hasExternalLabel(target)
-        && !isLabel(target)) {
-
+    // External label not yet created
+    if (isLabelExternal(target) && !hasExternalLabel(target) && !isLabel(target)) {
         var externalLabelMid = getExternalLabelMid(element);
-
         var absoluteBBox = canvas.getAbsoluteBBox({
             x: externalLabelMid.x,
             y: externalLabelMid.y,
@@ -373,13 +450,13 @@ PPINOTLabelEditingProvider.prototype.getEditingBBox = function(element) {
         });
     }
 
-    // text annotations
+    // Text annotations
     if (is(element, 'bpmn:TextAnnotation')) {
         assign(bounds, {
             width: bbox.width,
             height: bbox.height,
-            minWidth: 30 * zoom,
-            minHeight: 10 * zoom
+            minWidth: Math.max(30 * zoom, 15),
+            minHeight: Math.max(10 * zoom, 15)
         });
 
         assign(style, {
@@ -392,14 +469,30 @@ PPINOTLabelEditingProvider.prototype.getEditingBBox = function(element) {
             lineHeight: defaultLineHeight
         });
     }
-
+    
     return { bounds: bounds, style: style };
 };
 
-PPINOTLabelEditingProvider.prototype.update = LabelEditingProvider.prototype.update
+PPINOTLabelEditingProvider.prototype.update = function(element, newLabel, activeContextText, bounds) {
+    var currentText = getLabel(element);
+    
+    if (currentText && currentText.trim() !== '' && (!newLabel || newLabel.trim() === '')) {
+        newLabel = currentText;
+    }
 
-// helpers //////////////////////
+    if (isAny(element, label.concat(directEdit))) {
+        try {
+            this._modeling.updateLabel(element, newLabel);
+        } catch (error) {                    setLabel(element, newLabel);
+                    this._eventBus.fire('element.changed', { element: element });
+        }
+        return;
+    }
 
+    return LabelEditingProvider.prototype.update.call(this, element, newLabel, activeContextText, bounds);
+};
+
+// Helper functions
 function isCollapsedSubProcess(element) {
     return is(element, 'bpmn:SubProcess') && !isExpanded(element);
 }
@@ -414,8 +507,4 @@ function isCollapsedPool(element) {
 
 function isExpandedPool(element) {
     return is(element, 'bpmn:Participant') && isExpanded(element);
-}
-
-function isEmptyText(label) {
-    return !label || !label.trim();
 }

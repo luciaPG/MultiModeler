@@ -180,8 +180,7 @@ class PPINOTModeler extends BaseModeler {
           idMap[taskDuration.id] = [item.timeSlot.id, item.connections[0].id];
           taskDuration.elements = [item.timeSlot.id, item.connections[0].id];
           obj.taskDurations.push(taskDuration);
-        } else {
-          console.error('TimeSlot with wrong connection');
+        } else {          console.error('TimeSlot with wrong connection');
         }
       } else if (item.occurrences > 2) {
         console.error('TimeSlot with too many connections');
@@ -224,15 +223,8 @@ class PPINOTModeler extends BaseModeler {
         idMap[constraint.id] = [item.timeSlot.id, ...item.connections.map(obj => obj.id)];
         counter++;
       }
-    });
-
-    delete obj.timeSlots;
-    delete obj.timeConnections;    console.log(this.getCustomElements());
-    console.log({
-      definitions: obj,
-      diagram: this.getCustomElements(),
-      idMap: idMap
-    });
+    });    delete obj.timeSlots;
+    delete obj.timeConnections;
 
     return {
       definitions: obj,
@@ -359,7 +351,6 @@ function createRRG(item, type) {
 
 function createTimeInstance(item) {
   let obj = item.text.match(new RegExp('(Start|End)?[ ]*(Before|After)[ ]*(.*)'));
-  console.log(obj);
 
   return {
     id: item.id,

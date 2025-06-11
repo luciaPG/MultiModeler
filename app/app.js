@@ -33,8 +33,7 @@ function initializeNavigation() {
   navigationTimer = setTimeout(() => {
     try {
       subprocessNavigation = new SubprocessNavigation(modeler);
-      navigationTimer = null; 
-    } catch (error) {
+      navigationTimer = null;    } catch (error) {
       console.error('Error creating navigation:', error);
       navigationTimer = null;
     }

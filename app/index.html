@@ -306,12 +306,7 @@
     <!--  </ul>-->
 
     <script src="bundle.js"></script>
-    <script>
-        function downloadAll() {
-            console.log("download")
-            console.log(window.localStorage.getItem("diagram"))
-            console.log(window.localStorage.getItem("PPINOT"))
-
+    <script>        function downloadAll() {
             if (window.localStorage.getItem("diagram")) {
                 var link = document.createElement('a');
                 link.style.display = 'none';

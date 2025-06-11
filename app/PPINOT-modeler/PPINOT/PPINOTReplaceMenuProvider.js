@@ -679,80 +679,9 @@ return timeEntry;
 ReplaceMenuProvider.prototype._getFunctionsTimeAgg = function(element) {
   var translate = this._translate;
   var replace = this._replace;
-  var modeling = this._modeling;
-
-  function replacePreservingConnections(element, newType) {
-
-    var incoming = element.incoming ? element.incoming.slice() : [];
-    var outgoing = element.outgoing ? element.outgoing.slice() : [];
-    
-    console.log('Preserving connections for', element.id, 'type:', element.type);
-    console.log('Incoming connections:', incoming.length, 'Outgoing:', outgoing.length);
-    
-    var incomingData = incoming.map(function(connection) {
-      return {
-        source: connection.source,
-        target: element,
-        type: connection.type,
-        waypoints: connection.waypoints ? connection.waypoints.slice() : undefined
-      };
-    });
-    
-    var outgoingData = outgoing.map(function(connection) {
-      return {
-        source: element,
-        target: connection.target,
-        type: connection.type,
-        waypoints: connection.waypoints ? connection.waypoints.slice() : undefined
-      };
-    });
-    
-  
-    var newElement = replace.replaceElement(element, { type: newType });
-    
-
-    incomingData.forEach(function(data) {
-      try {
-       
-        if (data.source && newElement) {
-          console.log('Recreating incoming connection from', data.source.id, 'to', newElement.id);
-          
-          var connectionData = { type: data.type };
-          if (data.waypoints) {
-            connectionData.waypoints = data.waypoints;
-          }
-          
-          modeling.connect(data.source, newElement, connectionData);
-        } else {
-          console.warn('Invalid source or target for incoming connection');
-        }
-      } catch (error) {
-        console.error('Error recreating incoming connection:', error);
-      }
-    });
-    
-
-    outgoingData.forEach(function(data) {
-      try {
-      
-        if (newElement && data.target) {
-          console.log('Recreating outgoing connection from', newElement.id, 'to', data.target.id);
-          
-          var connectionData = { type: data.type };
-          if (data.waypoints) {
-            connectionData.waypoints = data.waypoints;
-          }
-          
-          modeling.connect(newElement, data.target, connectionData);
-        } else {
-          console.warn('Invalid source or target for outgoing connection');
-        }
-      } catch (error) {
-        console.error('Error recreating outgoing connection:', error);
-      }
-    });
-    
-    return newElement;
+    function replacePreservingConnections(element, newType) {
+    // Use the PPINOTReplace service which handles label preservation and connections
+    return replace.replaceElement(element, { type: newType });
   }
   
 
