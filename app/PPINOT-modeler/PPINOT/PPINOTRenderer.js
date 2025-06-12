@@ -445,8 +445,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     'PPINOT:DerivedMultiInstanceMeasure': (p, element) => {
       let derivedMultiInstanceMeasure = drawDerivedMultiInstanceMeasure(element)
       svgAppend(p, derivedMultiInstanceMeasure);
-      self.renderEmbeddedLabel(p, element, 'center-middle');
-      return derivedMultiInstanceMeasure; 
+      return derivedMultiInstanceMeasure;
     },
     'PPINOT:StateConditionMeasure': (p, element) => {
       let stateConditionMeasure = drawStateConditionMeasure(element)

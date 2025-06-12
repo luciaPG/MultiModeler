@@ -349,15 +349,12 @@ PPINOTLabelEditingProvider.prototype.getEditingBBox = function(element) {
             paddingLeft: (5 * zoom) + 'px',
             paddingRight: (5 * zoom) + 'px'
         });
-    }
-
-    // PPINOT elements
+    }    // PPINOT elements
     if (isAny(element, [
         'PPINOT:Target', 'PPINOT:Scope', 'PPINOT:Ppi',
         'PPINOT:DataPropertyConditionAggregatedMeasure',
         'PPINOT:DataPropertyConditionMeasure',
         'PPINOT:DerivedSingleInstanceMeasure',
-        'PPINOT:DerivedMultiInstanceMeasure',
         'PPINOT:CountMeasure', 'PPINOT:TimeMeasure',
         'PPINOT:CyclicTimeMeasure', 'PPINOT:DataMeasure',
         'PPINOT:StateConditionMeasure'

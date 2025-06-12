@@ -9,7 +9,7 @@ export default function PPINOTCustomTextEditor(eventBus, canvas, modeling) {
     this._activeEditor = null;
     
     const self = this;
-    // High priority (1500) to intercept before bpmn-js DirectEditing
+      // High priority (1500) to intercept before bpmn-js DirectEditing
     eventBus.on('element.dblclick', 1500, function(event) {
         if (isAny(event.element, directEdit)) {
             event.stopPropagation();
@@ -39,12 +39,23 @@ PPINOTCustomTextEditor.prototype._calculatePosition = function(element) {
     const bbox = this._canvas.getAbsoluteBBox(element);
     const viewport = this._canvas.viewbox();
     const containerRect = this._canvas.getContainer().getBoundingClientRect();
+      // Check if this is a derived single instance measure (these should edit in place)
+    // Note: DerivedMultiInstanceMeasure now has external labels, so only DerivedSingleInstanceMeasure edits in place
+    const isDerivedSingleInstance = element.type === 'PPINOT:DerivedSingleInstanceMeasure';
     
-    // Position input below element with proper viewport scaling
-    return {
-        x: (bbox.x - viewport.x) * viewport.scale + containerRect.left + bbox.width / 2 * viewport.scale,
-        y: (bbox.y - viewport.y) * viewport.scale + containerRect.top + bbox.height * viewport.scale + 10
-    };
+    if (isDerivedSingleInstance) {
+        // Position input in the center of the element (where the label normally appears)
+        return {
+            x: (bbox.x - viewport.x) * viewport.scale + containerRect.left + bbox.width / 2 * viewport.scale,
+            y: (bbox.y - viewport.y) * viewport.scale + containerRect.top + bbox.height / 2 * viewport.scale
+        };
+    } else {
+        // Position input below element - this preserves built-in function labels for aggregated measures
+        return {
+            x: (bbox.x - viewport.x) * viewport.scale + containerRect.left + bbox.width / 2 * viewport.scale,
+            y: (bbox.y - viewport.y) * viewport.scale + containerRect.top + bbox.height * viewport.scale + 10
+        };
+    }
 };
 
 PPINOTCustomTextEditor.prototype._createInput = function(text, position) {
@@ -55,20 +66,18 @@ PPINOTCustomTextEditor.prototype._createInput = function(text, position) {
     const styles = {
         position: 'fixed',
         left: position.x + 'px',
-        top: position.y + 'px',
+        top: position.y-15 + 'px',
         transform: 'translateX(-50%)',
         zIndex: '1000',
-        padding: '6px 12px',
-        border: '2px solid #1e90ff',
-        borderRadius: '4px',
-        fontSize: '13px',
+        padding: '4px 8px',
+        border: '1px solid #d3d3d3',
+        fontSize: '12px',
         fontFamily: 'Arial, sans-serif',
-        backgroundColor: 'white',
-        minWidth: '120px',
-        maxWidth: '300px',
+        backgroundColor: '#f9f9f9',
+        minWidth: '80px',
+        maxWidth: '250px',
         textAlign: 'center',
         outline: 'none',
-        boxShadow: '0 2px 8px rgba(30, 144, 255, 0.3)'
     };
     
     Object.assign(input.style, styles);
@@ -77,14 +86,15 @@ PPINOTCustomTextEditor.prototype._createInput = function(text, position) {
 
 PPINOTCustomTextEditor.prototype._setupEventListeners = function(input) {
     const self = this;
-
+    
     input.addEventListener('focus', () => {
-        input.style.border = '2px solid #4169e1';
-        input.style.boxShadow = '0 0 0 3px rgba(65, 105, 225, 0.2)';
+        input.style.border = '1px solid #999';
+        input.style.backgroundColor = 'white';
     });
-      input.addEventListener('blur', () => {
-        input.style.border = '2px solid #1e90ff';
-        input.style.boxShadow = '0 2px 8px rgba(30, 144, 255, 0.3)';
+    
+    input.addEventListener('blur', () => {
+        input.style.border = '1px solid #d3d3d3';
+        input.style.backgroundColor = '#f9f9f9';
         
         // Delay to prevent conflicts with other events
         setTimeout(() => {

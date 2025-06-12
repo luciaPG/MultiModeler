@@ -89,6 +89,7 @@ export const externalLabel = [
     'PPINOT:AggregatedConnection',
     'PPINOT:GroupedBy',
     'PPINOT:ToConnection',
+    'PPINOT:DerivedMultiInstanceMeasure',
     'PPINOT:FromConnection',
     'PPINOT:AggregatedMeasure',
     'PPINOT:TimeAggregatedMeasure',
@@ -183,33 +184,11 @@ export const directEdit = [
     'PPINOT:RFCStateConnection',
     'PPINOT:StateCondAggMeasureNumber',
     'PPINOT:StateCondAggMeasurePercentage',
-    'PPINOT:StateCondAggMeasureAll',
-    'PPINOT:StateCondAggMeasureAtLeastOne',
-    'PPINOT:StateCondAggMeasureNo',
-    'PPINOT:CyclicTimeAggregatedMeasureMAX',
-    'PPINOT:CyclicTimeAggregatedMeasureSUM',
-    'PPINOT:CyclicTimeAggregatedMeasureMIN',
-    'PPINOT:CyclicTimeAggregatedMeasureAVG',
-    'PPINOT:CyclicTimeMeasureSUM',
-    'PPINOT:CyclicTimeMeasureMAX',
-    'PPINOT:CyclicTimeMeasureMIN',
-    'PPINOT:CyclicTimeMeasureAVG',
-    'PPINOT:TimeAggregatedMeasureSUM',
-    'PPINOT:TimeAggregatedMeasureMAX',
-    'PPINOT:TimeAggregatedMeasureMIN',
-    'PPINOT:TimeAggregatedMeasureAVG',
-    'PPINOT:CountAggregatedMeasureSUM',
-    'PPINOT:CountAggregatedMeasureMAX',
-    'PPINOT:CountAggregatedMeasureMIN',
-    'PPINOT:CountAggregatedMeasureAVG',
-    'PPINOT:DataAggregatedMeasureSUM',
-    'PPINOT:DataAggregatedMeasureMAX',
-    'PPINOT:DataAggregatedMeasureMIN',
-    'PPINOT:DataAggregatedMeasureAVG',
-    'PPINOT:AggregatedMeasureSUM',
-    'PPINOT:AggregatedMeasureMAX',
-    'PPINOT:AggregatedMeasureMIN',
-    'PPINOT:AggregatedMeasureAVG'
+    'PPINOT:StateCondAggMeasureAll',    'PPINOT:StateCondAggMeasureAtLeastOne',
+    'PPINOT:StateCondAggMeasureNo'
+    // NOTE: Aggregated measure variants with built-in function labels (SUM, MAX, MIN, AVG) 
+    // are deliberately excluded from directEdit to prevent interference with their function labels.
+    // These elements should not be directly editable since they have built-in labels.
     
 ]
 
