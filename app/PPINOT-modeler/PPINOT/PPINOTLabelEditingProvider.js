@@ -286,6 +286,18 @@ PPINOTLabelEditingProvider.prototype.getEditingBBox = function(element) {
     var canvas = this._canvas;
     var target = element.label || element;
     var bbox = canvas.getAbsoluteBBox(target);
+    
+    // Validate bbox and provide fallback if properties are missing
+    if (!bbox || typeof bbox.width === 'undefined' || typeof bbox.height === 'undefined') {
+        // Use element bounds as fallback
+        bbox = {
+            x: target.x || 0,
+            y: target.y || 0,
+            width: target.width || 100,
+            height: target.height || 80
+        };
+    }
+    
     var mid = {
         x: bbox.x + bbox.width / 2,
         y: bbox.y + bbox.height / 2
