@@ -1,5 +1,5 @@
 import $ from 'jquery';
-import PPINOTModeler from './PPINOT-modeler';
+import MultiNotationModeler from './MultiNotationModeler';
 import BpmnModdle from 'bpmn-moddle';
 import PPINOTDescriptor from './PPINOT-modeler/PPINOT/PPINOT.json';
 import SubprocessNavigation from './PPINOT-modeler/PPINOT/utils/NavigationUtil';
@@ -8,7 +8,8 @@ const moddle = new BpmnModdle({});
 const container = $('#js-drop-zone');
 const body = $('body');
 
-const modeler = new PPINOTModeler({
+// Use the multi-notation modeler so both notations can be used simultaneously
+const modeler = new MultiNotationModeler({
   container: '#js-canvas',
   moddleExtensions: {
     PPINOT: PPINOTDescriptor 
