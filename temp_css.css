@@ -1,0 +1,163 @@
+/* Estilos específicos para la aplicación híbrida */
+
+/* ===== PALETA HÍBRIDA ===== */
+.hybrid-palette {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: #fafbfc;
+}
+
+.palette-header {
+    padding: 16px;
+    border-bottom: 1px solid #e1e4e8;
+    background: white;
+}
+
+.palette-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #24292e;
+}
+
+.notation-switcher {
+    display: flex;
+    gap: 4px;
+    margin-top: 12px;
+}
+
+.notation-toggle {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1px solid #d1d5da;
+    background: white;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.notation-toggle:hover {
+    background: #f6f8fa;
+}
+
+.notation-toggle.active {
+    background: #0366d6;
+    color: white;
+    border-color: #0366d6;
+}
+
+.notation-toggle.ppinot.active {
+    background: #1976D2;
+    border-color: #1976D2;
+}
+
+.notation-toggle.ralph.active {
+    background: #2E7D32;
+    border-color: #2E7D32;
+}
+
+.notation-toggle.hybrid.active {
+    background: linear-gradient(45deg, #1976D2, #2E7D32);
+    border-color: #1976D2;
+}
+
+/* ===== ELEMENTOS DE PALETA ===== */
+.palette-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+}
+
+.palette-group {
+    margin-bottom: 16px;
+}
+
+.group-header {
+    padding: 8px 16px;
+    background: #f6f8fa;
+    border-top: 1px solid #e1e4e8;
+    border-bottom: 1px solid #e1e4e8;
+    font-size: 12px;
+    font-weight: 600;
+    color: #586069;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.group-header.ppinot {
+    border-left: 3px solid #1976D2;
+    background: #e3f2fd;
+}
+
+.group-header.ralph {
+    border-left: 3px solid #2E7D32;
+    background: #e8f5e8;
+}
+
+.palette-element {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    cursor: grab;
+    transition: background-color 0.2s ease;
+    gap: 12px;
+}
+
+.palette-element:hover {
+    background: #f6f8fa;
+}
+
+.palette-element:active {
+    cursor: grabbing;
+}
+
+.element-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.element-icon.ppinot {
+    background: #e3f2fd;
+    color: #1976D2;
+}
+
+.element-icon.ralph {
+    background: #e8f5e8;
+    color: #2E7D32;
+}
+
+.element-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.element-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #24292e;
+    margin: 0;
+}
+
+.element-description {
+    font-size: 11px;
+    color: #586069;
+    margin: 2px 0 0 0;
+    line-height: 1.3;
+}
+
+/* ===== ICONOS ESPECÍFICOS ===== */
+
+/* Iconos PPINOT - SVG Icons */
+

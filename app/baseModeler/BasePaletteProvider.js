@@ -119,7 +119,6 @@ BasePaletteProvider.prototype._getBaseBpmnActions = function() {
   function createParticipant(event, collapsed) {
     create.start(event, elementFactory.createParticipantShape(collapsed));
   }
-
   return {
     // Tools
     'hand-tool': {
@@ -167,37 +166,37 @@ BasePaletteProvider.prototype._getBaseBpmnActions = function() {
       separator: true
     },
 
-    // BPMN Elements
+    // BPMN Elements - all grouped under 'bpmn'
     'create.start-event': createAction(
-        'bpmn:StartEvent', 'event', 'bpmn-icon-start-event-none',
+        'bpmn:StartEvent', 'bpmn', 'bpmn-icon-start-event-none',
         translate('Create StartEvent')
     ),
     'create.intermediate-event': createAction(
-        'bpmn:IntermediateThrowEvent', 'event', 'bpmn-icon-intermediate-event-none',
+        'bpmn:IntermediateThrowEvent', 'bpmn', 'bpmn-icon-intermediate-event-none',
         translate('Create Intermediate/Boundary Event')
     ),
     'create.end-event': createAction(
-        'bpmn:EndEvent', 'event', 'bpmn-icon-end-event-none',
+        'bpmn:EndEvent', 'bpmn', 'bpmn-icon-end-event-none',
         translate('Create EndEvent')
     ),
     'create.exclusive-gateway': createAction(
-        'bpmn:ExclusiveGateway', 'gateway', 'bpmn-icon-gateway-none',
+        'bpmn:ExclusiveGateway', 'bpmn', 'bpmn-icon-gateway-none',
         translate('Create Gateway')
     ),
     'create.task': createAction(
-        'bpmn:Task', 'activity', 'bpmn-icon-task',
+        'bpmn:Task', 'bpmn', 'bpmn-icon-task',
         translate('Create Task')
     ),
     'create.data-object': createAction(
-        'bpmn:DataObjectReference', 'data-object', 'bpmn-icon-data-object',
+        'bpmn:DataObjectReference', 'bpmn', 'bpmn-icon-data-object',
         translate('Create DataObjectReference')
     ),
     'create.data-store': createAction(
-        'bpmn:DataStoreReference', 'data-store', 'bpmn-icon-data-store',
+        'bpmn:DataStoreReference', 'bpmn', 'bpmn-icon-data-store',
         translate('Create DataStoreReference')
     ),
     'create.subprocess-expanded': {
-      group: 'activity',
+      group: 'bpmn',
       className: 'bpmn-icon-subprocess-expanded',
       title: translate('Create expanded SubProcess'),
       action: {
@@ -206,7 +205,7 @@ BasePaletteProvider.prototype._getBaseBpmnActions = function() {
       }
     },
     'create.participant-expanded': {
-      group: 'collaboration',
+      group: 'bpmn',
       className: 'bpmn-icon-participant',
       title: translate('Create Pool/Participant'),
       action: {
@@ -215,7 +214,7 @@ BasePaletteProvider.prototype._getBaseBpmnActions = function() {
       }
     },
     'create.group': createAction(
-        'bpmn:Group', 'artifact', 'bpmn-icon-group',
+        'bpmn:Group', 'bpmn', 'bpmn-icon-group',
         translate('Create Group')
     )
   };

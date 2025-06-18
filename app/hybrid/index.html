@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPINOT-RALPH Hybrid Modeler</title>
+</head>
+<body>
+    <div class="hybrid-container">
+        <div class="hybrid-header">
+            <h1 class="hybrid-title">PPINOT-RALPH Hybrid Modeler</h1>
+            <div class="hybrid-controls">
+                <div class="mode-buttons">
+                    <button id="ppinot-mode" class="mode-btn">PPINOT</button>
+                    <button id="ralph-mode" class="mode-btn">RALPH</button>
+                    <button id="hybrid-mode" class="mode-btn active">Hybrid</button>
+                </div>
+                <div class="file-controls">
+                    <button id="load-diagram" class="btn btn-secondary">Load</button>
+                    <button id="save-diagram" class="btn">Save</button>
+                </div>
+            </div>
+        </div>
+        <div class="hybrid-content">
+            <div id="canvas"></div>
+        </div>
+    </div>
+    
+    <div class="notation-status" id="notation-status">
+        Mode: Hybrid
+    </div>
+    
+    <input type="file" id="file-input" accept=".bpmn,.xml" />
+    
+    <script src="hybrid-bundle.js"></script>
+</body>
+</html>

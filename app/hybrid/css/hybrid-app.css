@@ -1,0 +1,342 @@
+/* Hybrid App Styles */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f5f5f5;
+}
+
+.hybrid-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.hybrid-header {
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hybrid-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+.hybrid-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.mode-buttons {
+  display: flex;
+  gap: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mode-btn {
+  padding: 8px 16px;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.mode-btn:hover {
+  background: #f0f0f0;
+}
+
+.mode-btn.active {
+  background: #819aac;
+  color: white;
+}
+
+.file-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  padding: 8px 16px;
+  background: #007acc;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.btn:hover {
+  background: #570000;
+}
+
+.btn-secondary {
+  background: #6c757d;
+}
+
+.btn-secondary:hover {
+  background: #545b62;
+}
+
+.hybrid-content {
+  flex: 1;
+  display: flex;
+}
+
+#canvas {
+  flex: 1;
+  background: white;
+}
+
+#file-input {
+  display: none;
+}
+
+/* Context Pad Professional Centered Layout */
+.djs-context-pad {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  align-content: flex-start !important;
+  gap: 4px !important;
+  padding: 6px !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid #d0d0d0 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15) !important;
+  z-index: 1000 !important;
+  width: auto !important;
+  min-width: fit-content !important;
+}
+
+/* Remove group-based layout - everything in one unified grid */
+.djs-context-pad .group {
+  display: contents !important;
+}
+
+.djs-context-pad .entry {
+  width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  border-radius: 4px !important;
+  margin: 0 !important;
+  background-color: white !important;
+  border: 1px solid #e8e8e8 !important;
+  transition: all 0.15s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
+}
+
+.djs-context-pad .entry:hover {
+  background-color: #f8f9fa !important;
+  border-color: #4a90e2 !important;
+  transform: scale(1.05) !important;
+  box-shadow: 0 2px 6px rgba(74, 144, 226, 0.3) !important;
+}
+
+.djs-context-pad .entry:active {
+  background-color: #e6f3ff !important;
+  transform: scale(0.98) !important;
+}
+
+.djs-context-pad .entry>* {
+  background-size: 16px 16px !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  width: 16px !important;
+  height: 16px !important;
+  display: block !important;
+}
+
+/* PPINOT Context Pad Icons - Original Complete Icons */
+.icon-dashed-line {
+  background-image: url("data:image/svg+xml,%3Csvg width='23' height='23' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='25' width='25' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cg stroke='null' transform='rotate(135 -26.999954223632812,50) ' id='edgeAppliesTo'%3E%3Cpath stroke='black' id='svg_1' marker-end='url(%23end)' stroke-dasharray='3, 4' stroke-width='2' fill='none' d='m-126.99996,50l200,0'/%3E%3Ctext stroke='null' y='0' x='-76.99996' id='stateText3' font-size='12'/%3E%3Ctext stroke='null' y='0' x='-76.99996' id='restrictionText' font-size='12'/%3E%3Ctext stroke='null' y='0' x='-76.99996' id='dataContentSelectionText' font-size='12'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+.icon-fromConnector {
+  background-image: url("data:image/svg+xml,%3Csvg width='23' height='23' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='25' width='25' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cline stroke='black' stroke-width='NaN' stroke-linecap='round' stroke-linejoin='round' id='svg_8' y2='1.91417' x2='20.21972' y1='19.59789' x1='5.24674' fill-opacity='null' stroke-opacity='null' stroke-dasharray='2,2' fill='none'/%3E%3Cellipse transform='rotate(-61.4674072265625 6.438542366027829,17.4184513092041) ' stroke='black' ry='4.0167' rx='3.73501' id='svg_11' cy='17.41845' cx='6.43854' stroke-opacity='null' stroke-width='null' fill='%23ffffff'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.icon-toConnector {
+  background-image: url("data:image/svg+xml,%3Csvg width='23' height='23' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='25' width='25' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cline stroke='black' stroke-width='NaN' stroke-linecap='round' stroke-linejoin='round' id='svg_8' y2='1.91417' x2='20.21972' y1='19.59789' x1='5.24674' fill-opacity='null' stroke-opacity='null' stroke-dasharray='2,2' fill='none'/%3E%3Cellipse transform='rotate(-61.4674072265625 6.438542366027839,17.418453216552738) ' stroke='black' ry='4.0167' rx='3.73501' id='svg_11' cy='17.41845' cx='6.43854' stroke-opacity='null' stroke-width='null' fill='%23000000'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.icon-aggregates {
+  background-image: url("data:image/svg+xml,%3Csvg width='23' height='23' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cmarker id='start' refX='0' refY='5' markerUnits='userSpaceOnUse' markerWidth='17' markerHeight='11' orient='auto'%3E%3Cpath d='m0,5l8,-5l8,5l-8,5l-8,-5' fill='white' stroke='black' id='svg_1'/%3E%3C/marker%3E%3C/defs%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect x='-1' y='-1' width='25' height='25' id='canvas_background' fill='none'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cg id='edge' stroke='null' transform='rotate(-46 44.37645339965819,-67.41716003417969) '%3E%3Cpath d='m-50.62355,-36.48747l200,0' fill='none' stroke-width='2' marker-start='url(%23start)' id='svg_2' stroke='black'/%3E%3Ctext x='-60.62355' id='svg_3' stroke='null' y='-86.48747'%3Eaggregates%3C/text%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+.icon-isGroupedBy {
+  background-image: url("data:image/svg+xml,%3Csvg width='23' height='23' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cmarker orient='auto' markerHeight='11' markerWidth='17' markerUnits='userSpaceOnUse' refY='5' refX='0' id='start'%3E%3Cpath id='svg_1' stroke='black' fill='white' d='m0,5l8,-5l8,5l-8,5l-8,-5'/%3E%3C/marker%3E%3C/defs%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='25' width='25' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cg id='edge'%3E%3Cpath transform='rotate(-45 71.40612792968754,-48.344631195068345) ' id='svg_2' marker-start='url(%23start)' stroke-dasharray='3, 4' stroke-width='2' fill='none' stroke='black' d='m-28.59387,-48.34463l200,0'/%3E%3Ctext transform='rotate(-45 -17.048513412475575,-37.1524543762207) ' id='svg_3' y='-32.51964' x='-56.58757'%3EisGroupedBy%3C/text%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Override any default context pad styles */
+.djs-context-pad.open {
+  display: flex !important;
+  flex-wrap: wrap !important;
+}
+
+/* Force proper sizing for PPINOT context pad icons */
+.djs-context-pad .entry.icon-fromConnector,
+.djs-context-pad .entry.icon-toConnector,
+.djs-context-pad .entry.icon-aggregates,
+.djs-context-pad .entry.icon-isGroupedBy,
+.djs-context-pad .entry.icon-dashed-line,
+.djs-context-pad .entry.icon-startConnector,
+.djs-context-pad .entry.icon-endConnector {
+  background-size: 20px 20px !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  width: 32px !important;
+  height: 32px !important;
+}
+
+/* Palette Styling */
+.djs-palette {
+  background: rgb(255, 255, 255);
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 160px;
+  min-width: 160px;
+  box-shadow: 0 2px 8px rgba(116, 116, 116, 0.1);
+  padding: 8px;
+}
+
+.djs-palette .group {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  width: 100% !important;
+  padding: 8px 8px !important;
+  margin-bottom: 10px !important;
+  border-bottom: 1px solid #f0f0f0;
+  justify-content: flex-start !important;
+}
+
+.djs-palette .group:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.djs-palette .entry {
+  padding: 8px !important;
+  margin: 4px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  width: 44px !important;
+  height: 44px ;
+  box-sizing: border-box !important;
+  border-radius: 6px !important;
+  border: 1px solid transparent !important;
+  transition: all 0.2s ease !important;
+  background: rgb(255, 0, 0) !important;
+}
+
+.djs-palette .entry:hover {
+  background: #f5f5f5 !important;
+  border-color: #ccc !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* PPINOT Icons for Palette */
+.icon-baseMeasure:before {
+  content: '';
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Crect fill='white' stroke='black' stroke-width='2' height='20' width='28' y='6' x='2'/%3E%3Cpath d='m4,22l0,4m2,-4l0,4m2,-4l0,4m2,-8l0,8m2,-4l0,4m2,-4l0,4m2,-4l0,4m2,-8l0,8m2,-4l0,4m2,-4l0,4m2,-4l0,4m2,-8l0,8' stroke='black' stroke-width='1' fill='none'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.icon-PPINOT-aggregatedMeasure:before {
+  content: '';
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Crect fill='white' stroke='black' stroke-width='2' height='16' width='20' y='8' x='4'/%3E%3Cpath stroke='black' stroke-width='2' fill='none' d='m6,8l0,-2l20,0l0,16l-3,0m1.5,-2.5l0,2.5'/%3E%3Cpath stroke='black' stroke-width='2' fill='none' d='m9,6l0,-2l20,0l0,16l-3,0m1.5,-2.5l0,2.5'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.icon-PPINOT-ppi:before {
+  content: '';
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m16,6l0,3' stroke='black' fill='none'/%3E%3Cpath d='m19,7l-3,3' stroke='black' fill='none'/%3E%3Cpath d='m20,10l-4,0' stroke='black' fill='none'/%3E%3Cpath d='m16,10l-3,-3' stroke='black' fill='none'/%3E%3Cpath d='m13,10l4,0' stroke='black' fill='none'/%3E%3Cpath fill='white' stroke='black' d='m14,10c0,-1 1,-2 2,-2s2,1 2,2s-1,2 -2,2s-2,-1 -2,-2'/%3E%3Cpath fill='white' d='m17,12l-1.5,-3l0.8,3.2l0.7,-0.2'/%3E%3Cpath d='m17,12l-1.5,-3l0.8,3.2l0.7,-0.2z' stroke='black' fill='none'/%3E%3Cpath d='m13,10c0,-2 1.5,-3.5 3,-3.5s3,1.5 3,3.5s-1.5,3.5 -3,3.5 -3,-1.5 -3,-3.5' stroke='black' fill='none'/%3E%3Cpath fill='white' d='m15,13.5c0,-0.5 0.7,-0.8 1.5,-0.8s1.5,0.3 1.5,0.8s-0.7,0.8 -1.5,0.8 -1.5,-0.3 -1.5,-0.8'/%3E%3Crect x='4' y='16' width='24' height='12' stroke='black' fill='white'/%3E%3Crect x='4' y='24' width='24' height='4' stroke='black' fill='lightgray'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.icon-target:before {
+  content: '';
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='16' cy='16' r='14' stroke='black' stroke-width='2' fill='white'/%3E%3Ccircle cx='16' cy='16' r='7' fill='black'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.icon-scope:before {
+  content: '';
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='4' y='6' width='24' height='20' stroke='black' stroke-width='2' fill='black'/%3E%3Crect x='6' y='8' width='4' height='4' fill='white'/%3E%3Crect x='11' y='8' width='4' height='4' fill='white'/%3E%3Crect x='16' y='8' width='4' height='4' fill='white'/%3E%3Crect x='21' y='8' width='4' height='4' fill='white'/%3E%3Crect x='6' y='13' width='4' height='4' fill='white'/%3E%3Crect x='11' y='13' width='4' height='4' fill='white'/%3E%3Crect x='16' y='13' width='4' height='4' fill='white'/%3E%3Crect x='21' y='13' width='4' height='4' fill='white'/%3E%3Crect x='6' y='18' width='4' height='4' fill='white'/%3E%3Crect x='11' y='18' width='4' height='4' fill='white'/%3E%3Crect x='16' y='18' width='4' height='4' fill='white'/%3E%3Crect x='21' y='18' width='4' height='4' fill='white'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* Status indicator */
+.notation-status {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 1000;
+}
+
+/* Responsive Design - Keep centered layout compact */
+@media (max-width: 768px) {
+  .djs-context-pad {
+    gap: 3px !important;
+    padding: 5px !important;
+  }
+
+  .djs-context-pad .entry {
+    width: 26px !important;
+    height: 26px !important;
+  }
+
+  .djs-context-pad .entry>* {
+    background-size: 14px 14px !important;
+    width: 14px !important;
+    height: 14px !important;
+  }
+}

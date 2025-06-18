@@ -1,0 +1,265 @@
+/* Hybrid App Styles - Clean Version */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f5f5f5;
+}
+
+.hybrid-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.hybrid-header {
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hybrid-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+.hybrid-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.mode-buttons {
+  display: flex;
+  gap: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mode-btn {
+  padding: 8px 16px;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.mode-btn:hover {
+  background: #f0f0f0;
+}
+
+.mode-btn.active {
+  background: #007bff;
+  color: #fff;
+}
+
+.hybrid-main {
+  flex: 1;
+  display: flex;
+  position: relative;
+}
+
+.hybrid-canvas {
+  flex: 1;
+  position: relative;
+  background: #fff;
+}
+
+.modeler-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* Import/Export buttons */
+.import-export-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.import-btn, .export-btn {
+  padding: 6px 12px;
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s ease;
+}
+
+.import-btn:hover, .export-btn:hover {
+  background: #f0f0f0;
+  border-color: #999;
+}
+
+/* Hidden file input */
+.file-input {
+  display: none;
+}
+
+/* Palette Styling */
+.djs-palette {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.djs-palette .entry {
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  border: 1px solid transparent;
+  margin: 2px;
+  border-radius: 3px;
+  background-color: white;
+  transition: all 0.2s ease;
+}
+
+.djs-palette .entry:hover {
+  background-color: #f8f8f8;
+  border-color: #999;
+  transform: scale(1.05);
+}
+
+/* Context Pad Basic Styling */
+.djs-context-pad {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  padding: 2px;
+}
+
+.djs-context-pad .entry {
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  margin: 1px;
+  border-radius: 2px;
+  background-color: white;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  background-size: 16px 16px !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+}
+
+.djs-context-pad .entry:hover {
+  background-color: #e3f2fd;
+  border-color: #2196f3;
+  transform: scale(1.1);
+}
+
+.djs-context-pad .entry:active {
+  background-color: #bbdefb;
+  transform: scale(0.95);
+}
+
+/* PPINOT Context Pad Icons - Simple and Clear */
+.icon-fromConnector {
+    background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Cline stroke='black' stroke-width='2' stroke-linecap='round' y2='3' x2='13' y1='13' x1='3' stroke-dasharray='2,2'/%3E%3Ccircle stroke='black' r='2' cy='13' cx='3' stroke-width='1' fill='white'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.icon-toConnector {
+    background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Cline stroke='black' stroke-width='2' stroke-linecap='round' y2='3' x2='13' y1='13' x1='3' stroke-dasharray='2,2'/%3E%3Ccircle stroke='black' r='2' cy='13' cx='3' stroke-width='1' fill='black'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.icon-aggregates {
+    background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Cline stroke='black' stroke-width='2' y2='8' x2='12' y1='8' x1='4'/%3E%3Cpolygon stroke='black' fill='white' points='4,8 8,4 8,12'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.icon-isGroupedBy {
+    background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Cline stroke='black' stroke-width='2' stroke-dasharray='2,2' y2='8' x2='12' y1='8' x1='4'/%3E%3Cpolygon stroke='black' fill='white' points='4,8 8,4 8,12'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.icon-startConnector {
+    background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Cline stroke='black' stroke-width='2' stroke-linecap='round' y2='3' x2='13' y1='13' x1='3' stroke-dasharray='2,2'/%3E%3Ccircle stroke='black' r='2' cy='3' cx='13' stroke-width='1' fill='white'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.icon-endConnector {
+    background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Cline stroke='black' stroke-width='2' stroke-linecap='round' y2='3' x2='13' y1='13' x1='3' stroke-dasharray='2,2'/%3E%3Ccircle stroke='black' r='2' cy='3' cx='13' stroke-width='1' fill='black'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.icon-dashed-line {
+    background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Cline stroke='black' stroke-width='2' stroke-linecap='round' y2='3' x2='13' y1='13' x1='3' stroke-dasharray='2,2'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Palette Group Styling */
+.djs-palette .group[data-group="tools"] .entry {
+  background: white;
+  border-color: #e0e0e0;
+}
+
+.djs-palette .group[data-group="tools"] .entry:hover {
+  background: #f8f8f8;
+  border-color: #999;
+}
+
+.djs-palette .group[data-group="bpmn"] .entry {
+  background: white;
+  border-color: #e0e0e0;
+}
+
+.djs-palette .group[data-group="bpmn"] .entry:hover {
+  background: #f0f8ff;
+  border-color: #4a90e2;
+}
+
+.djs-palette .group[data-group="PPINOT"] .entry {
+  background: white;
+  border-color: #e3f2fd;
+}
+
+.djs-palette .group[data-group="PPINOT"] .entry:hover {
+  background: #e8f4fd;
+  border-color: #2196f3;
+}
+
+/* Replace Menu Styling */
+.djs-popup .entry {
+  padding: 4px 8px;
+  border-radius: 2px;
+  transition: background-color 0.2s ease;
+}
+
+.djs-popup .entry:hover {
+  background-color: #f0f8ff;
+}
+
+/* Status indicator */
+.notation-status {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 1000;
+}
+
+/* General icon styling */
+[class*="icon-"] {
+    display: inline-block;
+    background-size: 16px 16px;
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 16px;
+    height: 16px;
+}
+
+/* Connection drag feedback */
+.djs-drag-active {
+    cursor: crosshair;
+}
+
+/* Ensure proper visibility and sizing */
+.djs-context-pad .entry[class*="icon-"] {
+    background-size: 16px 16px !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+}

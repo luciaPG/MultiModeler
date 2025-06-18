@@ -11,10 +11,9 @@ import { assign } from "min-dash";
 export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
 
     // Connection validation rules
-    function canConnect(source, target, type, showMessage = false) {
-        // PPINOT elements can only connect to BPMN elements
+    function canConnect(source, target, type, showMessage = false) {        // PPINOT elements can only connect to BPMN elements
         if ((type === 'PPINOT:FromConnection' || type === 'PPINOT:ToConnection') &&
-            typeof target?.type === 'string' &&
+            target && typeof target.type === 'string' &&
             !target.type.startsWith('bpmn:')) {
 
             if (showMessage) {
@@ -55,13 +54,11 @@ export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
             toast.style.transition = 'opacity 0.5s';
             setTimeout(() => document.body.removeChild(toast), 500);
         }, 3000);
-    }
-
-    function determineConnectionType(source, target) {
+    }    function determineConnectionType(source, target) {
         if (source.type && source.type.startsWith('PPINOT:')) {
-            return 'PPINOT:FromConnection';
-        } else if (target.type && target.type.startsWith('PPINOT:')) {
             return 'PPINOT:ToConnection';
+        } else if (target.type && target.type.startsWith('PPINOT:')) {
+            return 'PPINOT:FromConnection';
         } else if (source.type && source.type.startsWith('bpmn:') && 
                    target.type && target.type.startsWith('bpmn:')) {
             return 'bpmn:SequenceFlow';

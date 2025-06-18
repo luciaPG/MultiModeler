@@ -389,15 +389,6 @@ if (is(element, 'PPINOT:DataAggregatedMeasure')
   headerEntries = headerEntries.concat(this._getFunctionsDataAgg(element));
 }
 
-if (is(element, 'PPINOT:DataMeasure')){
-  headerEntries = headerEntries.concat(this._getFunctionsDataMeasure(element));
-}
-
-if (is(element, 'PPINOT:DerivedSingleInstanceMeasure') 
-|| is(element, 'PPINOT:DerivedMultiInstanceMeasure')){
-  headerEntries = headerEntries.concat(this._getFunctionsDerivedMeasure(element));
-}
-
 if (is(element, 'PPINOT:CyclicTimeMeasure')
 || is(element, 'PPINOT:CyclicTimeMeasureSUM')
 || is(element, 'PPINOT:CyclicTimeMeasureMIN')
@@ -431,11 +422,6 @@ if (is(element, 'bpmn:SubProcess') &&
     !is(element, 'bpmn:Transaction') &&
     !isEventSubProcess(element)) {
   headerEntries.push(this._getAdHocEntry(element));
-}
-
-if (is(element, 'PPINOT:DerivedSingleInstanceMeasure') 
-|| is(element, 'PPINOT:DerivedMultiInstanceMeasure')){
-  headerEntries = headerEntries.concat(this._getFunctionsDerivedMeasure(element));
 }
 
 // De-duplicate by id
@@ -760,11 +746,13 @@ ReplaceMenuProvider.prototype._getFunctionsTimeAgg = function(element) {
     };
     var replaceActionMIN = function() {
       return replace.replaceElement(element, { type: 'PPINOT:AggregatedMeasureMIN' });
-    };    var replaceActionAVG = function() {
+    };
+    var replaceActionAVG = function() {
       return replace.replaceElement(element, { type: 'PPINOT:AggregatedMeasureAVG' });
     };
     
     var timeEntry = [
+    
       {
         id: 'replace-with-agg-sum',
         label: translate('SUM'),
@@ -878,7 +866,6 @@ ReplaceMenuProvider.prototype._getFunctionsTimeAgg = function(element) {
   return timeEntry;
   };
 
-
 ReplaceMenuProvider.prototype._getFunctionsDataAgg = function(element) {
 
   var translate = this._translate;
@@ -918,95 +905,8 @@ ReplaceMenuProvider.prototype._getFunctionsDataAgg = function(element) {
       action: replaceActionAVG
     }
   ];
-    return timeEntry;
-  };
-
-
-ReplaceMenuProvider.prototype._getFunctionsDataMeasure = function(element) {
-
-  var translate = this._translate;
-  var replace = this._replace;
-  var replaceActionSUM = function() {
-    return replace.replaceElement(element, { type: 'PPINOT:DataAggregatedMeasureSUM' });
-  };
-  var replaceActionMAX = function() {
-    return replace.replaceElement(element, { type: 'PPINOT:DataAggregatedMeasureMAX' });
-  };
-  var replaceActionMIN = function() {
-    return replace.replaceElement(element, { type: 'PPINOT:DataAggregatedMeasureMIN' });
-  };
-  var replaceActionAVG = function() {
-    return replace.replaceElement(element, { type: 'PPINOT:DataAggregatedMeasureAVG' });
-  };
   
-  var dataEntry = [
-    {
-      id: 'replace-with-data-measure-sum',
-      label: translate('SUM'),
-      action: replaceActionSUM
-    },
-    {
-      id: 'replace-with-data-measure-max',
-      label: translate('MAX'),
-      action: replaceActionMAX
-    },
-    {
-      id: 'replace-with-data-measure-min',
-      label: translate('MIN'),
-      action: replaceActionMIN
-    },
-    {
-      id: 'replace-with-data-measure-avg',
-      label: translate('AVG'),
-      action: replaceActionAVG
-    }
-  ];
-  
-  return dataEntry;
-  };
-
-
-ReplaceMenuProvider.prototype._getFunctionsDerivedMeasure = function(element) {
-
-  var translate = this._translate;
-  var replace = this._replace;
-  var replaceActionSUM = function() {
-    return replace.replaceElement(element, { type: 'PPINOT:AggregatedMeasureSUM' });
-  };
-  var replaceActionMAX = function() {
-    return replace.replaceElement(element, { type: 'PPINOT:AggregatedMeasureMAX' });
-  };
-  var replaceActionMIN = function() {
-    return replace.replaceElement(element, { type: 'PPINOT:AggregatedMeasureMIN' });
-  };
-  var replaceActionAVG = function() {
-    return replace.replaceElement(element, { type: 'PPINOT:AggregatedMeasureAVG' });
-  };
-  
-  var derivedEntry = [
-    {
-      id: 'replace-with-derived-sum',
-      label: translate('SUM'),
-      action: replaceActionSUM
-    },
-    {
-      id: 'replace-with-derived-max',
-      label: translate('MAX'),
-      action: replaceActionMAX
-    },
-    {
-      id: 'replace-with-derived-min',
-      label: translate('MIN'),
-      action: replaceActionMIN
-    },
-    {
-      id: 'replace-with-derived-avg',
-      label: translate('AVG'),
-      action: replaceActionAVG
-    }
-  ];
-  
-  return derivedEntry;
+  return timeEntry;
   };
 
 

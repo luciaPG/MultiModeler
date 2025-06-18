@@ -58,9 +58,7 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
     this._translate = translate;
     this._contextPad = contextPad;
     this._popupMenu = popupMenu;
-    this._canvas = canvas;
-
-    // Enable autoPlace, if configured
+    this._canvas = canvas;    // Enable autoPlace, if configured
     this._autoPlace =
       (config && config.autoPlace !== false) ? injector.get('autoPlace', false) : null;
   }
@@ -106,10 +104,8 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
         click: this._autoPlace ? append : appendStart
       }
     };
-  }
-
-  // With this function you can append some connections to an element in the diagram automatically
-  appendConnectAction(type, className, title) {
+  }  // With this function you can append some connections to an element in the diagram automatically
+  appendConnectAction(type, className, title, groupName = 'ppinot-connect') {
     if (typeof title !== 'string') {
       title = this._translate('Append {type}', { type: type.replace(/^PPINOT:/, '') });
     }
@@ -119,7 +115,7 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
     };
 
     return {
-      group: 'connect',
+      group: groupName,
       className: className,
       title: title,
       action: {
@@ -127,31 +123,50 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
         click: connectStart
       }
     };
-  }
-  getContextPadEntries(element) {
+  }  getContextPadEntries(element) {
     const actions = super.getContextPadEntries(element);
 
-    // Don't want BPMN arrows to appear on PPINOT elements
+    // Don't want ANY BPMN elements to appear on PPINOT elements
     if (element.type && element.type.startsWith('PPINOT:')) {
+      // Remove all BPMN-specific actions
       if (actions['connect']) {
         delete actions['connect'];
       }
-    }
-
-    const businessObject = element.businessObject;
-
-
+      if (actions['append.end-event']) {
+        delete actions['append.end-event'];
+      }
+      if (actions['append.gateway']) {
+        delete actions['append.gateway'];
+      }
+      if (actions['append.append-task']) {
+        delete actions['append.append-task'];
+      }
+      if (actions['append.intermediate-event']) {
+        delete actions['append.intermediate-event'];
+      }
+      if (actions['append.text-annotation']) {
+        delete actions['append.text-annotation'];
+      }
+      // Remove any other BPMN append actions
+      Object.keys(actions).forEach(key => {
+        if (key.startsWith('append.') && !key.includes('PPINOT')) {
+          delete actions[key];
+        }
+      });
+    }const businessObject = element.businessObject;
     if (isAny(businessObject, aggregatedElements) && element.type !== 'label') {
       assign(actions, {
-        'connect1': this.appendConnectAction(
+        'connect3': this.appendConnectAction(
           'PPINOT:AggregatedConnection',
           'icon-aggregates',
-          'Connect using aggregates connection'
+          'Connect using aggregates connection',
+          'ppinot-aggregate'
         ),
-        'connect2': this.appendConnectAction(
+        'connect4': this.appendConnectAction(
           'PPINOT:GroupedBy',
           'icon-isGroupedBy',
-          'Connect using isGroupedBy connection'
+          'Connect using isGroupedBy connection',
+          'ppinot-aggregate'
         )
       });
     }
@@ -176,12 +191,12 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
         is(businessObject, 'PPINOT:DataAggregatedMeasureMAX') ||
         is(businessObject, 'PPINOT:DataAggregatedMeasureAVG')) &&
       element.type !== 'label'
-    ) {
-      assign(actions, {
-        'connect3': this.appendConnectAction(
+    ) {      assign(actions, {
+        'connect5': this.appendConnectAction(
           'PPINOT:DashedLine',
           'icon-dashed-line',
-          'Connect using dashed line'
+          'Connect using dashed line',
+          'ppinot-dashed'
         )
       });
     }
@@ -204,17 +219,18 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
         is(businessObject, 'PPINOT:CyclicTimeAggregatedMeasureMIN') ||
         is(businessObject, 'PPINOT:CyclicTimeAggregatedMeasureAVG')) &&
       element.type !== 'label'
-    ) {
-      assign(actions, {
-        'connect7': this.appendConnectAction(
+    ) {      assign(actions, {
+        'connect1': this.appendConnectAction(
           'PPINOT:ToConnection',
           'icon-toConnector',
-          'Connect using To connection'
+          'Connect using To connection',
+          'ppinot-time'
         ),
-        'connect8': this.appendConnectAction(
+        'connect2': this.appendConnectAction(
           'PPINOT:FromConnection',
           'icon-fromConnector',
-          'Connect using From connection'
+          'Connect using From connection',
+          'ppinot-time'
         )
       });
     }
@@ -227,37 +243,38 @@ export default class PPINOTContextPadProvider extends ContextPadProvider {
         is(businessObject, 'PPINOT:CountAggregatedMeasureMIN') ||
         is(businessObject, 'PPINOT:CountAggregatedMeasureAVG')) &&
       element.type !== 'label'
-    ) {
-      assign(actions, {
+    ) {      assign(actions, {
         'connect10': this.appendConnectAction(
           'PPINOT:StartConnection',
           'icon-startConnector',
-          'Connect using Start connection'
+          'Connect using Start connection',
+          'ppinot-count'
         ),
         'connect11': this.appendConnectAction(
           'PPINOT:EndConnection',
           'icon-endConnector',
-          'Connect using End connection'
+          'Connect using End connection',
+          'ppinot-count'
         )
       });
     }
 
-    if (is(businessObject, 'bpmn:DataObjectReference') && element.type !== 'label') {
-      assign(actions, {
+    if (is(businessObject, 'bpmn:DataObjectReference') && element.type !== 'label') {      assign(actions, {
         'connect12': this.appendConnectAction(
           'PPINOT:RFCStateConnection',
           'icon-dashed-line',
-          'Connect using RFC state connection'
+          'Connect using RFC state connection',
+          'ppinot-data'
         )
       });
     }
 
-    if (isAny(businessObject, myConnectionElements) && element.type !== 'label') {
-      assign(actions, {
+    if (isAny(businessObject, myConnectionElements) && element.type !== 'label') {      assign(actions, {
         'connect13': this.appendConnectAction(
           'PPINOT:MyConnection',
           'bpmn-icon-connection',
-          'Connection between PPINOT elements'
+          'Connection between PPINOT elements',
+          'ppinot-general'
         )
       });
     }

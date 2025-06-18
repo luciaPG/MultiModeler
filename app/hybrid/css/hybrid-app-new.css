@@ -1,0 +1,364 @@
+/* Hybrid App Styles */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f5f5f5;
+}
+
+.hybrid-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.hybrid-header {
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hybrid-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+.hybrid-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.mode-buttons {
+  display: flex;
+  gap: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mode-btn {
+  padding: 8px 16px;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.mode-btn:hover {
+  background: #f0f0f0;
+}
+
+.mode-btn.active {
+  background: #007acc;
+  color: white;
+}
+
+.file-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  padding: 8px 16px;
+  background: #007acc;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.btn:hover {
+  background: #005a9e;
+}
+
+.btn-secondary {
+  background: #6c757d;
+}
+
+.btn-secondary:hover {
+  background: #545b62;
+}
+
+.hybrid-content {
+  flex: 1;
+  display: flex;
+}
+
+#canvas {
+  flex: 1;
+  background: white;
+}
+
+#file-input {
+  display: none;
+}
+
+/* Context Pad Compact Flexbox Layout - PRIORITY STYLES */
+.djs-context-pad {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    max-width: 100px !important;
+    min-width: 60px !important;
+    gap: 4px !important;
+    padding: 8px !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    border: 2px solid #d0d0d0 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2) !important;
+    z-index: 1000 !important;
+}
+
+.djs-context-pad .entry {
+    width: 28px !important;
+    height: 28px !important;
+    padding: 2px !important;
+    border-radius: 4px !important;
+    margin: 0 !important;
+    background-color: white !important;
+    border: 1px solid #e8e8e8 !important;
+    transition: all 0.2s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    position: relative !important;
+    flex: 0 0 auto !important;
+}
+
+.djs-context-pad .entry:hover {
+    background-color: #f0f8ff !important;
+    border-color: #4a90e2 !important;
+    transform: scale(1.1) !important;
+    box-shadow: 0 2px 8px rgba(74, 144, 226, 0.4) !important;
+}
+
+.djs-context-pad .entry:active {
+    background-color: #e6f3ff !important;
+    transform: scale(0.95) !important;
+}
+
+.djs-context-pad .entry > * {
+    background-size: 18px 18px !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    width: 18px !important;
+    height: 18px !important;
+}
+
+/* PPINOT Context Pad Icons */
+.icon-dashed-line {
+    background-image: url("data:image/svg+xml,%3Csvg width='18' height='18' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Cline stroke='black' stroke-width='2' stroke-dasharray='3,3' y2='15' x2='15' y1='3' x1='3'/%3E%3C/g%3E%3C/svg%3E") !important;
+}
+
+.icon-fromConnector {
+    background-image: url("data:image/svg+xml,%3Csvg width='18' height='18' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Cline stroke='black' stroke-width='2' stroke-dasharray='2,2' y2='3' x2='15' y1='15' x1='3'/%3E%3Ccircle stroke='black' r='2.5' cy='15' cx='3' stroke-width='1' fill='white'/%3E%3C/g%3E%3C/svg%3E") !important;
+}
+
+.icon-toConnector {
+    background-image: url("data:image/svg+xml,%3Csvg width='18' height='18' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Cline stroke='black' stroke-width='2' stroke-dasharray='2,2' y2='3' x2='15' y1='15' x1='3'/%3E%3Ccircle stroke='black' r='2.5' cy='15' cx='3' stroke-width='1' fill='black'/%3E%3C/g%3E%3C/svg%3E") !important;
+}
+
+.icon-aggregates {
+    background-image: url("data:image/svg+xml,%3Csvg width='18' height='18' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Cline stroke='black' stroke-width='2' y2='9' x2='15' y1='9' x1='7'/%3E%3Cpolygon stroke='black' stroke-width='1' fill='white' points='3,9 7,6 7,12'/%3E%3C/g%3E%3C/svg%3E") !important;
+}
+
+.icon-isGroupedBy {
+    background-image: url("data:image/svg+xml,%3Csvg width='18' height='18' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Cline stroke='black' stroke-width='2' stroke-dasharray='2,2' y2='9' x2='15' y1='9' x1='7'/%3E%3Cpolygon stroke='black' stroke-width='1' fill='white' points='3,9 7,6 7,12'/%3E%3C/g%3E%3C/svg%3E") !important;
+}
+
+.icon-startConnector {
+    background-image: url("data:image/svg+xml,%3Csvg width='18' height='18' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Cline stroke='black' stroke-width='2' stroke-dasharray='2,2' y2='3' x2='15' y1='15' x1='3'/%3E%3Ccircle stroke='black' r='2.5' cy='3' cx='15' stroke-width='1' fill='green'/%3E%3C/g%3E%3C/svg%3E") !important;
+}
+
+.icon-endConnector {
+    background-image: url("data:image/svg+xml,%3Csvg width='18' height='18' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Cline stroke='black' stroke-width='2' stroke-dasharray='2,2' y2='3' x2='15' y1='15' x1='3'/%3E%3Ccircle stroke='black' r='2.5' cy='3' cx='15' stroke-width='1' fill='red'/%3E%3C/g%3E%3C/svg%3E") !important;
+}
+
+/* Context Pad Group Organization */
+.djs-context-pad .entry[class*="icon-toConnector"],
+.djs-context-pad .entry[class*="icon-fromConnector"] {
+    order: 1; /* Time connections first */
+}
+
+.djs-context-pad .entry[class*="icon-startConnector"],
+.djs-context-pad .entry[class*="icon-endConnector"] {
+    order: 2; /* Count connections second */
+}
+
+.djs-context-pad .entry[class*="icon-aggregates"],
+.djs-context-pad .entry[class*="icon-isGroupedBy"] {
+    order: 3; /* Aggregate connections third */
+}
+
+.djs-context-pad .entry[class*="icon-dashed-line"] {
+    order: 4; /* Other connections last */
+}
+
+/* Override any default context pad styles */
+.djs-context-pad.open {
+    display: flex !important;
+    flex-wrap: wrap !important;
+}
+
+/* Force proper sizing */
+.djs-context-pad .entry.icon-fromConnector,
+.djs-context-pad .entry.icon-toConnector,
+.djs-context-pad .entry.icon-aggregates,
+.djs-context-pad .entry.icon-isGroupedBy,
+.djs-context-pad .entry.icon-dashed-line,
+.djs-context-pad .entry.icon-startConnector,
+.djs-context-pad .entry.icon-endConnector {
+    background-size: 18px 18px !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    width: 28px !important;
+    height: 28px !important;
+}
+
+/* Palette Styling */
+.djs-palette {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  width: 160px !important;
+  min-width: 160px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 10px 8px !important;
+}
+
+.djs-palette .group {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  width: 100% !important;
+  padding: 8px 8px !important;
+  margin-bottom: 10px !important;
+  border-bottom: 1px solid #f0f0f0;
+  justify-content: flex-start !important;
+}
+
+.djs-palette .group:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.djs-palette .entry {
+  padding: 8px !important;
+  margin: 4px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  width: 44px !important;
+  height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+  border-radius: 6px !important;
+  border: 1px solid transparent !important;
+  transition: all 0.2s ease !important;
+  background: white !important;
+}
+
+.djs-palette .entry:hover {
+  background: #f5f5f5 !important;
+  border-color: #ccc !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* PPINOT Icons for Palette */
+.icon-baseMeasure:before {
+  content: '';
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Crect fill='white' stroke='black' stroke-width='2' height='20' width='28' y='6' x='2'/%3E%3Cpath d='m4,22l0,4m2,-4l0,4m2,-4l0,4m2,-8l0,8m2,-4l0,4m2,-4l0,4m2,-4l0,4m2,-8l0,8m2,-4l0,4m2,-4l0,4m2,-4l0,4m2,-8l0,8' stroke='black' stroke-width='1' fill='none'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.icon-PPINOT-aggregatedMeasure:before {
+  content: '';
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Crect fill='white' stroke='black' stroke-width='2' height='16' width='20' y='8' x='4'/%3E%3Cpath stroke='black' stroke-width='2' fill='none' d='m6,8l0,-2l20,0l0,16l-3,0m1.5,-2.5l0,2.5'/%3E%3Cpath stroke='black' stroke-width='2' fill='none' d='m9,6l0,-2l20,0l0,16l-3,0m1.5,-2.5l0,2.5'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.icon-PPINOT-ppi:before {
+  content: '';
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m16,6l0,3' stroke='black' fill='none'/%3E%3Cpath d='m19,7l-3,3' stroke='black' fill='none'/%3E%3Cpath d='m20,10l-4,0' stroke='black' fill='none'/%3E%3Cpath d='m16,10l-3,-3' stroke='black' fill='none'/%3E%3Cpath d='m13,10l4,0' stroke='black' fill='none'/%3E%3Cpath fill='white' stroke='black' d='m14,10c0,-1 1,-2 2,-2s2,1 2,2s-1,2 -2,2s-2,-1 -2,-2'/%3E%3Cpath fill='white' d='m17,12l-1.5,-3l0.8,3.2l0.7,-0.2'/%3E%3Cpath d='m17,12l-1.5,-3l0.8,3.2l0.7,-0.2z' stroke='black' fill='none'/%3E%3Cpath d='m13,10c0,-2 1.5,-3.5 3,-3.5s3,1.5 3,3.5s-1.5,3.5 -3,3.5 -3,-1.5 -3,-3.5' stroke='black' fill='none'/%3E%3Cpath fill='white' d='m15,13.5c0,-0.5 0.7,-0.8 1.5,-0.8s1.5,0.3 1.5,0.8s-0.7,0.8 -1.5,0.8 -1.5,-0.3 -1.5,-0.8'/%3E%3Crect x='4' y='16' width='24' height='12' stroke='black' fill='white'/%3E%3Crect x='4' y='24' width='24' height='4' stroke='black' fill='lightgray'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.icon-target:before {
+  content: '';
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='16' cy='16' r='14' stroke='black' stroke-width='2' fill='white'/%3E%3Ccircle cx='16' cy='16' r='7' fill='black'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.icon-scope:before {
+  content: '';
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='4' y='6' width='24' height='20' stroke='black' stroke-width='2' fill='black'/%3E%3Crect x='6' y='8' width='4' height='4' fill='white'/%3E%3Crect x='11' y='8' width='4' height='4' fill='white'/%3E%3Crect x='16' y='8' width='4' height='4' fill='white'/%3E%3Crect x='21' y='8' width='4' height='4' fill='white'/%3E%3Crect x='6' y='13' width='4' height='4' fill='white'/%3E%3Crect x='11' y='13' width='4' height='4' fill='white'/%3E%3Crect x='16' y='13' width='4' height='4' fill='white'/%3E%3Crect x='21' y='13' width='4' height='4' fill='white'/%3E%3Crect x='6' y='18' width='4' height='4' fill='white'/%3E%3Crect x='11' y='18' width='4' height='4' fill='white'/%3E%3Crect x='16' y='18' width='4' height='4' fill='white'/%3E%3Crect x='21' y='18' width='4' height='4' fill='white'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* Status indicator */
+.notation-status {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 1000;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .djs-context-pad {
+        max-width: 70px !important;
+        gap: 2px !important;
+        padding: 4px !important;
+    }
+    
+    .djs-context-pad .entry {
+        width: 22px !important;
+        height: 22px !important;
+    }
+    
+    .djs-context-pad .entry > * {
+        background-size: 14px 14px !important;
+        width: 14px !important;
+        height: 14px !important;
+    }
+}

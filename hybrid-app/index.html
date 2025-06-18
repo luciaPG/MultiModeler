@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid PPINOT-RALPH Modeler</title>
+      <!-- Estilos de la aplicación híbrida -->
+    <link rel="stylesheet" href="hybrid-css/hybrid-app.css">
+    
+    <!-- Diagram-js styles -->
+    <link rel="stylesheet" href="vendor/diagram-js/diagram-js.css">
+    <link rel="stylesheet" href="vendor/bpmn-js/bpmn.css">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #f5f5f5;
+        }
+        
+        .hybrid-app {
+            display: flex;
+            height: 100vh;
+        }
+        
+        .hybrid-sidebar {
+            width: 300px;
+            background: white;
+            border-right: 1px solid #e1e4e8;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .hybrid-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .hybrid-toolbar {
+            height: 50px;
+            background: #24292e;
+            color: white;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            border-bottom: 1px solid #e1e4e8;
+        }
+        
+        .hybrid-canvas {
+            flex: 1;
+            position: relative;
+            background: white;
+        }
+        
+        .app-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-right: auto;
+        }
+        
+        .notation-badge {
+            background: #0366d6;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+        
+        .notation-badge.ppinot {
+            background: #1976D2;
+        }
+        
+        .notation-badge.ralph {
+            background: #2E7D32;
+        }
+        
+        .notation-badge.hybrid {
+            background: linear-gradient(45deg, #1976D2, #2E7D32);
+        }
+    </style>
+</head>
+<body>
+    <div class="hybrid-app">
+        <!-- Sidebar con paleta y controles -->
+        <div class="hybrid-sidebar">
+            <div id="hybrid-palette-container"></div>
+        </div>
+        
+        <!-- Área principal -->
+        <div class="hybrid-main">
+            <!-- Toolbar -->
+            <div class="hybrid-toolbar">
+                <div class="app-title">
+                    🧩 Hybrid Modeler
+                    <span class="notation-badge hybrid">PPINOT + RALPH</span>
+                </div>
+                
+                <!-- Controles de la toolbar -->
+                <div class="toolbar-controls">
+                    <button id="save-btn" class="toolbar-btn">💾 Save</button>
+                    <button id="load-btn" class="toolbar-btn">📁 Load</button>
+                    <button id="export-btn" class="toolbar-btn">📤 Export</button>
+                </div>
+            </div>
+            
+            <!-- Canvas principal -->
+            <div id="hybrid-canvas" class="hybrid-canvas"></div>
+        </div>
+    </div>
+    
+    <!-- Script de la aplicación híbrida -->
+    <script src="hybrid-bundle.js"></script>
+</body>
+</html>

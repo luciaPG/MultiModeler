@@ -70,16 +70,14 @@ PPINOTNotationPalette.prototype.getPaletteEntries = function() {
         click: createListener
       }
     };
-  }
-
-  return {
+  }  return {
     // Separator before PPINOT elements
     'PPINOT-separator': {
       group: 'PPINOT',
       separator: true
     },
 
-    // PPINOT elements
+    // PPINOT elements - only basic palette elements
     'PPINOT-baseMeasure': createAction(
       'PPINOT:BaseMeasure', 'PPINOT', 'icon-baseMeasure',
       translate('Create Base Measure')
@@ -99,7 +97,8 @@ PPINOTNotationPalette.prototype.getPaletteEntries = function() {
     'PPINOT-scope': createAction(
       'PPINOT:Scope', 'PPINOT', 'icon-scope',
       translate('Create Scope')
-    )  };
+    )
+  };
 };
 
 
