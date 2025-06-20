@@ -1,5 +1,6 @@
 import $ from 'jquery';
-import PPINOTModeler from './PPINOT-modeler';
+// Import the base modeler directly
+import BaseModeler from './baseModeler/index.js';
 import BpmnModdle from 'bpmn-moddle';
 import PPINOTDescriptor from './PPINOT-modeler/PPINOT/PPINOT.json';
 import SubprocessNavigation from './PPINOT-modeler/PPINOT/utils/NavigationUtil';
@@ -8,8 +9,10 @@ const moddle = new BpmnModdle({});
 const container = $('#js-drop-zone');
 const body = $('body');
 
-const modeler = new PPINOTModeler({
+// Create the unified modeler with PPINOT notation enabled
+const modeler = new BaseModeler({
   container: '#js-canvas',
+  notations: ['ppinot'],
   moddleExtensions: {
     PPINOT: PPINOTDescriptor 
   }

@@ -226,55 +226,40 @@ body {
   background: rgb(255, 255, 255);
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 160px;
-  min-width: 160px;
+  display: block;
+  width: 48px;
+  min-width: 48px;
   box-shadow: 0 2px 8px rgba(116, 116, 116, 0.1);
-  padding: 8px;
+  padding: 4px;
   box-sizing: border-box;
 }
 
 .djs-palette .group {
-  display: flex;
-  flex-wrap: wrap;
+  display: block;
   width: 100%;
-  padding: 8px 0;
-  margin-bottom: 8px;
-  border-bottom: 1px solid #f0f0f0;
-  justify-content: center;
-  align-items: center;
-  gap: 4px;
+  margin-bottom: 2px;
 }
 
 .djs-palette .group:last-child {
-  border-bottom: none;
   margin-bottom: 0;
 }
 
 .djs-palette .entry {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0;
-  margin: 0;
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  min-height: 44px;
-  border-radius: 6px;
+  display: block;
+  width: 40px;
+  height: 40px;
+  margin: 2px 0;
+  border-radius: 4px;
   border: 1px solid transparent;
   transition: all 0.2s ease;
   background: rgb(255, 255, 255);
   box-sizing: border-box;
+  cursor: pointer;
 }
 
 .djs-palette .entry:hover {
   background: #f5f5f5;
   border-color: #ccc;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Centering for palette icons */
@@ -282,8 +267,8 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
 }
 
 
@@ -321,27 +306,27 @@ body {
 
 /*PPINOT Icons*/
 .icon-PPINOT-aggregatedMeasure {
-  background-image: url("data:image/svg+xml,%3Csvg width='71' height='49' viewBox='0 0 115 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='51' width='73' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cg id='svg_1'%3E%3Cg id='aggregatedMeasure'%3E%3Crect id='svg_2' fill='white' stroke='black' height='32' width='48' y='13' x='5'/%3E%3Cpath id='svg_3' d='m8,40l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5' stroke='black' fill='none'/%3E%3Cpath id='svg_4' d='m11,13l0,-4l48,0l0,32l-6,0m3,-5l0,5' stroke='black' fill='none'/%3E%3Cpath id='svg_5' d='m17,9l0,-4l48,0l0,32l-6,0m3,-5l0,5' stroke='black' fill='none'/%3E%3C/g%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='71' height='49' viewBox='0 0 115 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='51' width='73' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cg id='svg_1'%3E%3Cg id='aggregatedMeasure'%3E%3Crect id='svg_2' fill='white' stroke='black' height='32' width='48' y='13' x='5'/%3E%3Cpath id='svg_3' d='m8,40l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5' stroke='black' fill='none'/%3E%3Cpath id='svg_4' d='m11,13l0,-4l48,0l0,32l-6,0m3,-5l0,5' stroke='black' fill='none'/%3E%3Cpath id='svg_5' d='m17,9l0,-4l48,0l0,32l-6,0m3,-5l0,5' stroke='black' fill='none'/%3E%3C/g%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 
 .icon-PPINOT-countAggregatedMeasure {
-  background-image: url("data:image/svg+xml,%3Csvg width='71' height='49' viewBox= '0 0 120 70' xmlns='http://www.w3.org/2000/svg'%3E%3C!-- %3Coryx:magnets%3E%3Coryx:magnet oryx:cx='0' oryx:cy='42' oryx:anchors='left' /%3E%3Coryx:magnet oryx:cx='24' oryx:cy='58' oryx:anchors='bottom' /%3E%3Coryx:magnet oryx:cx='48' oryx:cy='42' oryx:anchors='right' /%3E%3Coryx:magnet oryx:cx='20' oryx:cy='26' oryx:anchors='top' /%3E%3Coryx:magnet oryx:cx='24' oryx:cy='42' oryx:default='yes' /%3E%3C/oryx:magnets%3E --%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='64' width='74' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cg id='svg_1'%3E%3Cg id='timeAggregatedMeasure'%3E%3Crect id='svg_2' fill='white' stroke='black' height='32' width='48' y='26' x='7'/%3E%3Cpath id='svg_3' d='m10,53l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5' stroke='black' fill='none'/%3E%3Cpath id='svg_4' d='m13,26l0,-4l48,0l0,32l-6,0m3,-5l0,5' stroke='black' fill='none'/%3E%3Cpath id='svg_5' d='m19,22l0,-4l48,0l0,32l-6,0m3,-5l0,5' stroke='black' fill='none'/%3E%3C!-- count icon --%3E%3Cellipse id='svg_6' fill='white' ry='7' rx='12' cy='9' cx='18'/%3E%3Ctext id='svg_7' text-anchor='middle' font-size='7' fill='black' y='11' x='9'%3E1%3C/text%3E%3Ctext id='svg_8' text-anchor='middle' font-size='7' fill='black' y='14' x='15'%3E2%3C/text%3E%3Ctext id='svg_9' text-anchor='middle' font-size='7' fill='black' y='11' x='21'%3E3%3C/text%3E%3C/g%3E%3C!-- %3Ctext font-size='12' id='minimum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E MIN %3C/text%3E%3Ctext font-size='12' id='maximum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E MAX %3C/text%3E%3Ctext font-size='12' id='average' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E AVG %3C/text%3E%3Ctext font-size='12' id='sum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E SUM %3C/text%3E%3Ctext font-size='11' id='text' x='30' y='60' oryx:align='top center' stroke='black'%3E%3C/text%3E --%3E%3C!-- %3Ctext font-size='10' id='unitOfMeasure' x='35' y='38' oryx:align='middle center' stroke='black' oryx:fittoelem='aggregateMeasure'%3E%3C/text%3E --%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='71' height='49' viewBox= '0 0 120 70' xmlns='http://www.w3.org/2000/svg'%3E%3C!-- %3Coryx:magnets%3E%3Coryx:magnet oryx:cx='0' oryx:cy='42' oryx:anchors='left' /%3E%3Coryx:magnet oryx:cx='24' oryx:cy='58' oryx:anchors='bottom' /%3E%3Coryx:magnet oryx:cx='48' oryx:cy='42' oryx:anchors='right' /%3E%3Coryx:magnet oryx:cx='20' oryx:cy='26' oryx:anchors='top' /%3E%3Coryx:magnet oryx:cx='24' oryx:cy='42' oryx:default='yes' /%3E%3C/oryx:magnets%3E --%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='64' width='74' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cg id='svg_1'%3E%3Cg id='timeAggregatedMeasure'%3E%3Crect id='svg_2' fill='white' stroke='black' height='32' width='48' y='26' x='7'/%3E%3Cpath id='svg_3' d='m10,53l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5' stroke='black' fill='none'/%3E%3Cpath id='svg_4' d='m13,26l0,-4l48,0l0,32l-6,0m3,-5l0,5' stroke='black' fill='none'/%3E%3Cpath id='svg_5' d='m19,22l0,-4l48,0l0,32l-6,0m3,-5l0,5' stroke='black' fill='none'/%3E%3C!-- count icon --%3E%3Cellipse id='svg_6' fill='white' ry='7' rx='12' cy='9' cx='18'/%3E%3Ctext id='svg_7' text-anchor='middle' font-size='7' fill='black' y='11' x='9'%3E1%3C/text%3E%3Ctext id='svg_8' text-anchor='middle' font-size='7' fill='black' y='14' x='15'%3E2%3C/text%3E%3Ctext id='svg_9' text-anchor='middle' font-size='7' fill='black' y='11' x='21'%3E3%3C/text%3E%3C/g%3E%3C!-- %3Ctext font-size='12' id='minimum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E MIN %3C/text%3E%3Ctext font-size='12' id='maximum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E MAX %3C/text%3E%3Ctext font-size='12' id='average' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E AVG %3C/text%3E%3Ctext font-size='12' id='sum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E SUM %3C/text%3E%3Ctext font-size='11' id='text' x='30' y='60' oryx:align='top center' stroke='black'%3E%3C/text%3E --%3E%3C!-- %3Ctext font-size='10' id='unitOfMeasure' x='35' y='38' oryx:align='middle center' stroke='black' oryx:fittoelem='aggregateMeasure'%3E%3C/text%3E --%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 
 .icon-PPINOT-countMeasure {
-  background-image: url("data:image/svg+xml,%3Csvg width='68' height='49' viewBox= '0 0 120 70' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='64' width='74' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cg id='svg_1'%3E%3Cg id='countMeasure'%3E%3Crect id='svg_2' fill='white' stroke='black' height='40' width='60' y='19' x='7'/%3E%3Cpath id='svg_3' d='m10,54l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5' stroke='black' fill='none'/%3E%3Cellipse id='svg_4' fill='white' ry='7' rx='12' cy='10' cx='18'/%3E%3Ctext id='svg_5' text-anchor='middle' font-size='7' fill='black' y='11' x='9'%3E1%3C/text%3E%3Ctext id='svg_6' text-anchor='middle' font-size='7' fill='black' y='14' x='15'%3E2%3C/text%3E%3Ctext id='svg_7' text-anchor='middle' font-size='7' fill='black' y='11' x='21'%3E3%3C/text%3E%3C/g%3E%3C!-- %3Ctext font-size='12' id='minimum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E MIN %3C/text%3E%3Ctext font-size='12' id='maximum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E MAX %3C/text%3E%3Ctext font-size='12' id='average' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E AVG %3C/text%3E%3Ctext font-size='12' id='sum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E SUM %3C/text%3E%3Ctext font-size='11' id='text' x='30' y='60' oryx:align='top center' stroke='black'%3E%3C/text%3E --%3E%3C!-- %3Ctext font-size='10' id='unitOfMeasure' x='35' y='38' oryx:align='middle center' stroke='black' oryx:fittoelem='aggregateMeasure'%3E%3C/text%3E --%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='68' height='49' viewBox= '0 0 120 70' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='64' width='74' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cg id='svg_1'%3E%3Cg id='countMeasure'%3E%3Crect id='svg_2' fill='white' stroke='black' height='40' width='60' y='19' x='7'/%3E%3Cpath id='svg_3' d='m10,54l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5' stroke='black' fill='none'/%3E%3Cellipse id='svg_4' fill='white' ry='7' rx='12' cy='10' cx='18'/%3E%3Ctext id='svg_5' text-anchor='middle' font-size='7' fill='black' y='11' x='9'%3E1%3C/text%3E%3Ctext id='svg_6' text-anchor='middle' font-size='7' fill='black' y='14' x='15'%3E2%3C/text%3E%3Ctext id='svg_7' text-anchor='middle' font-size='7' fill='black' y='11' x='21'%3E3%3C/text%3E%3C/g%3E%3C!-- %3Ctext font-size='12' id='minimum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E MIN %3C/text%3E%3Ctext font-size='12' id='maximum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E MAX %3C/text%3E%3Ctext font-size='12' id='average' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E AVG %3C/text%3E%3Ctext font-size='12' id='sum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E SUM %3C/text%3E%3Ctext font-size='11' id='text' x='30' y='60' oryx:align='top center' stroke='black'%3E%3C/text%3E --%3E%3C!-- %3Ctext font-size='10' id='unitOfMeasure' x='35' y='38' oryx:align='middle center' stroke='black' oryx:fittoelem='aggregateMeasure'%3E%3C/text%3E --%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 
 .icon-PPINOT-dataAggregatedMeasure {
-  background-image: url("data:image/svg+xml,%3Csvg width='72' height='62' viewBox= '0 0 120 95' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='64' width='74' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cg id='svg_1'%3E%3Cg id='dataAggregatedMeasure'%3E%3Crect id='svg_2' fill='white' stroke='black' height='32' width='48' y='26' x='6'/%3E%3Cpath id='svg_3' d='m9,53l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5' stroke='black' fill='none'/%3E%3Cpath id='svg_4' d='m12,26l0,-4l48,0l0,32l-6,0m3,-5l0,5' stroke='black' fill='none'/%3E%3Cpath id='svg_5' d='m18,22l0,-4l48,0l0,32l-6,0m3,-5l0,5' stroke='black' fill='none'/%3E%3C!-- Data icon --%3E%3Cellipse id='svg_6' fill='white' ry='7' rx='12' cy='9' cx='18'/%3E%3Ctext id='svg_7' text-anchor='middle' font-size='7' fill='black' y='11' x='9'%3E1%3C/text%3E%3Ctext id='svg_8' text-anchor='middle' font-size='7' fill='black' y='14' x='15'%3E2%3C/text%3E%3Ctext id='svg_9' text-anchor='middle' font-size='7' fill='black' y='11' x='21'%3E3%3C/text%3E%3C/g%3E%3C!-- %3Ctext font-size='12' id='minimum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E MIN %3C/text%3E%3Ctext font-size='12' id='maximum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E MAX %3C/text%3E%3Ctext font-size='12' id='average' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E AVG %3C/text%3E%3Ctext font-size='12' id='sum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E SUM %3C/text%3E%3Ctext font-size='11' id='text' x='30' y='60' oryx:align='top center' stroke='black'%3E%3C/text%3E --%3E%3C!-- %3Ctext font-size='10' id='unitOfMeasure' x='35' y='38' oryx:align='middle center' stroke='black' oryx:fittoelem='aggregateMeasure'%3E%3C/text%3E --%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='72' height='62' viewBox= '0 0 120 95' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='64' width='74' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cg id='svg_1'%3E%3Cg id='dataAggregatedMeasure'%3E%3Crect id='svg_2' fill='white' stroke='black' height='32' width='48' y='26' x='6'/%3E%3Cpath id='svg_3' d='m9,53l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5' stroke='black' fill='none'/%3E%3Cpath id='svg_4' d='m12,26l0,-4l48,0l0,32l-6,0m3,-5l0,5' stroke='black' fill='none'/%3E%3Cpath id='svg_5' d='m18,22l0,-4l48,0l0,32l-6,0m3,-5l0,5' stroke='black' fill='none'/%3E%3C!-- Data icon --%3E%3Cellipse id='svg_6' fill='white' ry='7' rx='12' cy='9' cx='18'/%3E%3Ctext id='svg_7' text-anchor='middle' font-size='7' fill='black' y='11' x='9'%3E1%3C/text%3E%3Ctext id='svg_8' text-anchor='middle' font-size='7' fill='black' y='14' x='15'%3E2%3C/text%3E%3Ctext id='svg_9' text-anchor='middle' font-size='7' fill='black' y='11' x='21'%3E3%3C/text%3E%3C/g%3E%3C!-- %3Ctext font-size='12' id='minimum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E MIN %3C/text%3E%3Ctext font-size='12' id='maximum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E MAX %3C/text%3E%3Ctext font-size='12' id='average' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E AVG %3C/text%3E%3Ctext font-size='12' id='sum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E SUM %3C/text%3E%3Ctext font-size='11' id='text' x='30' y='60' oryx:align='top center' stroke='black'%3E%3C/text%3E --%3E%3C!-- %3Ctext font-size='10' id='unitOfMeasure' x='35' y='38' oryx:align='middle center' stroke='black' oryx:fittoelem='aggregateMeasure'%3E%3C/text%3E --%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 
 .icon-PPINOT-dataMeasure {
-  background-image: url("data:image/svg+xml,%3Csvg width='72' height='72' viewBox= '0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='74' width='74' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cg id='svg_1'%3E%3Cg id='dataMeasure'%3E%3Crect id='svg_2' fill='white' stroke='black' height='40' width='60' y='21' x='6'/%3E%3Cpath id='svg_3' d='m9,56l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5' stroke='black' fill='none'/%3E%3Cellipse id='svg_4' fill='white' ry='7' rx='12' cy='10' cx='18'/%3E%3Ctext id='svg_5' text-anchor='middle' font-size='7' fill='black' y='11' x='9'%3E1%3C/text%3E%3Ctext id='svg_6' text-anchor='middle' font-size='7' fill='black' y='14' x='15'%3E2%3C/text%3E%3Ctext id='svg_7' text-anchor='middle' font-size='7' fill='black' y='11' x='21'%3E3%3C/text%3E%3C/g%3E%3C!-- %3Ctext font-size='12' id='minimum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E MIN %3C/text%3E%3Ctext font-size='12' id='maximum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E MAX %3C/text%3E%3Ctext font-size='12' id='average' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E AVG %3C/text%3E%3Ctext font-size='12' id='sum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E SUM %3C/text%3E%3Ctext font-size='11' id='text' x='30' y='60' oryx:align='top center' stroke='black'%3E%3C/text%3E --%3E%3C!-- %3Ctext font-size='10' id='unitOfMeasure' x='35' y='38' oryx:align='middle center' stroke='black' oryx:fittoelem='aggregateMeasure'%3E%3C/text%3E --%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='72' height='72' viewBox= '0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='74' width='74' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cg id='svg_1'%3E%3Cg id='dataMeasure'%3E%3Crect id='svg_2' fill='white' stroke='black' height='40' width='60' y='21' x='6'/%3E%3Cpath id='svg_3' d='m9,56l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5' stroke='black' fill='none'/%3E%3Cellipse id='svg_4' fill='white' ry='7' rx='12' cy='10' cx='18'/%3E%3Ctext id='svg_5' text-anchor='middle' font-size='7' fill='black' y='11' x='9'%3E1%3C/text%3E%3Ctext id='svg_6' text-anchor='middle' font-size='7' fill='black' y='14' x='15'%3E2%3C/text%3E%3Ctext id='svg_7' text-anchor='middle' font-size='7' fill='black' y='11' x='21'%3E3%3C/text%3E%3C/g%3E%3C!-- %3Ctext font-size='12' id='minimum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E MIN %3C/text%3E%3Ctext font-size='12' id='maximum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E MAX %3C/text%3E%3Ctext font-size='12' id='average' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E AVG %3C/text%3E%3Ctext font-size='12' id='sum' x='10' y='38' oryx:align='middle left' oryx:fittoelem='timeAggregatedMeasure'%3E SUM %3C/text%3E%3Ctext font-size='11' id='text' x='30' y='60' oryx:align='top center' stroke='black'%3E%3C/text%3E --%3E%3C!-- %3Ctext font-size='10' id='unitOfMeasure' x='35' y='38' oryx:align='middle center' stroke='black' oryx:fittoelem='aggregateMeasure'%3E%3C/text%3E --%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 
 .icon-PPINOT-dataPropertyConditionAggregatedMeasure {
-  background-image: url("data:image/svg+xml,%3Csvg width='68' height='72' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect x='-1' y='-1' width='70' height='74' id='canvas_background' fill='none'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cg id='svg_1'%3E%3Cg id='timeAggregatedMeasure'%3E%3Crect x='4.18009' y='35.91943' width='48' height='32' stroke='black' fill='white' id='svg_2'/%3E%3Cpath fill='none' stroke='black' d='m7.18009,62.41807l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5' id='svg_3'/%3E%3Cpath fill='none' stroke='black' d='m10.4989,35.46439l0,-4l48,0l0,32l-6,0m3,-5l0,5' id='svg_4'/%3E%3Cpath fill='none' d='m14.22642,31.00935l0,-4l51,0l0,32l-6.375,0m3.1875,-5l0,5' stroke='black'/%3E%3C!-- dataCondition icon --%3E%3Cellipse cx='20.8177' cy='14.14559' rx='20' ry='11' fill='white' id='svg_6'/%3E%3Cellipse cx='20.22914' cy='8.46439' rx='2' ry='2' fill='none' id='svg_7' stroke='black'/%3E%3Cpath fill='none' stroke='black' d='m14.22914,11.46439l12,0l0,8l-12,0l0,-8l6,4l6,-4' id='svg_8'/%3E%3Cpath stroke='black' fill='none' id='svg_9'/%3E%3C/g%3E%3Ctext font-size='11' id='text' x='-7' y='71' stroke='black'/%3E%3C!-- %3Ctext font-size='10' id='unitOfMeasure' x='35' y='38' oryx:align='middle center' stroke='black' oryx:fittoelem='aggregateMeasure'%3E%3C/text%3E --%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='68' height='72' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect x='-1' y='-1' width='70' height='74' id='canvas_background' fill='none'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cg id='svg_1'%3E%3Cg id='timeAggregatedMeasure'%3E%3Crect x='4.18009' y='35.91943' width='48' height='32' stroke='black' fill='white' id='svg_2'/%3E%3Cpath fill='none' stroke='black' d='m7.18009,62.41807l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5' id='svg_3'/%3E%3Cpath fill='none' stroke='black' d='m10.4989,35.46439l0,-4l48,0l0,32l-6,0m3,-5l0,5' id='svg_4'/%3E%3Cpath fill='none' d='m14.22642,31.00935l0,-4l51,0l0,32l-6.375,0m3.1875,-5l0,5' stroke='black'/%3E%3C!-- dataCondition icon --%3E%3Cellipse cx='20.8177' cy='14.14559' rx='20' ry='11' fill='white' id='svg_6'/%3E%3Cellipse cx='20.22914' cy='8.46439' rx='2' ry='2' fill='none' id='svg_7' stroke='black'/%3E%3Cpath fill='none' stroke='black' d='m14.22914,11.46439l12,0l0,8l-12,0l0,-8l6,4l6,-4' id='svg_8'/%3E%3Cpath stroke='black' fill='none' id='svg_9'/%3E%3C/g%3E%3Ctext font-size='11' id='text' x='-7' y='71' stroke='black'/%3E%3C!-- %3Ctext font-size='10' id='unitOfMeasure' x='35' y='38' oryx:align='middle center' stroke='black' oryx:fittoelem='aggregateMeasure'%3E%3C/text%3E --%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 
 .icon-PPINOT-dataPropertyConditionMeasure {
@@ -382,6 +367,40 @@ body {
 
 .icon-PPINOT-ppi {
   background-image: url("data:image/svg+xml,%3Csvg width='87' height='72' viewBox= '0 0 180 170' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='602' width='802' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cg id='svg_1'%3E%3Cpath id='svg_2' d='m10.80003,4.79996l0,6.71995' stroke='%23000000' fill='none' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath id='svg_3' d='m15.59998,6.71992l-4.79996,4.8' stroke='%23000000' fill='none' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath id='svg_4' d='m17.63983,11.51992l-6.8398,0' stroke='%23000000' fill='none' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath id='svg_5' d='m10.80003,11.51992l-4.91996,-4.8' stroke='%23000000' fill='none' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath id='svg_6' d='m3.96015,11.51992l6.83988,0' stroke='%23000000' fill='none' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath id='svg_7' fill-rule='evenodd' fill='%23ffffff' d='m5.88008,11.5199c0,-2.7597 2.15976,-4.9199 4.91992,-4.9199c2.6398,0 4.9199,2.1602 4.9199,4.9199c0,2.7602 -2.2801,4.9199 -4.9199,4.9199c-2.76016,0 -4.91992,-2.1597 -4.91992,-4.9199'/%3E%3Cpath id='svg_8' fill-rule='evenodd' fill='%23ffffff' d='m12.2398,14.7602l-2.99996,-6l1.56016,6.4796l1.4398,-0.4796'/%3E%3Cpath id='svg_9' d='m12.23986,14.76016l-3.00003,-6.00004l1.56019,6.47968l1.43984,-0.47964z' stroke='%23000000' fill='none' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath id='svg_10' d='m3.96015,11.51992c0,-3.71988 3.00001,-6.71995 6.83988,-6.71995c3.7199,0 6.8398,3.00007 6.8398,6.71995c0,3.84022 -3.1199,6.84019 -6.8398,6.84019c-3.83987,0 -6.83988,-2.99997 -6.83988,-6.84019' stroke='%23000000' fill='none' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath id='svg_11' fill-rule='evenodd' fill='%23ffffff' d='m6.96016,16.0801c0,-0.9602 1.67968,-1.6801 3.83984,-1.6801c2.0398,0 3.7199,0.7199 3.7199,1.6801c0,0.9597 -1.6801,1.6801 -3.7199,1.6801c-2.16016,0 -3.83984,-0.7204 -3.83984,-1.6801'/%3E%3Cpath stroke='black' id='svg_12' d='m15.59998,16.43985c-1.80002,-2.7598 -5.39996,-3.47971 -8.03983,-1.67969c-0.6,0.47964 -1.2,0.95978 -1.68008,1.67969' stroke='%23000000' fill='none' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath id='svg_13' d='m1.68008,54.23984l82.68,0l0,-51.47967l-82.68,0l0,51.47967z' stroke='%23000000' fill='none' stroke-miterlimit='2'/%3E%3Cpath id='svg_14' fill-rule='evenodd' fill='%23f2f2f2' d='m1.68008,70.43984l82.6801,0l0,-16.5598l-82.6801,0l0,16.5598z'/%3E%3CclipPath id='cp0'%3E%3Cpath id='svg_15' d='m0.11992,52.3199l86.04028,0l0,19.6801l-86.04028,0'/%3E%3C/clipPath%3E%3Cg id='svg_16' clip-path='url(%23cp0)'%3E%3Cpath id='svg_17' d='m1.68008,70.43985l82.68,0l0,-16.55981l-82.68,0l0,16.55981z' stroke='%23000000' fill='none' stroke-miterlimit='2'/%3E%3C/g%3E%3Cpath stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' fill='none' d='m5.13333,61.74347c0,-2.96472 2.41763,-5.38011 5.49498,-5.38011c2.96705,0 5.38506,2.41539 5.38506,5.38011c0,2.96434 -2.41801,5.3797 -5.38506,5.3797c-3.07735,0 -5.49498,-2.41536 -5.49498,-5.3797' id='svg_18' stroke='%23000000'/%3E%3Cpath d='m8.76016,61.91016c0,-1.08006 0.95976,-1.92036 2.03984,-1.92036c1.0801,0 2.0398,0.8403 2.0398,1.92036c0,1.07968 -0.9597,1.91992 -2.0398,1.91992c-1.08008,0 -2.03984,-0.84024 -2.03984,-1.91992' fill-rule='evenodd' id='svg_19'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m8.51014,61.66016c0,-1.08003 0.95977,-1.92028 2.03988,-1.92028c1.08005,0 2.03984,0.84024 2.03984,1.92028c0,1.07969 -0.95979,1.91992 -2.03984,1.91992c-1.08011,0 -2.03988,-0.84023 -2.03988,-1.91992' id='svg_20'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m10.80003,5.79995l0,6.71995' id='svg_21'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m15.59998,7.71991l-4.79996,4.8' id='svg_22'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m17.63983,12.51991l-6.8398,0' id='svg_23'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m10.80003,12.51991l-4.91996,-4.8' id='svg_24'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m3.96015,12.51991l6.83988,0' id='svg_25'/%3E%3Cpath d='m5.88008,12.51989c0,-2.7597 2.15976,-4.9199 4.91992,-4.9199c2.6398,0 4.9199,2.1602 4.9199,4.9199c0,2.7602 -2.2801,4.9199 -4.9199,4.9199c-2.76016,0 -4.91992,-2.1597 -4.91992,-4.9199' fill='%23e5e5e5' fill-rule='evenodd' id='svg_26'/%3E%3Cpath d='m12.2398,15.76019l-2.99996,-6l1.56016,6.4796l1.4398,-0.4796' fill='%23ffffff' fill-rule='evenodd' id='svg_27'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m12.23985,15.76015l-3.00003,-6.00004l1.56019,6.47968l1.43984,-0.47964z' id='svg_28'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m3.96015,12.51991c0,-3.71988 3.00001,-6.71995 6.83988,-6.71995c3.7199,0 6.8398,3.00007 6.8398,6.71995c0,3.84022 -3.1199,6.84019 -6.8398,6.84019c-3.83987,0 -6.83988,-2.99997 -6.83988,-6.84019' id='svg_29'/%3E%3Cpath d='m6.96016,17.08009c0,-0.9602 1.67968,-1.6801 3.83984,-1.6801c2.0398,0 3.7199,0.7199 3.7199,1.6801c0,0.9597 -1.6801,1.6801 -3.7199,1.6801c-2.16016,0 -3.83984,-0.7204 -3.83984,-1.6801' fill='%23e5e5e5' fill-rule='evenodd' id='svg_30'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m15.59998,17.43984c-1.80002,-2.7598 -5.39996,-3.47971 -8.03983,-1.67969c-0.6,0.47964 -1.2,0.95978 -1.68008,1.67969' id='svg_31'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Force palette visibility for debugging */
+.djs-palette {
+  position: absolute !important;
+  left: 20px !important;
+  top: 20px !important;
+  width: 48px !important;
+  background: white !important;
+  border: 1px solid #ccc !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important;
+  z-index: 100 !important;
+  padding: 4px !important;
+}
+
+.djs-palette .entry {
+  width: 40px !important;
+  height: 40px !important;
+  border: 1px solid transparent !important;
+  cursor: pointer !important;
+  margin-bottom: 4px !important;
+  display: block !important;
+  background: #f8f8f8 !important;
+}
+
+.djs-palette .entry:hover {
+  background: #e0e0e0 !important;
+  border-color: #999 !important;
+}
+
+.djs-palette .entry.separator {
+  height: 1px !important;
+  background: #ccc !important;
+  margin: 8px 0 !important;
 }
 
 /* Hybrid App Styles */

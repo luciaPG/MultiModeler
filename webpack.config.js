@@ -43,7 +43,7 @@ module.exports = (env, argv) => {
                     to: 'index.html'
                 },                // Aplicación híbrida
                 {
-                    from: 'app/hybrid/index.html',
+                    from: 'app/hybrid.html',
                     to: 'hybrid.html'
                 },
                 // Assets comunes
@@ -54,25 +54,14 @@ module.exports = (env, argv) => {
                 {
                     from: 'node_modules/diagram-js/assets/',
                     to: 'vendor/diagram-js'
-                },
-                // CSS original
+                },                // CSS files
                 {
                     from: 'app/css',
                     to: 'css'
-                },                // CSS híbrido
-                {
-                    from: 'app/hybrid/css',
-                    to: 'hybrid-css'
-                },
-                // Configuraciones
+                },                // Configuraciones
                 {
                     from: 'app/PPINOT-modeler/PPINOT/PPINOT.json',
                     to: 'PPINOT.json'
-                },                // Assets híbridos
-                {
-                    from: 'app/hybrid/assets',
-                    to: 'hybrid-assets',
-                    noErrorOnMissing: true
                 }
             ]
         })
@@ -80,7 +69,7 @@ module.exports = (env, argv) => {
             static: {
                 directory: path.join(__dirname, 'public')
             },
-            port: 9000,
+            port: 3000,
             hot: true,
             open: isHybrid ? {
                 target: '/hybrid.html'

@@ -1,27 +1,24 @@
+import PaletteProvider from 'bpmn-js/lib/features/palette/PaletteProvider';
 import { assign } from 'min-dash';
 
 /**
- * A modular palette provider that combines multiple notation-specific palettes
- * This allows easy extension with different notations while maintaining BPMN base functionality
+ * A unified palette provider that extends the standard BPMN palette
+ * and adds notation-specific elements based on enabled notations
  */
 export default function BasePaletteProvider(
     palette, create, elementFactory,
     spaceTool, lassoTool, handTool,
-    globalConnect, translate, 
-    notationPalettes = []) {
+    globalConnect, translate, bpmnFactory) {
 
-  this._palette = palette;
-  this._create = create;
-  this._elementFactory = elementFactory;
-  this._spaceTool = spaceTool;
-  this._lassoTool = lassoTool;
-  this._handTool = handTool;
-  this._globalConnect = globalConnect;
-  this._translate = translate;
-  this._notationPalettes = notationPalettes;
+  // Call parent constructor
+  PaletteProvider.call(this, palette, create, elementFactory, spaceTool, lassoTool, handTool, globalConnect, translate, bpmnFactory);
 
-  palette.registerProvider(this);
+  console.log('🎨 BasePaletteProvider constructor called (extending BPMN PaletteProvider)');
 }
+
+// Set up prototype chain
+BasePaletteProvider.prototype = Object.create(PaletteProvider.prototype);
+BasePaletteProvider.prototype.constructor = BasePaletteProvider;
 
 BasePaletteProvider.$inject = [
   'palette',
@@ -31,191 +28,34 @@ BasePaletteProvider.$inject = [
   'lassoTool',
   'handTool',
   'globalConnect',
-  'translate'
+  'translate',
+  'bpmnFactory'
 ];
 
-BasePaletteProvider.prototype.getPaletteEntries = function(element) {
-  var actions = {},
-      create = this._create,
-      elementFactory = this._elementFactory,
-      spaceTool = this._spaceTool,
-      lassoTool = this._lassoTool,
-      handTool = this._handTool,
-      globalConnect = this._globalConnect,
-      translate = this._translate;
-
-  // Base BPMN palette entries
-  var baseBpmnActions = this._getBaseBpmnActions();
-  assign(actions, baseBpmnActions);
-
-  // Add notation-specific palette entries
-  this._notationPalettes.forEach(notationPalette => {
-    if (notationPalette && typeof notationPalette.getPaletteEntries === 'function') {
-      var notationActions = notationPalette.getPaletteEntries(element);
-      assign(actions, notationActions);
-    }
-  });
-
-  return actions;
-};
-
-/**
- * Creates the base BPMN palette actions that are common to all modelers
- */
-BasePaletteProvider.prototype._getBaseBpmnActions = function() {
-  var create = this._create,
-      elementFactory = this._elementFactory,
-      spaceTool = this._spaceTool,
-      lassoTool = this._lassoTool,
-      handTool = this._handTool,
-      globalConnect = this._globalConnect,
-      translate = this._translate;
-
-  function createAction(type, group, className, title, options) {
-    function createListener(event) {
-      var shape = elementFactory.createShape(assign({ type: type }, options));
-      shape.color = "#000";
-      if (options) {
-        shape.businessObject.di.isExpanded = options.isExpanded;
-      }
-      create.start(event, shape);
-    }
-
-    var shortType = type.replace(/^bpmn:/, '');
-
-    return {
-      group: group,
-      className: className,
-      title: title || 'Create ' + shortType,
-      action: {
-        dragstart: createListener,
-        click: createListener
-      }
-    };
-  }
-
-  function createSubprocess(event) {
-    var subProcess = elementFactory.createShape({
-      type: 'bpmn:SubProcess',
-      x: 0,
-      y: 0,
-      isExpanded: true
-    });
-
-    var startEvent = elementFactory.createShape({
-      type: 'bpmn:StartEvent',
-      x: 40,
-      y: 82,
-      parent: subProcess
-    });
-
-    create.start(event, [ subProcess, startEvent ], {
-      hints: {
-        autoSelect: [ startEvent ]
-      }
-    });
-  }
-
-  function createParticipant(event, collapsed) {
-    create.start(event, elementFactory.createParticipantShape(collapsed));
-  }
-  return {
-    // Tools
-    'hand-tool': {
+BasePaletteProvider.prototype.getPaletteEntries = function() {
+  console.log('🎨 BasePaletteProvider.getPaletteEntries called');
+  
+  // Get the standard BPMN palette entries from parent
+  var parentEntries = PaletteProvider.prototype.getPaletteEntries.call(this);
+  console.log('📋 Parent BPMN palette entries:', Object.keys(parentEntries));
+  
+  // Add our custom test entry
+  var customEntries = {
+    'test-entry': {
       group: 'tools',
       className: 'bpmn-icon-hand-tool',
-      title: translate('Activate the hand tool'),
+      title: 'Test Custom Entry',
       action: {
-        click: function(event) {
-          handTool.activateHand(event);
+        click: function() {
+          console.log('Test custom entry clicked!');
         }
       }
-    },
-    'lasso-tool': {
-      group: 'tools',
-      className: 'bpmn-icon-lasso-tool',
-      title: translate('Activate the lasso tool'),
-      action: {
-        click: function(event) {
-          lassoTool.activateSelection(event);
-        }
-      }
-    },
-    'space-tool': {
-      group: 'tools',
-      className: 'bpmn-icon-space-tool',
-      title: translate('Activate the create/remove space tool'),
-      action: {
-        click: function(event) {
-          spaceTool.activateSelection(event);
-        }
-      }
-    },
-    'global-connect-tool': {
-      group: 'tools',
-      className: 'bpmn-icon-connection-multi',
-      title: translate('Activate the global connect tool'),
-      action: {
-        click: function(event) {
-          globalConnect.toggle(event);
-        }
-      }
-    },
-    'tool-separator': {
-      group: 'tools',
-      separator: true
-    },
-
-    // BPMN Elements - all grouped under 'bpmn'
-    'create.start-event': createAction(
-        'bpmn:StartEvent', 'bpmn', 'bpmn-icon-start-event-none',
-        translate('Create StartEvent')
-    ),
-    'create.intermediate-event': createAction(
-        'bpmn:IntermediateThrowEvent', 'bpmn', 'bpmn-icon-intermediate-event-none',
-        translate('Create Intermediate/Boundary Event')
-    ),
-    'create.end-event': createAction(
-        'bpmn:EndEvent', 'bpmn', 'bpmn-icon-end-event-none',
-        translate('Create EndEvent')
-    ),
-    'create.exclusive-gateway': createAction(
-        'bpmn:ExclusiveGateway', 'bpmn', 'bpmn-icon-gateway-none',
-        translate('Create Gateway')
-    ),
-    'create.task': createAction(
-        'bpmn:Task', 'bpmn', 'bpmn-icon-task',
-        translate('Create Task')
-    ),
-    'create.data-object': createAction(
-        'bpmn:DataObjectReference', 'bpmn', 'bpmn-icon-data-object',
-        translate('Create DataObjectReference')
-    ),
-    'create.data-store': createAction(
-        'bpmn:DataStoreReference', 'bpmn', 'bpmn-icon-data-store',
-        translate('Create DataStoreReference')
-    ),
-    'create.subprocess-expanded': {
-      group: 'bpmn',
-      className: 'bpmn-icon-subprocess-expanded',
-      title: translate('Create expanded SubProcess'),
-      action: {
-        dragstart: createSubprocess,
-        click: createSubprocess
-      }
-    },
-    'create.participant-expanded': {
-      group: 'bpmn',
-      className: 'bpmn-icon-participant',
-      title: translate('Create Pool/Participant'),
-      action: {
-        dragstart: createParticipant,
-        click: createParticipant
-      }
-    },
-    'create.group': createAction(
-        'bpmn:Group', 'bpmn', 'bpmn-icon-group',
-        translate('Create Group')
-    )
+    }
   };
+  
+  // Merge parent entries with our custom entries
+  var allEntries = assign({}, parentEntries, customEntries);
+  
+  console.log('🎨 BasePaletteProvider returning merged entries:', Object.keys(allEntries));
+  return allEntries;
 };
