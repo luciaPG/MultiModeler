@@ -1,42 +1,5 @@
 /* Hybrid App Styles */
 
-/* Base icon styles for PPINOT palette */
-[class^="icon-"],
-[class*=" icon-"] {
-  display: inline-block;
-  width: 24px;
-  height: 24px;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-}
-
-/* Palette icon specific styles */
-.djs-palette .entry [class^="icon-"],
-.djs-palette .entry [class*=" icon-"] {
-  width: 18px;
-  height: 18px;
-  display: block;
-  margin: 0 auto;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-}
-
-/* Specific PPINOT icon styles */
-.djs-palette .entry .icon-PPINOT-aggregatedMeasure,
-.djs-palette .entry .icon-PPINOT-ppi,
-.djs-palette .entry .icon-baseMeasure,
-.djs-palette .entry .icon-target,
-.djs-palette .entry .icon-scope {
-  width: 18px;
-  height: 18px;
-  display: block;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-}
-
 body {
   font-family: Arial, sans-serif;
   margin: 0;
@@ -47,7 +10,6 @@ body {
 .hybrid-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
 }
 
 .hybrid-header {
@@ -129,99 +91,32 @@ body {
 
 #canvas {
   flex: 1;
-  background: white;
+  background: rgb(255, 255, 255);
 }
 
 #file-input {
   display: none;
 }
 
-/* Context Pad Professional Centered Layout */
-.djs-context-pad {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-content: flex-start;
-  gap: 4px;
-  padding: 6px;
-  background: rgba(255, 255, 255, 0.98);
-  border: 1px solid #d0d0d0;
-  border-radius: 6px;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  width: auto;
-  min-width: fit-content;
-}
-
-/* Remove group-based layout - everything in one unified grid */
-.djs-context-pad .group {
-  display: contents;
-}
-
-.djs-context-pad .entry {
-  width: 28px;
-  height: 28px;
-  padding: 0;
+/* Status indicator */
+.notation-status {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
   border-radius: 4px;
-  margin: 0;
-  background-color: white;
-  border: 1px solid #e8e8e8;
-  transition: all 0.15s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  position: relative;
-  box-sizing: border-box;
-  flex-shrink: 0;
-}
-
-.djs-context-pad .entry:hover {
-  background-color: #f8f9fa;
-  border-color: #4a90e2;
-  transform: scale(1.05);
-  box-shadow: 0 2px 6px rgba(74, 144, 226, 0.3);
-}
-
-.djs-context-pad .entry:active {
-  background-color: #e6f3ff;
-  transform: scale(0.98);
-}
-
-.djs-context-pad .entry>* {
-  background-size: 16px 16px;
-  background-position: center;
-  background-repeat: no-repeat;
-  width: 16px;
-  height: 16px;
-  display: block;
+  font-size: 12px;
+  z-index: 1000;
 }
 
 
-/* Override any default context pad styles */
-.djs-context-pad.open {
-  display: flex;
-  flex-wrap: wrap;
-}
 
-/* Force proper sizing for PPINOT context pad icons */
-.djs-context-pad .entry.icon-fromConnector,
-.djs-context-pad .entry.icon-toConnector,
-.djs-context-pad .entry.icon-aggregates,
-.djs-context-pad .entry.icon-isGroupedBy,
-.djs-context-pad .entry.icon-dashed-line,
-.djs-context-pad .entry.icon-startConnector,
-.djs-context-pad .entry.icon-endConnector {
-  background-size: 20px 20px;
-  background-repeat: no-repeat;
-  background-position: center;
-  opacity: 1;
-  visibility: visible;
-  width: 32px;
-  height: 32px;
-}
+/* ======================================
+   === CUSTOM PALETTE STYLES ===
+   ====================================== */
 
-/* Palette Styling */
 .djs-palette {
   background: rgb(255, 255, 255);
   border: 1px solid #e0e0e0;
@@ -271,40 +166,98 @@ body {
   height: 24px;
 }
 
-
-/* Status indicator */
-.notation-status {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  z-index: 1000;
+/* Base icon styles for PPINOT palette */
+[class^="icon-"],
+[class*=" icon-"] {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
-/* Responsive Design - Keep centered layout compact */
-@media (max-width: 768px) {
-  .djs-context-pad {
-    gap: 3px;
-    padding: 5px;
-  }
-
-  .djs-context-pad .entry {
-    width: 26px;
-    height: 26px;
-  }
-
-  .djs-context-pad .entry>* {
-    background-size: 14px 14px;
-    width: 14px;
-    height: 14px;
-  }
+/* Palette icon specific styles */
+.djs-palette .entry [class^="icon-"],
+.djs-palette .entry [class*=" icon-"] {
+  width: 15px;
+  height: 15px;
+  display: block;
+  margin: 0 auto;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
-/*PPINOT Icons*/
+/* Specific PPINOT icon styles */
+.djs-palette .entry .icon-PPINOT-aggregatedMeasure,
+.djs-palette .entry .icon-PPINOT-ppi,
+.djs-palette .entry .icon-baseMeasure,
+.djs-palette .entry .icon-target,
+.djs-palette .entry .icon-scope {
+  width: 15px;
+  height: 15px;
+  display: block;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+
+/* ======================================
+   === CUSTOM CONTEXT PAD GRID STYLES ===
+   ====================================== */
+
+.djs-context-pad {
+  display: grid !important;
+  grid-template-columns: repeat(3, 34px);
+  grid-auto-rows: 32px;
+  background: rgb(255, 255, 255) ;
+  border-radius: 8px;
+  width: max-content;
+  box-shadow: 0 2px 8px rgba(116, 116, 116, 0.158);
+  box-sizing: border-box;
+  place-items: center;
+  justify-content: center;
+  align-content: center;
+  gap: 6px;
+  padding: 6px;
+}
+
+.djs-context-pad .group {
+  display: contents !important;
+}
+
+.djs-context-pad .entry {
+  width: 32px;
+  height: 32px;
+  display: flex !important;
+  
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.15s ease;
+}
+
+.djs-context-pad .entry > * {
+  width: 16px;
+  height: 16px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  display: block;
+  margin: 0;
+  transition: transform 0.15s ease;
+  will-change: transform;
+}
+
+
+/* ======================================
+   ====     CUSTOM PPINOT ICONS      ====
+   ====================================== */
+
 .icon-PPINOT-aggregatedMeasure {
   background-image: url("data:image/svg+xml,%3Csvg width='71' height='49' viewBox='0 0 115 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='51' width='73' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cg id='svg_1'%3E%3Cg id='aggregatedMeasure'%3E%3Crect id='svg_2' fill='white' stroke='black' height='32' width='48' y='13' x='5'/%3E%3Cpath id='svg_3' d='m8,40l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5' stroke='black' fill='none'/%3E%3Cpath id='svg_4' d='m11,13l0,-4l48,0l0,32l-6,0m3,-5l0,5' stroke='black' fill='none'/%3E%3Cpath id='svg_5' d='m17,9l0,-4l48,0l0,32l-6,0m3,-5l0,5' stroke='black' fill='none'/%3E%3C/g%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
@@ -369,91 +322,3 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg width='87' height='72' viewBox= '0 0 180 170' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='602' width='802' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cg id='svg_1'%3E%3Cpath id='svg_2' d='m10.80003,4.79996l0,6.71995' stroke='%23000000' fill='none' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath id='svg_3' d='m15.59998,6.71992l-4.79996,4.8' stroke='%23000000' fill='none' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath id='svg_4' d='m17.63983,11.51992l-6.8398,0' stroke='%23000000' fill='none' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath id='svg_5' d='m10.80003,11.51992l-4.91996,-4.8' stroke='%23000000' fill='none' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath id='svg_6' d='m3.96015,11.51992l6.83988,0' stroke='%23000000' fill='none' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath id='svg_7' fill-rule='evenodd' fill='%23ffffff' d='m5.88008,11.5199c0,-2.7597 2.15976,-4.9199 4.91992,-4.9199c2.6398,0 4.9199,2.1602 4.9199,4.9199c0,2.7602 -2.2801,4.9199 -4.9199,4.9199c-2.76016,0 -4.91992,-2.1597 -4.91992,-4.9199'/%3E%3Cpath id='svg_8' fill-rule='evenodd' fill='%23ffffff' d='m12.2398,14.7602l-2.99996,-6l1.56016,6.4796l1.4398,-0.4796'/%3E%3Cpath id='svg_9' d='m12.23986,14.76016l-3.00003,-6.00004l1.56019,6.47968l1.43984,-0.47964z' stroke='%23000000' fill='none' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath id='svg_10' d='m3.96015,11.51992c0,-3.71988 3.00001,-6.71995 6.83988,-6.71995c3.7199,0 6.8398,3.00007 6.8398,6.71995c0,3.84022 -3.1199,6.84019 -6.8398,6.84019c-3.83987,0 -6.83988,-2.99997 -6.83988,-6.84019' stroke='%23000000' fill='none' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath id='svg_11' fill-rule='evenodd' fill='%23ffffff' d='m6.96016,16.0801c0,-0.9602 1.67968,-1.6801 3.83984,-1.6801c2.0398,0 3.7199,0.7199 3.7199,1.6801c0,0.9597 -1.6801,1.6801 -3.7199,1.6801c-2.16016,0 -3.83984,-0.7204 -3.83984,-1.6801'/%3E%3Cpath stroke='black' id='svg_12' d='m15.59998,16.43985c-1.80002,-2.7598 -5.39996,-3.47971 -8.03983,-1.67969c-0.6,0.47964 -1.2,0.95978 -1.68008,1.67969' stroke='%23000000' fill='none' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath id='svg_13' d='m1.68008,54.23984l82.68,0l0,-51.47967l-82.68,0l0,51.47967z' stroke='%23000000' fill='none' stroke-miterlimit='2'/%3E%3Cpath id='svg_14' fill-rule='evenodd' fill='%23f2f2f2' d='m1.68008,70.43984l82.6801,0l0,-16.5598l-82.6801,0l0,16.5598z'/%3E%3CclipPath id='cp0'%3E%3Cpath id='svg_15' d='m0.11992,52.3199l86.04028,0l0,19.6801l-86.04028,0'/%3E%3C/clipPath%3E%3Cg id='svg_16' clip-path='url(%23cp0)'%3E%3Cpath id='svg_17' d='m1.68008,70.43985l82.68,0l0,-16.55981l-82.68,0l0,16.55981z' stroke='%23000000' fill='none' stroke-miterlimit='2'/%3E%3C/g%3E%3Cpath stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' fill='none' d='m5.13333,61.74347c0,-2.96472 2.41763,-5.38011 5.49498,-5.38011c2.96705,0 5.38506,2.41539 5.38506,5.38011c0,2.96434 -2.41801,5.3797 -5.38506,5.3797c-3.07735,0 -5.49498,-2.41536 -5.49498,-5.3797' id='svg_18' stroke='%23000000'/%3E%3Cpath d='m8.76016,61.91016c0,-1.08006 0.95976,-1.92036 2.03984,-1.92036c1.0801,0 2.0398,0.8403 2.0398,1.92036c0,1.07968 -0.9597,1.91992 -2.0398,1.91992c-1.08008,0 -2.03984,-0.84024 -2.03984,-1.91992' fill-rule='evenodd' id='svg_19'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m8.51014,61.66016c0,-1.08003 0.95977,-1.92028 2.03988,-1.92028c1.08005,0 2.03984,0.84024 2.03984,1.92028c0,1.07969 -0.95979,1.91992 -2.03984,1.91992c-1.08011,0 -2.03988,-0.84023 -2.03988,-1.91992' id='svg_20'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m10.80003,5.79995l0,6.71995' id='svg_21'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m15.59998,7.71991l-4.79996,4.8' id='svg_22'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m17.63983,12.51991l-6.8398,0' id='svg_23'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m10.80003,12.51991l-4.91996,-4.8' id='svg_24'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m3.96015,12.51991l6.83988,0' id='svg_25'/%3E%3Cpath d='m5.88008,12.51989c0,-2.7597 2.15976,-4.9199 4.91992,-4.9199c2.6398,0 4.9199,2.1602 4.9199,4.9199c0,2.7602 -2.2801,4.9199 -4.9199,4.9199c-2.76016,0 -4.91992,-2.1597 -4.91992,-4.9199' fill='%23e5e5e5' fill-rule='evenodd' id='svg_26'/%3E%3Cpath d='m12.2398,15.76019l-2.99996,-6l1.56016,6.4796l1.4398,-0.4796' fill='%23ffffff' fill-rule='evenodd' id='svg_27'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m12.23985,15.76015l-3.00003,-6.00004l1.56019,6.47968l1.43984,-0.47964z' id='svg_28'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m3.96015,12.51991c0,-3.71988 3.00001,-6.71995 6.83988,-6.71995c3.7199,0 6.8398,3.00007 6.8398,6.71995c0,3.84022 -3.1199,6.84019 -6.8398,6.84019c-3.83987,0 -6.83988,-2.99997 -6.83988,-6.84019' id='svg_29'/%3E%3Cpath d='m6.96016,17.08009c0,-0.9602 1.67968,-1.6801 3.83984,-1.6801c2.0398,0 3.7199,0.7199 3.7199,1.6801c0,0.9597 -1.6801,1.6801 -3.7199,1.6801c-2.16016,0 -3.83984,-0.7204 -3.83984,-1.6801' fill='%23e5e5e5' fill-rule='evenodd' id='svg_30'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m15.59998,17.43984c-1.80002,-2.7598 -5.39996,-3.47971 -8.03983,-1.67969c-0.6,0.47964 -1.2,0.95978 -1.68008,1.67969' id='svg_31'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 
-/* Force palette visibility for debugging */
-.djs-palette {
-  position: absolute !important;
-  left: 20px !important;
-  top: 20px !important;
-  width: 48px !important;
-  background: white !important;
-  border: 1px solid #ccc !important;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important;
-  z-index: 100 !important;
-  padding: 4px !important;
-}
-
-.djs-palette .entry {
-  width: 40px !important;
-  height: 40px !important;
-  border: 1px solid transparent !important;
-  cursor: pointer !important;
-  margin-bottom: 4px !important;
-  display: block !important;
-  background: #f8f8f8 !important;
-}
-
-.djs-palette .entry:hover {
-  background: #e0e0e0 !important;
-  border-color: #999 !important;
-}
-
-.djs-palette .entry.separator {
-  height: 1px !important;
-  background: #ccc !important;
-  margin: 8px 0 !important;
-}
-
-/* Hybrid App Styles */
-
-/* PPINOT Palette Icons */
-.djs-palette .entry {
-    position: relative;
-}
-
-/* Allow BPMN icons to show normally with font */
-.djs-palette [class^="bpmn-icon"]:before,
-.djs-palette [class*=" bpmn-icon"]:before {
-    font-family: 'bpmn';
-    font-style: normal;
-    font-weight: normal;
-    line-height: 1;
-    display: inline-block;
-    text-decoration: inherit;
-    width: 1em;
-    text-align: center;
-    font-variant: normal;
-    text-transform: none;
-}
-
-/* Hide font for PPINOT icons and show background */
-.djs-palette .icon-baseMeasure:before,
-.djs-palette .icon-PPINOT-aggregatedMeasure:before,
-.djs-palette .icon-PPINOT-ppi:before,
-.djs-palette .icon-target:before,
-.djs-palette .icon-scope:before {
-    display: none !important;
-}
-
-/* PPINOT icons as background images */
-.djs-palette .icon-baseMeasure,
-.djs-palette .icon-PPINOT-aggregatedMeasure,
-.djs-palette .icon-PPINOT-ppi,
-.djs-palette .icon-target,
-.djs-palette .icon-scope {
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 16px 16px;
-    width: 20px;
-    height: 20px;
-    display: block;
-}
-
-/* Ensure PPINOT icons don't use font icons */
-.djs-palette .entry .icon-baseMeasure:before,
-.djs-palette .entry .icon-PPINOT-aggregatedMeasure:before,
-.djs-palette .entry .icon-PPINOT-ppi:before,
-.djs-palette .entry .icon-target:before,
-.djs-palette .entry .icon-scope:before {
-    content: none !important;
-    display: none !important;
-}
