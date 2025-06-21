@@ -1,318 +1,354 @@
 /**
  * Unified Hybrid Modeler Application
  * 
- * This is the main application that demonstrates the unified modeler architecture
- * with a single modeler instance and dynamic notation switching.
+ * Simple unified modeler with all notations (BPMN, PPINOT, RALPH) as one symbolism
+ * 
+ * Estructura basada en el setup tipo bpmn.io + jQuery + drag & drop + moddleExtensions
  */
 
-import PPINOTDescriptor from './PPINOT-modeler/PPINOT/PPINOT.json';
-
-// Import BaseModeler for the unified architecture
+import $ from 'jquery';
 import BaseModeler from './baseModeler/index.js';
+import BpmnModdle from 'bpmn-moddle';
+import PPINOTDescriptor from './PPINOT-modeler/PPINOT/PPINOT.json';
+// import RALPHDescriptor from './RALPH-modeler/RALPH/RALPH.json'; // (Si tienes RALPH)
 
-// Test: Import basic bpmn-js Modeler for debugging
-import BpmnModeler from 'bpmn-js/lib/Modeler';
+// Utilidades de navegación de subprocesos
+import SubprocessNavigation from './PPINOT-modeler/PPINOT/utils/NavigationUtil';
 
-// Import required CSS
+// Importar CSS
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import 'diagram-js/assets/diagram-js.css';
 import './css/hybrid-app.css';
 
-class HybridApp {
-  constructor() {
-    this.modeler = null;
-    this.currentFile = null;
-    this.initializeApp();
-  }  initializeApp() {
-    console.log('Initializing Unified Hybrid Modeler Application...');
-    
-    // Wait for DOM to be fully loaded
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => this.initializeModeler());
-    } else {
-      this.initializeModeler();
-    }
-  }
+// Variables globales
+const moddle = new BpmnModdle({});
+const container = $('#js-drop-zone');
+const body = $('body');
 
-  initializeModeler() {
-    console.log('DOM ready, creating modeler...');
-    
-    // Verify that the canvas element exists
-    const canvasElement = document.querySelector('#canvas');
-    if (!canvasElement) {
-      throw new Error('Canvas element #canvas not found in DOM');
+let modeler = null;
+let subprocessNavigation = null;
+let navigationTimer = null;
+let currentFile = null;
+
+// Inicializar el modelador híbrido con extensiones
+function initializeModeler() {
+  modeler = new BaseModeler({
+    container: '#js-canvas',
+    notations: ['bpmn', 'ppinot'], // Puedes agregar 'ralph' si tienes el descriptor
+    moddleExtensions: {
+      PPINOT: PPINOTDescriptor,
+      // RALPH: RALPHDescriptor
     }
-      console.log('Canvas element found:', canvasElement);
-    console.log('Canvas element dimensions:', canvasElement.getBoundingClientRect());    // Now test with BaseModeler but without additional modules
+  });
+  window.modeler = modeler; // Para debugging global
+}
+
+// Inicializar navegación de subprocesos
+function initializeNavigation() {
+  if (subprocessNavigation) subprocessNavigation.destroy();
+  if (navigationTimer) clearTimeout(navigationTimer);
+
+  navigationTimer = setTimeout(() => {
     try {
-      console.log('Creating BaseModeler with minimal configuration...');
-      const baseModeler = new BaseModeler({
-        container: '#canvas',
-        width: '100%',
-        height: '600px',
-        notations: [] // Start with no additional notations
-      });
-      
-      console.log('BaseModeler created successfully:', baseModeler);
-      
-      // Store the base modeler
-      this.modeler = baseModeler;
-      
-      // Load a simple BPMN diagram
-      const simpleBPMN = `<?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
-  <bpmn:process id="Process_1" isExecutable="true">
-    <bpmn:startEvent id="StartEvent_1" />
-  </bpmn:process>
-  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
-    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
-      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
-        <dc:Bounds x="179" y="79" width="36" height="36" />
-      </bpmndi:BPMNShape>
-    </bpmndi:BPMNPlane>
-  </bpmndi:BPMNDiagram>
-</bpmn:definitions>`;      // Import the diagram
-      baseModeler.importXML(simpleBPMN).then(() => {
-        console.log('✅ Simple BPMN diagram loaded successfully');
-      }).catch(err => {
-        console.error('❌ Failed to load simple BPMN diagram:', err);
-      });// Wait a bit then try to access palette
-      setTimeout(() => {        try {
-          console.log('🔍 Checking for palette after 1 second...');
-          
-          // Check all available services
-          console.log('🔧 Available services in modeler:');
-          try {
-            const services = Object.keys(this.modeler._container._providers);
-            console.log('📋 Services:', services.sort());
-          } catch (e) {
-            console.log('Could not get services list:', e);
-          }
-          
-          const palette = this.modeler.get('palette');
-          console.log('✅ Basic modeler palette found:', palette);
-          
-          if (palette && palette.getEntries) {
-            const entries = palette.getEntries();
-            console.log('🎨 Basic modeler palette entries:', entries);
-            console.log('📊 Number of palette entries:', Object.keys(entries).length);
-            
-            // Check palette internal state
-            console.log('🔍 Palette internal state:');
-            console.log('  - _canvas:', palette._canvas);
-            console.log('  - _container:', palette._container);
-            console.log('  - _providers:', palette._providers);
-            console.log('  - _providerMap:', palette._providerMap);
-            
-            // Try to trigger palette creation manually
-            if (palette.open) {
-              console.log('🔓 Trying to open palette manually...');
-              palette.open();
-            }
-            
-          } else {
-            console.warn('⚠️ Palette found but no getEntries method');
-          }
-          
-          // Check if palette DOM element exists
-          const paletteElement = document.querySelector('.djs-palette');
-          console.log('🔍 Palette DOM element:', paletteElement);
-          
-          if (paletteElement) {
-            console.log('📏 Palette element dimensions:', paletteElement.getBoundingClientRect());
-            console.log('🎨 Palette element styles:', window.getComputedStyle(paletteElement));
-            console.log('👶 Palette element children:', paletteElement.children.length);
-          } else {
-            console.error('❌ Palette DOM element not found!');
-            // Let's check what's in the canvas
-            const canvasElement = document.querySelector('#canvas');
-            if (canvasElement) {
-              console.log('🖼️ Canvas children:', canvasElement.children);
-              console.log('🔍 Looking for any palette-related elements...');
-              const allPaletteElements = document.querySelectorAll('[class*="palette"]');
-              console.log('🎨 All palette-related elements:', allPaletteElements);
-            }
-          }
-            } catch (e) {
-          console.error('❌ Failed to get palette from basic modeler:', e);
-        }
-      }, 1000);
-        } catch (error) {
-      console.error('Failed to create basic modeler:', error);
-      return;
+      subprocessNavigation = new SubprocessNavigation(modeler);
+      navigationTimer = null;
+    } catch (error) {
+      console.error('Error creando navegación:', error);
+      navigationTimer = null;
     }
+  }, 100);
+}
 
-    this.setupEventListeners();
-    this.updateUI();
-    
-    console.log('Unified Hybrid Modeler initialized');
-  }
+// Crear un nuevo diagrama vacío
+async function createNewDiagram() {
+  try {
+    if (typeof modeler.clear === 'function') await modeler.clear();
+    await modeler.createDiagram();
 
-  setupEventListeners() {
-    // Notation mode buttons
-    document.getElementById('ppinot-mode').addEventListener('click', () => {
-      this.switchToPPINOTMode();
-    });
+    container.removeClass('with-error').addClass('with-diagram');
+    body.addClass('shown');
 
-    document.getElementById('ralph-mode').addEventListener('click', () => {
-      this.switchToRALPHMode();
-    });
+    initializeNavigation();
 
-    document.getElementById('hybrid-mode').addEventListener('click', () => {
-      this.switchToHybridMode();
-    });
-
-    // File operations
-    document.getElementById('load-diagram').addEventListener('click', () => {
-      this.loadDiagram();
-    });
-
-    document.getElementById('save-diagram').addEventListener('click', () => {
-      this.saveDiagram();
-    });
-
-    // File input change
-    document.getElementById('file-input').addEventListener('change', (event) => {
-      this.handleFileLoad(event);
-    });
-
-    // Listen for notation events from the modeler
-    if (this.modeler.get) {
-      try {
-        const eventBus = this.modeler.get('eventBus');
-        eventBus.on('notation.enabled', (event) => {
-          console.log('Notation enabled:', event.notation);
-          this.updateUI();
-        });
-        
-        eventBus.on('notation.disabled', (event) => {
-          console.log('Notation disabled:', event.notation);
-          this.updateUI();
-        });
-      } catch (error) {
-        console.warn('Could not set up modeler event listeners:', error.message);
-      }
-    }
-  }
-  switchToPPINOTMode() {
-    console.log('Switching to PPINOT mode...');
-    // TODO: Implement PPINOT mode switching when BaseModeler is integrated
-    this.updateUI('PPINOT');
-  }
-
-  switchToRALPHMode() {
-    console.log('Switching to RALPH mode...');
-    // TODO: Implement RALPH mode switching when BaseModeler is integrated
-    this.updateUI('RALPH');
-  }
-
-  switchToHybridMode() {
-    console.log('Switching to Hybrid mode...');
-    // TODO: Implement Hybrid mode switching when BaseModeler is integrated
-    this.updateUI('Hybrid');
-  }
-  updateUI(mode = null) {
-    // For basic bpmn-js modeler, just update the status
-    const currentMode = mode || 'BPMN';
-    
-    document.getElementById('notation-status').textContent = `Mode: ${currentMode}`;
-    
-    // Update button states
-    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-    
-    if (currentMode === 'PPINOT') {
-      document.getElementById('ppinot-mode').classList.add('active');
-    } else if (currentMode === 'RALPH') {
-      document.getElementById('ralph-mode').classList.add('active');
-    } else if (currentMode === 'Hybrid') {
-      document.getElementById('hybrid-mode').classList.add('active');
-    } else {
-      // Default to hybrid mode active
-      document.getElementById('hybrid-mode').classList.add('active');
-    }
-
-    console.log('UI updated - Mode:', currentMode);
-  }
-
-  getCurrentModeLabel(notations) {
-    if (notations.includes('ppinot') && notations.includes('ralph')) {
-      return 'Hybrid';
-    } else if (notations.includes('ppinot')) {
-      return 'PPINOT';
-    } else if (notations.includes('ralph')) {
-      return 'RALPH';
-    } else {
-      return 'BPMN';
-    }
-  }
-
-  loadDiagram() {
-    document.getElementById('file-input').click();
-  }
-
-  handleFileLoad(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const xml = e.target.result;
-      this.modeler.importXML(xml)
-        .then(() => {
-          console.log('Diagram loaded successfully');
-          this.currentFile = file.name;
-        })
-        .catch((error) => {
-          console.error('Error loading diagram:', error);
-          alert('Error loading diagram: ' + error.message);
-        });
-    };
-    reader.readAsText(file);
-  }
-
-  saveDiagram() {
-    this.modeler.saveXML({ format: true })
-      .then((result) => {
-        const xml = result.xml;
-        const filename = this.currentFile || 'diagram.bpmn';
-        this.downloadFile(xml, filename);
-        console.log('Diagram saved successfully');
-      })
-      .catch((error) => {
-        console.error('Error saving diagram:', error);
-        alert('Error saving diagram: ' + error.message);
-      });
-  }
-
-  downloadFile(content, filename) {
-    const blob = new Blob([content], { type: 'application/xml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  // API for external access
-  getModeler() {
-    return this.modeler;
-  }
-
-  getConfiguration() {
-    return this.modeler ? this.modeler.getConfiguration() : null;
+    updateUI('Nuevo diagrama creado.');
+  } catch (err) {
+    container.removeClass('with-diagram').addClass('with-error');
+    container.find('.error pre').text(err.message);
   }
 }
 
-// Initialize the application when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-  window.hybridApp = new HybridApp();
+// Abrir diagrama desde XML (+ opcionalmente archivo CBPMN para PPINOT)
+async function openDiagram(xml, cbpmn) {
+  try {
+    await modeler.clear();
+    await modeler.importXML(xml);
+
+    container.removeClass('with-error').addClass('with-diagram');
+    if (cbpmn) modeler.addPPINOTElements(cbpmn);
+
+    body.addClass('shown');
+    initializeNavigation();
+
+    updateUI('Diagrama cargado exitosamente.');
+  } catch (err) {
+    container.removeClass('with-diagram').addClass('with-error');
+    container.find('.error pre').text(err.message);
+  }
+}
+
+// Guardar diagrama como XML
+function saveDiagram(done) {
+  modeler.saveXML({ format: true }, (err, xml) => {
+    // Opcional: procesamiento para integridad de PPINOT/BPMN
+    moddle.fromXML(xml, (err, def) => {
+      if (def.getPPINOTElements) def.getPPINOTElements();
+      def.get('rootElements').forEach((obj) => {
+        if (obj.$type && obj.$type.includes('Process')) {
+          obj.get('flowElements').forEach((el) => {
+            if (el.$type && el.$type.includes('Task')) fixTaskData(el);
+            else if (el.$type === 'bpmn:DataObjectReference' && !el.get('name')) el.set('name', '');
+          });
+        }
+      });
+      moddle.toXML(def, { format: true }, (err, res) => {
+        done(err, res, modeler.getPPINOTElements ? modeler.getPPINOTElements() : null);
+      });
+    });
+    done(err, xml);
+  });
+}
+
+// Guardar SVG
+function saveSVG(done) {
+  modeler.saveSVG(done);
+}
+
+// Manejo avanzado de archivos BPMN + CBPMN
+function handleFiles(files, callback) {
+  let bpmn, cbpmnFile;
+  if (files[0].name.includes('.bpmn')) {
+    bpmn = files[0];
+    if (files[1] && files[1].name.includes('.cbpmn')) cbpmnFile = files[1];
+    else if (files[1]) window.alert('El segundo archivo no es cbpmn');
+  } else if (files[1] && files[1].name.includes('.bpmn')) {
+    bpmn = files[1];
+    if (files[0] && files[0].name.includes('.cbpmn')) cbpmnFile = files[0];
+    else if (files[0]) window.alert('El segundo archivo no es cbpmn');
+  } else if (files[0].name.includes('.cbpmn')) cbpmnFile = files[0];
+
+  const reader = new FileReader();
+  if (bpmn) {
+    reader.onload = (e) => {
+      const xml = e.target.result;
+      if (cbpmnFile) {
+        const reader1 = new FileReader();
+        reader1.onload = (e) => {
+          const cbpmn = JSON.parse(e.target.result);
+          callback(xml, cbpmn);
+        };
+        reader1.readAsText(cbpmnFile);
+      } else {
+        callback(xml, null);
+      }
+    };
+    reader.readAsText(bpmn);  } else if (cbpmnFile) {
+    reader.onload = (e) => {
+      const cbpmn = JSON.parse(e.target.result);
+      if (modeler.addPPINOTElements) modeler.addPPINOTElements(cbpmn);
+    };
+    reader.readAsText(cbpmnFile);
+  }
+}
+
+// Registrar drag & drop en el contenedor principal
+function registerFileDrop(container, callback) {
+  const handleFileSelect = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const files = e.dataTransfer.files;
+    handleFiles(files, callback);
+  };
+  const handleDragOver = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
+  container.get(0).addEventListener('dragover', handleDragOver, false);
+  container.get(0).addEventListener('drop', handleFileSelect, false);
+}
+
+// Fix de datos en tareas para integridad BPMN/PPINOT
+function fixTaskData(task) {
+  if (task.dataInputAssociations || task.dataOutputAssociations) {
+    const ioSpecification = moddle.create('bpmn:InputOutputSpecification', { id: `io_${task.get('id')}` });
+    if (task.dataInputAssociations) {
+      task.dataInputAssociations.forEach((obj) => {
+        const dataInput = moddle.create('bpmn:DataInput', { id: `input_${obj.get('id')}` });
+        ioSpecification.get('dataInputs').push(dataInput);
+        obj.set('targetRef', dataInput);
+        if (!obj.get('name')) obj.set('name', '');
+      });
+    }
+    if (task.dataOutputAssociations) {
+      task.dataOutputAssociations.forEach((obj) => {
+        const dataOutput = moddle.create('bpmn:DataOutput', { id: `output_${obj.get('id')}` });
+        ioSpecification.get('dataOutputs').push(dataOutput);
+        obj.set('sourceRef', [dataOutput]);
+        if (!obj.get('name')) obj.set('name', '');
+      });
+    }
+    task.set('ioSpecification', ioSpecification);
+  }
+  if (!task.get('name')) task.set('name', '');
+  return task;
+}
+
+// UI update (modo unificado)
+function updateUI(msg) {
+  $('#notation-status').text('Modo: Unificado (BPMN + PPINOT + RALPH)');
+  $('.mode-btn').removeClass('active');
+  $('#hybrid-mode').addClass('active');
+  if (msg) console.log(msg);
+}
+
+// ==== INICIALIZACIÓN DOCUMENTO Y BOTONES ====
+
+$(function() {
+  // Chequeo soporte archivos
+  if (!window.FileList || !window.FileReader) {
+    window.alert('Tu navegador no soporta drag and drop. Usa Chrome/Firefox/IE > 10.');
+    return;
+  }
+  // Inicializar modeler
+  initializeModeler();
   
-  // Expose modeler instance globally for debugging
-  window.modeler = window.hybridApp.getModeler();
-  
-  console.log('Hybrid application ready. Available globals: window.hybridApp, window.modeler');
+  // Crear diagrama vacío automáticamente al inicializar
+  createNewDiagram();
+
+  // Drag & drop
+  registerFileDrop(container, openDiagram);
+
+  // Botón abrir diagrama
+  $('#js-open-diagram').click((e) => {
+    e.preventDefault();
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.click();
+    input.addEventListener('input', (evt) => {
+      handleFiles(evt.target.files, openDiagram);
+    });
+  });
+
+  // Botón crear nuevo diagrama
+  $('.js-create-diagram').click((e) => {
+    e.preventDefault();
+    createNewDiagram();
+  });
+
+  // Botón guardar diagrama
+  $('#js-download-diagram').click((e) => {
+    e.preventDefault();
+    saveDiagram((err, xml) => {
+      if (err) return alert('Error guardando: ' + err.message);
+      const filename = currentFile || 'diagram.bpmn';
+      downloadFile(xml, filename);
+      updateUI('Diagrama guardado.');
+    });
+  });
+
+  // Botón guardar SVG
+  $('#js-download-svg').click((e) => {
+    e.preventDefault();
+    saveSVG((err, svg) => {
+      if (err) return alert('Error exportando SVG: ' + err.message);
+      const filename = 'diagram.svg';
+      downloadFile(svg, filename, 'image/svg+xml');
+      updateUI('SVG exportado.');
+    });
+  });
+
+  // Botón añadir colores (opcional)
+  $('#js-add-colors').click((e) => {
+    e.preventDefault();
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = false;
+    input.click();
+    input.addEventListener('input', (evt) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (modeler.setColors) modeler.setColors(JSON.parse(e.target.result));
+      };
+      reader.readAsText(evt.target.files[0]);
+    });
+  });
+
+  // Bloqueo de clicks repetidos
+  $('.buttons a').click(function(e) {
+    if (!$(this).is('.active')) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  });
+
+  // Export automático (SVG y BPMN) al cambiar el diagrama
+  const exportArtifacts = debounce(() => {
+    saveSVG((err, svg) => {
+      setEncoded($('#js-download-svg'), 'diagram.svg', err ? null : svg);
+    });
+    saveDiagram((err, xml) => {
+      const cbpmn = modeler.getJson ? modeler.getJson() : null;
+      setMultipleEncoded($('#js-download-diagram'), 'diagram.bpmn', err ? null : [xml, cbpmn]);
+    });
+  }, 500);
+  if (modeler.on) modeler.on('commandStack.changed', exportArtifacts);
+
+  updateUI('Aplicación híbrida lista ✔️');
 });
+
+// ==== HELPERS ====
+
+function setEncoded(link, name, data) {
+  const encodedData = encodeURIComponent(data);
+  if (data) {
+    link.addClass('active').attr({
+      href: `data:application/bpmn20-xml;charset=UTF-8,${encodedData}`,
+      download: name
+    });
+  } else {
+    link.removeClass('active');
+  }
+}
+
+function setMultipleEncoded(link, name, data) {
+  if (data) {
+    window.localStorage.setItem('diagram', encodeURIComponent(data[0]));
+    window.localStorage.setItem('PPINOT', encodeURIComponent(JSON.stringify(data[1])));
+  } else {
+    link.removeClass('active');
+  }
+}
+
+function downloadFile(content, filename, type = 'application/xml') {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Utilidad debounce
+function debounce(fn, timeout) {
+  let timer;
+  return () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(fn, timeout);
+  };
+}

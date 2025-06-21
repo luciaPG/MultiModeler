@@ -1,24 +1,20 @@
-import PaletteProvider from 'bpmn-js/lib/features/palette/PaletteProvider';
 import { assign } from 'min-dash';
+import BpmnPaletteProvider from 'bpmn-js/lib/features/palette/PaletteProvider';
 
 /**
- * A unified palette provider that extends the standard BPMN palette
- * and adds notation-specific elements based on enabled notations
+ * A unified palette provider that extends BPMN.js PaletteProvider and adds
+ * PPINOT and RALPH elements based on enabled notations
  */
-export default function BasePaletteProvider(
-    palette, create, elementFactory,
-    spaceTool, lassoTool, handTool,
-    globalConnect, translate, bpmnFactory) {
+export default function BasePaletteProvider(palette, create, elementFactory, spaceTool, lassoTool, handTool, globalConnect, translate, injector) {
+  // Call parent constructor to initialize BPMN palette logic
+  BpmnPaletteProvider.call(this, palette, create, elementFactory, spaceTool, lassoTool, handTool, globalConnect, translate);
+  
+  // Store injector to get notation services
+  this._injector = injector;
 
-  // Call parent constructor
-  PaletteProvider.call(this, palette, create, elementFactory, spaceTool, lassoTool, handTool, globalConnect, translate, bpmnFactory);
-
-  console.log('🎨 BasePaletteProvider constructor called (extending BPMN PaletteProvider)');
+  console.log('🎨 BasePaletteProvider constructor called - Extending BPMN PaletteProvider with PPINOT + RALPH');
+  console.log('🎨 Single unified palette provider registered for all notations');
 }
-
-// Set up prototype chain
-BasePaletteProvider.prototype = Object.create(PaletteProvider.prototype);
-BasePaletteProvider.prototype.constructor = BasePaletteProvider;
 
 BasePaletteProvider.$inject = [
   'palette',
@@ -29,33 +25,59 @@ BasePaletteProvider.$inject = [
   'handTool',
   'globalConnect',
   'translate',
-  'bpmnFactory'
+  'injector'
 ];
 
-BasePaletteProvider.prototype.getPaletteEntries = function() {
+// Set up inheritance from BpmnPaletteProvider
+BasePaletteProvider.prototype = Object.create(BpmnPaletteProvider.prototype);
+BasePaletteProvider.prototype.constructor = BasePaletteProvider;
+
+BasePaletteProvider.prototype.getPaletteEntries = function () {
   console.log('🎨 BasePaletteProvider.getPaletteEntries called');
   
-  // Get the standard BPMN palette entries from parent
-  var parentEntries = PaletteProvider.prototype.getPaletteEntries.call(this);
-  console.log('📋 Parent BPMN palette entries:', Object.keys(parentEntries));
+  // Get the original BPMN palette entries
+  var bpmnEntries = BpmnPaletteProvider.prototype.getPaletteEntries.call(this);
+  console.log('🎨 Got BPMN palette entries:', Object.keys(bpmnEntries));  // Get notation services if available
+  var ppinotNotationPalette = null;
+  var ralphNotationPalette = null;
   
-  // Add our custom test entry
-  var customEntries = {
-    'test-entry': {
-      group: 'tools',
-      className: 'bpmn-icon-hand-tool',
-      title: 'Test Custom Entry',
-      action: {
-        click: function() {
-          console.log('Test custom entry clicked!');
-        }
-      }
-    }
-  };
+  try {
+    ppinotNotationPalette = this._injector.get('ppinotNotationPalette', false);
+    console.log('🎨 Found ppinotNotationPalette service:', !!ppinotNotationPalette);
+  } catch (e) {
+    console.log('🎨 PPINOT service not available:', e.message);
+  }
   
-  // Merge parent entries with our custom entries
-  var allEntries = assign({}, parentEntries, customEntries);
+  try {
+    ralphNotationPalette = this._injector.get('ralphNotationPalette', false);
+    console.log('🎨 Found ralphNotationPalette service:', !!ralphNotationPalette);
+  } catch (e) {
+    console.log('🎨 RALPH service not available:', e.message);
+  }
   
-  console.log('🎨 BasePaletteProvider returning merged entries:', Object.keys(allEntries));
+  // Start with BPMN entries
+  var allEntries = assign({}, bpmnEntries);
+  
+  // Add PPINOT entries if service is available
+  if (ppinotNotationPalette && typeof ppinotNotationPalette.getPaletteEntries === 'function') {
+    console.log('🎨 Adding PPINOT palette entries');
+    var ppinotEntries = ppinotNotationPalette.getPaletteEntries();
+    console.log('🎨 PPINOT entries:', Object.keys(ppinotEntries));
+    assign(allEntries, ppinotEntries);
+  } else {
+    console.log('🎨 PPINOT service not available or no getPaletteEntries method');
+  }
+  
+  // Add RALPH entries if service is available  
+  if (ralphNotationPalette && typeof ralphNotationPalette.getPaletteEntries === 'function') {
+    console.log('🎨 Adding RALPH palette entries');
+    var ralphEntries = ralphNotationPalette.getPaletteEntries();
+    console.log('🎨 RALPH entries:', Object.keys(ralphEntries));
+    assign(allEntries, ralphEntries);
+  } else {
+    console.log('🎨 RALPH service not available or no getPaletteEntries method');
+  }
+  
+  console.log('🎨 BasePaletteProvider returning combined entries:', Object.keys(allEntries));
   return allEntries;
 };
