@@ -5,48 +5,49 @@
 
 export var MEASURE = [
   {
-    label: 'Base measure',
+    label: '\xa0\xa0\xa0\xa0\xa0\xa0' + 'Base measure',
     actionName: 'replace-with-base-measure',
+    className: 'icon-PPINOT-PPINOT-baseMeasure-menu',
     target: {
       type: 'PPINOT:BaseMeasure'
     }
   },
   {
-    label: '\xa0\xa0\xa0\xa0\xa0' + 'Time measure',
+    label: '\xa0\xa0\xa0\xa0\xa0\xa0' + 'Time measure',
     actionName: 'replace-with-time-measure',
-    className: 'icon-time-menu',
+    className: 'icon-PPINOT-time-menu',
     target: {
       type: 'PPINOT:TimeMeasure'
     }
   },
   {
-    label: '\xa0\xa0\xa0\xa0\xa0' + 'Count measure',
+    label: '\xa0\xa0\xa0\xa0\xa0\xa0' + 'Count measure',
     actionName: 'replace-with-count-measure',
-    className: 'icon-count-menu',
+    className: 'icon-PPINOT-count-menu',
     target: {
       type: 'PPINOT:CountMeasure'
     }
   }, 
   {
-    label: '\xa0\xa0\xa0\xa0\xa0' + 'Data measure',
+    label: '\xa0\xa0\xa0\xa0\xa0\xa0' + 'Data measure',
     actionName: 'replace-with-data-measure',
-    className: 'icon-data-menu',
+    className: 'icon-PPINOT-data-menu',
     target: {
       type: 'PPINOT:DataMeasure'
     }
   },
   {
-    label: '\xa0\xa0\xa0\xa0\xa0' + 'State condition measure',
+    label: '\xa0\xa0\xa0\xa0\xa0\xa0' + 'State condition measure',
     actionName: 'replace-with-state-condition-measure',
-    className: 'icon-state-menu',
+    className: 'icon-PPINOT-state-menu',
     target: {
       type: 'PPINOT:StateConditionMeasure'
     }
   },
   {
-    label: '\xa0\xa0\xa0\xa0\xa0' + 'Derived single instance measure',
+    label: '\xa0\xa0\xa0\xa0\xa0\xa0' + 'Derived single instance measure',
     actionName: 'replace-with-derived-single-instance-measure',
-    className: 'icon-derivedMeasure-menu',
+    className: 'icon-PPINOT-derivedMeasure-menu',
     target: {
       type: 'PPINOT:DerivedSingleInstanceMeasure',
     }
@@ -56,48 +57,49 @@ export var MEASURE = [
 
 export var AGGREGATED_MEASURE = [
   {
-    label: 'Aggregated measure',
+    label: '\xa0\xa0\xa0\xa0\xa0\xa0' +'Aggregated measure',
     actionName: 'replace-with-aggregated-measure',
+    className: 'icon-PPINOT-aggregatedMeasure-menu ',
     target: {
       type: 'PPINOT:AggregatedMeasure'
     }
   },
   {
-    label: '\xa0\xa0\xa0\xa0\xa0' + 'Count aggregated measure',
+    label: '\xa0\xa0\xa0\xa0\xa0\xa0\xa0' + 'Count aggregated measure',
     actionName: 'replace-with-count-aggregated-measure',
-    className: 'icon-count-menu',
+    className: 'icon-PPINOT-count-menu',
     target: {
       type: 'PPINOT:CountAggregatedMeasure',
     }
   }, 
   {
-    label: '\xa0\xa0\xa0\xa0\xa0' + 'Data aggregated measure',
+    label: '\xa0\xa0\xa0\xa0\xa0\xa0' + 'Data aggregated measure',
     actionName: 'replace-with-data-aggregated-measure',
-    className: 'icon-data-menu',
+    className: 'icon-PPINOT-data-menu',
     target: {
       type: 'PPINOT:DataAggregatedMeasure',
     }
   },
   {
-    label: '\xa0\xa0\xa0\xa0\xa0' + 'Time aggregated measure',
+    label: '\xa0\xa0\xa0\xa0\xa0\xa0' + 'Time aggregated measure',
     actionName: 'replace-with-time-aggregated-measure',
-    className: 'icon-time-menu',
+    className: 'icon-PPINOT-time-menu',
     target: {
       type: 'PPINOT:TimeAggregatedMeasure',
     }
   },
   {
-    label: '\xa0\xa0\xa0\xa0\xa0' + 'State condition aggregated measure',
+    label: '\xa0\xa0\xa0\xa0\xa0\xa0' + 'State condition aggregated measure',
     actionName: 'replace-with-state-condition-aggregated-measure',
-    className: 'icon-state-menu',
+    className: 'icon-PPINOT-state-menu',
     target: {
       type: 'PPINOT:StateConditionAggregatedMeasure',
     }
   },
   {
-    label: '\xa0\xa0\xa0\xa0\xa0' + 'Derived multi instance measure',
+    label: '\xa0\xa0\xa0\xa0\xa0\xa0' + 'Derived multi instance measure',
     actionName: 'replace-with-derived-multi-instance-measure',
-    className: 'icon-derivedMeasure-menu',
+    className: 'icon-PPINOT-derivedMeasure-menu',
     target: {
       type: 'PPINOT:DerivedMultiInstanceMeasure',
     }
@@ -109,6 +111,7 @@ export var STATE = [
   {
     label: 'Aggregated measure',
     actionName: 'replace-with-aggregated-measure',
+    className: 'icon-PPINOT-PPINOT-aggregatedMeasure-menu',
     target: {
       type: 'PPINOT:AggregatedMeasure'
     }
@@ -116,7 +119,7 @@ export var STATE = [
   {
     label: '\xa0\xa0\xa0\xa0' +'Number of process instances',
     actionName: 'replace-with-number-state',
-    className: 'icon-state-number-menu',
+    className: 'icon-PPINOT-PPINOT--state-number-menu',
     target: {
       type: 'PPINOT:StateCondAggMeasureNumber'
     }
@@ -124,7 +127,7 @@ export var STATE = [
   {
     label: '\xa0\xa0\xa0\xa0' + 'Percentage of process instances',
     actionName: 'replace-with-percentage-state',
-    className: 'icon-state-percentage-menu',
+    className: 'icon-PPINOT-PPINOT--state-percentage-menu',
     target: {
       type: 'PPINOT:StateCondAggMeasurePercentage',
     }
@@ -132,7 +135,7 @@ export var STATE = [
   {
     label: '\xa0\xa0\xa0\xa0' + 'All process instances',
     actionName: 'replace-with-all-state',
-    className: 'icon-state-all-menu',
+    className: 'icon-PPINOT-PPINOT--state-all-menu',
     target: {
       type: 'PPINOT:StateCondAggMeasureAll',
     }
@@ -140,7 +143,7 @@ export var STATE = [
   {
     label: '\xa0\xa0\xa0\xa0' + 'At least one process instance',
     actionName: 'replace-with-at-least-one-state',
-    className: 'icon-state-atLeast-menu',
+    className: 'icon-PPINOT-PPINOT--state-atLeast-menu',
     target: {
       type: 'PPINOT:StateCondAggMeasureAtLeastOne',
     }
@@ -148,7 +151,7 @@ export var STATE = [
   {
     label: '\xa0\xa0\xa0\xa0' + 'No process instance',
     actionName: 'replace-with-no-state',
-    className: 'icon-state-no-menu',
+    className: 'icon-PPINOT-PPINOT--state-no-menu',
     target: {
       type: 'PPINOT:StateCondAggMeasureNo',
     }
@@ -953,7 +956,7 @@ export var PARTICIPANT = [
   {
     label: 'Target',
     actionName: 'replace-with-target',
-    className: 'icon-target-mini',
+    className: 'icon-PPINOT-target-mini',
     target: {
       type: 'PPINOT:Target'
     }
@@ -961,7 +964,7 @@ export var PARTICIPANT = [
   {
     label: 'Scope',
     actionName: 'replace-with-scope',
-    className: 'icon-scope',
+    className: 'icon-PPINOT-scope',
     target: {
       type: 'PPINOT:Scope'
     }

@@ -69,7 +69,7 @@ module.exports = (env, argv) => {
             static: {
                 directory: path.join(__dirname, 'public')
             },
-            port: 3000,
+            port: 9013,
             hot: true,
             open: isHybrid ? {
                 target: '/hybrid.html'
