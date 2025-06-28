@@ -1,22 +1,18 @@
-import {
-  is
-} from "bpmn-js/lib/util/ModelUtil";
-
-import {
-  isDifferentType
-} from "bpmn-js/lib/features/popup-menu/util/TypeUtil"; 
-
-import {
-  forEach,
-  filter
-} from 'min-dash';
-
+import { is } from 'bpmn-js/lib/util/ModelUtil';
+import { isDifferentType } from 'bpmn-js/lib/features/popup-menu/util/TypeUtil';
+import { filter } from 'min-dash';
 import * as replaceOptions from './PPINOTReplaceOptions';
-import { isPPINOTShape } from "./Types";
+import { isPPINOTShape } from './Types';
 
 export default function PPINOTReplaceMenuProvider(
-  popupMenu, modeling, moddle,
-  bpmnReplace, rules, translate, replace) {
+  popupMenu,
+  modeling,
+  moddle,
+  bpmnReplace,
+  rules,
+  translate,
+  replace
+) {
   this._popupMenu = popupMenu;
   this._modeling = modeling;
   this._moddle = moddle;
@@ -24,6 +20,9 @@ export default function PPINOTReplaceMenuProvider(
   this._rules = rules;
   this._translate = translate;
   this._replace = replace;
+
+  // register this provider under 'replace'
+  popupMenu.registerProvider('replace', this);
 }
 
 PPINOTReplaceMenuProvider.$inject = [
@@ -38,27 +37,34 @@ PPINOTReplaceMenuProvider.$inject = [
 
 PPINOTReplaceMenuProvider.prototype.getEntries = function(element) {
   const businessObject = element.businessObject;
-  const rules = this._rules;
-  if (!rules.allowed('shape.replace', { element })) return [];
-  if (!isPPINOTShape(element)) return [];
+
+  // only for replaceable shapes
+  if (!this._rules.allowed('shape.replace', { element })) {
+    return [];
+  }
+
+  // only apply to PPINOT shapes
+  if (!isPPINOTShape(element)) {
+    return [];
+  }
 
   const boType = businessObject.$type || businessObject.type;
   const differentType = isDifferentType(element);
 
-  // Target/Scope replacement
+  // Target/Scope swap
   if (boType === 'PPINOT:Target' || boType === 'PPINOT:Scope') {
     const targetType = boType === 'PPINOT:Target' ? 'PPINOT:Scope' : 'PPINOT:Target';
-    const label = boType === 'PPINOT:Target' ? '\xa0\xa0\xa0Scope' : '\xa0\xa0\xa0Target';
-    const className = boType === 'PPINOT:Target' ? 'icon-scope-mini' : 'icon-target-mini';
+    const label = boType === 'PPINOT:Target' ? '\u00A0\u00A0\u00A0Scope' : '\u00A0\u00A0\u00A0Target'; // espacio antes del texto
+    const className = boType === 'PPINOT:Target' ? 'icon-PPINOT-scope-menu' : 'icon-PPINOT-target-menu';
     return this._createEntries(element, [{
       label,
-      actionName: `replace-with-${label.toLowerCase()}`,
+      actionName: `replace-with-${label.trim().toLowerCase()}`,
       className,
       target: { type: targetType }
     }]);
   }
 
-  // Medidas base y derivadas (no agregadas)
+  // Base measure types
   const baseTypes = [
     'PPINOT:BaseMeasure',
     'PPINOT:CountMeasure',
@@ -72,21 +78,20 @@ PPINOTReplaceMenuProvider.prototype.getEntries = function(element) {
     return this._createEntries(element, filter(replaceOptions.MEASURE, differentType));
   }
 
-  // Medidas agregadas y variantes (incluyendo state condition)
-  if (/^PPINOT:(AggregatedMeasure|CountAggregatedMeasure|DataAggregatedMeasure|TimeAggregatedMeasure|CyclicTimeAggregatedMeasure|StateConditionAggregatedMeasure|StateCondAggMeasure(Number|Percentage|AtLeastOne|All|No))(SUM|MAX|MIN|AVG)?$/.test(boType)) {
+  // Aggregated measure types
+  const aggPattern = /^PPINOT:(AggregatedMeasure|CountAggregatedMeasure|DataAggregatedMeasure|TimeAggregatedMeasure|CyclicTimeAggregatedMeasure|StateConditionAggregatedMeasure|StateCondAggMeasure(Number|Percentage|AtLeastOne|All|No))(SUM|MAX|MIN|AVG)?$/;
+  if (aggPattern.test(boType)) {
     return this._createEntries(element, filter(replaceOptions.AGGREGATED_MEASURE, differentType));
   }
 
-  // DerivedMultiInstanceMeasure: mostrar solo agregadas
+  // Derived multi-instance
   if (boType === 'PPINOT:DerivedMultiInstanceMeasure') {
     return this._createEntries(element, filter(replaceOptions.AGGREGATED_MEASURE, differentType));
   }
-  // PPITarget, PPIScope, PPI: mostrar solo base
-  if ([
-    'PPINOT:PPITarget',
-    'PPINOT:PPIScope',
-    'PPINOT:PPI'
-  ].includes(boType)) {
+
+  // PPI target/scope/pPI fallback
+  const ppiTypes = ['PPINOT:PPITarget', 'PPINOT:PPIScope', 'PPINOT:PPI'];
+  if (ppiTypes.includes(boType)) {
     return this._createEntries(element, filter(replaceOptions.MEASURE, differentType));
   }
 
@@ -94,83 +99,81 @@ PPINOTReplaceMenuProvider.prototype.getEntries = function(element) {
 };
 
 PPINOTReplaceMenuProvider.prototype.getHeaderEntries = function(element) {
-  const businessObject = element.businessObject;
-  const boType = businessObject.$type || businessObject.type;
-  const translate = this._translate;
-  const replace = this._replace;
+  const boType = element.businessObject.$type || element.businessObject.type;
 
-  // Sin headers para estos tipos
-  if ([
+  // skip headers for these types
+  const skipHeader = [
     'PPINOT:DerivedMultiInstanceMeasure',
     'PPINOT:DerivedSingleInstanceMeasure',
     'PPINOT:Target',
     'PPINOT:Scope',
     'PPINOT:Ppi'
-  ].includes(boType)) return [];
+  ];
+  if (skipHeader.includes(boType)) {
+    return [];
+  }
 
-  // StateConditionAggregatedMeasure y variantes
+  // state condition variants
   if (/StateConditionAggregatedMeasure/.test(boType) || boType.startsWith('PPINOT:StateCondAggMeasure')) {
     return this._getStateConditionVariantHeaders(element);
   }
 
-  // TimeAggregatedMeasure y variantes
+  // time aggregated variants
   if (/^PPINOT:TimeAggregatedMeasure(SUM|MAX|MIN|AVG)?$/.test(boType)) {
     const variants = ['SUM', 'MAX', 'MIN', 'AVG'];
-    const functionHeaders = variants.map(fn => ({
+    const headers = variants.map(fn => ({
       id: `replace-with-time-agg-${fn.toLowerCase()}`,
-      className: '',
-      label: translate(fn),
-      action: () => replace.replaceElement(element, { type: `PPINOT:TimeAggregatedMeasure${fn}` })
+      label: this._translate(fn),
+      action: () => this._replace.replaceElement(element, { type: `PPINOT:TimeAggregatedMeasure${fn}` })
     }));
-    functionHeaders.unshift({
+    headers.unshift({
       id: 'replace-with-cyclic-time-agg',
       className: 'icon-cyclic-time-menu',
-      label: translate('\xa0\xa0\xa0\xa0\xa0Cyclic'),
-      action: () => replace.replaceElement(element, { type: 'PPINOT:CyclicTimeAggregatedMeasure' })
+      label: this._translate('\u00A0\u00A0\u00A0\u00A0\u00A0Cyclic'),
+      action: () => this._replace.replaceElement(element, { type: 'PPINOT:CyclicTimeAggregatedMeasure' })
     });
-    return functionHeaders;
+    return headers;
   }
 
-  // CyclicTimeAggregatedMeasure y variantes
+  // cyclic time aggregated variants
   if (/^PPINOT:CyclicTimeAggregatedMeasure(SUM|MAX|MIN|AVG)?$/.test(boType)) {
     const variants = ['SUM', 'MAX', 'MIN', 'AVG'];
     return variants.map(fn => ({
       id: `replace-with-cyclic-time-agg-${fn.toLowerCase()}`,
       className: 'icon-cyclic-time-menu',
-      label: translate(fn),
-      action: () => replace.replaceElement(element, { type: `PPINOT:CyclicTimeAggregatedMeasure${fn}` })
+      label: this._translate(fn),
+      action: () => this._replace.replaceElement(element, { type: `PPINOT:CyclicTimeAggregatedMeasure${fn}` })
     }));
   }
 
-  // Otras agregadas: solo SUM,MAX,MIN,AVG
+  // other aggregated (SUM,MAX,MIN,AVG)
   if (/^PPINOT:(AggregatedMeasure|CountAggregatedMeasure|DataAggregatedMeasure)(SUM|MAX|MIN|AVG)?$/.test(boType)) {
     const variants = ['SUM', 'MAX', 'MIN', 'AVG'];
     return variants.map(fn => ({
       id: `replace-with-agg-${fn.toLowerCase()}`,
-      className: '',
-      label: translate(fn),
-      action: () => replace.replaceElement(element, { type: boType.replace(/(SUM|MAX|MIN|AVG)?$/, fn) })
+      label: this._translate(fn),
+      action: () => this._replace.replaceElement(element, { type: boType.replace(/(SUM|MAX|MIN|AVG)?$/, fn) })
     }));
   }
 
-  // TimeMeasure base: solo Cyclic
+  // time measure cyclic header
   if (boType === 'PPINOT:TimeMeasure') {
     return [{
       id: 'replace-with-cyclic-time',
       className: 'icon-cyclic-time-menu',
-      label: translate('\xa0\xa0\xa0\xa0\xa0Cyclic'),
-      action: () => replace.replaceElement(element, { type: 'PPINOT:CyclicTimeMeasure' })
+      label: this._translate('\u00A0\u00A0\u00A0\u00A0\u00A0Cyclic'),
+      action: () => this._replace.replaceElement(element, { type: 'PPINOT:CyclicTimeMeasure' })
     }];
   }
 
-  // CyclicTimeMeasure y variantes
+  // cyclic time measure variants
   if (/^PPINOT:CyclicTimeMeasure(SUM|MAX|MIN|AVG)?$/.test(boType)) {
     const variants = ['SUM', 'MAX', 'MIN', 'AVG'];
     return variants.map(fn => ({
       id: `replace-with-cyclic-time-${fn.toLowerCase()}`,
       className: 'icon-cyclic-time-menu',
-      label: translate(fn),
-      action: () => replace.replaceElement(element, { type: `PPINOT:CyclicTimeMeasure${fn}` })
+      label: this._translate(fn),
+      action: () => this._replace.replaceElement(element, { type: `PPINOT:CyclicTimeMeasure${fn}` })
     }));
   }
 
@@ -178,49 +181,29 @@ PPINOTReplaceMenuProvider.prototype.getHeaderEntries = function(element) {
 };
 
 PPINOTReplaceMenuProvider.prototype._createEntries = function(element, replaceOptions) {
-  const self = this;
-  return replaceOptions.map(definition => self._createMenuEntry(definition, element)).filter(Boolean);
+  return replaceOptions.map(definition => this._createMenuEntry(definition, element)).filter(Boolean);
 };
 
-PPINOTReplaceMenuProvider.prototype._createMenuEntry = function(definition, element, action) {
-  const translate = this._translate;
-  const replace = this._replace;
-  const popupMenu = this._popupMenu;
-  const replaceAction = function() {
-    const newElement = replace.replaceElement(element, definition.target);
-    if (popupMenu && typeof popupMenu.close === 'function') {
-      setTimeout(() => popupMenu.close(), 50);
-    }
-    setTimeout(() => {
-      if (newElement && newElement.businessObject) {
-        // Opcional: log para depuración
-      }
-    }, 100);
-    return newElement;
-  };
-  action = action || replaceAction;
+PPINOTReplaceMenuProvider.prototype._createMenuEntry = function(def, element) {
   return {
-    label: translate(definition.label),
-    className: definition.className || '',
-    id: definition.actionName,
-    action
+    label: this._translate(def.label),
+    className: def.className || '',
+    id: def.actionName,
+    action: () => this._replace.replaceElement(element, def.target)
   };
 };
 
-// Headers para variantes de state condition
 PPINOTReplaceMenuProvider.prototype._getStateConditionVariantHeaders = function(element) {
-  const self = this;
-  const translate = this._translate;
-  const replaceTypes = [
+  const variants = [
     { type: 'PPINOT:StateCondAggMeasureNumber', label: '#' },
     { type: 'PPINOT:StateCondAggMeasurePercentage', label: '%' },
     { type: 'PPINOT:StateCondAggMeasureAll', label: '∀' },
     { type: 'PPINOT:StateCondAggMeasureAtLeastOne', label: '∃' },
     { type: 'PPINOT:StateCondAggMeasureNo', label: '∄' }
   ];
-  return replaceTypes.map(rt => ({
+  return variants.map(rt => ({
     id: `replace-with-state-cond-${rt.label.toLowerCase()}`,
-    label: translate(rt.label),
-    action: () => self._replace.replaceElement(element, { type: rt.type })
+    label: this._translate(rt.label),
+    action: () => this._replace.replaceElement(element, { type: rt.type })
   }));
 };

@@ -7,7 +7,7 @@ export var MEASURE = [
   {
     label: '\xa0\xa0\xa0\xa0\xa0\xa0' + 'Base measure',
     actionName: 'replace-with-base-measure',
-    className: 'icon-PPINOT-PPINOT-baseMeasure-menu',
+    className: 'icon-PPINOT-baseMeasure-menu',
     target: {
       type: 'PPINOT:BaseMeasure'
     }

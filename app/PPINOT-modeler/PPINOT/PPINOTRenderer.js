@@ -33,11 +33,11 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
   function drawBaseMeasure(element){
     var baseMeasure = svgCreate('image', {
       // Ajustamos el posicionamiento para centrar mejor la imagen
-      x: 6,
-      y: 4,
+      x: 0,
+      y: 0,
       // Reducimos ligeramente el tamaño para darle menos margen
-      width: element.width*0.8,
-      height: element.height*0.8,
+      width: element.width*0.7,
+      height: element.height*0.7,
       href: Svg.dataURLbaseMeasure
     })
     return baseMeasure;
@@ -45,10 +45,10 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
 
   function drawTarget(element){
     var target = svgCreate('image', {
-      x: 10,
-      y: 5,
-      width: element.width * 0.85,
-      height: element.height * 0.85,
+      x: 0,
+      y: 0,
+      width: element.width,
+      height: element.height,
       href: Svg.dataURLtarget
     })
     return target;
@@ -56,10 +56,10 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
 
   function drawScope(element){
     var scope = svgCreate('image', {
-      x: 10,
-      y: 5,
-      width: element.width * 0.85,
-      height: element.height * 0.85,
+      x: 0,
+      y: 0,
+      width: element.width,
+      height: element.height ,
       href: Svg.dataURLscope
     })
     return scope;

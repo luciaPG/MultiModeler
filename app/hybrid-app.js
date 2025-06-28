@@ -21,6 +21,7 @@ import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import 'diagram-js/assets/diagram-js.css';
 import './css/hybrid-app.css';
 
+
 // Variables globales
 const moddle = new BpmnModdle({});
 const container = $('#js-drop-zone');
@@ -35,7 +36,6 @@ let currentFile = null;
 function initializeModeler() {
   modeler = new BaseModeler({
     container: '#js-canvas',
-    notations: ['bpmn', 'ppinot'], // Puedes agregar 'ralph' si tienes el descriptor
     moddleExtensions: {
       PPINOT: PPINOTDescriptor,
       // RALPH: RALPHDescriptor

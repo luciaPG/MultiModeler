@@ -81,99 +81,6 @@ PPINOTPalette.prototype.getPaletteEntries = function() {
   var actions = {};
 
   // Add BPMN tools first
-  assign(actions, {
-    'hand-tool': {
-      group: 'tools',
-      className: 'bpmn-icon-hand-tool',
-      title: translate('Activate the hand tool'),
-      action: {
-        click: function(event) {
-          handTool.activateHand(event);
-        }
-      }
-    },
-    'lasso-tool': {
-      group: 'tools',
-      className: 'bpmn-icon-lasso-tool',
-      title: translate('Activate the lasso tool'),
-      action: {
-        click: function(event) {
-          lassoTool.activateSelection(event);
-        }
-      }
-    },
-    'space-tool': {
-      group: 'tools',
-      className: 'bpmn-icon-space-tool',
-      title: translate('Activate the create/remove space tool'),
-      action: {
-        click: function(event) {
-          spaceTool.activateSelection(event);
-        }
-      }
-    },
-    'global-connect-tool': {
-      group: 'tools',
-      className: 'bpmn-icon-connection-multi',
-      title: translate('Activate the global connect tool'),
-      action: {
-        click: function(event) {
-          globalConnect.toggle(event);
-        }
-      }
-    },
-    'tool-separator': {
-      group: 'tools',
-      separator: true
-    },
-    'create.start-event': createAction(
-      'bpmn:StartEvent', 'event', 'bpmn-icon-start-event-none',
-      translate('Create StartEvent')
-    ),
-    'create.intermediate-event': createAction(
-      'bpmn:IntermediateThrowEvent', 'event', 'bpmn-icon-intermediate-event-none',
-      translate('Create Intermediate/Boundary Event')
-    ),
-    'create.end-event': createAction(
-      'bpmn:EndEvent', 'event', 'bpmn-icon-end-event-none',
-      translate('Create EndEvent')
-    ),
-    'create.exclusive-gateway': createAction(
-      'bpmn:ExclusiveGateway', 'gateway', 'bpmn-icon-gateway-none',
-      translate('Create Gateway')
-    ),
-    'create.task': createAction(
-      'bpmn:Task', 'activity', 'bpmn-icon-task',
-      translate('Create Task')
-    ),
-    'create.data-object': createAction(
-      'bpmn:DataObjectReference', 'data-object', 'bpmn-icon-data-object',
-      translate('Create DataObjectReference')
-    ),
-    'create.data-store': createAction(
-      'bpmn:DataStoreReference', 'data-store', 'bpmn-icon-data-store',
-      translate('Create DataStoreReference')
-    ),
-    'create.subprocess-expanded': {
-      group: 'activity',
-      className: 'bpmn-icon-subprocess-expanded',
-      title: translate('Create expanded SubProcess'),
-      action: {
-        dragstart: createSubprocess,
-        click: createSubprocess
-      }
-    },
-    'create.participant-expanded': {
-      group: 'collaboration',
-      className: 'bpmn-icon-participant',
-      title: translate('Create Pool/Participant'),
-      action: {
-        dragstart: createParticipant,
-        click: createParticipant
-      }
-    }
-  });
-
   // Add PPINOT-specific elements
   assign(actions, {
     // Separator before PPINOT elements
@@ -190,7 +97,7 @@ PPINOTPalette.prototype.getPaletteEntries = function() {
       translate('Create Aggregated Measure')
     ),
     'PPINOT-ppi': createAction(
-      'PPINOT:Ppi', 'PPINOT', 'icon-PPINOT-ppi',
+      'PPINOT:Ppi', 'PPINOT', 'icon-PPINOT-ppi-palette',
       translate('Create PPI')
     ),
     'PPINOT-target': createAction(

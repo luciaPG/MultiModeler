@@ -1,17 +1,9 @@
 import { is } from "bpmn-js/lib/util/ModelUtil";
+import { isAny } from 'bpmn-js/lib/features/modeling/util/ModelingUtil';
+import { assign } from 'min-dash';
+import { myConnectionElements, aggregatedElements } from "./Types";
 
-import {
-  isAny
-} from 'bpmn-js/lib/features/modeling/util/ModelingUtil';
-
-import {
-  assign
-} from 'min-dash';
-
-import { myConnectionElements, aggregatedElements, isPPINOTShape } from "./Types";
-
-
-// This module is used to show buttons in the menu of element in the diagram
+// Clase/fábrica auxiliar: SOLO devuelve las acciones para el context pad de PPINOT
 export default function PPINOTContextPadProvider(
   config,
   injector,
@@ -25,30 +17,22 @@ export default function PPINOTContextPadProvider(
   rules,
   translate
 ) {
-  this._injector = injector;
   this._modeling = modeling;
   this._elementFactory = elementFactory;
   this._connect = connect;
   this._create = create;
   this._translate = translate;
-  this._contextPad = contextPad;
   this._popupMenu = popupMenu;
   this._canvas = canvas;
   this._rules = rules;
-
-  // Enable autoPlace, if configured
   this._autoPlace = (config && config.autoPlace !== false) ? injector.get('autoPlace', false) : null;
-
-  contextPad.registerProvider(this);
 }
-  // With this function you can append some connections to an element in the diagram automatically
+
 PPINOTContextPadProvider.prototype.appendConnectAction = function(type, className, title, groupName = 'ppinot-connect') {
   const connect = this._connect;
-  
   function startConnect(event, element) {
     connect.start(event, element, { type: type });
   }
-
   return {
     group: groupName,
     className: className,
@@ -63,11 +47,6 @@ PPINOTContextPadProvider.prototype.appendConnectAction = function(type, classNam
 PPINOTContextPadProvider.prototype.getContextPadEntries = function(element) {
   const businessObject = element.businessObject;
   const actions = {};
-  
-  // Only show PPINOT context pad entries for PPINOT elements
-  if (!isPPINOTShape(element)) {
-    return {};
-  }
 
   // PPINOT-specific connection actions based on element type
   if (isAny(businessObject, aggregatedElements) && element.type !== 'label') {
@@ -193,15 +172,11 @@ PPINOTContextPadProvider.prototype.getContextPadEntries = function(element) {
       title: this._translate('Replace'),
       action: {
         click: (event, element) => {
-          // Use the standard bpmn-js replace mechanism
-          // This will automatically use the registered replace menu provider
           this._popupMenu.open(element, 'replace', { x: event.x, y: event.y });
         }
       }
     }
   });
-
-  // Add delete action at the end so it appears last
   assign(actions, {
     'delete': {
       group: 'edit',
@@ -214,6 +189,11 @@ PPINOTContextPadProvider.prototype.getContextPadEntries = function(element) {
       }
     }
   });
+
+  // Remove 'replace' for PPINOT:Ppi
+  if (businessObject && (businessObject.$type === 'PPINOT:Ppi' || businessObject.type === 'PPINOT:Ppi')) {
+    delete actions.replace;
+  }
 
   return actions;
 };// Match the order of the constructor for injection

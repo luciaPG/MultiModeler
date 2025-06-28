@@ -51,7 +51,7 @@
         "webpack-dev-server": "^4.15.2"
     },
     "dependencies": {
-        "bpmn-js": "latest",
+        "bpmn-js": "^18.6.2",
         "bpmn-moddle": "latest",
         "diagram-js": "latest",
         "inherits": "latest",

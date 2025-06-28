@@ -432,9 +432,8 @@ export function isExternalLabel(type) {
 
 export function isPPINOTShape(type) {
     if (typeof type === 'object')
-        type = type.type
-
-    return type.includes('PPINOT:') && !connections.includes(type)
+        type = type.type || type.$type;
+    return type && type.includes('PPINOT:');
 }
 
 export function isPPINOTConnection(type) {

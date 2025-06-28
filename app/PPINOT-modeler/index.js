@@ -4,11 +4,18 @@ import inherits from 'inherits';
 import { isPPINOTConnection } from './PPINOT/Types';
 import PPINOTModule from './PPINOT';
 import { isLabelExternal, getExternalLabelBounds, getLabel } from './PPINOT/utils/LabelUtil';
-import BaseModeler from '../baseModeler';
+import BaseModule from '../baseModeler/BaseModule';
 
-class PPINOTModeler extends BaseModeler {
-  constructor(options) {
-    super(options);
+class PPINOTModeler extends Modeler {
+  constructor(options = {}) {
+    super({
+      ...options,
+      additionalModules: [
+        ...(options.additionalModules || []),
+        PPINOTModule,
+        BaseModule // <-- Asegura que tu módulo personalizado va al final
+      ]
+    });
   }
 
   _addPPINOTShape(PPINOTElement) {
