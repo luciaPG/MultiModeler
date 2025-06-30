@@ -32,36 +32,40 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
   // --> href is the svg element defined in svg -> index.js
   function drawBaseMeasure(element){
     var baseMeasure = svgCreate('image', {
-      // Ajustamos el posicionamiento para centrar mejor la imagen
       x: 0,
       y: 0,
-      // Reducimos ligeramente el tamaño para darle menos margen
-      width: element.width*0.7,
-      height: element.height*0.7,
+      width: element.width,
+      height: element.height,
       href: Svg.dataURLbaseMeasure
     })
     return baseMeasure;
   }
 
   function drawTarget(element){
+    // Mini if parent is a PPI
+    let isMini = element.parent && (element.parent.type === 'PPINOT:Ppi' || (element.parent.businessObject && element.parent.businessObject.$type === 'PPINOT:Ppi'));
+    let scale = isMini ? (1/3) : 1;
     var target = svgCreate('image', {
-      x: 0,
-      y: 0,
-      width: element.width,
-      height: element.height,
-      href: Svg.dataURLtarget
-    })
+      x: (element.width - element.width * scale) / 2,
+      y: (element.height - element.height * scale) / 2,
+      width: element.width * scale,
+      height: element.height * scale,
+      href: isMini && Svg.dataURLtargetMini ? Svg.dataURLtargetMini : Svg.dataURLtarget
+    });
     return target;
   }
 
   function drawScope(element){
+    // Mini if parent is a PPI
+    let isMini = element.parent && (element.parent.type === 'PPINOT:Ppi' || (element.parent.businessObject && element.parent.businessObject.$type === 'PPINOT:Ppi'));
+    let scale = isMini ? (1/1.5) : 1;
     var scope = svgCreate('image', {
-      x: 0,
-      y: 0,
-      width: element.width,
-      height: element.height ,
-      href: Svg.dataURLscope
-    })
+      x: (element.width - element.width * scale) / 2,
+      y: (element.height - element.height * scale) / 2,
+      width: element.width * scale,
+      height: element.height * scale,
+      href: isMini && Svg.dataURLscopeMini ? Svg.dataURLscopeMini : Svg.dataURLscope
+    });
     return scope;
   }
 
@@ -214,7 +218,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       y: 0,
       width: element.width,
       height: element.height,
-      href: Svg.dataURLppi3
+      href: Svg.dataURLppi4
     })
     return ppi;
   }
@@ -1229,98 +1233,6 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
 
       return componentsToPath(d);
     },
-    'PPINOT:CyclicTimeMeasureSUM': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CyclicTimeMeasureMAX': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CyclicTimeMeasureMIN': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CyclicTimeMeasureAVG': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
     'PPINOT:TimeAggregatedMeasureSUM': (element) => {
       var x = element.x,
           y = element.y,
@@ -1669,6 +1581,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     'PPINOT:DataAggregatedMeasureAVG': (element) => {
       var x = element.x,
           y = element.y,
+          y = element.y,
           width = element.width,
           height = element.height;
       
@@ -1733,7 +1646,6 @@ PPINOTRenderer.prototype.getShapePath = function(shape) {
   
   // Para conexiones, tenemos que generar un path válido a partir de los waypoints
   if (isPPINOTConnection(type)) {
-    // Si es una conexión PPINOT con waypoints, usarlos para generar el path
     var waypoints = shape.waypoints || [];
     if (waypoints.length < 2) {
       return 'M0,0 L0,0';

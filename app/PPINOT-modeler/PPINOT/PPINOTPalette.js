@@ -1,6 +1,7 @@
 import { 
   assign
 } from 'min-dash';
+import { PPINOTNotation } from './PPINOTElementFactory';
 
 /**
  * PPINOT-specific palette service
@@ -31,7 +32,8 @@ PPINOTPalette.prototype.getPaletteEntries = function() {
 
   function createAction(type, group, className, title, options) {
     function createListener(event) {
-      var shape = elementFactory.createShape(assign({ type: type }, options));
+      const size = PPINOTNotation.getElementSize(type);
+      var shape = elementFactory.createShape(assign({ type: type }, size, options));
       shape.color = "#000";
       if (options) {
         shape.businessObject.di.isExpanded = options.isExpanded;
