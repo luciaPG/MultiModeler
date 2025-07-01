@@ -1,9 +1,7 @@
-import inherits from 'inherits';
 import {componentsToPath, createLine} from 'diagram-js/lib/util/RenderUtil';
 import {append as svgAppend, create as svgCreate} from 'tiny-svg';
 import {isPPINOTConnection} from "./Types";
 import Svg from './svg';
-import CustomBaseRenderer from '../../baseModeler/BaseRenderer';
 
 var BLACK = '#000';
 
@@ -14,16 +12,98 @@ var BLACK = '#000';
  * drag an element of the palette. It is only for PPINOT elements, not bpmn elements.
  */
 export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
-  CustomBaseRenderer.call(this, eventBus, canvas, textRenderer);
+  // No need to call BaseRenderer.call, we'll use this as a composition helper
 
   var computeStyle = styles.computeStyle;
 
   // Store reference to this for use in inner functions
   var self = this;
 
-  //This function is used to add different shapes to the ends of connectors
+  var markers = {};
+  var rendererId = this.rendererId = 'ppinot-' + (Math.random() * 1000000 | 0);
+
+  function colorEscape(str) {
+    return str.replace(/[()\s,#]+/g, '_');
+  }
+
+  // This function is used to add different shapes to the ends of connectors
   function marker(type, fill, stroke) {
-    return self.markerUrl(type, fill, stroke);
+    var id = type + '-' + colorEscape(fill) + '-' + colorEscape(stroke) + '-' + rendererId;
+
+    if (!markers[id]) {
+      createMarker(id, type, fill, stroke);
+    }
+
+    return 'url(#' + id + ')';
+  }
+
+  function addMarker(id, options) {
+    var marker = svgCreate('marker', {
+      id: id,
+      viewBox: '0 0 20 20',
+      refX: options.refX || 0,
+      refY: options.refY || 0,
+      markerWidth: options.markerWidth || 10,
+      markerHeight: options.markerHeight || 10,
+      orient: 'auto'
+    });
+
+    var shape = svgCreate(options.element || 'path', options.attrs);
+    svgAppend(marker, shape);
+
+    var defs = document.querySelector('defs') || svgCreate('defs');
+    svgAppend(defs, marker);
+
+    if (!document.querySelector('defs')) {
+      svgAppend(document.querySelector('svg'), defs);
+    }
+
+    markers[id] = marker;
+  }
+
+  function createMarker(id, type, fill, stroke) {
+    if (type === 'sequenceflow-end') {
+      addMarker(id, {
+        element: 'polygon',
+        attrs: {
+          fill: fill,
+          stroke: stroke,
+          points: '0,6 0,10 8,6 0,2 0,6'
+        },
+        refX: 8,
+        refY: 6,
+        markerWidth: 10,
+        markerHeight: 10
+      });
+    } else if (type === 'conditional-flow-marker') {
+      addMarker(id, {
+        element: 'polygon',
+        attrs: {
+          fill: fill,
+          stroke: stroke,
+          points: '7,4 0,6 7,8'
+        },
+        refX: 7,
+        refY: 6,
+        markerWidth: 10,
+        markerHeight: 10
+      });
+    } else if (type === 'messageflow-start') {
+      addMarker(id, {
+        element: 'circle',
+        attrs: {
+          fill: fill,
+          stroke: stroke,
+          r: 4,
+          cx: 4,
+          cy: 4
+        },
+        refX: 4,
+        refY: 4,
+        markerWidth: 8,
+        markerHeight: 8
+      });
+    }
   }
 
   
@@ -32,40 +112,64 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
   // --> href is the svg element defined in svg -> index.js
   function drawBaseMeasure(element){
     var baseMeasure = svgCreate('image', {
-      x: 0,
-      y: 0,
-      width: element.width,
-      height: element.height,
+      // Ajustamos el posicionamiento para centrar mejor la imagen
+      x: 6,
+      y: 4,
+      // Reducimos ligeramente el tamaño para darle menos margen
+      width: element.width*0.8,
+      height: element.height*0.8,
       href: Svg.dataURLbaseMeasure
     })
     return baseMeasure;
   }
 
   function drawTarget(element){
-    // Mini if parent is a PPI
-    let isMini = element.parent && (element.parent.type === 'PPINOT:Ppi' || (element.parent.businessObject && element.parent.businessObject.$type === 'PPINOT:Ppi'));
-    let scale = isMini ? (1/3) : 1;
+    // Check if the parent is a PPINOT:Ppi and use mini icon if so
+    var iconUrl = Svg.dataURLtarget;
+    var scaleFactor = 1;
+    var offsetX = 10;
+    var offsetY = 5;
+    
+    if (element.parent && element.parent.type === 'PPINOT:Ppi') {
+      iconUrl = Svg.dataURLtargetMini;
+      scaleFactor = 0.4; // Scale down target mini icons to 50% of original size
+      // Center the smaller icon by adjusting the offset
+      offsetX = 10 + (element.width * (1 - scaleFactor)) / 2;
+      offsetY = 5 + (element.height * (1 - scaleFactor)) / 2;
+    }
+    
     var target = svgCreate('image', {
-      x: (element.width - element.width * scale) / 2,
-      y: (element.height - element.height * scale) / 2,
-      width: element.width * scale,
-      height: element.height * scale,
-      href: isMini && Svg.dataURLtargetMini ? Svg.dataURLtargetMini : Svg.dataURLtarget
-    });
+      x: offsetX,
+      y: offsetY,
+      width: element.width * scaleFactor,
+      height: element.height * scaleFactor,
+      href: iconUrl
+    })
     return target;
   }
 
   function drawScope(element){
-    // Mini if parent is a PPI
-    let isMini = element.parent && (element.parent.type === 'PPINOT:Ppi' || (element.parent.businessObject && element.parent.businessObject.$type === 'PPINOT:Ppi'));
-    let scale = isMini ? (1/1.5) : 1;
+    // Check if the parent is a PPINOT:Ppi and use mini icon if so
+    var iconUrl = Svg.dataURLscope;
+    var scaleFactor = 1;
+    var offsetX = 10;
+    var offsetY = 5;
+    
+    if (element.parent && element.parent.type === 'PPINOT:Ppi') {
+      iconUrl = Svg.dataURLscopeMini;
+      scaleFactor = 0.7; // Scale down scope mini icons to 70% of original size
+      // Center the smaller icon by adjusting the offset
+      offsetX = 10 + (element.width * (1 - scaleFactor)) / 2;
+      offsetY = 5 + (element.height * (1 - scaleFactor)) / 2;
+    }
+    
     var scope = svgCreate('image', {
-      x: (element.width - element.width * scale) / 2,
-      y: (element.height - element.height * scale) / 2,
-      width: element.width * scale,
-      height: element.height * scale,
-      href: isMini && Svg.dataURLscopeMini ? Svg.dataURLscopeMini : Svg.dataURLscope
-    });
+      x: offsetX,
+      y: offsetY,
+      width: element.width * scaleFactor,
+      height: element.height * scaleFactor,
+      href: iconUrl
+    })
     return scope;
   }
 
@@ -257,7 +361,8 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       svgAppend(p, target);
       self.renderEmbeddedLabel(p, element, 'center-middle'); // label will be added to the element using this function
       return target;
-    },    'PPINOT:Scope': (p, element) => {
+    },
+    'PPINOT:Scope': (p, element) => {
       let scope = drawScope(element)
       svgAppend(p, scope);
       self.renderEmbeddedLabel(p, element, 'center-middle');
@@ -267,15 +372,18 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       let aggregatedMeasure = drawAggregatedMeasure(element)
       svgAppend(p, aggregatedMeasure);
       return aggregatedMeasure;
-    },    'PPINOT:AggregatedMeasureSUM': (p, element) => {
+    },
+    'PPINOT:AggregatedMeasureSUM': (p, element) => {
       var sum = renderer('PPINOT:AggregatedMeasure')(p, element); 
       self.renderEmbeddedDefaultLabel(p, element, 'center-middle', 'SUM', 15, 'bold');
       return sum;
-    },    'PPINOT:AggregatedMeasureMAX': (p, element) => {
+    },
+    'PPINOT:AggregatedMeasureMAX': (p, element) => {
       var max = renderer('PPINOT:AggregatedMeasure')(p, element); 
       self.renderEmbeddedDefaultLabel(p, element, 'center-middle', 'MAX', 15, 'bold');
       return max;
-    },    'PPINOT:AggregatedMeasureMIN': (p, element) => {
+    },
+    'PPINOT:AggregatedMeasureMIN': (p, element) => {
       var min = renderer('PPINOT:AggregatedMeasure')(p, element); 
       self.renderEmbeddedDefaultLabel(p, element, 'center-middle', 'MIN', 15, 'bold');
       return min;
@@ -666,943 +774,8 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
 
       return componentsToPath(d);
     },
-    'PPINOT:AggregatedMeasure': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-          
-
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:TimeAggregatedMeasure': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-          
-
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CyclicTimeAggregatedMeasure': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-          
-
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CountAggregatedMeasure': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-          
-
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:RFCStateConnection': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-          
-
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CountMeasure': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-          
-
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:TimeMeasure': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-          
-
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CyclicTimeMeasure': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-          
-
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:DataAggregatedMeasure': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-          
-
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-
-    'PPINOT:DataMeasure': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-          
-
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-
-    'PPINOT:DerivedMultiInstanceMeasure': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-          
-
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-
-    'PPINOT:DerivedSingleInstanceMeasure': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-          
-
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:DataPropertyConditionAggregatedMeasure': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:StateConditionMeasure': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:StateConditionAggregatedMeasure': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:StateCondAggMeasureNumber': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:StateCondAggMeasurePercentage': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:StateCondAggMeasureAll': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:StateCondAggMeasureNo': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:StateCondAggMeasureAtLeastOne': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CyclicTimeAggregatedMeasureMAX': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CyclicTimeAggregatedMeasureSUM': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CyclicTimeAggregatedMeasureMIN': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CyclicTimeAggregatedMeasureAVG': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:TimeAggregatedMeasureSUM': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:TimeAggregatedMeasureMAX': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:TimeAggregatedMeasureMIN': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:TimeAggregatedMeasureAVG': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CountAggregatedMeasureSUM': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CountAggregatedMeasureMAX': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CountAggregatedMeasureMIN': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CountAggregatedMeasureAVG': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:AggregatedMeasureSUM': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:AggregatedMeasureMAX': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:AggregatedMeasureMIN': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:AggregatedMeasureAVG': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:DataAggregatedMeasureSUM': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:DataAggregatedMeasureMAX': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:DataAggregatedMeasureMIN': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:DataAggregatedMeasureAVG': (element) => {
-      var x = element.x,
-          y = element.y,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      var borderRadius = 20;
-         
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    
+    // Define paths for other element types using similar structure
+    // Each element type should have a path definition that matches its visual bounds
     'label': (element) => {
       var x = element.x,
           y = element.y,
@@ -1620,53 +793,45 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       return componentsToPath(rectPath);
     }
   }
-}
+  // Define methods as instance properties
+  this.canRender = function(element) {
+    return /^PPINOT:/.test(element.type) || element.type === 'label';
+  };
 
-inherits(PPINOTRenderer, CustomBaseRenderer);
+  this.drawShape = function(p, element) {
+    var type = element.type;
+    var h = renderers[type];
+    
+    if(element.color == null)
+      element.color= "#000"
 
-PPINOTRenderer.$inject = [ 'eventBus', 'styles', 'canvas', 'textRenderer' ];
+    /* jshint -W040 */
+    return h(p, element);
+  };
 
-PPINOTRenderer.prototype.canRender = function(element) {
-  return /^PPINOT:/.test(element.type) || element.type === 'label';
-};
+  this.getShapePath = function(shape) {
+    var type = shape.type;
+    
+    // Para conexiones, tenemos que generar un path válido a partir de los waypoints
+    if (isPPINOTConnection(type)) {
+      // Si es una conexión PPINOT con waypoints, usarlos para generar el path
+      var waypoints = shape.waypoints || [];
+      if (waypoints.length < 2) {
+        return 'M0,0 L0,0';
+      }
+      
+      var connectionPath = [
+        ['M', waypoints[0].x, waypoints[0].y]
+      ];
 
-PPINOTRenderer.prototype.drawShape = function(p, element) {
-  var type = element.type;
-  var h = this.renderers[type];
-  
-  if(element.color == null)
-    element.color= "#000"
+      for (var i = 1; i < waypoints.length; i++) {
+        connectionPath.push(['L', waypoints[i].x, waypoints[i].y]);
+      }
 
-  /* jshint -W040 */
-  return h(p, element);
-};
-
-PPINOTRenderer.prototype.getShapePath = function(shape) {
-  var type = shape.type;
-  
-  // Para conexiones, tenemos que generar un path válido a partir de los waypoints
-  if (isPPINOTConnection(type)) {
-    var waypoints = shape.waypoints || [];
-    if (waypoints.length < 2) {
-      return 'M0,0 L0,0';
+      return componentsToPath(connectionPath);
     }
     
-    var connectionPath = [
-      ['M', waypoints[0].x, waypoints[0].y]
-    ];
-
-    for (var i = 1; i < waypoints.length; i++) {
-      connectionPath.push(['L', waypoints[i].x, waypoints[i].y]);
-    }
-
-    return componentsToPath(connectionPath);
-  }
-  
-  // Para otros elementos, usar el path definido
-  var h = this.paths[type];
-  
-  if (!h) {
-    // Si no hay un path definido, devolver un rectángulo básico
+    // Para otros elementos, devolver un rectángulo básico
     var x = shape.x || 0;
     var y = shape.y || 0;
     var width = shape.width || 50;
@@ -1677,42 +842,33 @@ PPINOTRenderer.prototype.getShapePath = function(shape) {
            ' L' + (x + width) + ',' + (y + height) + 
            ' L' + x + ',' + (y + height) + 
            ' Z';
-  }
+  };
 
-  /* jshint -W040 */
-  return h(shape);
-};
+  this.drawConnection = function(p, element) {
+    var type = element.type;
+    var h = renderers[type];
+    if(element.color == null)
+      element.color= "#000"
 
-PPINOTRenderer.prototype.drawConnection = function(p, element) {
-  var type = element.type;
-  var h = this.renderers[type];
-  if(element.color == null)
-    element.color= "#000"
+    /* jshint -W040 */
+    return h(p, element);
+  };
 
-  /* jshint -W040 */
-  return h(p, element);
-};
+  this.getConnectionPath = function(connection) {
+    var waypoints = connection.waypoints.map(function(p) {
+      return p.original || p;
+    });
 
-PPINOTRenderer.prototype.getConnectionPath = function(connection) {
-  // var type = connection.type;
-  // var h = this.paths[type];
-  //
-  // /* jshint -W040 */
-  // return h(connection);
-  var waypoints = connection.waypoints.map(function(p) {
-    return p.original || p;
-  });
+    var connectionPath = [
+      ['M', waypoints[0].x, waypoints[0].y]
+    ];
 
-  var connectionPath = [
-    ['M', waypoints[0].x, waypoints[0].y]
-  ];
+    waypoints.forEach(function(waypoint, index) {
+      if (index !== 0) {
+        connectionPath.push(['L', waypoint.x, waypoint.y]);
+      }
+    });
 
-  waypoints.forEach(function(waypoint, index) {
-    if (index !== 0) {
-      connectionPath.push(['L', waypoint.x, waypoint.y]);
-    }
-  });
-
-  return componentsToPath(connectionPath);
-
-};
+    return componentsToPath(connectionPath);
+  };
+}

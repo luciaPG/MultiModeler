@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>VisualPPINOT</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/hybrid-app.css">
+  <link rel="stylesheet" href="vendor/bpmn-js/diagram-js.css">
+  <link rel="stylesheet" href="vendor/bpmn-js/bpmn-embedded.css">
+  <link rel="stylesheet" href="vendor/diagram-js/diagram-js.css">
+</head>
+<body>
+  <div id="js-drop-zone">
+    <div id="js-canvas"></div>
+    <div class="buttons">
+      <a id="js-open-diagram" href="#">Abrir</a>
+      <a class="js-create-diagram" href="#">Nuevo</a>
+      <a id="js-download-diagram" href="#">Guardar BPMN</a>
+      <a id="js-download-svg" href="#">Exportar SVG</a>
+      <a id="js-add-colors" href="#">Colores</a>
+    </div>
+    <div id="notation-status"></div>
+    <div class="error"><pre></pre></div>
+  </div>
+  <script src="main-bundle.js"></script>
+</body>
+</html>
