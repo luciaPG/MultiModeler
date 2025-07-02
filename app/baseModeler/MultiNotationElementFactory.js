@@ -41,10 +41,17 @@ MultiNotationElementFactory.prototype.create = function(elementType, attrs) {
     size = { width: 100, height: 80 };
   }
 
-  return this.baseCreate(elementType, assign({
+  // Ensure valid coordinates and dimensions
+  const validAttrs = assign({
     businessObject: businessObject,
-    id: businessObject.id
-  }, size, attrs));
+    id: businessObject.id,
+    x: isFinite(attrs.x) ? attrs.x : 0,
+    y: isFinite(attrs.y) ? attrs.y : 0,
+    width: isFinite(size.width) && size.width > 0 ? size.width : 100,
+    height: isFinite(size.height) && size.height > 0 ? size.height : 80
+  }, attrs);
+
+  return this.baseCreate(elementType, validAttrs);
 };
 
 // Recuerda exportar las funciones auxiliares en los factories de PPINOT/RALPH:

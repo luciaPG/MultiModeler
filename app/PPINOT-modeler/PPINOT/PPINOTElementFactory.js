@@ -1,6 +1,3 @@
-import { assign } from 'min-dash';
-import { isPPINOTShape } from './Types';
-
 export class PPINOTNotation {
   // Devuelve el tamaño de cada tipo de elemento PPINOT
   static getElementSize(type) {
@@ -35,7 +32,7 @@ export class PPINOTNotation {
       'PPINOT:StateConditionMeasure': { width: 110, height: 90 },
       'PPINOT:StateConditionAggregatedMeasure': { width: 120, height: 100 },
       'PPINOT:Target': { width: 120, height: 60 },
-      'PPINOT:Scope': { width: 100, height: 35 },
+      'PPINOT:Scope': { width: 120, height: 60 },
       'PPINOT:BaseMeasure': { width: 110, height: 90 },
       'PPINOT:StateCondAggMeasureNumber': { width: 120, height: 100 },
       'PPINOT:StateCondAggMeasurePercentage': { width: 120, height: 100 },
@@ -68,10 +65,7 @@ export class PPINOTNotation {
       const prefix = elementType.replace('PPINOT:', '') + '_';
       businessObject.id = moddle.ids.nextPrefixed(prefix, businessObject);
     }
-    // Si es un shape PPINOT, añade dimensiones
-    if (isPPINOTShape(elementType)) {
-      assign(businessObject, PPINOTNotation.getElementSize(elementType));
-    }
+    // No agregamos dimensiones al business object, eso se maneja en el factory
     return businessObject;
   }
 }

@@ -1,154 +1,84 @@
-
 import BpmnRenderer from 'bpmn-js/lib/draw/BpmnRenderer';
 import PPINOTRenderer from '../PPINOT-modeler/PPINOT/PPINOTRenderer';
-import {create as svgCreate, append as svgAppend} from 'tiny-svg';
+import inherits from 'inherits';
 
-export default class MultiNotationRenderer extends BpmnRenderer {
-  constructor(eventBus, styles, pathMap, canvas, textRenderer, priority = 500) {
-    // Use a higher priority than the default BpmnRenderer to ensure our renderer is used first
-    super(eventBus, styles, pathMap, canvas, textRenderer, priority);
-    
-    // Create an instance of PPINOTRenderer with proper dependencies
-    this._ppinotRenderer = new PPINOTRenderer(eventBus, styles, canvas, textRenderer);
-    
-    // Bind label rendering methods so PPINOTRenderer can use them
-    var self = this;
-    this._ppinotRenderer.renderEmbeddedLabel = function(parentGfx, element, align) {
-      return self._renderEmbeddedLabel(parentGfx, element, align);
-    };
-    
-    this._ppinotRenderer.renderEmbeddedDefaultLabel = function(parentGfx, element, align, text, fontSize, fontWeight) {
-      return self._renderEmbeddedDefaultLabel(parentGfx, element, align, text, fontSize, fontWeight);
-    };
+export default function MultiNotationRenderer(config, eventBus, styles, pathMap, canvas, textRenderer) {
+  // Validate parameters
+  if (!eventBus) {
+    throw new Error('MultiNotationRenderer requires eventBus');
   }
-
-  _renderEmbeddedLabel(parentGfx, element, align) {
-    // Get the business object name or use element name
-    var text = (element.businessObject && element.businessObject.name) || element.name || '';
-    
-    if (!text) {
-      return null;
-    }
-
-    // Calculate text position based on alignment
-    var x, y;
-    var width = element.width || 50;
-    var height = element.height || 50;
-    
-    if (align === 'center-middle') {
-      x = width / 2;
-      y = height / 2;
-    } else if (align === 'center-top') {
-      x = width / 2;
-      y = 15;
-    } else {
-      x = 10;
-      y = height / 2;
-    }
-
-    // Create text element directly using SVG
-    var textElement = svgCreate('text', {
-      x: x,
-      y: y,
-      'text-anchor': 'middle',
-      'dominant-baseline': 'central',
-      'font-family': 'Arial, sans-serif',
-      'font-size': '12px',
-      'fill': '#000'
-    });
-
-    textElement.textContent = text;
-    svgAppend(parentGfx, textElement);
-
-    return textElement;
+  if (typeof eventBus.on !== 'function') {
+    throw new Error('MultiNotationRenderer requires a proper EventBus object with .on method');
   }
-
-  _renderEmbeddedDefaultLabel(parentGfx, element, align, text, fontSize, fontWeight) {
-    if (!text) {
-      return null;
-    }
-
-    // Calculate text position based on alignment
-    var x, y;
-    var width = element.width || 50;
-    var height = element.height || 50;
-    
-    if (align === 'center-middle') {
-      x = width / 2;
-      y = height / 2;
-    } else if (align === 'center-top') {
-      x = width / 2;
-      y = 15;
-    } else {
-      x = 10;
-      y = height / 2;
-    }
-
-    // Create text element directly using SVG
-    var textElement = svgCreate('text', {
-      x: x,
-      y: y,
-      'text-anchor': 'middle',
-      'dominant-baseline': 'central',
-      'font-family': 'Arial, sans-serif',
-      'font-size': (fontSize || 12) + 'px',
-      'font-weight': fontWeight || 'normal',
-      'fill': '#000'
-    });
-
-    textElement.textContent = text;
-    svgAppend(parentGfx, textElement);
-
-    return textElement;
+  if (!styles) {
+    throw new Error('MultiNotationRenderer requires styles');
   }
-
-  canRender(element) {
-    console.log('MultiNotationRenderer.canRender called for:', element.type);
-    
-    // Delegate to PPINOTRenderer for PPINOT types
-    if (this._ppinotRenderer.canRender(element)) {
-      console.log('  -> Will be handled by PPINOTRenderer');
-      return true;
-    }
-    
-    // Otherwise, BPMN
-    const canRenderBpmn = super.canRender ? super.canRender(element) : /^bpmn:/.test(element.type);
-    console.log('  -> Will be handled by BpmnRenderer:', canRenderBpmn);
-    return canRenderBpmn;
+  if (!canvas) {
+    throw new Error('MultiNotationRenderer requires canvas');
   }
-
-  drawShape(parentGfx, element) {
-    console.log('MultiNotationRenderer.drawShape called for:', element.type);
-    
-    if (this._ppinotRenderer.canRender(element)) {
-      console.log('  -> Drawing with PPINOTRenderer');
-      // Use the inheritance-based PPINOTRenderer method directly
-      return this._ppinotRenderer.drawShape(parentGfx, element);
-    }
-    
-    console.log('  -> Drawing with BpmnRenderer');
-    return super.drawShape(parentGfx, element);
+  if (!textRenderer) {
+    throw new Error('MultiNotationRenderer requires textRenderer');
   }
-
-  getShapePath(shape) {
-    if (this._ppinotRenderer.canRender(shape)) {
-      return this._ppinotRenderer.getShapePath(shape);
-    }
-    return super.getShapePath(shape);
-  }
-
-  drawConnection(parentGfx, element) {
-    if (this._ppinotRenderer.canRender(element)) {
-      // Use the inheritance-based PPINOTRenderer method directly
-      return this._ppinotRenderer.drawConnection(parentGfx, element);
-    }
-    return super.drawConnection(parentGfx, element);
-  }
-
-  getConnectionPath(connection) {
-    if (this._ppinotRenderer.canRender(connection)) {
-      return this._ppinotRenderer.getConnectionPath(connection);
-    }
-    return super.getConnectionPath(connection);
-  }
+  
+  // Call the parent constructor with the correct parameter order
+  BpmnRenderer.call(this, config, eventBus, styles, pathMap, canvas, textRenderer);
+  
+  // Store references for later use
+  this._textRenderer = textRenderer;
+  this._canvas = canvas;
+  
+  // Create an instance of PPINOTRenderer with proper dependencies
+  this._ppinotRenderer = new PPINOTRenderer(eventBus, styles, canvas, textRenderer);
+  
+  // Don't override label rendering - let PPINOTRenderer handle it natively
 }
+
+inherits(MultiNotationRenderer, BpmnRenderer);
+
+MultiNotationRenderer.$inject = [
+  'config.bpmnRenderer',
+  'eventBus',
+  'styles',
+  'pathMap',
+  'canvas',
+  'textRenderer'
+];
+
+MultiNotationRenderer.prototype.canRender = function(element) {
+  // First check if PPINOT renderer can handle it
+  if (this._ppinotRenderer.canRender(element)) {
+    return true;
+  }
+  // Otherwise, defer to parent BpmnRenderer
+  return BpmnRenderer.prototype.canRender.call(this, element);
+};
+
+MultiNotationRenderer.prototype.drawShape = function(parentGfx, element) {
+  if (this._ppinotRenderer.canRender(element)) {
+    // Use the inheritance-based PPINOTRenderer method directly
+    return this._ppinotRenderer.drawShape(parentGfx, element);
+  }
+  return BpmnRenderer.prototype.drawShape.call(this, parentGfx, element);
+};
+
+MultiNotationRenderer.prototype.getShapePath = function(shape) {
+  if (this._ppinotRenderer.canRender(shape)) {
+    return this._ppinotRenderer.getShapePath(shape);
+  }
+  return BpmnRenderer.prototype.getShapePath.call(this, shape);
+};
+
+MultiNotationRenderer.prototype.drawConnection = function(parentGfx, element) {
+  if (this._ppinotRenderer.canRender(element)) {
+    // Use the inheritance-based PPINOTRenderer method directly
+    return this._ppinotRenderer.drawConnection(parentGfx, element);
+  }
+  return BpmnRenderer.prototype.drawConnection.call(this, parentGfx, element);
+};
+
+MultiNotationRenderer.prototype.getConnectionPath = function(connection) {
+  if (this._ppinotRenderer.canRender(connection)) {
+    return this._ppinotRenderer.getConnectionPath(connection);
+  }
+  return BpmnRenderer.prototype.getConnectionPath.call(this, connection);
+};

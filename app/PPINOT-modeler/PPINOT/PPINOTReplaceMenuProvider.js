@@ -1,4 +1,3 @@
-import { is } from 'bpmn-js/lib/util/ModelUtil';
 import { isDifferentType } from 'bpmn-js/lib/features/popup-menu/util/TypeUtil';
 import { filter } from 'min-dash';
 import * as replaceOptions from './PPINOTReplaceOptions';
@@ -11,7 +10,7 @@ export default function PPINOTReplaceMenuProvider(
   bpmnReplace,
   rules,
   translate,
-  replace
+  elementFactory
 ) {
   this._popupMenu = popupMenu;
   this._modeling = modeling;
@@ -19,7 +18,7 @@ export default function PPINOTReplaceMenuProvider(
   this._bpmnReplace = bpmnReplace;
   this._rules = rules;
   this._translate = translate;
-  this._replace = replace;
+  this._elementFactory = elementFactory;
 
   // register this provider under 'replace'
   popupMenu.registerProvider('replace', this);
@@ -32,7 +31,7 @@ PPINOTReplaceMenuProvider.$inject = [
   'bpmnReplace',
   'rules',
   'translate',
-  'replace'
+  'elementFactory'
 ];
 
 PPINOTReplaceMenuProvider.prototype.getEntries = function(element) {
@@ -124,13 +123,13 @@ PPINOTReplaceMenuProvider.prototype.getHeaderEntries = function(element) {
     const headers = variants.map(fn => ({
       id: `replace-with-time-agg-${fn.toLowerCase()}`,
       label: this._translate(fn),
-      action: () => this._replace.replaceElement(element, { type: `PPINOT:TimeAggregatedMeasure${fn}` })
+      action: () => this._replacePPINOTElement(element, { type: `PPINOT:TimeAggregatedMeasure${fn}` })
     }));
     headers.unshift({
       id: 'replace-with-cyclic-time-agg',
       className: 'icon-cyclic-time-menu',
       label: this._translate('\u00A0\u00A0\u00A0\u00A0\u00A0Cyclic'),
-      action: () => this._replace.replaceElement(element, { type: 'PPINOT:CyclicTimeAggregatedMeasure' })
+      action: () => this._replacePPINOTElement(element, { type: 'PPINOT:CyclicTimeAggregatedMeasure' })
     });
     return headers;
   }
@@ -142,7 +141,7 @@ PPINOTReplaceMenuProvider.prototype.getHeaderEntries = function(element) {
       id: `replace-with-cyclic-time-agg-${fn.toLowerCase()}`,
       className: 'icon-cyclic-time-menu',
       label: this._translate(fn),
-      action: () => this._replace.replaceElement(element, { type: `PPINOT:CyclicTimeAggregatedMeasure${fn}` })
+      action: () => this._replacePPINOTElement(element, { type: `PPINOT:CyclicTimeAggregatedMeasure${fn}` })
     }));
   }
 
@@ -152,7 +151,7 @@ PPINOTReplaceMenuProvider.prototype.getHeaderEntries = function(element) {
     return variants.map(fn => ({
       id: `replace-with-agg-${fn.toLowerCase()}`,
       label: this._translate(fn),
-      action: () => this._replace.replaceElement(element, { type: boType.replace(/(SUM|MAX|MIN|AVG)?$/, fn) })
+      action: () => this._replacePPINOTElement(element, { type: boType.replace(/(SUM|MAX|MIN|AVG)?$/, fn) })
     }));
   }
 
@@ -162,7 +161,7 @@ PPINOTReplaceMenuProvider.prototype.getHeaderEntries = function(element) {
       id: 'replace-with-cyclic-time',
       className: 'icon-cyclic-time-menu',
       label: this._translate('\u00A0\u00A0\u00A0\u00A0\u00A0Cyclic'),
-      action: () => this._replace.replaceElement(element, { type: 'PPINOT:CyclicTimeMeasure' })
+      action: () => this._replacePPINOTElement(element, { type: 'PPINOT:CyclicTimeMeasure' })
     }];
   }
 
@@ -173,7 +172,7 @@ PPINOTReplaceMenuProvider.prototype.getHeaderEntries = function(element) {
       id: `replace-with-cyclic-time-${fn.toLowerCase()}`,
       className: 'icon-cyclic-time-menu',
       label: this._translate(fn),
-      action: () => this._replace.replaceElement(element, { type: `PPINOT:CyclicTimeMeasure${fn}` })
+      action: () => this._replacePPINOTElement(element, { type: `PPINOT:CyclicTimeMeasure${fn}` })
     }));
   }
 
@@ -189,7 +188,7 @@ PPINOTReplaceMenuProvider.prototype._createMenuEntry = function(def, element) {
     label: this._translate(def.label),
     className: def.className || '',
     id: def.actionName,
-    action: () => this._replace.replaceElement(element, def.target)
+    action: () => this._replacePPINOTElement(element, def.target)
   };
 };
 
@@ -204,6 +203,45 @@ PPINOTReplaceMenuProvider.prototype._getStateConditionVariantHeaders = function(
   return variants.map(rt => ({
     id: `replace-with-state-cond-${rt.label.toLowerCase()}`,
     label: this._translate(rt.label),
-    action: () => this._replace.replaceElement(element, { type: rt.type })
+    action: () => this._replacePPINOTElement(element, { type: rt.type })
   }));
+};
+
+// Custom replacement method for PPINOT elements that avoids BPMN property system
+PPINOTReplaceMenuProvider.prototype._replacePPINOTElement = function(element, newTarget) {
+  const oldBusinessObject = element.businessObject;
+  
+  // Ensure we have valid coordinates and dimensions
+  const x = isFinite(element.x) ? element.x : 0;
+  const y = isFinite(element.y) ? element.y : 0;
+  const width = isFinite(element.width) && element.width > 0 ? element.width : 100;
+  const height = isFinite(element.height) && element.height > 0 ? element.height : 80;
+  
+  // Get the parent
+  const parent = element.parent;
+  
+  // Store the name before removing the element
+  const preservedName = oldBusinessObject.name || '';
+  
+  // Create new element using elementFactory to ensure proper structure
+  const newElement = this._elementFactory.create('shape', {
+    type: newTarget.type,
+    width: width,
+    height: height
+  });
+  
+  // Preserve the name if it exists
+  if (preservedName && newElement.businessObject) {
+    newElement.businessObject.name = preservedName;
+  }
+  
+  // Remove the old element first
+  this._modeling.removeShape(element);
+  
+  // Add the new element at the exact same position - use center coordinates
+  const centerX = x + width / 2;
+  const centerY = y + height / 2;
+  this._modeling.createShape(newElement, { x: centerX, y: centerY }, parent);
+  
+  return newElement;
 };
