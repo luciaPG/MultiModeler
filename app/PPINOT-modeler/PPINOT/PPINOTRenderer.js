@@ -11,6 +11,8 @@ import {getSemantic} from "bpmn-js/lib/draw/BpmnRenderUtil";
 import {assign} from "min-dash";
 import Ids from 'ids';
 import {isPPINOTConnection} from "./Types";
+import { getLabel } from './utils/LabelUtil';
+
 
 import Svg from './svg';
 
@@ -59,6 +61,20 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
   // This function uses renderLabel function to render a label INTO an element.
   function renderEmbeddedLabel(parentGfx, element, align) {
     var semantic = getSemantic(element);
+    
+    // No renderizar etiqueta interna si el elemento tiene una etiqueta externa
+    // o si está marcado para usar etiquetas externas
+    if (element._skipInternalLabel || element._hasExternalLabel || element.label) {
+      return null;
+    }
+    
+    // Si es un elemento PPINOT, no renderizar etiqueta interna ya que usará etiqueta externa
+    if (element.type && element.type.startsWith('PPINOT:') && 
+        // Mantener solo las etiquetas internas para elementos "mini" dentro de PPI
+        !(align === 'right-middle' && element.parent && element.parent.type === 'PPINOT:Ppi' && 
+        (element.type === 'PPINOT:Scope' || element.type === 'PPINOT:Target'))) {
+      return null;
+    }
     
     // Try multiple sources for the label text
     var labelText = '';
@@ -145,60 +161,6 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     });
   }
   
-  // This function uses renderLabel function to render an external label for an element.
-  // Label will render under the element by default.
-  function renderExternalLabel(parentGfx, element) {
-    var semantic = getSemantic(element);
-    
-    // Try multiple sources for the label text - same logic as renderEmbeddedLabel
-    var labelText = '';
-    if (semantic && semantic.name) {
-      labelText = semantic.name;
-    } else if (element.businessObject && element.businessObject.name) {
-      labelText = element.businessObject.name;
-    } else if (element.businessObject && element.businessObject.$attrs && element.businessObject.$attrs['name']) {
-      labelText = element.businessObject.$attrs['name'];
-    } else if (element.businessObject && element.businessObject.text) {
-      labelText = element.businessObject.text;
-    } else if (element.label) {
-      labelText = element.label;
-    }
-    
-    // Si no hay texto para la label, usar el tipo de elemento como fallback
-    if (!labelText || labelText.trim() === '') {
-      labelText = element.type ? element.type.replace('PPINOT:', '') : '';
-    }
-    
-    if (!labelText || labelText.trim() === '') {
-      return null;
-    }
-
-    // Use renderLabel function to create a proper editable label
-    var result = renderLabel(parentGfx, labelText, {
-      box: {
-        x: element.width / 2 - 50, // Center horizontally
-        y: element.height + 10, // Position below the element
-        width: 100,
-        height: 20
-      },
-      align: 'center-top',
-      padding: 5,
-      style: {
-        fill: element.color || '#000000',
-        fontSize: '11px',
-        fontWeight: 'normal'
-      }
-    });
-    
-    // Add classes to make it behave like an external label
-    if (result) {
-      svgClasses(result).add('djs-label');
-      svgClasses(result).add('djs-label-external');
-    }
-    
-    return result;
-  }
-  
   function addMarker( id, options) {
     var attrs = assign({
       fill: 'black',
@@ -257,6 +219,27 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
 
     return 'url(#' + id + ')';
   }
+  function renderExternalLabel(parentGfx, element) {
+    var labelText = element.businessObject && element.businessObject.name;
+    console.log('Rendering external label for', element.id, 'Text:', labelText);
+    
+    // Handle draggable label elements - these are separate elements of type 'label'
+    if (element.type === 'label') {
+      return renderLabel(parentGfx, labelText || '', {
+        box: element,
+        align: 'center-middle',
+        padding: 5,
+        style: {
+          fill: element.color || '#000000'
+        }
+      });
+    }
+    
+    // Para los demás elementos PPINOT, no renderizar etiquetas externas aquí
+    // ya que serán manejadas por PPINOTLabelSupport
+    return null;
+  }
+  
 
   function createMarker(id, type, fill, stroke) {
 
@@ -669,9 +652,12 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       return scope;
     },
     'PPINOT:AggregatedMeasure': (p, element) => {
-      let aggregatedMeasure = drawAggregatedMeasure(element)
+      let aggregatedMeasure = drawAggregatedMeasure(element);
       svgAppend(p, aggregatedMeasure);
-      // External labels will be handled by PPINOTLabelManager
+      
+      // Ya no necesitamos renderizar etiquetas externas aquí, se manejan en PPINOTLabelSupport
+      // Eliminar el código que intenta modificar la etiqueta
+      
       return aggregatedMeasure;
     },
     'PPINOT:AggregatedMeasureSUM': (p, element) => {
@@ -1127,12 +1113,30 @@ inherits(PPINOTRenderer, BaseRenderer);
 PPINOTRenderer.$inject = [ 'eventBus', 'styles', 'canvas', 'textRenderer' ];
 
 PPINOTRenderer.prototype.canRender = function(element) {
-  // Only render PPINOT elements, let bpmn-js handle labels for proper movement
-  return /^PPINOT:/.test(element.type);
+  // Handle PPINOT elements
+  if (/^PPINOT:/.test(element.type)) {
+    return true;
+  }
+  
+  // Handle label elements for PPINOT elements - SÍ RENDERIZAR LABELS PPINOT
+  if (element.type === 'label' && element.labelTarget) {
+    var target = element.labelTarget;
+    if (target.type && /^PPINOT:/.test(target.type)) {
+      return true;
+    }
+  }
+  
+  return false;
 };
 
 PPINOTRenderer.prototype.drawShape = function(p, element) {
   var type = element.type;
+  
+  // Handle PPINOT labels
+  if (type === 'label' && element.labelTarget && element.labelTarget.type && /^PPINOT:/.test(element.labelTarget.type)) {
+    return this.drawLabel(p, element);
+  }
+  
   var h = this.renderers[type];
   
   if(element.color == null)
@@ -1140,6 +1144,95 @@ PPINOTRenderer.prototype.drawShape = function(p, element) {
 
   /* jshint -W040 */
   return h(p, element);
+};
+
+PPINOTRenderer.prototype.drawLabel = function(parentGfx, element) {
+  console.log('PPINOTRenderer: Drawing label for', element.id);
+  
+  // First check if we have valid element
+  if (!element) {
+    console.warn('PPINOTRenderer: Cannot draw label for undefined element');
+    return null;
+  }
+  
+  var text = '';
+  var hasText = false;
+  
+  // Get label text from various sources - check each property type carefully
+  if (element.businessObject && typeof element.businessObject.name === 'string') {
+    text = element.businessObject.name;
+    hasText = text.trim() !== '';
+  } else if (element.businessObject && typeof element.businessObject.text === 'string') {
+    text = element.businessObject.text;
+    hasText = text.trim() !== '';
+  } else if (element.labelTarget && element.labelTarget.businessObject) {
+    var bo = element.labelTarget.businessObject;
+    if (typeof bo.name === 'string') {
+      text = bo.name;
+      hasText = text.trim() !== '';
+    } else if (bo.$attrs && typeof bo.$attrs.name === 'string') {
+      text = bo.$attrs.name;
+      hasText = text.trim() !== '';
+    }
+  } else if (element.labelTarget && typeof element.labelTarget.label === 'string') {
+    text = element.labelTarget.label;
+    hasText = text.trim() !== '';
+  }
+  
+  // Always ensure text is a string
+  if (typeof text !== 'string') {
+    text = '';
+    hasText = false;
+  }
+  
+  console.log('PPINOTRenderer: Label text:', text, 'hasText:', hasText);
+  
+  // Create text element using the text renderer with proper options
+  // Make sure element has dimensions
+  if (!element.width) element.width = 100;
+  if (!element.height) element.height = 50;
+  
+  var textElement = this._textRenderer.createText(text || '', {
+    box: element,
+    align: 'center-middle',
+    padding: 5,
+    style: {
+      fontSize: '12px',
+      fontFamily: 'Arial, sans-serif',
+      fill: '#000000'
+    }
+  });
+  
+  // Add CSS classes for styling
+  svgClasses(textElement).add('djs-label');
+  svgClasses(textElement).add('ppinot-label');
+  
+  // Check if this label has been edited before (persistent visibility)
+  var wasEditedBefore = element._labelWasEdited || 
+                        (element.businessObject && element.businessObject._labelWasEdited) ||
+                        (element.labelTarget && element.labelTarget._labelWasEdited);
+  
+  // Set visibility: hidden by default, visible if it has content OR was edited before
+  if (hasText || wasEditedBefore) {
+    svgClasses(textElement).add('ppinot-label-visible');
+    svgAttr(textElement, {
+      'visibility': 'visible',
+      'opacity': '1'
+    });
+  } else {
+    svgClasses(textElement).add('ppinot-label-hidden');
+    svgAttr(textElement, {
+      'visibility': 'hidden',
+      'opacity': '0'
+    });
+  }
+  
+  // Append to parent
+  svgAppend(parentGfx, textElement);
+  
+  console.log('PPINOTRenderer: Label created with visibility:', (hasText || wasEditedBefore) ? 'visible' : 'hidden');
+  
+  return textElement;
 };
 
 PPINOTRenderer.prototype.getShapePath = function(shape) {

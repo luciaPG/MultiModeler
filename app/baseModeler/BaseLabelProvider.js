@@ -83,10 +83,13 @@ export default function BaseLabelProvider(
         // Check if any custom provider can handle this element
         for (let provider of self._customProviders) {
             if (provider.canEdit && provider.canEdit(element)) {
-                directEditing.activate(element);
-                return;
+              var context = provider.activate(element);
+              if (context) {
+                directEditing.activate(element, context);
+              }
+              return;
             }
-        }
+          }
 
         // Handle standard BPMN elements
         let standardTypes = [

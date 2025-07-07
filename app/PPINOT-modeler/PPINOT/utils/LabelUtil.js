@@ -12,7 +12,7 @@ import {getDi} from "bpmn-js/lib/util/ModelUtil";
 import {label, externalLabel} from "../Types";
 
 export function getLabel(element) {
-    let semantic = element.businessObject
+    let semantic = element.businessObject;
 
     // Handle external label elements (type 'label')
     if (element.type === 'label' && semantic && semantic.text) {
@@ -22,11 +22,11 @@ export function getLabel(element) {
     if (isAny(semantic, label))
         return semantic.text;
     else
-        return basicGetLabel(element)
+        return basicGetLabel(element);
 }
 
 export function setLabel(element, text, isExternal) {
-    let semantic = element.businessObject
+    let semantic = element.businessObject;
     
     // Handle external label elements (type 'label')
     if (element.type === 'label') {
@@ -34,15 +34,28 @@ export function setLabel(element, text, isExternal) {
             semantic = element.businessObject = { $type: 'bpmn:Label' };
         }
         semantic.text = text;
+        
+        // Mark as edited for persistence
+        element._labelWasEdited = true;
+        
+        // Also mark target element if exists
+        if (element.labelTarget) {
+            element.labelTarget._labelWasEdited = true;
+        }
+        
         return element;
     }
     
     if (isAny(semantic, label)) {
-        semantic.text = text
-        return element
+        semantic.text = text;
+        
+        // Mark as edited for persistence
+        element._labelWasEdited = true;
+        
+        return element;
     }
     else
-        return basicSetLabel(element, text, isExternal)
+        return basicSetLabel(element, text, isExternal);
 }
 
 /**
@@ -61,12 +74,37 @@ export function isLabelExternal(semantic) {
         is(semantic, 'bpmn:SequenceFlow') ||
         is(semantic, 'bpmn:MessageFlow') ||
         is(semantic, 'bpmn:Group') ||
-        isAny(semantic, externalLabel) ;
+        isAny(semantic, externalLabel);
 }
 
-export function hasExternalLabel(element) {
-    return labelUtils.hasExternalLabel(element)
+/**
+ * Check if an element is a label
+ */
+export function isLabel(element) {
+    return element && element.type === 'label';
 }
+
+/**
+ * Check if an element has an external label
+ */
+export function hasExternalLabel(element) {
+    return element && element.label;
+}
+
+/**
+ * Get the mid point of an external label relative to its element
+ */
+export function getExternalLabelMid(element) {
+    if (!element) {
+        return undefined;
+    }
+    
+    return {
+        x: element.x + element.width / 2,
+        y: element.y + element.height + 30
+    };
+}
+
 
 /**
  * Get the position for sequence flow labels
@@ -90,11 +128,6 @@ export function getWaypointsMid(waypoints) {
 }
 
 
-export function getExternalLabelMid(element) {
-    return labelUtils.getExternalLabelMid(element)
-}
-
-
 /**
  * Returns the bounds of an elements label, parsed from the elements DI or
  * generated from its bounds.
@@ -115,10 +148,6 @@ export function getExternalLabelBounds(semantic, element) {
             y: mid.y - size.height / 2
         }, size);
     }
-}
-
-export function isLabel(element) {
-    return element && !!element.labelTarget;
 }
 
 /**

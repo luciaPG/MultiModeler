@@ -36,8 +36,8 @@ PPINOTLabelEnsurer.$inject = [
     'canvas',
     'modeling'
 ];
-
 // Helper function to check if element is a PPINOT element
 function isPPINOTElement(element) {
     return element && element.type && element.type.startsWith('PPINOT:');
 }
+
