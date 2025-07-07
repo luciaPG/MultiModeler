@@ -69,7 +69,6 @@ class BaseContextPadProvider extends ContextPadProvider {
   getContextPadEntries(element) {
     let entries = {};
     if (isPPINOTShape(element)) {
-      console.log('PPINOT ContextPad entries:', this._ppinotProvider.getContextPadEntries(element));
       return this._ppinotProvider.getContextPadEntries(element) || {};
     } else if (!isPPINOTShape(element) && element.type !== 'label') {
 

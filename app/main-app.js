@@ -19,7 +19,7 @@ import SubprocessNavigation from './PPINOT-modeler/PPINOT/utils/NavigationUtil';
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import 'diagram-js/assets/diagram-js.css';
-import './css/hybrid-app.css';
+import './css/app.css';
 
 
 // Variables globales

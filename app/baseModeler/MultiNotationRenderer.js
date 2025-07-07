@@ -45,6 +45,11 @@ MultiNotationRenderer.$inject = [
 ];
 
 MultiNotationRenderer.prototype.canRender = function(element) {
+  // Let BPMN renderer handle all labels for consistency and proper movement behavior
+  if (element.type === 'label') {
+    return BpmnRenderer.prototype.canRender.call(this, element);
+  }
+  
   // First check if PPINOT renderer can handle it
   if (this._ppinotRenderer.canRender(element)) {
     return true;
@@ -54,10 +59,21 @@ MultiNotationRenderer.prototype.canRender = function(element) {
 };
 
 MultiNotationRenderer.prototype.drawShape = function(parentGfx, element) {
+  console.log('MultiNotationRenderer.drawShape called for:', element.type, element);
+  
+  // Let BPMN renderer handle all labels for consistency and proper movement behavior
+  if (element.type === 'label') {
+    console.log('Drawing label using BPMN renderer');
+    return BpmnRenderer.prototype.drawShape.call(this, parentGfx, element);
+  }
+  
   if (this._ppinotRenderer.canRender(element)) {
+    console.log('Drawing PPINOT element using PPINOT renderer');
     // Use the inheritance-based PPINOTRenderer method directly
     return this._ppinotRenderer.drawShape(parentGfx, element);
   }
+  
+  console.log('Drawing BPMN element using BPMN renderer');
   return BpmnRenderer.prototype.drawShape.call(this, parentGfx, element);
 };
 
@@ -81,4 +97,72 @@ MultiNotationRenderer.prototype.getConnectionPath = function(connection) {
     return this._ppinotRenderer.getConnectionPath(connection);
   }
   return BpmnRenderer.prototype.getConnectionPath.call(this, connection);
+};
+
+MultiNotationRenderer.prototype.drawLabel = function(parentGfx, element) {
+  // Always ensure label is rendered by parent BpmnRenderer first
+  const labelGfx = BpmnRenderer.prototype.drawLabel.call(this, parentGfx, element);
+  
+  // Apply immediate visibility fix for all labels
+  if (labelGfx) {
+    // Force visibility immediately
+    labelGfx.style.visibility = 'visible';
+    labelGfx.style.display = 'block';
+    labelGfx.style.opacity = '1';
+    labelGfx.style.zIndex = '1000';
+    
+    // Find text and tspan elements
+    const textElement = labelGfx.querySelector('text');
+    if (textElement) {
+      textElement.style.visibility = 'visible';
+      textElement.style.display = 'block';
+      textElement.style.opacity = '1';
+      textElement.style.fill = '#000000';
+      
+      const tspanElement = textElement.querySelector('tspan');
+      if (tspanElement) {
+        tspanElement.style.visibility = 'visible';
+        tspanElement.style.display = 'block';
+        tspanElement.style.opacity = '1';
+        tspanElement.style.fill = '#000000';
+        
+        // Ensure text content exists
+        if (!tspanElement.textContent || tspanElement.textContent.trim() === '') {
+          const fallbackText = element.id ? 
+            element.id.replace('_label', '').replace(/([A-Z])/g, ' $1').trim() || 'PPINOT Element' :
+            'PPINOT Element';
+          tspanElement.textContent = fallbackText;
+        }
+      }
+    }
+    
+    // Add mutation observer to prevent changes
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && 
+            (mutation.attributeName === 'style' || mutation.attributeName === 'visibility')) {
+          // Re-force visibility if it was changed
+          const target = mutation.target;
+          if (target.style.visibility !== 'visible' || 
+              target.style.display === 'none' || 
+              target.style.opacity === '0') {
+            target.style.visibility = 'visible';
+            target.style.display = 'block';
+            target.style.opacity = '1';
+          }
+        }
+      });
+    });
+    
+    observer.observe(labelGfx, {
+      attributes: true,
+      attributeFilter: ['style', 'visibility', 'display', 'opacity'],
+      subtree: true
+    });
+    
+    // Store observer reference for cleanup
+    labelGfx._visibilityObserver = observer;
+  }
+  
+  return labelGfx;
 };

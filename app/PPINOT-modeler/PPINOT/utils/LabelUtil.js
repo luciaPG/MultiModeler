@@ -7,13 +7,18 @@ import {
 import * as labelUtils from "bpmn-js/lib/util/LabelUtil"
 import {isAny} from "bpmn-js/lib/features/modeling/util/ModelingUtil";
 import {assign} from "min-dash";
-import {DEFAULT_LABEL_SIZE, FLOW_LABEL_INDENT} from "bpmn-js/lib/util/LabelUtil";
+import {DEFAULT_LABEL_SIZE} from "bpmn-js/lib/util/LabelUtil";
 import {getDi} from "bpmn-js/lib/util/ModelUtil";
 import {label, externalLabel} from "../Types";
 
 export function getLabel(element) {
     let semantic = element.businessObject
 
+    // Handle external label elements (type 'label')
+    if (element.type === 'label' && semantic && semantic.text) {
+        return semantic.text;
+    }
+    
     if (isAny(semantic, label))
         return semantic.text;
     else
@@ -22,6 +27,16 @@ export function getLabel(element) {
 
 export function setLabel(element, text, isExternal) {
     let semantic = element.businessObject
+    
+    // Handle external label elements (type 'label')
+    if (element.type === 'label') {
+        if (!semantic) {
+            semantic = element.businessObject = { $type: 'bpmn:Label' };
+        }
+        semantic.text = text;
+        return element;
+    }
+    
     if (isAny(semantic, label)) {
         semantic.text = text
         return element
@@ -104,4 +119,20 @@ export function getExternalLabelBounds(semantic, element) {
 
 export function isLabel(element) {
     return element && !!element.labelTarget;
+}
+
+/**
+ * Check if element is a PPINOT element
+ */
+export function isPPINOTElement(element) {
+    return element && element.type && element.type.startsWith('PPINOT:');
+}
+
+/**
+ * Update label for PPINOT elements
+ */
+export function updateLabel(element) {
+    // For now, just trigger a visual update
+    // This can be expanded later if needed
+    return element;
 }

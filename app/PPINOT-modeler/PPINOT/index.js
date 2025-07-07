@@ -4,23 +4,23 @@ import PPINOTUpdater from './PPINOTUpdater';
 import PPINOTNotationPalette from './PPINOTNotationPalette';
 // import PPINOTContextPadProvider from './PPINOTContextPadProvider';
 import PPINOTReplaceMenuProvider from './PPINOTReplaceMenuProvider';
-import PPINOTCustomTextEditor from './PPINOTCustomTextEditor';
+import PPINOTLabelProvider from './PPINOTLabelProvider';  // Back to original
 
 export default {
   __init__: [
     'PPINOTRenderer',
     'PPINOTRules',
     'PPINOTUpdater',
-    'PPINOTCustomTextEditor',
     // 'PPINOTContextPadProvider',
-    'PPINOTReplaceMenuProvider'
+    'PPINOTReplaceMenuProvider',
+    'PPINOTLabelProvider'  // Re-enabled with minimal version
   ],
   PPINOTRenderer: [ 'type', PPINOTRenderer ],
   PPINOTRules: [ 'type', PPINOTRules ],
   PPINOTUpdater: [ 'type', PPINOTUpdater ],
-  PPINOTCustomTextEditor: [ 'type', PPINOTCustomTextEditor ],
   // PPINOTContextPadProvider: [ 'type', PPINOTContextPadProvider ],
   PPINOTReplaceMenuProvider: [ 'type', PPINOTReplaceMenuProvider ],
   ppinotReplaceMenuProvider: [ 'type', PPINOTReplaceMenuProvider ],
-  ppinotNotationPalette: [ 'type', PPINOTNotationPalette ]
+  ppinotNotationPalette: [ 'type', PPINOTNotationPalette ],
+  PPINOTLabelProvider: [ 'type', PPINOTLabelProvider ]  // Re-enabled with minimal version
 };

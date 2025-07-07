@@ -28,6 +28,9 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
 
   BaseRenderer.call(this, eventBus, 2000);
 
+  // Store textRenderer for use in prototype methods
+  this._textRenderer = textRenderer;
+
   var computeStyle = styles.computeStyle;
 
   var rendererId = RENDERER_IDS.next();
@@ -119,7 +122,9 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       align: align,
       padding: 5,
       style: {
-        fill: element.color || '#000000'
+        fill: element.color || '#000000',
+        fontSize: '11px',  // Aseguramos que tenga el mismo tamaño que los mini elementos
+        fontWeight: 'bold'  // Hacemos que todos sean bold para consistencia
       }
     });
     
@@ -133,9 +138,9 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       align: align,
       padding: 5,
       style: {
-        fill: element.color,
-        fontSize:  size + 'px',
-        fontWeight: weight
+        fill: element.color || '#000000',
+        fontSize: (size || 11) + 'px',  // Si no se especifica tamaño, usar 11px por defecto
+        fontWeight: weight || 'bold'    // Si no se especifica peso, usar bold por defecto
       }
     });
   }
@@ -159,29 +164,41 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       labelText = element.label;
     }
     
-    // Si no hay texto para la label, no renderizar nada
+    // Si no hay texto para la label, usar el tipo de elemento como fallback
+    if (!labelText || labelText.trim() === '') {
+      labelText = element.type ? element.type.replace('PPINOT:', '') : '';
+    }
+    
     if (!labelText || labelText.trim() === '') {
       return null;
     }
-    
-    // Crear el texto SVG directamente
-    var text = svgCreate('text');
-    svgAttr(text, {
-      x: element.width / 2,  // Centro horizontal del elemento
-      y: element.height + 18, // Debajo del elemento + offset para el texto
-      'text-anchor': 'middle',
-      'font-family': 'Arial, sans-serif',
-      'font-size': '11px',
-      'fill': element.color || '#000000'
+
+    // Use renderLabel function to create a proper editable label
+    var result = renderLabel(parentGfx, labelText, {
+      box: {
+        x: element.width / 2 - 50, // Center horizontally
+        y: element.height + 10, // Position below the element
+        width: 100,
+        height: 20
+      },
+      align: 'center-top',
+      padding: 5,
+      style: {
+        fill: element.color || '#000000',
+        fontSize: '11px',
+        fontWeight: 'normal'
+      }
     });
     
-    text.textContent = labelText;
-    svgClasses(text).add('djs-label');
-    svgAppend(parentGfx, text);
+    // Add classes to make it behave like an external label
+    if (result) {
+      svgClasses(result).add('djs-label');
+      svgClasses(result).add('djs-label-external');
+    }
     
-    return text;
+    return result;
   }
-
+  
   function addMarker( id, options) {
     var attrs = assign({
       fill: 'black',
@@ -437,7 +454,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     
     if (element.parent && element.parent.type === 'PPINOT:Ppi') {
       iconUrl = Svg.dataURLscopeMini;
-      scaleFactor = 0.3; // Scale down scope mini icons to 30% of original size
+      scaleFactor = 0.25; // Scale down scope mini icons to 30% of original size
       // Center the smaller icon by adjusting the offset
       offsetX = 10 + (element.width * (1 - scaleFactor)) / 2;
       offsetY = 5 + (element.height * (1 - scaleFactor)) / 2 - 5; // Ajuste adicional para subir más el icono
@@ -654,7 +671,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     'PPINOT:AggregatedMeasure': (p, element) => {
       let aggregatedMeasure = drawAggregatedMeasure(element)
       svgAppend(p, aggregatedMeasure);
-      renderExternalLabel(p, element);
+      // External labels will be handled by PPINOTLabelManager
       return aggregatedMeasure;
     },
     'PPINOT:AggregatedMeasureSUM': (p, element) => {
@@ -796,7 +813,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     'PPINOT:BaseMeasure': (p, element) => {
       let baseMeasure = drawBaseMeasure(element)
       svgAppend(p, baseMeasure);
-      renderExternalLabel(p, element);
+      // External labels will be handled by PPINOTLabelManager
       return baseMeasure;
     },
     'PPINOT:DataAggregatedMeasure': (p, element) => {
@@ -987,10 +1004,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
         markerEnd: marker('messageflow-start', 'white',BLACK),
       };
       return svgAppend(p, createLine(element.waypoints, attrs));
-    },
-    'label': (p, element) => {
-      return renderExternalLabel(p, element);
-    },
+    }
   };
 
   // Finally, you have to define the paths
@@ -1104,23 +1118,6 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       ]
 
       return componentsToPath(normalPath);
-    },
-    
-    'label': (element) => {
-      var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-
-      var rectPath = [
-        ['M', x, y],
-        ['l', width, 0],
-        ['l', 0, height],
-        ['l', -width, 0],
-        ['z']
-      ];
-
-      return componentsToPath(rectPath);
     }
   }
 }
@@ -1130,7 +1127,8 @@ inherits(PPINOTRenderer, BaseRenderer);
 PPINOTRenderer.$inject = [ 'eventBus', 'styles', 'canvas', 'textRenderer' ];
 
 PPINOTRenderer.prototype.canRender = function(element) {
-  return /^PPINOT:/.test(element.type) || element.type === 'label';
+  // Only render PPINOT elements, let bpmn-js handle labels for proper movement
+  return /^PPINOT:/.test(element.type);
 };
 
 PPINOTRenderer.prototype.drawShape = function(p, element) {
