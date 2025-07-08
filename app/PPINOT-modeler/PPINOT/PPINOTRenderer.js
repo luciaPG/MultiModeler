@@ -848,7 +848,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         strokeWidth: 1.5,
         markerEnd: marker('sequenceflow-end', 'white', BLACK),
       });
-      return svgAppend(p, createValidLine(element.waypoints, attrs));
+      return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:MyConnection': (p, element) => {
       var attrs = computeStyle(attrs, {
@@ -856,7 +856,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         strokeWidth: 1.5,
         markerEnd: marker('sequenceflow-end', 'white', BLACK),
       });
-      return svgAppend(p, createValidLine(element.waypoints, attrs));
+      return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:DashedLine': (p, element) => {
       var attrs = computeStyle(attrs, {
@@ -864,7 +864,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         strokeWidth: 1.5,
         strokeDasharray: [10, 7]
       });
-      return svgAppend(p, createValidLine(element.waypoints, attrs));
+      return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:RFCStateConnection': (p, element) => {
       var attrs = computeStyle(attrs, {
@@ -872,7 +872,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         strokeWidth: 1.5,
         strokeDasharray: [10, 7]
       });
-      return svgAppend(p, createValidLine(element.waypoints, attrs));
+      return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:AggregatedConnection': (p, element) => {
       var attrs = {
@@ -880,7 +880,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         strokeWidth: 1.5,
         markerStart: marker('conditional-flow-marker', 'white', BLACK),
       };
-      return svgAppend(p, createValidLine(element.waypoints, attrs));
+      return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:GroupedBy': (p, element) => {
       var attrs = {
@@ -890,7 +890,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         // i changed de marker name 
         markerStart: marker('conditional-flow-marker', 'white', BLACK),
       };
-      return svgAppend(p, createValidLine(element.waypoints, attrs));
+      return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:ToConnection': (p, element) => {
       var attrs = {
@@ -900,7 +900,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         markerStart: marker('messageflow-start', 'black', BLACK),
         markerEnd: marker('messageflow-start', 'black', BLACK),
       };
-      return svgAppend(p, createValidLine(element.waypoints, attrs));
+      return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:FromConnection': (p, element) => {
       var attrs = {
@@ -910,7 +910,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         markerStart: marker('messageflow-start', 'white', BLACK),
         markerEnd: marker('messageflow-start', 'white', BLACK),
       };
-      return svgAppend(p, createValidLine(element.waypoints, attrs));
+      return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:EndConnection': (p, element) => {
       var attrs = {
@@ -919,7 +919,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         strokeDasharray: [8, 5],
         markerEnd: marker('messageflow-start', 'black', BLACK),
       };
-      return svgAppend(p, createValidLine(element.waypoints, attrs));
+      return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:StartConnection': (p, element) => {
       var attrs = {
@@ -928,7 +928,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         strokeDasharray: [8, 5],
         markerEnd: marker('messageflow-start', 'white', BLACK),
       };
-      return svgAppend(p, createValidLine(element.waypoints, attrs));
+      return svgAppend(p, createLine(element.waypoints, attrs));
     }
   };
 
@@ -2216,21 +2216,4 @@ PPINOTRenderer.prototype.getConnectionPath = function (connection) {
 
   return componentsToPath(connectionPath);
 };
-
-  // Also fix the createLine function usage in connection renderers
-  function createValidLine(waypoints, attrs) {
-    if (!waypoints || waypoints.length < 2) {
-      waypoints = [{ x: 0, y: 0 }, { x: 0, y: 0 }];
-    }
-
-    // Ensure all waypoints have valid coordinates
-    waypoints = waypoints.map(function (p) {
-      return {
-        x: typeof p.x === 'number' ? p.x : 0,
-        y: typeof p.y === 'number' ? p.y : 0
-      };
-    });
-
-    return createLine(waypoints, attrs);
-  }
 }

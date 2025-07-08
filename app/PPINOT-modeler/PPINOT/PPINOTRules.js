@@ -9,8 +9,7 @@ import {
 } from 'bpmn-js/lib/util/ModelUtil';
 
 import RuleProvider from 'diagram-js/lib/features/rules/RuleProvider';
-import {isAny} from "bpmn-js/lib/features/modeling/util/ModelingUtil";
-import {isPPINOTResourceArcElement, isPPINOTShape, isPPINOTAggregatedElement, isPPINOTConnection} from "./Types";
+import {isPPINOTResourceArcElement, isPPINOTShape, isPPINOTAggregatedElement} from "./Types";
 import {isLabel} from "bpmn-js/lib/util/LabelUtil";
 
 // This module defines the rules of connection for the different types of connectors and elements created
@@ -70,18 +69,31 @@ function connect(source, target, connection) {
       return false
   }
 
+  else if (isPPINOTAggregatedElement(source) && is(target, 'bpmn:DataObjectReference')) {
+    return { 
+      type: 'PPINOT:GroupedBy',
+      waypoints: [
+        { x: source.x + source.width/2, y: source.y + source.height/2 },
+        { x: source.x + source.width/2, y: (source.y + target.y)/2 },
+        { x: target.x + target.width/2, y: (source.y + target.y)/2 },
+        { x: target.x + target.width/2, y: target.y + target.height/2 }
+      ]
+    };
+  }
   else if(connection === 'PPINOT:ToConnection') {
-    if((isDefaultValid(target) || is(target, 'bpmn:Participant') )
-    && ( is(source, 'PPINOT:TimeMeasure') || is(source, 'PPINOT:CyclicTimeMeasure')
-    || is(source, 'PPINOT:CyclicTimeMeasureSUM') || is(source, 'PPINOT:CyclicTimeMeasureMAX')
-    || is(source, 'PPINOT:CyclicTimeMeasureMIN') || is(source, 'PPINOT:CyclicTimeMeasureAVG')
-    || is(source, 'PPINOT:CyclicTimeAggregatedMeasureSUM') || is(source, 'PPINOT:CyclicTimeAggregatedMeasureMAX')
-    || is(source, 'PPINOT:CyclicTimeAggregatedMeasureMIN') || is(source, 'PPINOT:CyclicTimeAggregatedMeasureAVG')
-    || is(source, 'PPINOT:CyclicTimeAggregatedMeasure') || is(source, 'PPINOT:TimeAggregatedMeasure')
-    || is(source, 'PPINOT:TimeAggregatedMeasureMAX') || is(source, 'PPINOT:TimeAggregatedMeasureMIN') || is(source, 'PPINOT:TimeAggregatedMeasureAVG') || is(source, 'PPINOT:TimeAggregatedMeasureSUM')))
-      return { type: connection }
-    else
-      return false
+    if((isDefaultValid(target) || is(target, 'bpmn:Participant')) && 
+       (is(source, 'PPINOT:TimeMeasure') || is(source, 'PPINOT:TimeAggregatedMeasure'))) {
+      return { 
+        type: connection,
+        waypoints: [
+          { x: source.x + source.width/2, y: source.y + source.height/2 },
+          { x: (source.x + target.x)/2, y: source.y + source.height/2 },
+          { x: (source.x + target.x)/2, y: target.y + target.height/2 },
+          { x: target.x + target.width/2, y: target.y + target.height/2 }
+        ]
+      };
+    }
+    return false;
   }
   else if(connection === 'PPINOT:FromConnection') {
     if((isDefaultValid(target) || is(target, 'bpmn:Participant') )
