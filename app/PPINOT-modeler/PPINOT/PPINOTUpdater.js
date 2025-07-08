@@ -13,6 +13,7 @@ import {
 } from 'diagram-js/lib/util/Collections';
 
 import { is } from 'bpmn-js/lib/util/ModelUtil';
+import { isExternalLabel } from './Types';
 
 /**
  * A handler responsible for updating the PPINOT element's businessObject
@@ -21,6 +22,24 @@ import { is } from 'bpmn-js/lib/util/ModelUtil';
 export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
 
   CommandInterceptor.call(this, eventBus);
+
+  // Listen for element replacement events to handle labels
+  eventBus.on('shape.replace', function(event) {
+    const oldShape = event.oldShape;
+    const newShape = event.newShape;
+    
+    // If the old shape had a label and the new shape should have one too
+    if (oldShape.label && isExternalLabel(newShape)) {
+      // Ensure the new shape has the label reference
+      newShape.label = oldShape.label;
+      newShape._hasExternalLabel = true;
+      
+      // Update the label's target reference
+      if (oldShape.label.labelTarget) {
+        oldShape.label.labelTarget = newShape;
+      }
+    }
+  });
 
   function updatePPINOTElement(e) {
     var context = e.context,

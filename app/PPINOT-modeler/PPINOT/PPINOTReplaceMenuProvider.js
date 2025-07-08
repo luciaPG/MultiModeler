@@ -1,7 +1,7 @@
 import { isDifferentType } from 'bpmn-js/lib/features/popup-menu/util/TypeUtil';
 import { filter } from 'min-dash';
 import * as replaceOptions from './PPINOTReplaceOptions';
-import { isPPINOTShape } from './Types';
+import { isPPINOTShape, externalLabel } from './Types';
 
 export default function PPINOTReplaceMenuProvider(
   popupMenu,
@@ -223,6 +223,21 @@ PPINOTReplaceMenuProvider.prototype._replacePPINOTElement = function(element, ne
   // Store the name before removing the element
   const preservedName = oldBusinessObject.name || '';
   
+  // Store external label information if it exists
+  const oldLabel = element.label;
+  let labelData = null;
+  
+  if (oldLabel) {
+    // Store exact position and dimensions of the old label
+    labelData = {
+      x: oldLabel.x,
+      y: oldLabel.y,
+      width: oldLabel.width,
+      height: oldLabel.height,
+      text: oldLabel.businessObject ? oldLabel.businessObject.name || '' : ''
+    };
+  }
+  
   // Create new element using elementFactory to ensure proper structure
   const newElement = this._elementFactory.create('shape', {
     type: newTarget.type,
@@ -235,13 +250,53 @@ PPINOTReplaceMenuProvider.prototype._replacePPINOTElement = function(element, ne
     newElement.businessObject.name = preservedName;
   }
   
+  // Add the _hasExternalLabel property if the new element type should have an external label
+  if (this._shouldHaveExternalLabel(newTarget.type)) {
+    newElement._hasExternalLabel = true;
+  }
+  
   // Remove the old element first
   this._modeling.removeShape(element);
   
   // Add the new element at the exact same position - use center coordinates
   const centerX = x + width / 2;
   const centerY = y + height / 2;
-  this._modeling.createShape(newElement, { x: centerX, y: centerY }, parent);
+  const newShape = this._modeling.createShape(newElement, { x: centerX, y: centerY }, parent);
   
-  return newElement;
+  // Create external label if needed and we have the old label data
+  if (labelData && this._shouldHaveExternalLabel(newTarget.type)) {
+    const labelShape = this._elementFactory.createLabel({
+      businessObject: newShape.businessObject,
+      type: 'label',
+      labelTarget: newShape,
+      width: labelData.width,
+      height: labelData.height
+    });
+    
+    // Use the exact position of the old label
+    const position = {
+      x: labelData.x + labelData.width / 2, // centerX of label
+      y: labelData.y + labelData.height / 2  // centerY of label
+    };
+    
+    // Create the label at the exact same position
+    const createdLabel = this._modeling.createShape(labelShape, position, parent);
+    
+    // Ensure the label is linked to the new shape
+    newShape.label = createdLabel;
+    createdLabel.labelTarget = newShape;
+    
+    // Preserve the label text if it exists
+    if (labelData.text && createdLabel.businessObject) {
+      createdLabel.businessObject.name = labelData.text;
+    }
+  }
+  
+  return newShape;
+};
+
+// Helper method to check if an element type should have an external label
+PPINOTReplaceMenuProvider.prototype._shouldHaveExternalLabel = function(type) {
+  // Import the external label types array
+  return externalLabel.includes(type);
 };

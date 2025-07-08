@@ -4,6 +4,22 @@ import { isExternalLabel } from './Types';
 // In charge of creating external labels for PPINOT elements  
 export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, canvas, elementRegistry) {
 
+  // Listen for element replacement to ensure labels are properly preserved
+  eventBus.on('shape.replace', function(event) {
+    const oldShape = event.oldShape;
+    const newShape = event.newShape;
+    
+    // If the old element had a label and the new one should have one too
+    if (oldShape.label && isExternalLabel(newShape) && !newShape.label) {
+      // Transfer the label to the new shape
+      const oldLabel = oldShape.label;
+      newShape.label = oldLabel;
+      oldLabel.labelTarget = newShape;
+      
+      // Ensure the new shape has the flag set
+      newShape._hasExternalLabel = true;
+    }
+  });
 
   eventBus.on('create.end', 500, function(event) {
     const shape = event.context.shape;
@@ -80,14 +96,16 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
   }
 
   function shouldCreateExternalLabel(element) {
-    console.log('shouldCreateExternalLabel', isExternalLabel(element));
     if (!isExternalLabel(element)) {
       return false;
     }
 
-    
+    // Don't create a new external label if one already exists
+    if (element.label) {
+      return false;
+    }
 
-    return element && element.type;
+    return true;
   }
 
   function getExternalLabelMid(element) {
