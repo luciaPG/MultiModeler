@@ -694,7 +694,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
     'PPINOT:CountAggregatedMeasure': (p, element) => {
       let countAggregatedMeasure = drawCountAggregatedMeasure(element)
       svgAppend(p, countAggregatedMeasure);
-      (p, element, 'center-middle');
+    
       return countAggregatedMeasure;
     },
     'PPINOT:CountAggregatedMeasureSUM': (p, element) => {
@@ -720,19 +720,19 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
     'PPINOT:CountMeasure': (p, element) => {
       let countMeasure = drawCountMeasure(element)
       svgAppend(p, countMeasure);
-      (p, element, 'center-middle');
+     
       return countMeasure;
     },
     'PPINOT:TimeMeasure': (p, element) => {
       let timeMeasure = drawTimeMeasure(element)
       svgAppend(p, timeMeasure);
-      (p, element, 'center-middle');
+      
       return timeMeasure;
     },
     'PPINOT:CyclicTimeMeasure': (p, element) => {
       let cyclicTime = drawCyclicTimeMeasure(element)
       svgAppend(p, cyclicTime);
-      (p, element, 'center-middle');
+     
       return cyclicTime;
     },
     'PPINOT:BaseMeasure': (p, element) => {
@@ -744,7 +744,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
     'PPINOT:DataAggregatedMeasure': (p, element) => {
       let dataAggregatedMeasure = drawDataAggregatedMeasure(element)
       svgAppend(p, dataAggregatedMeasure);
-      (p, element, 'center-middle');
+    
       return dataAggregatedMeasure;
     },
     'PPINOT:DataAggregatedMeasureSUM': (p, element) => {
@@ -770,37 +770,37 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
     'PPINOT:DataMeasure': (p, element) => {
       let dataMeasure = drawDataMeasure(element)
       svgAppend(p, dataMeasure);
-      (p, element, 'center-middle');
+    
       return dataMeasure;
     },
     'PPINOT:DataPropertyConditionAggregatedMeasure': (p, element) => {
       let dataPropertyConditionAggregatedMeasure = drawDataPropertyConditionAggregatedMeasure(element)
       svgAppend(p, dataPropertyConditionAggregatedMeasure);
-      (p, element, 'center-middle');
+    
       return dataPropertyConditionAggregatedMeasure;
     },
     'PPINOT:DataPropertyConditionMeasure': (p, element) => {
       let dataPropertyConditionMeasure = drawDataPropertyConditionMeasure(element)
       svgAppend(p, dataPropertyConditionMeasure);
-      (p, element, 'center-middle');
+    
       return dataPropertyConditionMeasure;
     },
     'PPINOT:DerivedMultiInstanceMeasure': (p, element) => {
       let derivedMultiInstanceMeasure = drawDerivedMultiInstanceMeasure(element)
       svgAppend(p, derivedMultiInstanceMeasure);
-      (p, element, 'center-middle');
+    
       return derivedMultiInstanceMeasure;
     },
     'PPINOT:StateConditionMeasure': (p, element) => {
       let stateConditionMeasure = drawStateConditionMeasure(element)
       svgAppend(p, stateConditionMeasure);
-      (p, element, 'center-middle');
+    
       return stateConditionMeasure;
     },
     'PPINOT:StateConditionAggregatedMeasure': (p, element) => {
       let stateConditionAggregatedMeasure = drawStateConditionAggregatedMeasure(element)
       svgAppend(p, stateConditionAggregatedMeasure);
-      (p, element, 'center-middle');
+    
       return stateConditionAggregatedMeasure;
     },
     'PPINOT:StateCondAggMeasureNumber': (p, element) => {
@@ -831,13 +831,13 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
     'PPINOT:Ppi': (p, element) => {
       let ppi = drawPpi(element)
       svgAppend(p, ppi);
-      (p, element, 'top');
+      renderEmbeddedLabel(p, element, 'top');
       return ppi;
     },
     'PPINOT:DerivedSingleInstanceMeasure': (p, element) => {
       let derivedSingleInstanceMeasure = drawDerivedSingleInstanceMeasure(element)
       svgAppend(p, derivedSingleInstanceMeasure);
-      (p, element, 'center-middle');
+    
       return derivedSingleInstanceMeasure;
     },
 
