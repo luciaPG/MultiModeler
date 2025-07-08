@@ -1,15 +1,11 @@
-
-
-
+// import inherits from 'inherits';
+// import BaseRenderer from 'diagram-js/lib/draw/BaseRenderer';
 import { componentsToPath, createLine } from 'diagram-js/lib/util/RenderUtil';
-
 import { query as domQuery } from 'min-dom';
-
 import { append as svgAppend, attr as svgAttr, classes as svgClasses, create as svgCreate } from 'tiny-svg';
 import { getSemantic } from "bpmn-js/lib/draw/BpmnRenderUtil";
 import { assign } from "min-dash";
 import Ids from 'ids';
-import { isPPINOTConnection } from "./Types";
 
 import Svg from './svg';
 
@@ -19,21 +15,106 @@ var BLACK = '#000';
 
 /**
  * A renderer that knows how to render PPINOT elements.
- * 
- * This module is used to declarate which elements will be created in the diagram when you 
- * drag an element of the palette. It is only for PPINOT elements, not bpmn elements.
  */
 export default function PPINOTRenderer(styles, canvas, textRenderer) {
-
-
+  // Clase auxiliar: no hereda de BaseRenderer ni usa eventBus
   this._textRenderer = textRenderer;
-
   var computeStyle = styles.computeStyle;
-
   var rendererId = RENDERER_IDS.next();
-
   var markers = {};
 
+  function ensureMarkers() {
+    if (!markers['messageflow-start']) {
+      createMarker('messageflow-start', 'white', BLACK);
+    }
+    if (!markers['conditional-flow-marker']) {
+      createMarker('conditional-flow-marker', 'white', BLACK);
+    }
+  }
+
+  function addMarker(id, options) {
+    var attrs = assign({
+      fill: 'black',
+      strokeWidth: 1,
+      strokeLinecap: 'round',
+      strokeDasharray: 'none'
+    }, options.attrs);
+
+    var ref = options.ref || { x: 0, y: 0 };
+    var scale = options.scale || 1;
+
+    if (attrs.strokeDasharray === 'none') {
+      attrs.strokeDasharray = [10000, 1];
+    }
+
+    var marker = svgCreate('marker');
+    svgAttr(options.element, attrs);
+    svgAppend(marker, options.element);
+
+    svgAttr(marker, {
+      id: id,
+      viewBox: '0 0 20 20',
+      refX: ref.x,
+      refY: ref.y,
+      markerWidth: 20 * scale,
+      markerHeight: 20 * scale,
+      orient: 'auto'
+    });
+
+    var defs = domQuery('defs', canvas._svg);
+
+    if (!defs) {
+      defs = svgCreate('defs');
+      svgAppend(canvas._svg, defs);
+    }
+    svgAppend(defs, marker);
+    markers[id] = marker;
+  }
+
+  function colorEscape(str) {
+    return str.replace(/[()\s,#]+/g, '_');
+  }
+
+  function marker(type, fill, stroke) {
+    var id = type + '-' + colorEscape(fill) + '-' + colorEscape(stroke) + '-' + rendererId;
+
+    if (!markers[id]) {
+      createMarker(id, type, fill, stroke);
+    }
+
+    return 'url(#' + id + ')';
+  }
+
+  function createMarker(id, type, fill, stroke) {
+    if (type === 'messageflow-start') {
+      var messageflowStart = svgCreate('circle');
+      svgAttr(messageflowStart, { cx: 6, cy: 6, r: 3.5 });
+
+      addMarker(id, {
+        element: messageflowStart,
+        attrs: {
+          fill: fill,
+          stroke: stroke
+        },
+        ref: { x: 6, y: 6 }
+      });
+    }
+
+    if (type === 'conditional-flow-marker') {
+      var conditionalflowMarker = svgCreate('path');
+      svgAttr(conditionalflowMarker, { d: 'M 0 10 L 8 6 L 16 10 L 8 14 Z' });
+
+      addMarker(id, {
+        element: conditionalflowMarker,
+        attrs: {
+          fill: fill,
+          stroke: stroke
+        },
+        ref: { x: -1, y: 10 },
+        scale: 0.5
+      });
+    }
+  }
 
   // This function is necessary to render a label for an element.
   function renderLabel(parentGfx, label, options) {
@@ -128,219 +209,6 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
       }
     });
   }
-
-  function addMarker(id, options) {
-    var attrs = assign({
-      fill: 'black',
-      strokeWidth: 1,
-      strokeLinecap: 'round',
-      strokeDasharray: 'none',
-      labelContent: ''
-
-    }, options.attrs);
-
-    var ref = options.ref || { x: 0, y: 0 };
-    var scale = options.scale || 1;
-
-    // fix for safari / chrome / firefox bug not correctly
-    // resetting stroke dash array
-    if (attrs.strokeDasharray === 'none') {
-      attrs.strokeDasharray = [10000, 1];
-    }
-
-    var marker = svgCreate('marker');
-    svgAttr(options.element, attrs);
-    svgAppend(marker, options.element);
-
-    svgAttr(marker, {
-      id: id,
-      viewBox: '0 0 20 20',
-      refX: ref.x,
-      refY: ref.y,
-      markerWidth: 20 * scale,
-      markerHeight: 20 * scale,
-      orient: 'auto'
-    });
-
-    var defs = domQuery('defs', canvas._svg);
-
-    if (!defs) {
-      defs = svgCreate('defs');
-      svgAppend(canvas._svg, defs);
-    }
-    svgAppend(defs, marker);
-    markers[id] = marker;
-  }
-
-  function colorEscape(str) {
-    return str.replace(/[()\s,#]+/g, '_');
-  }
-
-
-  //This function is used to add different shapes to the ends of connectors
-  function marker(type, fill, stroke) {
-    var id = type + '-' + colorEscape(fill) + '-' + colorEscape(stroke) + '-' + rendererId;
-
-    if (!markers[id]) {
-      createMarker(id, type, fill, stroke);
-    }
-
-    return 'url(#' + id + ')';
-  }
-
-
-  function createMarker(id, type, fill, stroke) {
-
-    // this is to draw a commom arrow
-    if (type === 'sequenceflow-end') {
-      var sequenceflowEnd = svgCreate('path');
-      svgAttr(sequenceflowEnd, { d: 'M 1 5 L 11 10 L 1 15 Z' });
-
-      addMarker(id, {
-        element: sequenceflowEnd,
-        ref: { x: 11, y: 10 },
-        scale: 0.5,
-        attrs: {
-          fill: stroke,
-          stroke: stroke
-        }
-      });
-    }
-
-    //this is to draw a unfilled arrow and large blades
-    if (type === 'timedistance-start') {
-      var timedistanceStart = svgCreate('path');
-      svgAttr(timedistanceStart, { d: 'M -10 -5 L 20 10 L -10 25 L 20 10  Z' });
-
-      addMarker(id, {
-        element: timedistanceStart,
-        ref: { x: 5, y: 10 },
-        scale: 0.8,
-        attrs: {
-          fill: '#fff',
-          stroke: stroke,
-          strokeWidth: 1.5,
-          fillOpacity: 0
-        }
-      });
-    }
-
-    //this is to draw an arrow with ony two blades
-    if (type === 'timedistance-end') {
-      var timedistanceEnd = svgCreate('path');
-      svgAttr(timedistanceEnd, { d: 'M 35 0 L 0 15 L 35 30 L 0 15  Z' });
-
-      addMarker(id, {
-        element: timedistanceEnd,
-        ref: { x: 14, y: 15 },
-        scale: 0.8,
-        attrs: {
-          fill: '#fff',
-          stroke: stroke,
-          strokeWidth: 1.5,
-          fillOpacity: 0
-        }
-      });
-    }
-
-    //this is to draw a circle
-    if (type === 'messageflow-start') {
-      var messageflowStart = svgCreate('circle');
-      svgAttr(messageflowStart, { cx: 6, cy: 6, r: 3.5 });
-
-      addMarker(id, {
-        element: messageflowStart,
-        attrs: {
-          fill: fill,
-          stroke: stroke
-        },
-        ref: { x: 6, y: 6 }
-      });
-    }
-
-    //this is to draw a unfilled arrow 
-    if (type === 'messageflow-end') {
-      var messageflowEnd = svgCreate('path');
-      svgAttr(messageflowEnd, { d: 'm 1 5 l 0 -3 l 7 3 l -7 3 z' });
-
-
-      addMarker(id, {
-        element: messageflowEnd,
-        attrs: {
-          fill: fill,
-          stroke: stroke,
-          strokeLinecap: 'butt'
-        },
-        ref: { x: 8.5, y: 5 }
-      });
-    }
-
-    //this is to draw an arrow with inverse blades
-    if (type === 'association-start') {
-      var associationStart = svgCreate('path');
-      svgAttr(associationStart, { d: 'M 11 5 L 1 10 L 11 15' });
-
-      addMarker(id, {
-        element: associationStart,
-        attrs: {
-          fill: 'none',
-          stroke: stroke,
-          strokeWidth: 1.5
-        },
-        ref: { x: 1, y: 10 },
-        scale: 0.5
-      });
-    }
-
-    //this is to draw a small unfilled arrow 
-    if (type === 'association-end') {
-      var associationEnd = svgCreate('path');
-      svgAttr(associationEnd, { d: 'M 1 5 L 11 10 L 1 15' });
-
-      addMarker(id, {
-        element: associationEnd,
-        attrs: {
-          fill: 'none',
-          stroke: stroke,
-          strokeWidth: 1.5
-        },
-        ref: { x: 12, y: 10 },
-        scale: 0.5
-      });
-    }
-
-    //this is to draw a diamond
-    if (type === 'conditional-flow-marker') {
-      var conditionalflowMarker = svgCreate('path');
-      svgAttr(conditionalflowMarker, { d: 'M 0 10 L 8 6 L 16 10 L 8 14 Z' });
-
-      addMarker(id, {
-        element: conditionalflowMarker,
-        attrs: {
-          fill: fill,
-          stroke: stroke
-        },
-        ref: { x: -1, y: 10 },
-        scale: 0.5
-      });
-    }
-
-    //this is to draw a small line
-    if (type === 'conditional-default-flow-marker') {
-      var conditionaldefaultflowMarker = svgCreate('path');
-      svgAttr(conditionaldefaultflowMarker, { d: 'M 6 4 L 10 16' });
-
-      addMarker(id, {
-        element: conditionaldefaultflowMarker,
-        attrs: {
-          stroke: stroke
-        },
-        ref: { x: 0, y: 10 },
-        scale: 0.5
-      });
-    }
-  }
-
 
   // The following functions define the shape of the element to be rendered 
   // You have to define x, y, width, height and href (this format is the same for all elements)
@@ -848,7 +716,9 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         strokeWidth: 1.5,
         markerEnd: marker('sequenceflow-end', 'white', BLACK),
       });
-      return svgAppend(p, createLine(element.waypoints, attrs));
+      const line = createLine(element.waypoints, attrs);
+      svgAppend(p, line);
+      return line;
     },
     'PPINOT:MyConnection': (p, element) => {
       var attrs = computeStyle(attrs, {
@@ -856,7 +726,9 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         strokeWidth: 1.5,
         markerEnd: marker('sequenceflow-end', 'white', BLACK),
       });
-      return svgAppend(p, createLine(element.waypoints, attrs));
+      const line = createLine(element.waypoints, attrs);
+      svgAppend(p, line);
+      return line;
     },
     'PPINOT:DashedLine': (p, element) => {
       var attrs = computeStyle(attrs, {
@@ -864,7 +736,9 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         strokeWidth: 1.5,
         strokeDasharray: [10, 7]
       });
-      return svgAppend(p, createLine(element.waypoints, attrs));
+      const line = createLine(element.waypoints, attrs);
+      svgAppend(p, line);
+      return line;
     },
     'PPINOT:RFCStateConnection': (p, element) => {
       var attrs = computeStyle(attrs, {
@@ -872,7 +746,9 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         strokeWidth: 1.5,
         strokeDasharray: [10, 7]
       });
-      return svgAppend(p, createLine(element.waypoints, attrs));
+      const line = createLine(element.waypoints, attrs);
+      svgAppend(p, line);
+      return line;
     },
     'PPINOT:AggregatedConnection': (p, element) => {
       var attrs = {
@@ -880,15 +756,16 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         strokeWidth: 1.5,
         markerStart: marker('conditional-flow-marker', 'white', BLACK),
       };
-      return svgAppend(p, createLine(element.waypoints, attrs));
+      const line = createLine(element.waypoints, attrs);
+      svgAppend(p, line);
+      return line;
     },
     'PPINOT:GroupedBy': (p, element) => {
       var attrs = {
         stroke: BLACK,
         strokeWidth: 1.5,
         strokeDasharray: [8, 5],
-        // i changed de marker name 
-        markerStart: marker('conditional-flow-marker', 'white', BLACK),
+        markerStart: marker('conditional-flow-marker', 'white', BLACK)
       };
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
@@ -898,7 +775,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         strokeWidth: 1.5,
         strokeDasharray: [8, 5],
         markerStart: marker('messageflow-start', 'black', BLACK),
-        markerEnd: marker('messageflow-start', 'black', BLACK),
+        markerEnd: marker('messageflow-start', 'black', BLACK)
       };
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
@@ -908,7 +785,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         strokeWidth: 1.5,
         strokeDasharray: [8, 5],
         markerStart: marker('messageflow-start', 'white', BLACK),
-        markerEnd: marker('messageflow-start', 'white', BLACK),
+        markerEnd: marker('messageflow-start', 'white', BLACK)
       };
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
@@ -919,7 +796,9 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         strokeDasharray: [8, 5],
         markerEnd: marker('messageflow-start', 'black', BLACK),
       };
-      return svgAppend(p, createLine(element.waypoints, attrs));
+      const line = createLine(element.waypoints, attrs);
+      svgAppend(p, line);
+      return line;
     },
     'PPINOT:StartConnection': (p, element) => {
       var attrs = {
@@ -928,13 +807,15 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         strokeDasharray: [8, 5],
         markerEnd: marker('messageflow-start', 'white', BLACK),
       };
-      return svgAppend(p, createLine(element.waypoints, attrs));
+      const line = createLine(element.waypoints, attrs);
+      svgAppend(p, line);
+      return line;
     }
   };
 
   // Finally, you have to define the paths
   // Using this property you define and delimit the connectivity area of the element
-  var paths = this.paths = {
+  this.paths = {
     'PPINOT:BaseMeasure': (element) => {
       var x = element.x,
         y = element.y,
@@ -1595,98 +1476,6 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
 
       return componentsToPath(d);
     },
-    'PPINOT:CyclicTimeMeasureSUM': (element) => {
-      var x = element.x,
-        y = element.y,
-        width = element.width,
-        height = element.height;
-
-      var borderRadius = 20;
-
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CyclicTimeMeasureMAX': (element) => {
-      var x = element.x,
-        y = element.y,
-        width = element.width,
-        height = element.height;
-
-      var borderRadius = 20;
-
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CyclicTimeMeasureMIN': (element) => {
-      var x = element.x,
-        y = element.y,
-        width = element.width,
-        height = element.height;
-
-      var borderRadius = 20;
-
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CyclicTimeMeasureAVG': (element) => {
-      var x = element.x,
-        y = element.y,
-        width = element.width,
-        height = element.height;
-
-      var borderRadius = 20;
-
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
     'PPINOT:TimeAggregatedMeasureSUM': (element) => {
       var x = element.x,
         y = element.y,
@@ -2074,146 +1863,45 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
   }
 }
 
+// Métodos auxiliares como funciones de instancia
+  this.canRender = function(element) {
+    return /^PPINOT:/.test(element.type) || element.type === 'label';
+  };
 
-PPINOTRenderer.prototype.canRender = function (element) {
+  this.drawShape = function(p, element) {
+    var type = element.type;
+    var h = this.renderers[type];
+    if (!h) return null;
+    if (element.color == null) element.color = "#000";
+    return h(p, element);
+  };
 
-  if (/^PPINOT:/.test(element.type)) {
-    return true;
+  this.drawConnection = function(p, element) {
+    var type = element.type;
+    var h = this.renderers[type];
+    if (!h) return null;
+    if (element.color == null) element.color = "#000";
+    return h(p, element);
+  };
+this.getShapePath = function(shape) {
+  const type = shape.type;
+  const pathFunction = this.paths[type];
+
+  if (typeof pathFunction === 'function') {
+    return pathFunction(shape);
   }
 
-
-  if (element.type === 'label' && element.labelTarget) {
-    var target = element.labelTarget;
-    if (target.type && /^PPINOT:/.test(target.type)) {
-      return true;
-    }
+  return null;
+};
+this.getConnectionPath = function(connection) {
+  const pathFunction = this.paths[connection.type];
+  
+  if (typeof pathFunction === 'function') {
+    return pathFunction(connection);
   }
 
-  return false;
+  return null;
 };
 
-PPINOTRenderer.prototype.drawShape = function (p, element) {
-  var type = element.type;
 
-
-  if (type === 'label' && element.labelTarget && element.labelTarget.type && /^PPINOT:/.test(element.labelTarget.type)) {
-    return this.drawLabel(p, element);
-  }
-
-  var h = this.renderers[type];
-
-  if (element.color == null)
-    element.color = "#000"
-
-  /* jshint -W040 */
-  return h(p, element);
-};
-PPINOTRenderer.prototype.drawLabel = function (parentGfx, element) {
-  if (!element) return null;
-
-  const text = (element.businessObject && typeof element.businessObject.name === 'string')
-    ? element.businessObject.name
-    : '';
-
-  if (!text.trim()) return null;
-
-  const { width = 150, height = 50 } = element;
-
-  // Centrar el texto en el elemento de etiqueta
-  const textElement = this._textRenderer.createText(text, {
-    box: { width, height },
-    align: 'center-middle',
-    style: {
-      fontSize: '12px',
-      fontFamily: 'Arial, sans-serif',
-      fill: '#000',
-      whiteSpace: 'pre',       // para soportar saltos de línea explícitos
-      maxWidth: width,
-    }
-  });
-
-  svgClasses(textElement).add('ppinot-label');
-  svgAppend(parentGfx, textElement);
-
-  return textElement
-}
-
-PPINOTRenderer.prototype.getShapePath = function (shape) {
-  var type = shape.type;
-
-  if (isPPINOTConnection(type)) {
-    var waypoints = shape.waypoints || [];
-    if (waypoints.length < 2) {
-      return 'M0,0 L0,0';
-    }
-
-    var connectionPath = [
-      ['M', waypoints[0].x, waypoints[0].y]
-    ];
-
-    for (var i = 1; i < waypoints.length; i++) {
-      connectionPath.push(['L', waypoints[i].x, waypoints[i].y]);
-    }
-
-    return componentsToPath(connectionPath);
-  }
-
-  var h = this.paths[type];
-
-  if (!h) {
-    var x = shape.x || 0;
-    var y = shape.y || 0;
-    var width = shape.width || 50;
-    var height = shape.height || 50;
-
-    return 'M' + x + ',' + y +
-      ' L' + (x + width) + ',' + y +
-      ' L' + (x + width) + ',' + (y + height) +
-      ' L' + x + ',' + (y + height) +
-      ' Z';
-  }
-
-  /* jshint -W040 */
-  return h(shape);
-};
-
-PPINOTRenderer.prototype.drawConnection = function (p, element) {
-  var type = element.type;
-  var h = this.renderers[type];
-  if (element.color == null)
-    element.color = "#000"
-
-  /* jshint -W040 */
-  return h(p, element);
-};
-
-PPINOTRenderer.prototype.getConnectionPath = function (connection) {
-    var waypoints = connection.waypoints || [];
-
-    // Validate that we have at least two valid waypoints
-    if (waypoints.length < 2) {
-      return 'M0,0 L0,0';
-    }
-
-    // Ensure all waypoints have valid coordinates
-    waypoints = waypoints.map(function (p) {
-      var point = p.original || p;
-      return {
-        x: typeof point.x === 'number' ? point.x : 0,
-        y: typeof point.y === 'number' ? point.y : 0
-      };
-  });
-
-  var connectionPath = [
-    ['M', waypoints[0].x, waypoints[0].y]
-  ];
-
-  waypoints.forEach(function (waypoint, index) {
-    if (index !== 0) {
-      connectionPath.push(['L', waypoint.x, waypoint.y]);
-    }
-  });
-
-  return componentsToPath(connectionPath);
-};
 }

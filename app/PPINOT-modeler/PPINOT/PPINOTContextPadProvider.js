@@ -30,9 +30,11 @@ export default function PPINOTContextPadProvider(
 
 PPINOTContextPadProvider.prototype.appendConnectAction = function(type, className, title, groupName = 'ppinot-connect') {
   const connect = this._connect;
+  
   function startConnect(event, element) {
-    connect.start(event, element, { type: type });
+    connect.start(event, element, null, { type: type });
   }
+  
   return {
     group: groupName,
     className: className,
@@ -192,6 +194,7 @@ PPINOTContextPadProvider.prototype.getContextPadEntries = function(element) {
 
   // Remove 'replace' for PPINOT:Ppi
   if (businessObject && (businessObject.$type === 'PPINOT:Ppi' || businessObject.type === 'PPINOT:Ppi')) {
+  
     delete actions.replace;
   }
 
