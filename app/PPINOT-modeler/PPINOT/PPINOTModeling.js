@@ -19,8 +19,7 @@ export default class PPINOTModeling extends Modeling {
     getHandlers() {
         let handlers = super.getHandlers();
         handlers['element.PPINOTUpdateLabel'] = PPINOTUpdateLabelHandler;
-        // handlers['connection.create'] = PPINOTCreateConnectionHandler;
-
+        handlers['connection.create'] = PPINOTCreateConnectionHandler;
 
         return handlers;
     }

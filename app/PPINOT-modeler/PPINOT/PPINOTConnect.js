@@ -1,27 +1,16 @@
-/**
- * Handles connection creation between BPMN and PPINOT elements with validation rules
- */
 import {
     asTRBL,
     getMid
 } from 'diagram-js/lib/layout/LayoutUtil';
 import { getNewShapePosition } from "bpmn-js/lib/features/auto-place/BpmnAutoPlaceUtil";
-import { assign } from "min-dash";
+import {assign} from "min-dash";
 
-export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
+// Añadimos canvas como dependencia
+export default function PPINOTConnect(eventBus, dragging, modeling, rules, canvas) {
 
-    // Connection validation rules
-    function canConnect(source, target, type, showMessage = false) {        // PPINOT elements can only connect to BPMN elements
-        if ((type === 'PPINOT:FromConnection' || type === 'PPINOT:ToConnection') &&
-            target && typeof target.type === 'string' &&
-            !target.type.startsWith('bpmn:')) {
+    // rules
 
-            if (showMessage) {
-                showUserFeedback('Time measures can only connect to BPMN elements like tasks and events, not to other PPINOT elements.');
-            }
-            return false;
-        }
-
+    function canConnect(source, target, type) {
         return rules.allowed('connection.create', {
             source: source,
             target: target,
@@ -29,58 +18,32 @@ export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
         });
     }
 
-    function showUserFeedback(message) {
-        const toast = document.createElement('div');
-        toast.textContent = message;
-        toast.style.cssText = `
-            position: fixed;
-            top: 20px;               
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #333;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 4px;
-            z-index: 10000;
-            max-width: 80%;
-            text-align: center;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.21);
-        `;
-
-        document.body.appendChild(toast);
-
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transition = 'opacity 0.5s';
-            setTimeout(() => document.body.removeChild(toast), 500);
-        }, 3000);
-    }    function determineConnectionType(source, target) {
-        if (source.type && source.type.startsWith('PPINOT:')) {
-            return 'PPINOT:ToConnection';
-        } else if (target.type && target.type.startsWith('PPINOT:')) {
-            return 'PPINOT:FromConnection';
-        } else if (source.type && source.type.startsWith('bpmn:') && 
-                   target.type && target.type.startsWith('bpmn:')) {
-            return 'bpmn:SequenceFlow';
+    // Normaliza un punto a {x: number, y: number} o devuelve null si no es válido
+    function normalizePoint(pt) {
+        if (!pt || typeof pt.x !== 'number' || typeof pt.y !== 'number' || isNaN(pt.x) || isNaN(pt.y)) {
+            return null;
         }
-        return null;
+        return { x: pt.x, y: pt.y };
     }
 
-    // Event handlers
-    eventBus.on(['connect.out', 'connect.cleanup'], function (event) {
-        var context = event.context;
-        context.target = null;
-        context.canExecute = false;
-    });
+    // Normaliza los waypoints de una conexión
+    function normalizeWaypoints(waypoints) {
+        if (!Array.isArray(waypoints)) return [];
+        return waypoints.map(normalizePoint).filter(Boolean);
+    }
 
-    eventBus.on('connect.hover', function (event) {
+    // event handlers
+
+    eventBus.on('connect.hover', function(event) {
         var context = event.context,
             source = context.source,
             type = context.type,
-            hover = event.hover;
+            hover = event.hover,
+            canExecute;
 
-        var canExecute = context.canExecute = canConnect(source, hover, type, false);
+        canExecute = context.canExecute = canConnect(source, hover, type);
 
+        // simply ignore hover
         if (canExecute === null) {
             return;
         }
@@ -88,58 +51,82 @@ export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
         context.target = hover;
     });
 
-    eventBus.on('connect.end', function (event) {
-        var context = event.context,
-            source = context.source,
-            sourcePosition = context.sourcePosition,
-            target = context.target,
-            targetPosition = {
-                x: event.x,
-                y: event.y
-            },
-            connectionType = context.type;
-        
-        // Auto-determine connection type if not specified
-        if (!connectionType) {
-            connectionType = determineConnectionType(source, target);
-        }
+    eventBus.on([ 'connect.out', 'connect.cleanup' ], function(event) {
+        var context = event.context;
 
-        if (!target) {
-            showUserFeedback('You need to connect this arrow to another element.');
-            return false;
-        }
-
-        // Validate PPINOT connections
-        if ((connectionType === 'PPINOT:FromConnection' || connectionType === 'PPINOT:ToConnection') &&
-            target.type && target.type.startsWith('PPINOT:')) {
-            showUserFeedback('Time measures can only connect to BPMN elements like tasks and events, not to other PPINOT elements.');
-            return false;
-        }
-
-        var canExecute = canConnect(source, target, connectionType, true);
-
-        if (!canExecute) {
-            showUserFeedback('This connection is not allowed.');
-            return false;
-        }
-
-        try {
-            var connection = modeling.connect(source, target, {
-                type: connectionType
-            }, {
-                connectionStart: sourcePosition,
-                connectionEnd: targetPosition
-            });
-            
-            return connection;
-        } catch (error) {
-            showUserFeedback('Failed to create connection: ' + error.message);
-            return false;
-        }
+        context.target = null;
+        context.canExecute = false;
     });
 
-    // Public API
-    this.start = function (event, source, sourcePosition, autoActivate) {
+    // This is util if you want to create a connection that includes an element 
+    eventBus.on('connect.end', function(event) {
+        var context = event.context,
+            source = context.source,
+            sourcePosition = normalizePoint(context.sourcePosition),
+            elementFactory = context.elementFactory,
+            target = context.target,
+            targetPosition = normalizePoint({ x: event.x, y: event.y }),
+            canExecute = context.canExecute || canConnect(source, target, context.type);
+
+        if (!canExecute) {
+            return false;
+        }
+
+        var attrs = null,
+            hints = {
+                connectionStart: sourcePosition,
+                connectionEnd: targetPosition
+            };
+
+        // Normaliza los puntos antes de crear la conexión
+        if (!sourcePosition || !targetPosition) {
+            // No crear conexión si los puntos no son válidos
+            return false;
+        }
+
+        // Asegura que la conexión se crea correctamente
+        let connection;
+        if (typeof canExecute === 'object') {
+            if (canExecute.type1) {
+                hints = {
+                    connectionStart: sourcePosition,
+                    connectionEnd: targetPosition
+                };
+                attrs = { type: canExecute.type2 };
+                connection = modeling.connect(source, target, attrs, hints);
+            } else {
+                attrs = canExecute;
+                connection = modeling.connect(source, target, attrs, hints);
+            }
+        } else {
+            connection = modeling.connect(source, target, attrs, hints);
+        }
+
+        // Fuerza refresco del canvas usando la instancia DI
+        if (canvas && typeof canvas.resized === 'function') {
+            canvas.resized();
+            // También fuerza el viewbox para asegurar el redibujado
+            if (typeof canvas.viewbox === 'function') {
+                const vbox = canvas.viewbox();
+                canvas.viewbox(vbox);
+            }
+        }
+
+        return connection;
+    });
+
+
+    // API
+
+    /**
+     * Start connect operation.
+     *
+     * @param {DOMEvent} event
+     * @param {djs.model.Base} source
+     * @param {Point} [sourcePosition]
+     * @param {Boolean} [autoActivate=false]
+     */
+    this.start = function(event, source, sourcePosition, autoActivate) {
         if (typeof sourcePosition !== 'object') {
             autoActivate = sourcePosition;
             sourcePosition = getMid(source);
@@ -157,16 +144,32 @@ export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
         });
     };
 
-    // PPINOT-specific connection starter with optional custom position
-    this.PPINOTStart = function (event, source, type, elementFactory, sourcePosition, autoActivate) {
-        // Handle overloaded parameters - sourcePosition is optional
-        if (typeof sourcePosition === 'boolean') {
+    this.PPINOTStart = function(event, source, type, elementFactory, autoActivate) {
+        let sourcePosition = getMid(source);
+        if (typeof sourcePosition !== 'object') {
             autoActivate = sourcePosition;
-            sourcePosition = getMid(source);
-        } else if (typeof sourcePosition !== 'object') {
-            sourcePosition = getMid(source);
+
         }
 
+        dragging.init(event, 'connect', {
+            autoActivate: autoActivate,
+            data: {
+                shape: source,
+                context: {
+                    source: source,
+                    sourcePosition: sourcePosition,
+                    type: type,
+                    elementFactory: elementFactory
+                }
+            }
+        });
+    };
+
+    this.PPINOTStart2 = function(event, source, type, elementFactory, sourcePosition, autoActivate) {
+        if (typeof sourcePosition !== 'object') {
+            autoActivate = sourcePosition;
+            sourcePosition = getMid(source);
+        }
         dragging.init(event, 'connect', {
             autoActivate: autoActivate,
             data: {
@@ -186,5 +189,6 @@ PPINOTConnect.$inject = [
     'eventBus',
     'dragging',
     'modeling',
-    'rules'
+    'rules',
+    'canvas'
 ];
