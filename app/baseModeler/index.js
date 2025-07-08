@@ -3,7 +3,7 @@ import { assign } from 'min-dash';
 import { isPPINOTConnection } from '../PPINOT-modeler/PPINOT/Types';
 import { isLabelExternal, getLabel } from '../PPINOT-modeler/PPINOT/utils/LabelUtil';
 
-import BaseModule from './BaseModule';
+import BaseModule from './MultiNotationModule';
 import PPINOTModule from '../PPINOT-modeler/PPINOT';
 import RALPHModule from '../RALPH-modeler/RALph';
 

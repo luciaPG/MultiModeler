@@ -4,8 +4,8 @@ import PPINOTUpdater from './PPINOTUpdater';
 import PPINOTNotationPalette from './PPINOTNotationPalette';
 // import PPINOTContextPadProvider from './PPINOTContextPadProvider';
 import PPINOTReplaceMenuProvider from './PPINOTReplaceMenuProvider';
-// import PPINOTLabelProvider from './PPINOTLabelProvider';  // Eliminar referencia
-import PPINOTLabelSupport from './handlers/PPINOTLabelSupport';  // Mantener solo label support
+import PPINOTLabelProvider from './PPINOTLabelProvider';
+
 
 export default {
   __init__: [
@@ -14,8 +14,7 @@ export default {
     'PPINOTUpdater',
     // 'PPINOTContextPadProvider',
     'PPINOTReplaceMenuProvider',
-    // 'PPINOTLabelProvider',  // Eliminar
-    'PPINOTLabelSupport'    // Mantener solo label support
+    'PPINOTLabelProvider'
   ],
   PPINOTRenderer: [ 'type', PPINOTRenderer ],
   PPINOTRules: [ 'type', PPINOTRules ],
@@ -24,6 +23,5 @@ export default {
   PPINOTReplaceMenuProvider: [ 'type', PPINOTReplaceMenuProvider ],
   ppinotReplaceMenuProvider: [ 'type', PPINOTReplaceMenuProvider ],
   ppinotNotationPalette: [ 'type', PPINOTNotationPalette ],
-  // PPINOTLabelProvider: [ 'type', PPINOTLabelProvider ],  // Eliminar
-  PPINOTLabelSupport: [ 'type', PPINOTLabelSupport ]  // Mantener solo label support
+  PPINOTLabelProvider: [ 'type', PPINOTLabelProvider ],
 };

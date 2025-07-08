@@ -2,15 +2,15 @@ import inherits from 'inherits';
 
 import BaseRenderer from 'diagram-js/lib/draw/BaseRenderer';
 
-import {componentsToPath, createLine} from 'diagram-js/lib/util/RenderUtil';
+import { componentsToPath, createLine } from 'diagram-js/lib/util/RenderUtil';
 
-import {query as domQuery} from 'min-dom';
+import { query as domQuery } from 'min-dom';
 
-import {append as svgAppend, attr as svgAttr, classes as svgClasses, create as svgCreate} from 'tiny-svg';
-import {getSemantic} from "bpmn-js/lib/draw/BpmnRenderUtil";
-import {assign} from "min-dash";
+import { append as svgAppend, attr as svgAttr, classes as svgClasses, create as svgCreate } from 'tiny-svg';
+import { getSemantic } from "bpmn-js/lib/draw/BpmnRenderUtil";
+import { assign } from "min-dash";
 import Ids from 'ids';
-import {isPPINOTConnection} from "./Types";
+import { isPPINOTConnection } from "./Types";
 import { getLabel } from './utils/LabelUtil';
 
 
@@ -30,7 +30,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
 
   BaseRenderer.call(this, eventBus, 2000);
 
-  // Store textRenderer for use in prototype methods
+
   this._textRenderer = textRenderer;
 
   var computeStyle = styles.computeStyle;
@@ -39,7 +39,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
 
   var markers = {};
 
-  
+
   // This function is necessary to render a label for an element.
   function renderLabel(parentGfx, label, options) {
     options = assign({
@@ -49,9 +49,10 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     }, options);
 
     var text = textRenderer.createText(label || '', options);
-    
+
 
     svgClasses(text).add('djs-label');
+    svgClasses(text).add('ppinot-label');
 
     svgAppend(parentGfx, text);
 
@@ -61,89 +62,61 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
   // This function uses renderLabel function to render a label INTO an element.
   function renderEmbeddedLabel(parentGfx, element, align) {
     var semantic = getSemantic(element);
-    
-    // No renderizar etiqueta interna si el elemento tiene una etiqueta externa
-    // o si está marcado para usar etiquetas externas
-    if (element._skipInternalLabel || element._hasExternalLabel || element.label) {
-      return null;
-    }
-    
-    // Si es un elemento PPINOT, no renderizar etiqueta interna ya que usará etiqueta externa
-    if (element.type && element.type.startsWith('PPINOT:') && 
-        // Mantener solo las etiquetas internas para elementos "mini" dentro de PPI
-        !(align === 'right-middle' && element.parent && element.parent.type === 'PPINOT:Ppi' && 
-        (element.type === 'PPINOT:Scope' || element.type === 'PPINOT:Target'))) {
-      return null;
-    }
-    
-    // Try multiple sources for the label text
-    var labelText = '';
-    if (semantic && semantic.name) {
-      labelText = semantic.name;
-    } else if (element.businessObject && element.businessObject.name) {
-      labelText = element.businessObject.name;
-    } else if (element.businessObject && element.businessObject.$attrs && element.businessObject.$attrs['name']) {
-      labelText = element.businessObject.$attrs['name'];
-    } else if (element.label) {
-      labelText = element.label;
-    }
-    
-    // Si no hay texto para la label, no renderizar nada
-    if (!labelText || labelText.trim() === '') {
+
+    if (! semantic.name ||  semantic.name.trim() === '') {
       return null;
     }
 
-    // Para Scope mini y Target mini, crear texto SVG directo sin recuadro
-    if (align === 'right-middle' && element.parent && element.parent.type === 'PPINOT:Ppi' && 
-        (element.type === 'PPINOT:Scope' || element.type === 'PPINOT:Target')) {
-      // Crear el texto SVG directamente para mini elementos sin usar el sistema de labels estándar
+    // For scope and target mini elements we need special treatment bc of place 
+    if (align === 'right-middle' && element.parent && element.parent.type === 'PPINOT:Ppi' &&
+      (element.type === 'PPINOT:Scope' || element.type === 'PPINOT:Target')) {
+
       var text = svgCreate('text');
-      
+
       var centerX, centerY;
-      
+
       if (element.type === 'PPINOT:Scope') {
-        // Para Scope mini: posicionar la etiqueta a la izquierda del icono pequeño centrado
+
         var scaleFactor = 0.3;
         var iconOffsetX = 10 + (element.width * (1 - scaleFactor)) / 2;
-        centerX = iconOffsetX - 2;  // Un poco a la izquierda del icono pequeño
+        centerX = iconOffsetX - 2;
         centerY = element.height / 2;
       } else {
-        // Para Target mini: posicionar la etiqueta a la izquierda del icono normal
-        centerX = 8;  // Posición a la izquierda del icono
+        centerX = 8;
         centerY = element.height / 2;
       }
-      
+
       svgAttr(text, {
         x: centerX,
         y: centerY,
-        'text-anchor': 'end',  // Alineado a la derecha (termina en centerX)
+        'text-anchor': 'end',
         'dominant-baseline': 'middle',
         'font-family': 'Arial, sans-serif',
-        'font-size': '11px',  // Tamaño estándar igual al de otras labels
-        'font-weight': 'bold',  // Hacer la etiqueta bold
+        'font-size': '11px',
+        'font-weight': 'bold',
         'fill': element.color || '#000000',
-        'pointer-events': 'none'  // Evitar que interfiera con la interacción
+        'pointer-events': 'none'
       });
-      
-      text.textContent = labelText;
-      // NO añadir la clase 'djs-label' para evitar el recuadro azul
+
+      text.textContent = semantic.name;
+
       svgAppend(parentGfx, text);
-      
+
       return text;
     }
 
-    // Para elementos normales, usar el método estándar
-    var result = renderLabel(parentGfx, labelText, {
+
+    var result = renderLabel(parentGfx, semantic.name, {
       box: element,
       align: align,
       padding: 5,
       style: {
         fill: element.color || '#000000',
-        fontSize: '11px',  // Aseguramos que tenga el mismo tamaño que los mini elementos
-        fontWeight: 'bold'  // Hacemos que todos sean bold para consistencia
+        fontSize: '11px',
+        fontWeight: 'bold'
       }
     });
-    
+
     return result;
   }
 
@@ -155,13 +128,13 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       padding: 5,
       style: {
         fill: element.color || '#000000',
-        fontSize: (size || 11) + 'px',  // Si no se especifica tamaño, usar 11px por defecto
-        fontWeight: weight || 'bold'    // Si no se especifica peso, usar bold por defecto
+        fontSize: (size || 11) + 'px',
+        fontWeight: weight || 'bold'
       }
     });
   }
-  
-  function addMarker( id, options) {
+
+  function addMarker(id, options) {
     var attrs = assign({
       fill: 'black',
       strokeWidth: 1,
@@ -222,7 +195,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
   function renderExternalLabel(parentGfx, element) {
     var labelText = element.businessObject && element.businessObject.name;
     console.log('Rendering external label for', element.id, 'Text:', labelText);
-    
+
     // Handle draggable label elements - these are separate elements of type 'label'
     if (element.type === 'label') {
       return renderLabel(parentGfx, labelText || '', {
@@ -234,12 +207,11 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
         }
       });
     }
-    
-    // Para los demás elementos PPINOT, no renderizar etiquetas externas aquí
-    // ya que serán manejadas por PPINOTLabelSupport
+
+
     return null;
   }
-  
+
 
   function createMarker(id, type, fill, stroke) {
 
@@ -315,7 +287,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       var messageflowEnd = svgCreate('path');
       svgAttr(messageflowEnd, { d: 'm 1 5 l 0 -3 l 7 3 l -7 3 z' });
 
-     
+
       addMarker(id, {
         element: messageflowEnd,
         attrs: {
@@ -393,31 +365,29 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     }
   }
 
-  
+
   // The following functions define the shape of the element to be rendered 
   // You have to define x, y, width, height and href (this format is the same for all elements)
   // --> href is the svg element defined in svg -> index.js
-  function drawBaseMeasure(element){
+  function drawBaseMeasure(element) {
     var baseMeasure = svgCreate('image', {
-      // Ajustamos el posicionamiento para centrar mejor la imagen
+
       x: 6,
       y: 4,
-      // Reducimos ligeramente el tamaño para darle menos margen
-      width: element.width*0.8,
-      height: element.height*0.8,
+      width: element.width * 0.8,
+      height: element.height * 0.8,
       href: Svg.dataURLbaseMeasure
     })
     return baseMeasure;
   }
 
-  function drawTarget(element){
-    // Check if the parent is a PPINOT:Ppi and use mini icon if so, but same size
+  function drawTarget(element) {
     var iconUrl = Svg.dataURLtarget;
-    
+
     if (element.parent && element.parent.type === 'PPINOT:Ppi') {
       iconUrl = Svg.dataURLtargetMini;
     }
-    
+
     var target = svgCreate('image', {
       x: 10,
       y: 5,
@@ -428,21 +398,20 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     return target;
   }
 
-  function drawScope(element){
+  function drawScope(element) {
     // Switch between normal and mini icon based on parent
     var iconUrl = Svg.dataURLscope;
     var scaleFactor = 0.85;
     var offsetX = 10;
     var offsetY = 5;
-    
+
     if (element.parent && element.parent.type === 'PPINOT:Ppi') {
       iconUrl = Svg.dataURLscopeMini;
-      scaleFactor = 0.25; // Scale down scope mini icons to 30% of original size
-      // Center the smaller icon by adjusting the offset
+      scaleFactor = 0.25;
       offsetX = 10 + (element.width * (1 - scaleFactor)) / 2;
-      offsetY = 5 + (element.height * (1 - scaleFactor)) / 2 - 5; // Ajuste adicional para subir más el icono
+      offsetY = 5 + (element.height * (1 - scaleFactor)) / 2 - 5;
     }
-    
+
     var scope = svgCreate('image', {
       x: offsetX,
       y: offsetY,
@@ -453,7 +422,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     return scope;
   }
 
-  function drawAggregatedMeasure(element){
+  function drawAggregatedMeasure(element) {
     var aggregatedMeasure = svgCreate('image', {
       x: 0,
       y: 0,
@@ -464,7 +433,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     return aggregatedMeasure;
   }
 
-  function drawTimeAggregatedMeasure(element){
+  function drawTimeAggregatedMeasure(element) {
     var timeAggregatedMeasure = svgCreate('image', {
       x: 0,
       y: 0,
@@ -475,7 +444,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     return timeAggregatedMeasure;
   }
 
-  function drawCyclicTimeAggregatedMeasure(element){
+  function drawCyclicTimeAggregatedMeasure(element) {
     var cyclicTimeAggregatedMeasure = svgCreate('image', {
       x: 0,
       y: 0,
@@ -486,7 +455,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     return cyclicTimeAggregatedMeasure;
   }
 
-  function drawCountAggregatedMeasure(element){
+  function drawCountAggregatedMeasure(element) {
     var countAggregatedMeasure = svgCreate('image', {
       x: 0,
       y: 0,
@@ -497,7 +466,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     return countAggregatedMeasure;
   }
 
-  function drawCountMeasure(element){
+  function drawCountMeasure(element) {
     var countMeasure = svgCreate('image', {
       x: 0,
       y: 0,
@@ -508,7 +477,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     return countMeasure;
   }
 
-  function drawTimeMeasure(element){
+  function drawTimeMeasure(element) {
     var countMeasure = svgCreate('image', {
       x: 0,
       y: 0,
@@ -519,7 +488,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     return countMeasure;
   }
 
-  function drawCyclicTimeMeasure(element){
+  function drawCyclicTimeMeasure(element) {
     var cyclicTime = svgCreate('image', {
       x: 0,
       y: 0,
@@ -530,7 +499,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     return cyclicTime;
   }
 
-  function drawDataAggregatedMeasure(element){
+  function drawDataAggregatedMeasure(element) {
     var dataAggregatedMeasure = svgCreate('image', {
       x: 0,
       y: 0,
@@ -541,7 +510,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     return dataAggregatedMeasure;
   }
 
-  function drawDataMeasure(element){
+  function drawDataMeasure(element) {
     var dataMeasure = svgCreate('image', {
       x: 0,
       y: 0,
@@ -552,7 +521,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     return dataMeasure;
   }
 
-  function drawDataPropertyConditionAggregatedMeasure(element){
+  function drawDataPropertyConditionAggregatedMeasure(element) {
     var dataPropertyConditionAggregatedMeasure = svgCreate('image', {
       x: 0,
       y: 0,
@@ -563,7 +532,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     return dataPropertyConditionAggregatedMeasure;
   }
 
-  function drawDataPropertyConditionMeasure(element){
+  function drawDataPropertyConditionMeasure(element) {
     var dataPropertyConditionMeasure = svgCreate('image', {
       x: 0,
       y: 0,
@@ -574,7 +543,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     return dataPropertyConditionMeasure;
   }
 
-  function drawDerivedMultiInstanceMeasure(element){
+  function drawDerivedMultiInstanceMeasure(element) {
     var derivedMultiInstanceMeasure = svgCreate('image', {
       x: 0,
       y: 0,
@@ -585,7 +554,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     return derivedMultiInstanceMeasure;
   }
 
-  function drawDerivedSingleInstanceMeasure(element){
+  function drawDerivedSingleInstanceMeasure(element) {
     var derivedSingleInstanceMeasure = svgCreate('image', {
       x: 0,
       y: 0,
@@ -596,7 +565,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     return derivedSingleInstanceMeasure;
   }
 
-  function drawPpi(element){
+  function drawPpi(element) {
     var ppi = svgCreate('image', {
       x: 0,
       y: 0,
@@ -607,7 +576,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     return ppi;
   }
 
-  function drawStateConditionMeasure(element){
+  function drawStateConditionMeasure(element) {
     var stateConditionMeasure = svgCreate('image', {
       x: 0,
       y: 0,
@@ -618,7 +587,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     return stateConditionMeasure;
   }
 
-  function drawStateConditionAggregatedMeasure(element){
+  function drawStateConditionAggregatedMeasure(element) {
     var stateConditionAggregatedMeasure = svgCreate('image', {
       x: 0,
       y: 0,
@@ -633,10 +602,8 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     return renderers[type];
   }
 
-  // After defining the functions correctly to draw each shape, we must associate each element 
-  // with its corresponding function
+
   var renderers = this.renderers = {
-    //for instance, in this case, to render 'PPINOT:Target' element, we must to use drawTarget
     'PPINOT:Target': (p, element) => {
       let target = drawTarget(element)
       svgAppend(p, target);
@@ -646,7 +613,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     'PPINOT:Scope': (p, element) => {
       let scope = drawScope(element)
       svgAppend(p, scope);
-      // Si es un elemento mini (dentro de Ppi), usar posición right-middle para activar lógica especial
+
       var alignment = (element.parent && element.parent.type === 'PPINOT:Ppi') ? 'right-middle' : 'center-middle';
       renderEmbeddedLabel(p, element, alignment);
       return scope;
@@ -654,29 +621,26 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     'PPINOT:AggregatedMeasure': (p, element) => {
       let aggregatedMeasure = drawAggregatedMeasure(element);
       svgAppend(p, aggregatedMeasure);
-      
-      // Ya no necesitamos renderizar etiquetas externas aquí, se manejan en PPINOTLabelSupport
-      // Eliminar el código que intenta modificar la etiqueta
-      
+
       return aggregatedMeasure;
     },
     'PPINOT:AggregatedMeasureSUM': (p, element) => {
-      var sum = renderer('PPINOT:AggregatedMeasure')(p, element); 
+      var sum = renderer('PPINOT:AggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', 'SUM', 15, 'bold');
       return sum;
     },
     'PPINOT:AggregatedMeasureMAX': (p, element) => {
-      var max = renderer('PPINOT:AggregatedMeasure')(p, element); 
+      var max = renderer('PPINOT:AggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', 'MAX', 15, 'bold');
       return max;
     },
     'PPINOT:AggregatedMeasureMIN': (p, element) => {
-      var min = renderer('PPINOT:AggregatedMeasure')(p, element); 
+      var min = renderer('PPINOT:AggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', 'MIN', 15, 'bold');
       return min;
     },
     'PPINOT:AggregatedMeasureAVG': (p, element) => {
-      var avg = renderer('PPINOT:AggregatedMeasure')(p, element); 
+      var avg = renderer('PPINOT:AggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', 'AVG', 15, 'bold');
       return avg;
     },
@@ -687,22 +651,22 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       return timeAggregatedMeasure;
     },
     'PPINOT:TimeAggregatedMeasureSUM': (p, element) => {
-      var sum = renderer('PPINOT:TimeAggregatedMeasure')(p, element); 
+      var sum = renderer('PPINOT:TimeAggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', 'SUM', 15, 'bold');
       return sum;
     },
     'PPINOT:TimeAggregatedMeasureMAX': (p, element) => {
-      var max = renderer('PPINOT:TimeAggregatedMeasure')(p, element); 
+      var max = renderer('PPINOT:TimeAggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', 'MAX', 15, 'bold');
       return max;
     },
     'PPINOT:TimeAggregatedMeasureMIN': (p, element) => {
-      var min = renderer('PPINOT:TimeAggregatedMeasure')(p, element); 
+      var min = renderer('PPINOT:TimeAggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', 'MIN', 15, 'bold');
       return min;
     },
     'PPINOT:TimeAggregatedMeasureAVG': (p, element) => {
-      var avg = renderer('PPINOT:TimeAggregatedMeasure')(p, element); 
+      var avg = renderer('PPINOT:TimeAggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', 'AVG', 15, 'bold');
       return avg;
     },
@@ -713,43 +677,43 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       return cyclicTimeAggregatedMeasure;
     },
     'PPINOT:CyclicTimeAggregatedMeasureSUM': (p, element) => {
-      var sum = renderer('PPINOT:CyclicTimeAggregatedMeasure')(p, element); 
+      var sum = renderer('PPINOT:CyclicTimeAggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', 'SUM', 15, 'bold');
       return sum;
     },
     'PPINOT:CyclicTimeAggregatedMeasureMAX': (p, element) => {
-      var max = renderer('PPINOT:CyclicTimeAggregatedMeasure')(p, element); 
+      var max = renderer('PPINOT:CyclicTimeAggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', 'MAX', 15, 'bold');
       return max;
     },
     'PPINOT:CyclicTimeAggregatedMeasureMIN': (p, element) => {
-      var min = renderer('PPINOT:CyclicTimeAggregatedMeasure')(p, element); 
+      var min = renderer('PPINOT:CyclicTimeAggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', 'MIN', 15, 'bold');
       return min;
     },
     'PPINOT:CyclicTimeAggregatedMeasureAVG': (p, element) => {
-      var avg = renderer('PPINOT:CyclicTimeAggregatedMeasure')(p, element); 
+      var avg = renderer('PPINOT:CyclicTimeAggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', 'AVG', 15, 'bold');
       return avg;
     },
     'PPINOT:CyclicTimeMeasureSUM': (p, element) => {
-      var sum = renderer('PPINOT:CyclicTimeMeasure')(p, element); 
-      renderEmbeddedDefaultLabel(p, element, 'top', '\xa0\xa0\xa0\xa0\xa0'+'SUM', 15, 'bold');
+      var sum = renderer('PPINOT:CyclicTimeMeasure')(p, element);
+      renderEmbeddedDefaultLabel(p, element, 'top', '\xa0\xa0\xa0\xa0\xa0' + 'SUM', 15, 'bold');
       return sum;
     },
     'PPINOT:CyclicTimeMeasureAVG': (p, element) => {
-      var avg = renderer('PPINOT:CyclicTimeMeasure')(p, element); 
-      renderEmbeddedDefaultLabel(p, element, 'top', '\xa0\xa0\xa0\xa0\xa0'+'AVG', 15, 'bold');
+      var avg = renderer('PPINOT:CyclicTimeMeasure')(p, element);
+      renderEmbeddedDefaultLabel(p, element, 'top', '\xa0\xa0\xa0\xa0\xa0' + 'AVG', 15, 'bold');
       return avg;
     },
     'PPINOT:CyclicTimeMeasureMIN': (p, element) => {
-      var min = renderer('PPINOT:CyclicTimeMeasure')(p, element); 
-      renderEmbeddedDefaultLabel(p, element, 'top', '\xa0\xa0\xa0\xa0\xa0'+'MIN', 15, 'bold');
+      var min = renderer('PPINOT:CyclicTimeMeasure')(p, element);
+      renderEmbeddedDefaultLabel(p, element, 'top', '\xa0\xa0\xa0\xa0\xa0' + 'MIN', 15, 'bold');
       return min;
     },
     'PPINOT:CyclicTimeMeasureMAX': (p, element) => {
-      var max = renderer('PPINOT:CyclicTimeMeasure')(p, element); 
-      renderEmbeddedDefaultLabel(p, element, 'top', '\xa0\xa0\xa0\xa0\xa0'+'MAX', 15, 'bold');
+      var max = renderer('PPINOT:CyclicTimeMeasure')(p, element);
+      renderEmbeddedDefaultLabel(p, element, 'top', '\xa0\xa0\xa0\xa0\xa0' + 'MAX', 15, 'bold');
       return max;
     },
     'PPINOT:CountAggregatedMeasure': (p, element) => {
@@ -759,22 +723,22 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       return countAggregatedMeasure;
     },
     'PPINOT:CountAggregatedMeasureSUM': (p, element) => {
-      var sum = renderer('PPINOT:CountAggregatedMeasure')(p, element); 
+      var sum = renderer('PPINOT:CountAggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', 'SUM', 15, 'bold');
       return sum;
     },
     'PPINOT:CountAggregatedMeasureMIN': (p, element) => {
-      var min = renderer('PPINOT:CountAggregatedMeasure')(p, element); 
+      var min = renderer('PPINOT:CountAggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', 'MIN', 15, 'bold');
       return min;
     },
     'PPINOT:CountAggregatedMeasureMAX': (p, element) => {
-      var max = renderer('PPINOT:CountAggregatedMeasure')(p, element); 
+      var max = renderer('PPINOT:CountAggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', 'MAX', 15, 'bold');
       return max;
     },
     'PPINOT:CountAggregatedMeasureAVG': (p, element) => {
-      var avg = renderer('PPINOT:CountAggregatedMeasure')(p, element); 
+      var avg = renderer('PPINOT:CountAggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', 'AVG', 15, 'bold');
       return avg;
     },
@@ -799,7 +763,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     'PPINOT:BaseMeasure': (p, element) => {
       let baseMeasure = drawBaseMeasure(element)
       svgAppend(p, baseMeasure);
-      // External labels will be handled by PPINOTLabelManager
+
       return baseMeasure;
     },
     'PPINOT:DataAggregatedMeasure': (p, element) => {
@@ -809,22 +773,22 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       return dataAggregatedMeasure;
     },
     'PPINOT:DataAggregatedMeasureSUM': (p, element) => {
-      var sum = renderer('PPINOT:DataAggregatedMeasure')(p, element); 
+      var sum = renderer('PPINOT:DataAggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', 'SUM', 15, 'bold');
       return sum;
     },
     'PPINOT:DataAggregatedMeasureMAX': (p, element) => {
-      var max = renderer('PPINOT:DataAggregatedMeasure')(p, element); 
+      var max = renderer('PPINOT:DataAggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', 'MAX', 15, 'bold');
       return max;
     },
     'PPINOT:DataAggregatedMeasureMIN': (p, element) => {
-      var min = renderer('PPINOT:DataAggregatedMeasure')(p, element); 
+      var min = renderer('PPINOT:DataAggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', 'MIN', 15, 'bold');
       return min;
     },
     'PPINOT:DataAggregatedMeasureAVG': (p, element) => {
-      var avg = renderer('PPINOT:DataAggregatedMeasure')(p, element); 
+      var avg = renderer('PPINOT:DataAggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', 'AVG', 15, 'bold');
       return avg;
     },
@@ -850,144 +814,144 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
       let derivedMultiInstanceMeasure = drawDerivedMultiInstanceMeasure(element)
       svgAppend(p, derivedMultiInstanceMeasure);
       renderEmbeddedLabel(p, element, 'center-middle');
-      return derivedMultiInstanceMeasure; 
+      return derivedMultiInstanceMeasure;
     },
     'PPINOT:StateConditionMeasure': (p, element) => {
       let stateConditionMeasure = drawStateConditionMeasure(element)
       svgAppend(p, stateConditionMeasure);
       renderEmbeddedLabel(p, element, 'center-middle');
-      return stateConditionMeasure; 
+      return stateConditionMeasure;
     },
     'PPINOT:StateConditionAggregatedMeasure': (p, element) => {
       let stateConditionAggregatedMeasure = drawStateConditionAggregatedMeasure(element)
       svgAppend(p, stateConditionAggregatedMeasure);
       renderEmbeddedLabel(p, element, 'center-middle');
-      return stateConditionAggregatedMeasure; 
+      return stateConditionAggregatedMeasure;
     },
     'PPINOT:StateCondAggMeasureNumber': (p, element) => {
-      var number = renderer('PPINOT:StateConditionAggregatedMeasure')(p, element); 
+      var number = renderer('PPINOT:StateConditionAggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', '#', 30);
-      return number; 
+      return number;
     },
     'PPINOT:StateCondAggMeasurePercentage': (p, element) => {
-      var percentage = renderer('PPINOT:StateConditionAggregatedMeasure')(p, element); 
+      var percentage = renderer('PPINOT:StateConditionAggregatedMeasure')(p, element);
       renderEmbeddedDefaultLabel(p, element, 'center-middle', '%', 30);
-      return percentage; 
+      return percentage;
     },
     'PPINOT:StateCondAggMeasureAll': (p, element) => {
-      var all = renderer('PPINOT:StateConditionAggregatedMeasure')(p, element); 
-      renderEmbeddedDefaultLabel(p, element, 'center-middle', '∀', 30); 
-      return all; 
+      var all = renderer('PPINOT:StateConditionAggregatedMeasure')(p, element);
+      renderEmbeddedDefaultLabel(p, element, 'center-middle', '∀', 30);
+      return all;
     },
     'PPINOT:StateCondAggMeasureAtLeastOne': (p, element) => {
-      var one = renderer('PPINOT:StateConditionAggregatedMeasure')(p, element); 
-      renderEmbeddedDefaultLabel(p, element, 'center-middle', '∃', 30);    
-      return one; 
+      var one = renderer('PPINOT:StateConditionAggregatedMeasure')(p, element);
+      renderEmbeddedDefaultLabel(p, element, 'center-middle', '∃', 30);
+      return one;
     },
     'PPINOT:StateCondAggMeasureNo': (p, element) => {
-      var no = renderer('PPINOT:StateConditionAggregatedMeasure')(p, element); 
-      renderEmbeddedDefaultLabel(p, element, 'center-middle', '∄', 30);    
-      return no; 
+      var no = renderer('PPINOT:StateConditionAggregatedMeasure')(p, element);
+      renderEmbeddedDefaultLabel(p, element, 'center-middle', '∄', 30);
+      return no;
     },
     'PPINOT:Ppi': (p, element) => {
       let ppi = drawPpi(element)
       svgAppend(p, ppi);
       renderEmbeddedLabel(p, element, 'top');
-      return ppi; 
+      return ppi;
     },
     'PPINOT:DerivedSingleInstanceMeasure': (p, element) => {
       let derivedSingleInstanceMeasure = drawDerivedSingleInstanceMeasure(element)
       svgAppend(p, derivedSingleInstanceMeasure);
       renderEmbeddedLabel(p, element, 'center-middle');
-      return derivedSingleInstanceMeasure; 
+      return derivedSingleInstanceMeasure;
     },
 
-    // You have to define the connectors (the properties of the lines)
+
     'PPINOT:ResourceArc': (p, element) => {
       var attrs = computeStyle(attrs, {
-        stroke: element.color || BLACK, //color
-        strokeWidth: 1.5, //width of the line
-        markerEnd: marker('sequenceflow-end', 'white',BLACK), //marker added to the line
+        stroke: element.color || BLACK,
+        strokeWidth: 1.5,
+        markerEnd: marker('sequenceflow-end', 'white', BLACK),
       });
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:MyConnection': (p, element) => {
       var attrs = computeStyle(attrs, {
-        stroke: BLACK, 
-        strokeWidth: 1.5, 
-        markerEnd: marker('sequenceflow-end', 'white',BLACK),
+        stroke: BLACK,
+        strokeWidth: 1.5,
+        markerEnd: marker('sequenceflow-end', 'white', BLACK),
       });
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:DashedLine': (p, element) => {
-        var attrs = computeStyle(attrs, {
-          stroke: BLACK, 
-          strokeWidth: 1.5, 
-          strokeDasharray: [10,7] 
-        });
-        return svgAppend(p, createLine(element.waypoints, attrs));
+      var attrs = computeStyle(attrs, {
+        stroke: BLACK,
+        strokeWidth: 1.5,
+        strokeDasharray: [10, 7]
+      });
+      return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:RFCStateConnection': (p, element) => {
       var attrs = computeStyle(attrs, {
-        stroke: BLACK, 
-        strokeWidth: 1.5, 
-        strokeDasharray: [10,7] 
+        stroke: BLACK,
+        strokeWidth: 1.5,
+        strokeDasharray: [10, 7]
       });
       return svgAppend(p, createLine(element.waypoints, attrs));
-  },
+    },
     'PPINOT:AggregatedConnection': (p, element) => {
       var attrs = {
-        stroke: BLACK, 
-        strokeWidth: 1.5, 
-        markerStart: marker('conditional-flow-marker', 'white',BLACK),
+        stroke: BLACK,
+        strokeWidth: 1.5,
+        markerStart: marker('conditional-flow-marker', 'white', BLACK),
       };
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:GroupedBy': (p, element) => {
       var attrs = {
-        stroke: BLACK, 
-        strokeWidth: 1.5, 
-        strokeDasharray: [8,5],
+        stroke: BLACK,
+        strokeWidth: 1.5,
+        strokeDasharray: [8, 5],
         // i changed de marker name 
-        markerStart: marker('conditional-flow-marker', 'white',BLACK),      
+        markerStart: marker('conditional-flow-marker', 'white', BLACK),
       };
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:ToConnection': (p, element) => {
       var attrs = {
-        stroke: BLACK, 
-        strokeWidth: 1.5, 
-        strokeDasharray: [8,5],
-        markerStart: marker('messageflow-start', 'black',BLACK),
-        markerEnd: marker('messageflow-start', 'black',BLACK),
+        stroke: BLACK,
+        strokeWidth: 1.5,
+        strokeDasharray: [8, 5],
+        markerStart: marker('messageflow-start', 'black', BLACK),
+        markerEnd: marker('messageflow-start', 'black', BLACK),
       };
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:FromConnection': (p, element) => {
       var attrs = {
-        stroke: BLACK, 
-        strokeWidth: 1.5, 
-        strokeDasharray: [8,5],
-        markerStart: marker('messageflow-start', 'white',BLACK),
-        markerEnd: marker('messageflow-start', 'white',BLACK),
+        stroke: BLACK,
+        strokeWidth: 1.5,
+        strokeDasharray: [8, 5],
+        markerStart: marker('messageflow-start', 'white', BLACK),
+        markerEnd: marker('messageflow-start', 'white', BLACK),
       };
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:EndConnection': (p, element) => {
       var attrs = {
-        stroke: BLACK, 
-        strokeWidth: 1.5, 
-        strokeDasharray: [8,5],
-        markerEnd: marker('messageflow-start', 'black',BLACK),
+        stroke: BLACK,
+        strokeWidth: 1.5,
+        strokeDasharray: [8, 5],
+        markerEnd: marker('messageflow-start', 'black', BLACK),
       };
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:StartConnection': (p, element) => {
       var attrs = {
-        stroke: BLACK, 
-        strokeWidth: 1.5, 
-        strokeDasharray: [8,5],
-        markerEnd: marker('messageflow-start', 'white',BLACK),
+        stroke: BLACK,
+        strokeWidth: 1.5,
+        strokeDasharray: [8, 5],
+        markerEnd: marker('messageflow-start', 'white', BLACK),
       };
       return svgAppend(p, createLine(element.waypoints, attrs));
     }
@@ -998,21 +962,20 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
   this.paths = {
     'PPINOT:BaseMeasure': (element) => {
       var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-          
-      // Ajustamos las coordenadas y tamaño del path para que coincida con la imagen reducida
-      var offsetX = 6; // Mismo offset que en drawBaseMeasure
-      var offsetY = 4; // Mismo offset que en drawBaseMeasure
-      var scaledWidth = width * 0.8; // Mismo factor que en drawBaseMeasure
-      var scaledHeight = height * 0.8; // Mismo factor que en drawBaseMeasure
-      
+        y = element.y,
+        width = element.width,
+        height = element.height;
+
+      var offsetX = 6;
+      var offsetY = 4;
+      var scaledWidth = width * 0.8;
+      var scaledHeight = height * 0.8;
+
       var adjustedX = x + offsetX;
       var adjustedY = y + offsetY;
-      
+
       var borderRadius = 10;
-         
+
       var d = [
         ['M', adjustedX + borderRadius, adjustedY],
         ['l', scaledWidth - borderRadius * 2, 0],
@@ -1030,19 +993,18 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
     },
     'PPINOT:Target': (element) => {
       var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      // Para Target mini (dentro de Ppi), usar un área de selección más pequeña
+        y = element.y,
+        width = element.width,
+        height = element.height;
+
       if (element.parent && element.parent.type === 'PPINOT:Ppi') {
-        // Usar dimensiones similares al icono para el área seleccionable
+
         var scaleFactor = 0.85;
         var offsetX = 10;
         var offsetY = 5;
         var scaledWidth = width * scaleFactor;
         var scaledHeight = height * scaleFactor;
-        
+
         var miniPath = [
           ['M', x + offsetX, y + offsetY],
           ['h', scaledWidth],
@@ -1053,8 +1015,8 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
         ]
         return componentsToPath(miniPath);
       }
-          
-      // Para Target normal, usar las dimensiones completas del elemento
+
+
       var normalPath = [
         ['M', x, y],
         ['h', width],
@@ -1069,19 +1031,18 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
 
     'PPINOT:Scope': (element) => {
       var x = element.x,
-          y = element.y,
-          width = element.width,
-          height = element.height;
-      
-      // Para Scope mini (dentro de Ppi), usar un área de selección más pequeña
+        y = element.y,
+        width = element.width,
+        height = element.height;
+
       if (element.parent && element.parent.type === 'PPINOT:Ppi') {
-        // Usar las mismas dimensiones que el icono escalado
+
         var scaleFactor = 0.3;
         var offsetX = 10 + (width * (1 - scaleFactor)) / 2;
         var offsetY = 5 + (height * (1 - scaleFactor)) / 2;
         var scaledWidth = width * scaleFactor;
         var scaledHeight = height * scaleFactor;
-        
+
         var miniPath = [
           ['M', x + offsetX, y + offsetY],
           ['h', scaledWidth],
@@ -1092,8 +1053,8 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
         ]
         return componentsToPath(miniPath);
       }
-          
-      // Para Scope normal, usar las dimensiones completas del elemento
+
+
       var normalPath = [
         ['M', x, y],
         ['h', width],
@@ -1110,89 +1071,57 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
 
 inherits(PPINOTRenderer, BaseRenderer);
 
-PPINOTRenderer.$inject = [ 'eventBus', 'styles', 'canvas', 'textRenderer' ];
+PPINOTRenderer.$inject = ['eventBus', 'styles', 'canvas', 'textRenderer'];
 
-PPINOTRenderer.prototype.canRender = function(element) {
-  // Handle PPINOT elements
+PPINOTRenderer.prototype.canRender = function (element) {
+
   if (/^PPINOT:/.test(element.type)) {
     return true;
   }
-  
-  // Handle label elements for PPINOT elements - SÍ RENDERIZAR LABELS PPINOT
+
+
   if (element.type === 'label' && element.labelTarget) {
     var target = element.labelTarget;
     if (target.type && /^PPINOT:/.test(target.type)) {
       return true;
     }
   }
-  
+
   return false;
 };
 
-PPINOTRenderer.prototype.drawShape = function(p, element) {
+PPINOTRenderer.prototype.drawShape = function (p, element) {
   var type = element.type;
-  
-  // Handle PPINOT labels
+
+
   if (type === 'label' && element.labelTarget && element.labelTarget.type && /^PPINOT:/.test(element.labelTarget.type)) {
     return this.drawLabel(p, element);
   }
-  
+
   var h = this.renderers[type];
-  
-  if(element.color == null)
-    element.color= "#000"
+
+  if (element.color == null)
+    element.color = "#000"
 
   /* jshint -W040 */
   return h(p, element);
 };
 
-PPINOTRenderer.prototype.drawLabel = function(parentGfx, element) {
-  console.log('PPINOTRenderer: Drawing label for', element.id);
-  
-  // First check if we have valid element
+PPINOTRenderer.prototype.drawLabel = function (parentGfx, element) {
+
   if (!element) {
     console.warn('PPINOTRenderer: Cannot draw label for undefined element');
     return null;
   }
-  
-  var text = '';
-  var hasText = false;
-  
-  // Get label text from various sources - check each property type carefully
-  if (element.businessObject && typeof element.businessObject.name === 'string') {
-    text = element.businessObject.name;
-    hasText = text.trim() !== '';
-  } else if (element.businessObject && typeof element.businessObject.text === 'string') {
-    text = element.businessObject.text;
-    hasText = text.trim() !== '';
-  } else if (element.labelTarget && element.labelTarget.businessObject) {
-    var bo = element.labelTarget.businessObject;
-    if (typeof bo.name === 'string') {
-      text = bo.name;
-      hasText = text.trim() !== '';
-    } else if (bo.$attrs && typeof bo.$attrs.name === 'string') {
-      text = bo.$attrs.name;
-      hasText = text.trim() !== '';
-    }
-  } else if (element.labelTarget && typeof element.labelTarget.label === 'string') {
-    text = element.labelTarget.label;
-    hasText = text.trim() !== '';
-  }
-  
-  // Always ensure text is a string
-  if (typeof text !== 'string') {
-    text = '';
-    hasText = false;
-  }
-  
-  console.log('PPINOTRenderer: Label text:', text, 'hasText:', hasText);
-  
-  // Create text element using the text renderer with proper options
-  // Make sure element has dimensions
-  if (!element.width) element.width = 100;
-  if (!element.height) element.height = 50;
-  
-  var textElement = this._textRenderer.createText(text || '', {
+
+
+  let text = (element.businessObject && typeof element.businessObject.name === 'string')
+    ? element.businessObject.name
+    : '';
+
+  const hasText = text.trim() !== '';
+
+  const textElement = this._textRenderer.createText(text, {
     box: element,
     align: 'center-middle',
     padding: 5,
@@ -1202,50 +1131,24 @@ PPINOTRenderer.prototype.drawLabel = function(parentGfx, element) {
       fill: '#000000'
     }
   });
-  
-  // Add CSS classes for styling
-  svgClasses(textElement).add('djs-label');
+
   svgClasses(textElement).add('ppinot-label');
-  
-  // Check if this label has been edited before (persistent visibility)
-  var wasEditedBefore = element._labelWasEdited || 
-                        (element.businessObject && element.businessObject._labelWasEdited) ||
-                        (element.labelTarget && element.labelTarget._labelWasEdited);
-  
-  // Set visibility: hidden by default, visible if it has content OR was edited before
-  if (hasText || wasEditedBefore) {
-    svgClasses(textElement).add('ppinot-label-visible');
-    svgAttr(textElement, {
-      'visibility': 'visible',
-      'opacity': '1'
-    });
-  } else {
-    svgClasses(textElement).add('ppinot-label-hidden');
-    svgAttr(textElement, {
-      'visibility': 'hidden',
-      'opacity': '0'
-    });
-  }
-  
-  // Append to parent
+
+
   svgAppend(parentGfx, textElement);
-  
-  console.log('PPINOTRenderer: Label created with visibility:', (hasText || wasEditedBefore) ? 'visible' : 'hidden');
-  
+
   return textElement;
 };
 
-PPINOTRenderer.prototype.getShapePath = function(shape) {
+PPINOTRenderer.prototype.getShapePath = function (shape) {
   var type = shape.type;
-  
-  // Para conexiones, tenemos que generar un path válido a partir de los waypoints
+
   if (isPPINOTConnection(type)) {
-    // Si es una conexión PPINOT con waypoints, usarlos para generar el path
     var waypoints = shape.waypoints || [];
     if (waypoints.length < 2) {
       return 'M0,0 L0,0';
     }
-    
+
     var connectionPath = [
       ['M', waypoints[0].x, waypoints[0].y]
     ];
@@ -1256,40 +1159,38 @@ PPINOTRenderer.prototype.getShapePath = function(shape) {
 
     return componentsToPath(connectionPath);
   }
-  
-  // Para otros elementos, usar el path definido
+
   var h = this.paths[type];
-  
+
   if (!h) {
-    // Si no hay un path definido, devolver un rectángulo básico
     var x = shape.x || 0;
     var y = shape.y || 0;
     var width = shape.width || 50;
     var height = shape.height || 50;
-    
-    return 'M' + x + ',' + y + 
-           ' L' + (x + width) + ',' + y + 
-           ' L' + (x + width) + ',' + (y + height) + 
-           ' L' + x + ',' + (y + height) + 
-           ' Z';
+
+    return 'M' + x + ',' + y +
+      ' L' + (x + width) + ',' + y +
+      ' L' + (x + width) + ',' + (y + height) +
+      ' L' + x + ',' + (y + height) +
+      ' Z';
   }
 
   /* jshint -W040 */
   return h(shape);
 };
 
-PPINOTRenderer.prototype.drawConnection = function(p, element) {
+PPINOTRenderer.prototype.drawConnection = function (p, element) {
   var type = element.type;
   var h = this.renderers[type];
-  if(element.color == null)
-    element.color= "#000"
+  if (element.color == null)
+    element.color = "#000"
 
   /* jshint -W040 */
   return h(p, element);
 };
 
-PPINOTRenderer.prototype.getConnectionPath = function(connection) {
-  var waypoints = connection.waypoints.map(function(p) {
+PPINOTRenderer.prototype.getConnectionPath = function (connection) {
+  var waypoints = connection.waypoints.map(function (p) {
     return p.original || p;
   });
 
@@ -1297,7 +1198,7 @@ PPINOTRenderer.prototype.getConnectionPath = function(connection) {
     ['M', waypoints[0].x, waypoints[0].y]
   ];
 
-  waypoints.forEach(function(waypoint, index) {
+  waypoints.forEach(function (waypoint, index) {
     if (index !== 0) {
       connectionPath.push(['L', waypoint.x, waypoint.y]);
     }

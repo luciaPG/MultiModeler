@@ -1,70 +1,125 @@
-import inherits from 'inherits';
-import CommandInterceptor from 'diagram-js/lib/command/CommandInterceptor';
+import { assign } from 'min-dash';
+import { getMid } from 'diagram-js/lib/layout/LayoutUtil';
+import { getLabel } from './utils/LabelUtil';
+import { isAny } from 'bpmn-js/lib/features/modeling/util/ModelingUtil';
 
-function getLabel(element) {
-  const bo = element.businessObject;
-  return bo && bo.name ? bo.name : '';
-}
+export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, canvas, elementRegistry) {
 
-export default function PPINOTLabelProvider(eventBus, modeling) {
-  CommandInterceptor.call(this, eventBus);
-  
-  eventBus.on('directEditing.activate', function(event) {
-    console.log('Direct editing activated with event:', event);
-    
-    // Intenta obtener el elemento de diferentes ubicaciones posibles en el evento
-    let element = null;
-    
-    if (event.active && event.active.element) {
-      // Si el elemento está en event.active.element
-      element = event.active.element;
-      console.log('Found element in event.active.element:', element.id);
-    } else if (event.context && event.context.element) {
-      // Si el elemento está en event.context.element
-      element = event.context.element;
-      console.log('Found element in event.context.element:', element.id);
-    } else if (event.element) {
-      // Si el elemento está directamente en el evento
-      element = event.element;
-      console.log('Found element directly in event:', element.id);
+  // Create external labels when finishing the creation of an element
+  eventBus.on('create.end', 500, function(event) {
+    const shape = event.context.shape;
+
+    if (!shape.labelTarget && !shape.hidden && !shape.label && shouldCreateExternalLabel(shape)) {
+      createLabel(shape, getExternalLabelPosition(shape));
     }
-    
-    if (!element) {
-      console.warn('PPINOTLabelProvider: No element found in event:', event);
+  });
+
+  // Create external labels for existing elements when loading the diagram
+  eventBus.on('import.done', function() {
+    elementRegistry.forEach(function(element) {
+      if (shouldCreateExternalLabel(element) && !element.label) {
+        createLabel(element, getExternalLabelPosition(element));
+      }
+
+      if (element.type && element.type.startsWith('PPINOT:')) {
+        element._skipInternalLabel = true;
+      }
+    });
+  });
+
+  // Reposition external label when moving the element
+  eventBus.on('shape.move.end', function(event) {
+    const element = event.shape;
+
+    if (isLabel(element) && element.labelTarget) return;
+
+    if (!isLabel(element) && element.label) {
+      const labelMid = getExternalLabelMid(element);
+
+      if (labelMid && typeof labelMid.x === 'number' && typeof labelMid.y === 'number') {
+        const delta = {
+          x: labelMid.x - element.label.x - element.label.width / 2,
+          y: labelMid.y - element.label.y - element.label.height / 2
+        };
+
+        modeling.moveShape(element.label, delta);
+      }
+    }
+  });
+
+  // Create an external label for a target element at the given position
+  function createLabel(target, position) {
+    if (target.label || !target || !position || 
+        typeof position.x !== 'number' || typeof position.y !== 'number') {
       return;
     }
-    
-    // Asegúrate de que event.context exista
-    if (!event.context) {
-      event.context = {};
-    }
-    
-    // Establece el elemento en el contexto
-    event.context.element = element;
-    
-    // Obtén y establece el texto de la etiqueta
-    const text = getLabel(element);
-    console.log('Setting label text for element:', element.id, 'Text:', text);
-    event.context.text = text;
-  });
-  
-  // Escucha cuando se completa la edición directa para actualizar el modelo
-  eventBus.on('directEditing.complete', function(event) {
-    if (event.context && event.context.element) {
-      const element = event.context.element;
-      const text = event.text;
-      console.log('Updating label for element:', element.id, 'New text:', text);
-      modeling.updateLabel(element, text);
-      
-      // Forzar actualización visual
-      eventBus.fire('element.changed', { element: element });
-    }
-  });
-}
 
-inherits(PPINOTLabelProvider, CommandInterceptor);
+    const labelText = getLabel(target) || '';
+
+    const labelElement = elementFactory.createLabel({
+      id: target.id + '_label',
+      businessObject: target.businessObject,
+      di: target.di,
+      type: 'label',
+      labelTarget: target,
+      width: 150,
+      height: 50
+    });
+
+    assign(labelElement, {
+      x: position.x - labelElement.width / 2,
+      y: position.y - labelElement.height / 2
+    });
+
+    target.label = labelElement;
+
+    const parent = canvas.findRoot(target) || canvas.getRootElement();
+
+    modeling.createShape(labelElement, {
+      x: position.x,
+      y: position.y
+    }, parent);
+  }
+
+  function isLabel(element) {
+    return element && element.type === 'label';
+  }
+
+  function shouldCreateExternalLabel(element) {
+    if (element._hasExternalLabel || element.label) {
+      return false;
+    }
+
+    if (element.parent && element.parent.type === 'PPINOT:Ppi' &&
+        (element.type === 'PPINOT:Scope' || element.type === 'PPINOT:Target')) {
+      return false;
+    }
+
+    return element && element.type && element.type.startsWith('PPINOT:');
+  }
+
+  function getExternalLabelMid(element) {
+    if (!element || typeof element.x !== 'number' || typeof element.y !== 'number' || 
+        typeof element.width !== 'number' || typeof element.height !== 'number') {
+      return null;
+    }
+
+    return {
+      x: element.x + element.width / 2,
+      y: element.y + element.height + 30
+    };
+  }
+
+  function getExternalLabelPosition(element) {
+    const mid = getExternalLabelMid(element);
+    return mid ? { x: mid.x, y: mid.y } : null;
+  }
+}
 
 PPINOTLabelProvider.$inject = [
   'eventBus',
-  'modeling'
+  'modeling',
+  'elementFactory',
+  'canvas',
+  'elementRegistry'
 ];

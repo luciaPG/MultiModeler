@@ -7,11 +7,8 @@ import {
     setLabel
 } from 'bpmn-js/lib/features/label-editing/LabelUtil';
 
-/**
- * BaseLabelProvider: Universal label editing provider for BPMN and custom elements
- * This provider can handle both BPMN standard elements and custom elements like PPINOT
- */
-export default function BaseLabelProvider(
+
+export default function MultiNotationLabelProvider(
     eventBus, canvas, directEditing,
     modeling, resizeHandles, textRenderer, injector) {
 
@@ -21,38 +18,34 @@ export default function BaseLabelProvider(
     this._injector = injector;
     this._customProviders = [];
 
-    console.log('BaseLabelProvider: Initialized as main label editing provider');
 
-    // Listen to dblclick on non-root elements
-    eventBus.on('element.dblclick', function(event) {
+    eventBus.on('element.dblclick', function (event) {
         activateDirectEdit(event.element, true);
     });
 
-    // Complete on followup canvas operation
     eventBus.on([
         'element.mousedown',
         'drag.init',
         'canvas.viewbox.changing',
         'autoPlace',
         'popupMenu.open'
-    ], function() {
+    ], function () {
         if (directEditing.isActive()) {
             directEditing.complete();
         }
     });
 
-    // Cancel on command stack changes
-    eventBus.on(['commandStack.changed'], function() {
+    eventBus.on(['commandStack.changed'], function () {
         if (directEditing.isActive()) {
             directEditing.cancel();
         }
     });
 
-    eventBus.on('directEditing.activate', function() {
+    eventBus.on('directEditing.activate', function () {
         resizeHandles.removeResizers();
     });
 
-    eventBus.on('create.end', 500, function(event) {
+    eventBus.on('create.end', 500, function (event) {
         var context = event.context,
             element = context.shape,
             canExecute = event.context.canExecute,
@@ -73,25 +66,23 @@ export default function BaseLabelProvider(
         activateDirectEdit(element);
     });
 
-    eventBus.on('autoPlace.end', 500, function(event) {
+    eventBus.on('autoPlace.end', 500, function (event) {
         activateDirectEdit(event.shape);
     });
 
     var self = this;
-    
+
     function activateDirectEdit(element, force) {
-        // Check if any custom provider can handle this element
         for (let provider of self._customProviders) {
             if (provider.canEdit && provider.canEdit(element)) {
-              var context = provider.activate(element);
-              if (context) {
-                directEditing.activate(element, context);
-              }
-              return;
+                var context = provider.activate(element);
+                if (context) {
+                    directEditing.activate(element, context);
+                }
+                return;
             }
-          }
+        }
 
-        // Handle standard BPMN elements
         let standardTypes = [
             'bpmn:Task',
             'bpmn:TextAnnotation',
@@ -107,14 +98,12 @@ export default function BaseLabelProvider(
         }
     }
 
-    // Register custom providers
-    this.registerProvider = function(provider) {
+    this.registerProvider = function (provider) {
         self._customProviders.push(provider);
-        console.log('BaseLabelProvider: Registered custom provider');
     };
 }
 
-BaseLabelProvider.$inject = [
+MultiNotationLabelProvider.$inject = [
     'eventBus',
     'canvas',
     'directEditing',
@@ -124,18 +113,13 @@ BaseLabelProvider.$inject = [
     'injector'
 ];
 
-/**
- * Check if this provider can edit the given element
- */
-BaseLabelProvider.prototype.canEdit = function(element) {
-    // Check custom providers first
+MultiNotationLabelProvider.prototype.canEdit = function (element) {
     for (let provider of this._customProviders) {
         if (provider.canEdit && provider.canEdit(element)) {
             return true;
         }
     }
 
-    // Check standard BPMN elements
     if (isAny(element, [
         'bpmn:Task',
         'bpmn:TextAnnotation',
@@ -151,11 +135,7 @@ BaseLabelProvider.prototype.canEdit = function(element) {
     return false;
 };
 
-/**
- * Activate direct editing for activities and text annotations.
- */
-BaseLabelProvider.prototype.activate = function(element) {
-    // Check custom providers first
+MultiNotationLabelProvider.prototype.activate = function (element) {
     for (let provider of this._customProviders) {
         if (provider.canEdit && provider.canEdit(element)) {
             if (provider.activate) {
@@ -164,14 +144,10 @@ BaseLabelProvider.prototype.activate = function(element) {
         }
     }
 
-    // Handle standard BPMN elements
     return this.activateStandardElement(element);
 };
 
-/**
- * Handle standard BPMN elements activation
- */
-BaseLabelProvider.prototype.activateStandardElement = function(element) {
+MultiNotationLabelProvider.prototype.activateStandardElement = function (element) {
     var text = getLabel(element);
 
     if (text === undefined) {
@@ -182,13 +158,11 @@ BaseLabelProvider.prototype.activateStandardElement = function(element) {
         text: text
     };
 
-    // Get editing bounding box
     var bounds = this.getEditingBBox(element);
     assign(context, bounds);
 
     var options = {};
 
-    // Tasks
     if (
         isAny(element, [
             'bpmn:Task',
@@ -203,7 +177,6 @@ BaseLabelProvider.prototype.activateStandardElement = function(element) {
         });
     }
 
-    // Text annotations
     if (is(element, 'bpmn:TextAnnotation')) {
         assign(options, {
             resizable: true,
@@ -218,11 +191,7 @@ BaseLabelProvider.prototype.activateStandardElement = function(element) {
     return context;
 };
 
-/**
- * Get the editing bounding box based on the element's size and position
- */
-BaseLabelProvider.prototype.getEditingBBox = function(element) {
-    // Check custom providers first
+MultiNotationLabelProvider.prototype.getEditingBBox = function (element) {
     for (let provider of this._customProviders) {
         if (provider.canEdit && provider.canEdit(element)) {
             if (provider.getEditingBBox) {
@@ -231,14 +200,11 @@ BaseLabelProvider.prototype.getEditingBBox = function(element) {
         }
     }
 
-    // Handle standard BPMN elements
     return this.getStandardEditingBBox(element);
 };
 
-/**
- * Get editing bounding box for standard BPMN elements
- */
-BaseLabelProvider.prototype.getStandardEditingBBox = function(element) {
+
+MultiNotationLabelProvider.prototype.getStandardEditingBBox = function (element) {
     var canvas = this._canvas;
     var target = element.label || element;
     var bbox = canvas.getAbsoluteBBox(target);
@@ -254,9 +220,7 @@ BaseLabelProvider.prototype.getStandardEditingBBox = function(element) {
     var defaultStyle = this._textRenderer.getDefaultStyle(),
         externalStyle = this._textRenderer.getExternalStyle();
 
-    var externalFontSize = externalStyle.fontSize * zoom,
-        externalLineHeight = externalStyle.lineHeight,
-        defaultFontSize = defaultStyle.fontSize * zoom,
+    var defaultFontSize = defaultStyle.fontSize * zoom,
         defaultLineHeight = defaultStyle.lineHeight;
 
     var style = {
@@ -264,7 +228,7 @@ BaseLabelProvider.prototype.getStandardEditingBBox = function(element) {
         fontWeight: this._textRenderer.getDefaultStyle().fontWeight
     };
 
-    // Adjust for expanded pools AND lanes
+
     if (is(element, 'bpmn:Lane') || isExpandedPool(element)) {
         assign(bounds, {
             width: bbox.height,
@@ -284,7 +248,7 @@ BaseLabelProvider.prototype.getStandardEditingBBox = function(element) {
         });
     }
 
-    // Internal labels for tasks and collapsed call activities
+
     if (isAny(element, ['bpmn:Task', 'bpmn:CallActivity']) ||
         isCollapsedPool(element) ||
         isCollapsedSubProcess(element)) {
@@ -304,7 +268,7 @@ BaseLabelProvider.prototype.getStandardEditingBBox = function(element) {
         });
     }
 
-    // Internal labels for expanded sub processes
+
     if (isExpandedSubProcess(element)) {
         assign(bounds, {
             width: bbox.width,
@@ -321,7 +285,7 @@ BaseLabelProvider.prototype.getStandardEditingBBox = function(element) {
         });
     }
 
-    // Text annotations
+
     if (is(element, 'bpmn:TextAnnotation')) {
         assign(bounds, {
             width: bbox.width,
@@ -344,11 +308,9 @@ BaseLabelProvider.prototype.getStandardEditingBBox = function(element) {
     return { bounds: bounds, style: style };
 };
 
-/**
- * Update method for handling label updates
- */
-BaseLabelProvider.prototype.update = function(element, newText, oldText) {
-    // Check custom providers first
+
+MultiNotationLabelProvider.prototype.update = function (element, newText, oldText) {
+
     for (let provider of this._customProviders) {
         if (provider.canEdit && provider.canEdit(element)) {
             if (provider.update) {
@@ -357,11 +319,11 @@ BaseLabelProvider.prototype.update = function(element, newText, oldText) {
         }
     }
 
-    // Handle standard BPMN elements
+
     setLabel(element, newText);
 };
 
-// Helper functions
+
 function isCollapsedSubProcess(element) {
     return is(element, 'bpmn:SubProcess') && !isExpanded(element);
 }

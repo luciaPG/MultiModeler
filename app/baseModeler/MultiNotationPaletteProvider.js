@@ -1,19 +1,13 @@
 import { assign } from 'min-dash';
 import BpmnPaletteProvider from 'bpmn-js/lib/features/palette/PaletteProvider';
 
-/**
- * Unified palette provider that extends BPMN.js PaletteProvider and adds
- * PPINOT and RALPH elements if their services are available.
- */
-export default function BasePaletteProvider(palette, create, elementFactory, spaceTool, lassoTool, handTool, globalConnect, translate, injector) {
-  // Call parent constructor to initialize BPMN palette logic
+export default function MultiNotationPaletteProvider(palette, create, elementFactory, spaceTool, lassoTool, handTool, globalConnect, translate, injector) {
   BpmnPaletteProvider.call(this, palette, create, elementFactory, spaceTool, lassoTool, handTool, globalConnect, translate);
   
-  // Store injector to get notation services
   this._injector = injector;
 }
 
-BasePaletteProvider.$inject = [
+MultiNotationPaletteProvider.$inject = [
   'palette',
   'create',
   'elementFactory',
@@ -26,25 +20,21 @@ BasePaletteProvider.$inject = [
   
 ];
 
-// Inherit from BpmnPaletteProvider
-BasePaletteProvider.prototype = Object.create(BpmnPaletteProvider.prototype);
-BasePaletteProvider.prototype.constructor = BasePaletteProvider;
+MultiNotationPaletteProvider.prototype = Object.create(BpmnPaletteProvider.prototype);
+MultiNotationPaletteProvider.prototype.constructor = MultiNotationPaletteProvider;
 
-BasePaletteProvider.prototype.getPaletteEntries = function () {
-  // Get BPMN palette entries
+MultiNotationPaletteProvider.prototype.getPaletteEntries = function () {
   const bpmnEntries = BpmnPaletteProvider.prototype.getPaletteEntries.call(this);
   let allEntries = assign({}, bpmnEntries);
-
-  // Try to get PPINOT and RALPH palette services
   const ppinotNotationPalette = safeGet(this._injector, 'ppinotNotationPalette');
   const ralphNotationPalette = safeGet(this._injector, 'ralphNotationPalette');
 
-  // Add PPINOT entries if available
+  //PPINOT entries
   if (ppinotNotationPalette && typeof ppinotNotationPalette.getPaletteEntries === 'function') {
     assign(allEntries, ppinotNotationPalette.getPaletteEntries());
   }
 
-  // Add RALPH entries if available
+  //RALPH entries
   if (ralphNotationPalette && typeof ralphNotationPalette.getPaletteEntries === 'function') {
     assign(allEntries, ralphNotationPalette.getPaletteEntries());
   }
@@ -52,7 +42,7 @@ BasePaletteProvider.prototype.getPaletteEntries = function () {
   return allEntries;
 };
 
-// Helper to safely get a service from injector
+
 function safeGet(injector, serviceName) {
   try {
     return injector.get(serviceName, false);

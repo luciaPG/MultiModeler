@@ -242,6 +242,22 @@ background-color: none;
 }
 
 
+
+        /* New PPINOT icons are added in this document 
+       To add a new icon you have to put:
+      
+      .icon-(name){
+        background-image: url("svg to css"); 
+      }
+
+      To convert svg to css, you can use this tool https://yoksel.github.io/url-encoder/
+
+      Moreover in some cases, icons in the palette are wrong due to their dimensions. So you should add 
+      viewBox parameter in the url to see the icon in the palette correctly. You should put 
+      viewBox='0 0 (a number greater than icon width) (a number greater than icon height)'
+    
+    */
+
 /* ======================================
    ====     CUSTOM PPINOT ICONS      ====
    ====================================== */
@@ -393,5 +409,6 @@ background-color: none;
 
 /* Label selection style */
 .djs-label.ppinot-label.selected {
-  outline: 2px solid #1a73e8;
+  outline: 2px solid #e31414;
+  min-width: 150px;
 }

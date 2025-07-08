@@ -2,11 +2,7 @@ import { isPPINOTShape } from '../PPINOT-modeler/PPINOT/Types';
 import ContextPadProvider from 'bpmn-js/lib/features/context-pad/ContextPadProvider';
 import PPINOTContextPadProvider from '../PPINOT-modeler/PPINOT/PPINOTContextPadProvider';
 
-
-/**
- * BaseContextPadProvider: preserves BPMN.js context-pad and delegates to PPINOT provider when needed.
- */
-class BaseContextPadProvider extends ContextPadProvider {
+class MultiNotationContextPadProvider extends ContextPadProvider {
   constructor(
     config,
     injector,
@@ -42,7 +38,7 @@ class BaseContextPadProvider extends ContextPadProvider {
     this._popupMenu = popupMenu;
     this._translate = translate;
 
-    // Initialize PPINOT context-pad provider
+    
     this._ppinotProvider = new PPINOTContextPadProvider(
       config,
       injector,
@@ -57,23 +53,16 @@ class BaseContextPadProvider extends ContextPadProvider {
       translate
     );
 
-    // Register this provider
+
     contextPad.registerProvider(this);
   }
 
-  /**
-   * Return context-pad entries:
-   * - For PPINOT shapes: use PPINOT provider
-   * - Otherwise: use BPMN entries, adding replace if missing
-   */
   getContextPadEntries(element) {
     let entries = {};
     if (isPPINOTShape(element)) {
       return this._ppinotProvider.getContextPadEntries(element) || {};
     } else if (!isPPINOTShape(element) && element.type !== 'label') {
-
       entries = super.getContextPadEntries(element) || {};
-      console.log('BPMN ContextPad entries:', entries);
       if (!entries.replace) {
         entries.replace = {
           group: 'edit',
@@ -89,17 +78,12 @@ class BaseContextPadProvider extends ContextPadProvider {
           }
         };
       }
-
-
-
-
       return entries;
     }
   }
 }
 
-// Inject dependencies
-BaseContextPadProvider.$inject = [
+MultiNotationContextPadProvider.$inject = [
   'config',
   'injector',
   'eventBus',
@@ -115,4 +99,4 @@ BaseContextPadProvider.$inject = [
   'appendPreview'
 ];
 
-export default BaseContextPadProvider;
+export default MultiNotationContextPadProvider;
