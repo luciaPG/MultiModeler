@@ -7,7 +7,7 @@
  */
 
 import $ from 'jquery';
-import BaseModeler from './baseModeler/index.js';
+import MultiNotationModeler from './MultiNotationModeler/index.js';
 import BpmnModdle from 'bpmn-moddle';
 import PPINOTDescriptor from './PPINOT-modeler/PPINOT/PPINOT.json';
 // import RALPHDescriptor from './RALPH-modeler/RALPH/RALPH.json'; // (Si tienes RALPH)
@@ -34,7 +34,7 @@ let currentFile = null;
 
 // Inicializar el modelador híbrido con extensiones
 function initializeModeler() {
-  modeler = new BaseModeler({
+  modeler = new MultiNotationModeler({
     container: '#js-canvas',
     moddleExtensions: {
       PPINOT: PPINOTDescriptor,

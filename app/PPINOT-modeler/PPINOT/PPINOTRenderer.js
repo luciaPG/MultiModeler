@@ -192,25 +192,6 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
 
     return 'url(#' + id + ')';
   }
-  function renderExternalLabel(parentGfx, element) {
-    var labelText = element.businessObject && element.businessObject.name;
-    console.log('Rendering external label for', element.id, 'Text:', labelText);
-
-    // Handle draggable label elements - these are separate elements of type 'label'
-    if (element.type === 'label') {
-      return renderLabel(parentGfx, labelText || '', {
-        box: element,
-        align: 'center-middle',
-        padding: 5,
-        style: {
-          fill: element.color || '#000000'
-        }
-      });
-    }
-
-
-    return null;
-  }
 
 
   function createMarker(id, type, fill, stroke) {

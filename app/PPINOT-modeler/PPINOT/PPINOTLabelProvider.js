@@ -1,11 +1,9 @@
 import { assign } from 'min-dash';
-import { getMid } from 'diagram-js/lib/layout/LayoutUtil';
-import { getLabel } from './utils/LabelUtil';
-import { isAny } from 'bpmn-js/lib/features/modeling/util/ModelingUtil';
 
+// In charge of creating external labels
 export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, canvas, elementRegistry) {
 
-  // Create external labels when finishing the creation of an element
+
   eventBus.on('create.end', 500, function(event) {
     const shape = event.context.shape;
 
@@ -14,7 +12,6 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
     }
   });
 
-  // Create external labels for existing elements when loading the diagram
   eventBus.on('import.done', function() {
     elementRegistry.forEach(function(element) {
       if (shouldCreateExternalLabel(element) && !element.label) {
@@ -27,7 +24,6 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
     });
   });
 
-  // Reposition external label when moving the element
   eventBus.on('shape.move.end', function(event) {
     const element = event.shape;
 
@@ -47,14 +43,11 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
     }
   });
 
-  // Create an external label for a target element at the given position
   function createLabel(target, position) {
     if (target.label || !target || !position || 
         typeof position.x !== 'number' || typeof position.y !== 'number') {
       return;
     }
-
-    const labelText = getLabel(target) || '';
 
     const labelElement = elementFactory.createLabel({
       id: target.id + '_label',

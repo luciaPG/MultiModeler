@@ -1,12 +1,14 @@
+// MultiNotationRenderer.js
 import BpmnRenderer from 'bpmn-js/lib/draw/BpmnRenderer';
 import PPINOTRenderer from '../PPINOT-modeler/PPINOT/PPINOTRenderer';
 import inherits from 'inherits';
 
 export default function MultiNotationRenderer(config, eventBus, styles, pathMap, canvas, textRenderer) {
-  
   BpmnRenderer.call(this, config, eventBus, styles, pathMap, canvas, textRenderer);
   this._textRenderer = textRenderer;
   this._canvas = canvas;
+  
+
   this._ppinotRenderer = new PPINOTRenderer(eventBus, styles, canvas, textRenderer);
 }
 
@@ -68,34 +70,6 @@ MultiNotationRenderer.prototype.drawLabel = function(parentGfx, element) {
     labelGfx.style.visibility = 'visible';
     labelGfx.style.display = 'block';
     labelGfx.style.opacity = '1';
-    const textElement = labelGfx.querySelector('text');
-    if (textElement) {
-      const tspanElement = textElement.querySelector('tspan');
-      if (tspanElement) {
-        if (!tspanElement.textContent || tspanElement.textContent.trim() === '') {
-          const fallbackText = element.id ? 
-            element.id.replace('_label', '').replace(/([A-Z])/g, ' $1').trim() || 'PPINOT Element' :
-            'PPINOT Element';
-          tspanElement.textContent = fallbackText;
-        }
-      }
-    }
   }
   return labelGfx;
 };
-
-export function CustomElementFactoryProvider(type = 'PPINOT') {
-  let factory;
-  switch (type) {
-    case 'PPINOT':
-      factory = MultiNotationRenderer;
-      break;
-    default:
-      factory = MultiNotationRenderer;
-  }
-  return {
-    __init__: ['elementFactory'],
-    elementFactory: ['type', factory]
-  };
-}
-
