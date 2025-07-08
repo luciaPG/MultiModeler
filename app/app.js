@@ -13,7 +13,7 @@ import PPINOTDescriptor from './PPINOT-modeler/PPINOT/PPINOT.json';
 // import RALPHDescriptor from './RALPH-modeler/RALPH/RALPH.json'; // (Si tienes RALPH)
 
 // Utilidades de navegación de subprocesos
-import SubprocessNavigation from './PPINOT-modeler/PPINOT/utils/NavigationUtil.js';
+
 
 // Importar CSS
 import 'bpmn-js/dist/assets/diagram-js.css';
@@ -28,7 +28,7 @@ const container = $('#js-drop-zone');
 const body = $('body');
 
 let modeler = null;
-let subprocessNavigation = null;
+
 let navigationTimer = null;
 let currentFile = null;
 
@@ -44,21 +44,6 @@ function initializeModeler() {
   window.modeler = modeler; // Para debugging global
 }
 
-// Inicializar navegación de subprocesos
-function initializeNavigation() {
-  if (subprocessNavigation) subprocessNavigation.destroy();
-  if (navigationTimer) clearTimeout(navigationTimer);
-
-  navigationTimer = setTimeout(() => {
-    try {
-      subprocessNavigation = new SubprocessNavigation(modeler);
-      navigationTimer = null;
-    } catch (error) {
-      console.error('Error creando navegación:', error);
-      navigationTimer = null;
-    }
-  }, 100);
-}
 
 // Crear un nuevo diagrama vacío
 async function createNewDiagram() {
@@ -69,7 +54,6 @@ async function createNewDiagram() {
     container.removeClass('with-error').addClass('with-diagram');
     body.addClass('shown');
 
-    initializeNavigation();
 
     updateUI('Nuevo diagrama creado.');
   } catch (err) {
@@ -88,7 +72,7 @@ async function openDiagram(xml, cbpmn) {
     if (cbpmn) modeler.addPPINOTElements(cbpmn);
 
     body.addClass('shown');
-    initializeNavigation();
+
 
     updateUI('Diagrama cargado exitosamente.');
   } catch (err) {

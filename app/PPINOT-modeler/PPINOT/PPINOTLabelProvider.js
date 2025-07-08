@@ -1,6 +1,7 @@
 import { assign } from 'min-dash';
+import { isExternalLabel } from './Types';
 
-// In charge of creating external labels
+// In charge of creating external labels for PPINOT elements  
 export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, canvas, elementRegistry) {
 
 
@@ -79,16 +80,14 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
   }
 
   function shouldCreateExternalLabel(element) {
-    if (element._hasExternalLabel || element.label) {
+    console.log('shouldCreateExternalLabel', isExternalLabel(element));
+    if (!isExternalLabel(element)) {
       return false;
     }
 
-    if (element.parent && element.parent.type === 'PPINOT:Ppi' &&
-        (element.type === 'PPINOT:Scope' || element.type === 'PPINOT:Target')) {
-      return false;
-    }
+    
 
-    return element && element.type && element.type.startsWith('PPINOT:');
+    return element && element.type;
   }
 
   function getExternalLabelMid(element) {

@@ -1,6 +1,5 @@
-import inherits from 'inherits';
 
-import BaseRenderer from 'diagram-js/lib/draw/BaseRenderer';
+
 
 import { componentsToPath, createLine } from 'diagram-js/lib/util/RenderUtil';
 
@@ -26,9 +25,7 @@ var BLACK = '#000';
  * This module is used to declarate which elements will be created in the diagram when you 
  * drag an element of the palette. It is only for PPINOT elements, not bpmn elements.
  */
-export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
-
-  BaseRenderer.call(this, eventBus, 2000);
+export default function PPINOTRenderer(styles, canvas, textRenderer) {
 
 
   this._textRenderer = textRenderer;
@@ -63,7 +60,7 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
   function renderEmbeddedLabel(parentGfx, element, align) {
     var semantic = getSemantic(element);
 
-    if (! semantic.name ||  semantic.name.trim() === '') {
+    if (!semantic.name || semantic.name.trim() === '') {
       return null;
     }
 
@@ -1050,7 +1047,6 @@ export default function PPINOTRenderer(eventBus, styles, canvas, textRenderer) {
   }
 }
 
-inherits(PPINOTRenderer, BaseRenderer);
 
 PPINOTRenderer.$inject = ['eventBus', 'styles', 'canvas', 'textRenderer'];
 
@@ -1087,39 +1083,35 @@ PPINOTRenderer.prototype.drawShape = function (p, element) {
   /* jshint -W040 */
   return h(p, element);
 };
-
 PPINOTRenderer.prototype.drawLabel = function (parentGfx, element) {
+  if (!element) return null;
 
-  if (!element) {
-    console.warn('PPINOTRenderer: Cannot draw label for undefined element');
-    return null;
-  }
-
-
-  let text = (element.businessObject && typeof element.businessObject.name === 'string')
+  const text = (element.businessObject && typeof element.businessObject.name === 'string')
     ? element.businessObject.name
     : '';
 
-  const hasText = text.trim() !== '';
+  if (!text.trim()) return null;
 
+  const { width = 150, height = 50 } = element;
+
+  // Centrar el texto en el elemento de etiqueta
   const textElement = this._textRenderer.createText(text, {
-    box: element,
+    box: { width, height },
     align: 'center-middle',
-    padding: 5,
     style: {
       fontSize: '12px',
       fontFamily: 'Arial, sans-serif',
-      fill: '#000000'
+      fill: '#000',
+      whiteSpace: 'pre',       // para soportar saltos de línea explícitos
+      maxWidth: width,
     }
   });
 
   svgClasses(textElement).add('ppinot-label');
-
-
   svgAppend(parentGfx, textElement);
 
-  return textElement;
-};
+  return textElement
+}
 
 PPINOTRenderer.prototype.getShapePath = function (shape) {
   var type = shape.type;

@@ -382,33 +382,4 @@ background-color: none;
   background-position: left center !important;
 }
 
-/* Add these styles at the end of the file */
 
-/* Styling for draggable labels */
-.djs-label.ppinot-label {
-  cursor: move;
-  user-select: none;
-}
-
-.djs-label.ppinot-label-visible {
-  visibility: visible;
-  opacity: 1;
-  transition: opacity 0.3s ease;
-}
-
-.djs-label.ppinot-label-hidden {
-  visibility: hidden;
-  opacity: 0;
-  transition: visibility 0s 0.3s, opacity 0.3s ease;
-}
-
-/* Add a subtle highlight when hovering over labels */
-.djs-label.ppinot-label:hover {
-  filter: brightness(1.2);
-}
-
-/* Label selection style */
-.djs-label.ppinot-label.selected {
-  outline: 2px solid #e31414;
-  min-width: 150px;
-}
