@@ -129,21 +129,17 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
     });
   }
 
-  function addMarker(id, options) {
+   function addMarker(id, options) {
     var attrs = assign({
       fill: 'black',
       strokeWidth: 1,
       strokeLinecap: 'round',
-      strokeDasharray: 'none',
-      labelContent: ''
-
+      strokeDasharray: 'none'
     }, options.attrs);
 
     var ref = options.ref || { x: 0, y: 0 };
     var scale = options.scale || 1;
 
-    // fix for safari / chrome / firefox bug not correctly
-    // resetting stroke dash array
     if (attrs.strokeDasharray === 'none') {
       attrs.strokeDasharray = [10000, 1];
     }
@@ -2075,7 +2071,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
 }
 
 
-PPINOTRenderer.prototype.canRender = function (element) {
+this.canRender = function (element) {
 
   if (/^PPINOT:/.test(element.type)) {
     return true;
@@ -2092,7 +2088,7 @@ PPINOTRenderer.prototype.canRender = function (element) {
   return false;
 };
 
-PPINOTRenderer.prototype.drawShape = function (p, element) {
+this.drawShape = function (p, element) {
   var type = element.type;
 
 
@@ -2138,7 +2134,7 @@ PPINOTRenderer.prototype.drawLabel = function (parentGfx, element) {
   return textElement
 }
 
-PPINOTRenderer.prototype.getShapePath = function (shape) {
+this.getShapePath = function (shape) {
   var type = shape.type;
 
   if (isPPINOTConnection(type)) {
@@ -2177,7 +2173,7 @@ PPINOTRenderer.prototype.getShapePath = function (shape) {
   return h(shape);
 };
 
-PPINOTRenderer.prototype.drawConnection = function (p, element) {
+this.drawConnection = function (p, element) {
   var type = element.type;
   var h = this.renderers[type];
   if (element.color == null)
@@ -2187,7 +2183,7 @@ PPINOTRenderer.prototype.drawConnection = function (p, element) {
   return h(p, element);
 };
 
-PPINOTRenderer.prototype.getConnectionPath = function (connection) {
+this.getConnectionPath = function (connection) {
     var waypoints = connection.waypoints || [];
 
     // Validate that we have at least two valid waypoints
