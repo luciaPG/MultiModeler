@@ -127,7 +127,7 @@ PPINOTContextPadProvider.prototype.getContextPadEntries = function (element) {
       ),
       'connect2': this.appendConnectAction(
         'PPINOT:FromConnection',
-        'icon-fromConnector',
+        'icon-PPINOT-fromConnector',
         'Connect using From connection',
         'ppinot-time'
       )

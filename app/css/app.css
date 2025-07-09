@@ -135,9 +135,9 @@ body {
 }
 
 .djs-palette .entry {
-  display: flex; 
+  display: flex;
   justify-content: center;
-  align-items: center;     
+  align-items: center;
   width: 40px;
   height: 40px;
   margin: 2px 0;
@@ -223,7 +223,7 @@ body {
   width: 32px;
   height: 32px;
   display: flex !important;
-background-color: none;
+  background-color: none;
   align-items: center;
   justify-content: center;
   border-radius: 6px;
@@ -246,7 +246,7 @@ background-color: none;
 
 
 
-        /* New PPINOT icons are added in this document 
+/* New PPINOT icons are added in this document 
        To add a new icon you have to put:
       
       .icon-(name){
@@ -399,12 +399,7 @@ background-color: none;
   background-position: center !important;
 }
 
-.icon-PPINOT-toConnector {
-  background-image: url("data:image/svg+xml,%3Csvg width='23' height='23' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='25' width='25' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cline stroke='black' stroke-width='NaN' stroke-linecap='round' stroke-linejoin='round' id='svg_8' y2='1.91417' x2='20.21972' y1='19.59789' x1='5.24674' fill-opacity='null' stroke-opacity='null' stroke-dasharray='2,2' fill='none'/%3E%3Cellipse transform='rotate(-61.4674072265625 6.438542366027839,17.418453216552738) ' stroke='black' ry='4.0167' rx='3.73501' id='svg_11' cy='17.41845' cx='6.43854' stroke-opacity='null' stroke-width='null' fill='%23000000'/%3E%3C/g%3E%3C/svg%3E") !important;
-  background-size: 22px 22px !important;
-  background-repeat: no-repeat !important;
-  background-position: center !important;
-}
+
 
 .icon-PPINOT-target {
   background-image: url("data:image/svg+xml,%3Csvg width='87' height='72' viewBox= '0 0 180 170' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect x='-1' y='-1' width='89' height='74' id='canvas_background' fill='none'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cg id='svg_1'%3E%3Cpath stroke-miterlimit='2' fill='%23e5e5e5' stroke='%23000000' d='m1.68008,53.73984l82.68,0l0,-51.47967l-82.68,0l0,51.47967z' id='svg_13'/%3E%3Cpath d='m1.68008,70.18984l82.6801,0l0,-16.5598l-82.6801,0l0,16.5598z' fill='%23f2f2f2' fill-rule='evenodd' id='svg_14'/%3E%3CclipPath transform='translate(0,-0.24999862909317017) ' id='cp0'%3E%3Cpath d='m0.11992,52.0699l86.04028,0l0,19.6801l-86.04028,0' id='svg_15'/%3E%3C/clipPath%3E%3Cg clip-path='url(%23cp0)' id='svg_16'%3E%3Cpath stroke-miterlimit='2' fill='%23e5e5e5' stroke='%23000000' d='m1.68008,70.18985l82.68,0l0,-16.55981l-82.68,0l0,16.55981z' id='svg_17'/%3E%3C/g%3E%3Cpath stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round' fill='none' d='m5.13333,61.74347c0,-2.96472 2.41763,-5.38011 5.49498,-5.38011c2.96705,0 5.38506,2.41539 5.38506,5.38011c0,2.96434 -2.41801,5.3797 -5.38506,5.3797c-3.07735,0 -5.49498,-2.41536 -5.49498,-5.3797' id='svg_18' stroke='%23000000'/%3E%3Cpath d='m8.76016,61.91016c0,-1.08006 0.95976,-1.92036 2.03984,-1.92036c1.0801,0 2.0398,0.8403 2.0398,1.92036c0,1.07968 -0.9597,1.91992 -2.0398,1.91992c-1.08008,0 -2.03984,-0.84024 -2.03984,-1.91992' fill-rule='evenodd' id='svg_19'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m8.51014,61.66016c0,-1.08003 0.95977,-1.92028 2.03988,-1.92028c1.08005,0 2.03984,0.84024 2.03984,1.92028c0,1.07969 -0.95979,1.91992 -2.03984,1.91992c-1.08011,0 -2.03988,-0.84023 -2.03988,-1.91992' id='svg_20'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m10.80003,5.79995l0,6.71995' id='svg_21'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m15.59998,7.71991l-4.79996,4.8' id='svg_22'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m17.63983,12.51991l-6.8398,0' id='svg_23'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m10.80003,12.51991l-4.91996,-4.8' id='svg_24'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m3.96015,12.51991l6.83988,0' id='svg_25'/%3E%3Cpath d='m5.88008,12.51989c0,-2.7597 2.15976,-4.9199 4.91992,-4.9199c2.6398,0 4.9199,2.1602 4.9199,4.9199c0,2.7602 -2.2801,4.9199 -4.9199,4.9199c-2.76016,0 -4.91992,-2.1597 -4.91992,-4.9199' fill='%23e5e5e5' fill-rule='evenodd' id='svg_26'/%3E%3Cpath d='m12.2398,15.76019l-2.99996,-6l1.56016,6.4796l1.4398,-0.4796' fill='%23ffffff' fill-rule='evenodd' id='svg_27'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m12.23986,15.76015l-3.00003,-6.00004l1.56019,6.47968l1.43984,-0.47964z' id='svg_28'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m3.96015,12.51991c0,-3.71988 3.00001,-6.71995 6.83988,-6.71995c3.7199,0 6.8398,3.00007 6.8398,6.71995c0,3.84022 -3.1199,6.84019 -6.8398,6.84019c-3.83987,0 -6.83988,-2.99997 -6.83988,-6.84019' id='svg_29'/%3E%3Cpath d='m6.96016,17.08009c0,-0.9602 1.67968,-1.6801 3.83984,-1.6801c2.0398,0 3.7199,0.7199 3.7199,1.6801c0,0.9597 -1.6801,1.6801 -3.7199,1.6801c-2.16016,0 -3.83984,-0.7204 -3.83984,-1.6801' fill='%23e5e5e5' fill-rule='evenodd' id='svg_30'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' fill='none' stroke='%23000000' d='m15.59998,17.43984c-1.80002,-2.7598 -5.39996,-3.47971 -8.03983,-1.67969c-0.6,0.47964 -1.2,0.95978 -1.68008,1.67969' id='svg_31'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") !important;
@@ -444,6 +439,20 @@ background-color: none;
 
 .icon-PPINOT-startConnector {
   background-image: url("data:image/svg+xml,%3Csvg width='23' height='23' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='25' width='25' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cline stroke='black' stroke-width='NaN' stroke-linecap='round' stroke-linejoin='round' id='svg_8' y2='6.98467' x2='15.14921' y1='21.28805' x1='2.71149' fill-opacity='null' stroke-opacity='null' stroke-dasharray='2,2' fill='none'/%3E%3Cellipse stroke='black' ry='4.0167' rx='3.73501' id='svg_11' cy='6.15066' cx='16.01616' stroke-opacity='null' stroke-width='null' fill='%23ffffff'/%3E%3C/g%3E%3C/svg%3E") !important;
+  background-size: 22px 22px !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+}
+
+.icon-PPINOT-toConnector {
+  background-image: url("data:image/svg+xml,%3Csvg width='23' height='23' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='25' width='25' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cline stroke='black' stroke-width='NaN' stroke-linecap='round' stroke-linejoin='round' id='svg_8' y2='1.91417' x2='20.21972' y1='19.59789' x1='5.24674' fill-opacity='null' stroke-opacity='null' stroke-dasharray='2,2' fill='none'/%3E%3Cellipse transform='rotate(-61.4674072265625 6.438542366027839,17.418453216552738) ' stroke='black' ry='4.0167' rx='3.73501' id='svg_11' cy='17.41845' cx='6.43854' stroke-opacity='null' stroke-width='null' fill='%23000000'/%3E%3C/g%3E%3C/svg%3E") !important;
+  background-size: 22px 22px !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+}
+
+.icon-PPINOT-fromConnector {
+  background-image: url("data:image/svg+xml,%3Csvg width='23' height='23' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='25' width='25' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cline stroke='black' stroke-width='NaN' stroke-linecap='round' stroke-linejoin='round' id='svg_8' y2='1.91417' x2='20.21972' y1='19.59789' x1='5.24674' fill-opacity='null' stroke-opacity='null' stroke-dasharray='2,2' fill='none'/%3E%3Cellipse transform='rotate(-61.4674072265625 6.438542366027829,17.4184513092041) ' stroke='black' ry='4.0167' rx='3.73501' id='svg_11' cy='17.41845' cx='6.43854' stroke-opacity='null' stroke-width='null' fill='%23ffffff'/%3E%3C/g%3E%3C/svg%3E");
   background-size: 22px 22px !important;
   background-repeat: no-repeat !important;
   background-position: center !important;
