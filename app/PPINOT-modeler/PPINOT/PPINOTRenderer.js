@@ -1,10 +1,7 @@
-
-
-
+// import inherits from 'inherits';
+// import BaseRenderer from 'diagram-js/lib/draw/BaseRenderer';
 import { componentsToPath, createLine } from 'diagram-js/lib/util/RenderUtil';
-
 import { query as domQuery } from 'min-dom';
-
 import { append as svgAppend, attr as svgAttr, classes as svgClasses, create as svgCreate } from 'tiny-svg';
 import { getSemantic } from "bpmn-js/lib/draw/BpmnRenderUtil";
 import { assign } from "min-dash";
@@ -19,21 +16,106 @@ var BLACK = '#000';
 
 /**
  * A renderer that knows how to render PPINOT elements.
- * 
- * This module is used to declarate which elements will be created in the diagram when you 
- * drag an element of the palette. It is only for PPINOT elements, not bpmn elements.
  */
 export default function PPINOTRenderer(styles, canvas, textRenderer) {
-
-
+  // Clase auxiliar: no hereda de BaseRenderer ni usa eventBus
   this._textRenderer = textRenderer;
-
   var computeStyle = styles.computeStyle;
-
   var rendererId = RENDERER_IDS.next();
-
   var markers = {};
 
+  function ensureMarkers() {
+    if (!markers['messageflow-start']) {
+      createMarker('messageflow-start', 'white', BLACK);
+    }
+    if (!markers['conditional-flow-marker']) {
+      createMarker('conditional-flow-marker', 'white', BLACK);
+    }
+  }
+
+  function addMarker(id, options) {
+    var attrs = assign({
+      fill: 'black',
+      strokeWidth: 1,
+      strokeLinecap: 'round',
+      strokeDasharray: 'none'
+    }, options.attrs);
+
+    var ref = options.ref || { x: 0, y: 0 };
+    var scale = options.scale || 1;
+
+    if (attrs.strokeDasharray === 'none') {
+      attrs.strokeDasharray = [10000, 1];
+    }
+
+    var marker = svgCreate('marker');
+    svgAttr(options.element, attrs);
+    svgAppend(marker, options.element);
+
+    svgAttr(marker, {
+      id: id,
+      viewBox: '0 0 20 20',
+      refX: ref.x,
+      refY: ref.y,
+      markerWidth: 20 * scale,
+      markerHeight: 20 * scale,
+      orient: 'auto'
+    });
+
+    var defs = domQuery('defs', canvas._svg);
+
+    if (!defs) {
+      defs = svgCreate('defs');
+      svgAppend(canvas._svg, defs);
+    }
+    svgAppend(defs, marker);
+    markers[id] = marker;
+  }
+
+  function colorEscape(str) {
+    return str.replace(/[()\s,#]+/g, '_');
+  }
+
+  function marker(type, fill, stroke) {
+    var id = type + '-' + colorEscape(fill) + '-' + colorEscape(stroke) + '-' + rendererId;
+
+    if (!markers[id]) {
+      createMarker(id, type, fill, stroke);
+    }
+
+    return 'url(#' + id + ')';
+  }
+
+  function createMarker(id, type, fill, stroke) {
+    if (type === 'messageflow-start') {
+      var messageflowStart = svgCreate('circle');
+      svgAttr(messageflowStart, { cx: 6, cy: 6, r: 3.5 });
+
+      addMarker(id, {
+        element: messageflowStart,
+        attrs: {
+          fill: fill,
+          stroke: stroke
+        },
+        ref: { x: 6, y: 6 }
+      });
+    }
+
+    if (type === 'conditional-flow-marker') {
+      var conditionalflowMarker = svgCreate('path');
+      svgAttr(conditionalflowMarker, { d: 'M 0 10 L 8 6 L 16 10 L 8 14 Z' });
+
+      addMarker(id, {
+        element: conditionalflowMarker,
+        attrs: {
+          fill: fill,
+          stroke: stroke
+        },
+        ref: { x: -1, y: 10 },
+        scale: 0.5
+      });
+    }
+  }
 
   // This function is necessary to render a label for an element.
   function renderLabel(parentGfx, label, options) {
@@ -883,9 +965,9 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         stroke: BLACK,
         strokeWidth: 1.5,
         strokeDasharray: [8, 5],
-        // i changed de marker name 
-        markerStart: marker('conditional-flow-marker', 'white', BLACK),
+        markerStart: marker('conditional-flow-marker', 'white', BLACK)
       };
+      return svgAppend(p, createLine(element.waypoints, attrs));
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:ToConnection': (p, element) => {
@@ -894,8 +976,9 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         strokeWidth: 1.5,
         strokeDasharray: [8, 5],
         markerStart: marker('messageflow-start', 'black', BLACK),
-        markerEnd: marker('messageflow-start', 'black', BLACK),
+        markerEnd: marker('messageflow-start', 'black', BLACK)
       };
+      return svgAppend(p, createLine(element.waypoints, attrs));
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:FromConnection': (p, element) => {
@@ -904,8 +987,9 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         strokeWidth: 1.5,
         strokeDasharray: [8, 5],
         markerStart: marker('messageflow-start', 'white', BLACK),
-        markerEnd: marker('messageflow-start', 'white', BLACK),
+        markerEnd: marker('messageflow-start', 'white', BLACK)
       };
+      return svgAppend(p, createLine(element.waypoints, attrs));
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:EndConnection': (p, element) => {
@@ -930,7 +1014,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
 
   // Finally, you have to define the paths
   // Using this property you define and delimit the connectivity area of the element
-  var paths = this.paths = {
+  this.paths = {
     'PPINOT:BaseMeasure': (element) => {
       var x = element.x,
         y = element.y,
@@ -1569,98 +1653,6 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
       return componentsToPath(d);
     },
     'PPINOT:CyclicTimeAggregatedMeasureAVG': (element) => {
-      var x = element.x,
-        y = element.y,
-        width = element.width,
-        height = element.height;
-
-      var borderRadius = 20;
-
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CyclicTimeMeasureSUM': (element) => {
-      var x = element.x,
-        y = element.y,
-        width = element.width,
-        height = element.height;
-
-      var borderRadius = 20;
-
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CyclicTimeMeasureMAX': (element) => {
-      var x = element.x,
-        y = element.y,
-        width = element.width,
-        height = element.height;
-
-      var borderRadius = 20;
-
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CyclicTimeMeasureMIN': (element) => {
-      var x = element.x,
-        y = element.y,
-        width = element.width,
-        height = element.height;
-
-      var borderRadius = 20;
-
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-    },
-    'PPINOT:CyclicTimeMeasureAVG': (element) => {
       var x = element.x,
         y = element.y,
         width = element.width,
