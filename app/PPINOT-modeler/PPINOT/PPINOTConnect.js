@@ -74,6 +74,15 @@ export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
             } : null);
             
             console.log('✅ Connection created successfully:', connection ? connection.type : 'no connection created');
+            
+            // Disparar evento personalizado para que PPINOTLabelProvider pueda crear el label
+            if (connection && connection.type && connection.type.startsWith('PPINOT:')) {
+                console.log('🚀 Firing ppinot.connection.created event for:', connection.type, connection.id);
+                eventBus.fire('ppinot.connection.created', {
+                    connection: connection
+                });
+            }
+            
             return connection;
         } catch (error) {
             console.error('❌ Error al conectar:', error);

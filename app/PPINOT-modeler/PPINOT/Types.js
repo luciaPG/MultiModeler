@@ -183,6 +183,7 @@ export const directEdit = [
     'PPINOT:TimeMeasure',
     'PPINOT:CyclicTimeMeasure',
     'PPINOT:Ppi',
+    // Conexiones PPINOT:
     'PPINOT:MyConnection',
     'PPINOT:StartConnection',
     'PPINOT:EndConnection',
@@ -191,18 +192,19 @@ export const directEdit = [
     'PPINOT:GroupedBy',
     'PPINOT:ToConnection',
     'PPINOT:FromConnection',
+    'PPINOT:RFCStateConnection',
+    // ...agrega aquí cualquier otro tipo de conexión PPINOT que quieras editar...
     'PPINOT:StateConditionMeasure',
     'PPINOT:StateConditionAggregatedMeasure',
     'PPINOT:BaseMeasure',
-    'PPINOT:RFCStateConnection',
     'PPINOT:StateCondAggMeasureNumber',
     'PPINOT:StateCondAggMeasurePercentage',
-    'PPINOT:StateCondAggMeasureAll',    'PPINOT:StateCondAggMeasureAtLeastOne',
+    'PPINOT:StateCondAggMeasureAll',
+    'PPINOT:StateCondAggMeasureAtLeastOne',
     'PPINOT:StateCondAggMeasureNo'
     // NOTE: Aggregated measure variants with built-in function labels (SUM, MAX, MIN, AVG) 
     // are deliberately excluded from directEdit to prevent interference with their function labels.
     // These elements should not be directly editable since they have built-in labels.
-    
 ]
 
 // The elements which are included in "myConnectionElements" could be connect by 'PPINOT:MyConnection'
