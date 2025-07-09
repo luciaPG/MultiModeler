@@ -18,7 +18,7 @@ export default {
     'PPINOTContextPadProvider',
     'PPINOTReplaceMenuProvider',
     'PPINOTLabelProvider',
-    'PPINOTConnect',
+    'connect',
     'PPINOTOrderingProvider',
     'replaceConnectionBehavior',
     'bendpointBehavior'
@@ -30,7 +30,7 @@ export default {
   PPINOTReplaceMenuProvider: ['type', PPINOTReplaceMenuProvider],
   ppinotNotationPalette: ['type', PPINOTNotationPalette],
   PPINOTLabelProvider: ['type', PPINOTLabelProvider],
-  PPINOTConnect: ['type', PPINOTConnect],
+  connect: ['type', PPINOTConnect],
   PPINOTOrderingProvider: ['type', PPINOTOrderingProvider],
   replaceConnectionBehavior: ['type', ReplaceConnectionBehavior],
   bendpointBehavior: ['type', BendpointBehavior]
