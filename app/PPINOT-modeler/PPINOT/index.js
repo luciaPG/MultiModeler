@@ -1,6 +1,7 @@
 import PPINOTRenderer from './PPINOTRenderer';
 import PPINOTRules from './PPINOTRules';
 import PPINOTUpdater from './PPINOTUpdater';
+import PPINOTBpmnUpdater from './PPINOTBpmnUpdater';
 import PPINOTNotationPalette from './PPINOTNotationPalette';
 import PPINOTContextPadProvider from './PPINOTContextPadProvider';
 import PPINOTReplaceMenuProvider from './PPINOTReplaceMenuProvider';
@@ -21,7 +22,8 @@ export default {
     'connect',
     'PPINOTOrderingProvider',
     'replaceConnectionBehavior',
-    'bendpointBehavior'
+    'bendpointBehavior',
+    'bpmnUpdater'
   ],
   PPINOTRenderer: ['type', PPINOTRenderer],
   PPINOTRules: ['type', PPINOTRules],
@@ -33,5 +35,6 @@ export default {
   connect: ['type', PPINOTConnect],
   PPINOTOrderingProvider: ['type', PPINOTOrderingProvider],
   replaceConnectionBehavior: ['type', ReplaceConnectionBehavior],
-  bendpointBehavior: ['type', BendpointBehavior]
+  bendpointBehavior: ['type', BendpointBehavior],
+  bpmnUpdater: ['type', PPINOTBpmnUpdater]
 };

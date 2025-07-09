@@ -13,7 +13,7 @@ import {
 } from 'diagram-js/lib/util/Collections';
 
 import { is } from 'bpmn-js/lib/util/ModelUtil';
-import { isExternalLabel } from './Types';
+import { isExternalLabel, isPPINOTConnection } from './Types';
 
 /**
  * A handler responsible for updating the PPINOT element's businessObject
@@ -26,6 +26,49 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
   // Initialize PPINOTElements array if it doesn't exist
   if (!bpmnjs._PPINOTElements) {
     bpmnjs._PPINOTElements = [];
+  }
+
+  // Helper function to initialize arrays on parent containers
+  function initializeParentArrays(parent) {
+    if (!parent || !parent.businessObject) {
+      return;
+    }
+
+    var parentBO = parent.businessObject;
+    
+    // Handle pools specially
+    if (is(parent, 'bpmn:Participant') && parentBO.processRef) {
+      var process = parentBO.processRef;
+      // Initialize all necessary arrays that BpmnUpdater expects
+      if (!process.flowElements) {
+        process.flowElements = [];
+      }
+      if (!process.artifacts) {
+        process.artifacts = [];
+      }
+      if (!process.children) {
+        process.children = [];
+      }
+    } else if (is(parent, 'bpmn:Collaboration')) {
+      // For collaboration, ensure arrays exist
+      if (!parentBO.participants) {
+        parentBO.participants = [];
+      }
+      if (!parentBO.messageFlows) {
+        parentBO.messageFlows = [];
+      }
+      if (!parentBO.artifacts) {
+        parentBO.artifacts = [];
+      }
+    } else if (is(parent, 'bpmn:Process')) {
+      // For direct process containers
+      if (!parentBO.flowElements) {
+        parentBO.flowElements = [];
+      }
+      if (!parentBO.artifacts) {
+        parentBO.artifacts = [];
+      }
+    }
   }
 
   // Listen for element replacement events to handle labels
@@ -56,6 +99,9 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
     }
 
     var parent = shape.parent;
+
+    // Initialize parent arrays FIRST to prevent BpmnUpdater errors
+    initializeParentArrays(parent);
 
     // Ensure PPINOTElements exists
     var PPINOTElements = bpmnjs._PPINOTElements = bpmnjs._PPINOTElements || [];
@@ -107,6 +153,9 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
     }
 
     var parent = connection.parent;
+    
+    // Initialize parent arrays FIRST to prevent BpmnUpdater errors
+    initializeParentArrays(parent);
     
     // Ensure PPINOTElements exists and is an array
     var PPINOTElements = bpmnjs._PPINOTElements = bpmnjs._PPINOTElements || [];
@@ -172,6 +221,10 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
     if (!isPPINOT(element)) {
       return;
     }
+    
+    // Initialize arrays for both old and new parents
+    initializeParentArrays(oldParent);
+    initializeParentArrays(newParent);
     
     var businessObject = element.businessObject;
     
