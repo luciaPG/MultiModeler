@@ -47,6 +47,7 @@ export default class MultiNotationModeler extends Modeler {
     this._customElements.push(PPINOTElement);
     const elementFactory = this.get('elementFactory');
     const elementRegistry = this.get('elementRegistry');
+    
     const attrs = assign({ businessObject: PPINOTElement }, PPINOTElement);
     if (PPINOTElement.source && PPINOTElement.target) {
       attrs.source = elementRegistry.get(PPINOTElement.source);

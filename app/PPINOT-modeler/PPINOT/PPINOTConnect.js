@@ -10,7 +10,6 @@ import { assign } from "min-dash";
  */
 export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
 
-    // Connection validation rules
     function canConnect(source, target, type) {
         return rules.allowed('connection.create', {
             source: source,
@@ -20,7 +19,6 @@ export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
     }
 
 
-    // Event handlers
     eventBus.on(['connect.out', 'connect.cleanup'], function (event) {
         var context = event.context;
         context.target = null;
@@ -32,7 +30,7 @@ export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
             source = context.source,
             hover = event.hover;
 
-        var type = context.hints && context.hints.type;
+        var type = context.type;
 
         var canExecute = context.canExecute = canConnect(source, hover, type);
 
@@ -41,55 +39,79 @@ export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
         }
 
         context.target = hover;
+        if (type) {
+            context.connectionType = type;
+        }
     });
 
     eventBus.on('connect.end', function (event) {
         var context = event.context,
             source = context.source,
-            sourcePosition = context.sourcePosition,
             target = context.target,
-            targetPosition = {
-                x: event.x,
-                y: event.y
-            };
+            connectionType = context.connectionType || context.type;
 
-        var hints = context.hints || {};
-        var connectionType = hints.type;
+        if (!target) {
+            return false;
+        }
 
+        var canExecute = canConnect(source, target, connectionType);
 
+        if (!canExecute) {
+            console.log('🚫 Connection not allowed by rules');
+            return false;
+        }
+
+        console.log('🔗 Attempting connection:', {
+            source: source.type,
+            target: target.type, 
+            connectionType: connectionType,
+            canExecute: canExecute
+        });
 
         try {
-            var connection = modeling.connect(source, target, {
+            var connection = modeling.connect(source, target, connectionType ? {
                 type: connectionType
-            }, {
-                connectionStart: sourcePosition,
-                connectionEnd: targetPosition
-            });
-
+            } : null);
+            
+            console.log('✅ Connection created successfully:', connection ? connection.type : 'no connection created');
             return connection;
         } catch (error) {
+            console.error('❌ Error al conectar:', error);
             return false;
         }
     });
 
+
     // Public API
-    this.start = function (event, source, sourcePosition, hints) {
-        if (typeof sourcePosition !== 'object') {
+    this.start = function (event, source, sourcePosition, autoActivate) {
+        var hints = {};
+        var realSourcePosition = getMid(source);
+        
+
+        if (typeof sourcePosition === 'object' && sourcePosition.type) {
             hints = sourcePosition;
-            sourcePosition = getMid(source);
+            console.log('🚀 PPINOTConnect.start called with hints:', hints);
+        } else {
+            if (typeof sourcePosition !== 'object') {
+                autoActivate = sourcePosition;
+            } else {
+                realSourcePosition = sourcePosition;
+            }
         }
 
         dragging.init(event, 'connect', {
+            autoActivate: autoActivate,
             data: {
                 shape: source,
                 context: {
                     source: source,
-                    sourcePosition: sourcePosition,
-                    hints: hints
+                    sourcePosition: realSourcePosition,
+                    type: hints.type
                 }
             }
         });
     };
+
 }
 
 PPINOTConnect.$inject = [

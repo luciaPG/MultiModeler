@@ -18,20 +18,11 @@ var BLACK = '#000';
  * A renderer that knows how to render PPINOT elements.
  */
 export default function PPINOTRenderer(styles, canvas, textRenderer) {
-  // Clase auxiliar: no hereda de BaseRenderer ni usa eventBus
+  
   this._textRenderer = textRenderer;
   var computeStyle = styles.computeStyle;
   var rendererId = RENDERER_IDS.next();
   var markers = {};
-
-  function ensureMarkers() {
-    if (!markers['messageflow-start']) {
-      createMarker('messageflow-start', 'white', BLACK);
-    }
-    if (!markers['conditional-flow-marker']) {
-      createMarker('conditional-flow-marker', 'white', BLACK);
-    }
-  }
 
   function addMarker(id, options) {
     var attrs = assign({
@@ -86,7 +77,59 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
     return 'url(#' + id + ')';
   }
 
-  function createMarker(id, type, fill, stroke) {
+  function createMarker(id, type, fill, stroke) { 
+    if (type === 'sequenceflow-end') {
+      var sequenceflowEnd = svgCreate('path');
+      svgAttr(sequenceflowEnd, { d: 'M 1 5 L 11 10 L 1 15 Z' });
+
+      addMarker(id, {
+        element: sequenceflowEnd,
+        ref: { x: 11, y: 10 },
+        scale: 0.5,
+        attrs: {
+          fill: stroke,
+          stroke: stroke
+        }
+      });
+    }
+
+    //this is to draw a unfilled arrow and large blades
+    if (type === 'timedistance-start') {
+      var timedistanceStart = svgCreate('path');
+      svgAttr(timedistanceStart, { d: 'M -10 -5 L 20 10 L -10 25 L 20 10  Z' });
+
+      addMarker(id, {
+        element: timedistanceStart,
+        ref: { x: 5, y: 10 },
+        scale: 0.8,
+        attrs: {
+          fill: '#fff',
+          stroke: stroke,
+          strokeWidth: 1.5,
+          fillOpacity: 0
+        }
+      });
+    }
+
+    //this is to draw an arrow with ony two blades
+    if (type === 'timedistance-end') {
+      var timedistanceEnd = svgCreate('path');
+      svgAttr(timedistanceEnd, { d: 'M 35 0 L 0 15 L 35 30 L 0 15  Z' });
+
+      addMarker(id, {
+        element: timedistanceEnd,
+        ref: { x: 14, y: 15 },
+        scale: 0.8,
+        attrs: {
+          fill: '#fff',
+          stroke: stroke,
+          strokeWidth: 1.5,
+          fillOpacity: 0
+        }
+      });
+    }
+
+    //this is to draw a circle
     if (type === 'messageflow-start') {
       var messageflowStart = svgCreate('circle');
       svgAttr(messageflowStart, { cx: 6, cy: 6, r: 3.5 });
@@ -101,6 +144,58 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
       });
     }
 
+    //this is to draw a unfilled arrow 
+    if (type === 'messageflow-end') {
+      var messageflowEnd = svgCreate('path');
+      svgAttr(messageflowEnd, { d: 'm 1 5 l 0 -3 l 7 3 l -7 3 z' });
+
+     
+      addMarker(id, {
+        element: messageflowEnd,
+        attrs: {
+          fill: fill,
+          stroke: stroke,
+          strokeLinecap: 'butt'
+        },
+        ref: { x: 8.5, y: 5 }
+      });
+    }
+
+    //this is to draw an arrow with inverse blades
+    if (type === 'association-start') {
+      var associationStart = svgCreate('path');
+      svgAttr(associationStart, { d: 'M 11 5 L 1 10 L 11 15' });
+
+      addMarker(id, {
+        element: associationStart,
+        attrs: {
+          fill: 'none',
+          stroke: stroke,
+          strokeWidth: 1.5
+        },
+        ref: { x: 1, y: 10 },
+        scale: 0.5
+      });
+    }
+
+    //this is to draw a small unfilled arrow 
+    if (type === 'association-end') {
+      var associationEnd = svgCreate('path');
+      svgAttr(associationEnd, { d: 'M 1 5 L 11 10 L 1 15' });
+
+      addMarker(id, {
+        element: associationEnd,
+        attrs: {
+          fill: 'none',
+          stroke: stroke,
+          strokeWidth: 1.5
+        },
+        ref: { x: 12, y: 10 },
+        scale: 0.5
+      });
+    }
+
+    //this is to draw a diamond
     if (type === 'conditional-flow-marker') {
       var conditionalflowMarker = svgCreate('path');
       svgAttr(conditionalflowMarker, { d: 'M 0 10 L 8 6 L 16 10 L 8 14 Z' });
@@ -115,9 +210,24 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         scale: 0.5
       });
     }
+
+    //this is to draw a small line
+    if (type === 'conditional-default-flow-marker') {
+      var conditionaldefaultflowMarker = svgCreate('path');
+      svgAttr(conditionaldefaultflowMarker, { d: 'M 6 4 L 10 16' });
+
+      addMarker(id, {
+        element: conditionaldefaultflowMarker,
+        attrs: {
+          stroke: stroke
+        },
+        ref: { x: 0, y: 10 },
+        scale: 0.5
+      });
+    }
   }
 
-  // This function is necessary to render a label for an element.
+
   function renderLabel(parentGfx, label, options) {
     options = assign({
       size: {
@@ -136,7 +246,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
     return text;
   }
 
-  // This function uses renderLabel function to render a label INTO an element.
+
   function renderEmbeddedLabel(parentGfx, element, align) {
     var semantic = getSemantic(element);
 
@@ -249,176 +359,6 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
     svgAppend(defs, marker);
     markers[id] = marker;
   }
-
-  function colorEscape(str) {
-    return str.replace(/[()\s,#]+/g, '_');
-  }
-
-
-  //This function is used to add different shapes to the ends of connectors
-  function marker(type, fill, stroke) {
-    var id = type + '-' + colorEscape(fill) + '-' + colorEscape(stroke) + '-' + rendererId;
-
-    if (!markers[id]) {
-      createMarker(id, type, fill, stroke);
-    }
-
-    return 'url(#' + id + ')';
-  }
-
-
-  function createMarker(id, type, fill, stroke) {
-
-    // this is to draw a commom arrow
-    if (type === 'sequenceflow-end') {
-      var sequenceflowEnd = svgCreate('path');
-      svgAttr(sequenceflowEnd, { d: 'M 1 5 L 11 10 L 1 15 Z' });
-
-      addMarker(id, {
-        element: sequenceflowEnd,
-        ref: { x: 11, y: 10 },
-        scale: 0.5,
-        attrs: {
-          fill: stroke,
-          stroke: stroke
-        }
-      });
-    }
-
-    //this is to draw a unfilled arrow and large blades
-    if (type === 'timedistance-start') {
-      var timedistanceStart = svgCreate('path');
-      svgAttr(timedistanceStart, { d: 'M -10 -5 L 20 10 L -10 25 L 20 10  Z' });
-
-      addMarker(id, {
-        element: timedistanceStart,
-        ref: { x: 5, y: 10 },
-        scale: 0.8,
-        attrs: {
-          fill: '#fff',
-          stroke: stroke,
-          strokeWidth: 1.5,
-          fillOpacity: 0
-        }
-      });
-    }
-
-    //this is to draw an arrow with ony two blades
-    if (type === 'timedistance-end') {
-      var timedistanceEnd = svgCreate('path');
-      svgAttr(timedistanceEnd, { d: 'M 35 0 L 0 15 L 35 30 L 0 15  Z' });
-
-      addMarker(id, {
-        element: timedistanceEnd,
-        ref: { x: 14, y: 15 },
-        scale: 0.8,
-        attrs: {
-          fill: '#fff',
-          stroke: stroke,
-          strokeWidth: 1.5,
-          fillOpacity: 0
-        }
-      });
-    }
-
-    //this is to draw a circle
-    if (type === 'messageflow-start') {
-      var messageflowStart = svgCreate('circle');
-      svgAttr(messageflowStart, { cx: 6, cy: 6, r: 3.5 });
-
-      addMarker(id, {
-        element: messageflowStart,
-        attrs: {
-          fill: fill,
-          stroke: stroke
-        },
-        ref: { x: 6, y: 6 }
-      });
-    }
-
-    //this is to draw a unfilled arrow 
-    if (type === 'messageflow-end') {
-      var messageflowEnd = svgCreate('path');
-      svgAttr(messageflowEnd, { d: 'm 1 5 l 0 -3 l 7 3 l -7 3 z' });
-
-
-      addMarker(id, {
-        element: messageflowEnd,
-        attrs: {
-          fill: fill,
-          stroke: stroke,
-          strokeLinecap: 'butt'
-        },
-        ref: { x: 8.5, y: 5 }
-      });
-    }
-
-    //this is to draw an arrow with inverse blades
-    if (type === 'association-start') {
-      var associationStart = svgCreate('path');
-      svgAttr(associationStart, { d: 'M 11 5 L 1 10 L 11 15' });
-
-      addMarker(id, {
-        element: associationStart,
-        attrs: {
-          fill: 'none',
-          stroke: stroke,
-          strokeWidth: 1.5
-        },
-        ref: { x: 1, y: 10 },
-        scale: 0.5
-      });
-    }
-
-    //this is to draw a small unfilled arrow 
-    if (type === 'association-end') {
-      var associationEnd = svgCreate('path');
-      svgAttr(associationEnd, { d: 'M 1 5 L 11 10 L 1 15' });
-
-      addMarker(id, {
-        element: associationEnd,
-        attrs: {
-          fill: 'none',
-          stroke: stroke,
-          strokeWidth: 1.5
-        },
-        ref: { x: 12, y: 10 },
-        scale: 0.5
-      });
-    }
-
-    //this is to draw a diamond
-    if (type === 'conditional-flow-marker') {
-      var conditionalflowMarker = svgCreate('path');
-      svgAttr(conditionalflowMarker, { d: 'M 0 10 L 8 6 L 16 10 L 8 14 Z' });
-
-      addMarker(id, {
-        element: conditionalflowMarker,
-        attrs: {
-          fill: fill,
-          stroke: stroke
-        },
-        ref: { x: -1, y: 10 },
-        scale: 0.5
-      });
-    }
-
-    //this is to draw a small line
-    if (type === 'conditional-default-flow-marker') {
-      var conditionaldefaultflowMarker = svgCreate('path');
-      svgAttr(conditionaldefaultflowMarker, { d: 'M 6 4 L 10 16' });
-
-      addMarker(id, {
-        element: conditionaldefaultflowMarker,
-        attrs: {
-          stroke: stroke
-        },
-        ref: { x: 0, y: 10 },
-        scale: 0.5
-      });
-    }
-  }
-
 
   // The following functions define the shape of the element to be rendered 
   // You have to define x, y, width, height and href (this format is the same for all elements)
@@ -919,101 +859,102 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
       return derivedSingleInstanceMeasure;
     },
 
-
     'PPINOT:ResourceArc': (p, element) => {
       var attrs = computeStyle(attrs, {
-        stroke: element.color || BLACK,
-        strokeWidth: 1.5,
-        markerEnd: marker('sequenceflow-end', 'white', BLACK),
+      stroke: element.color || BLACK, 
+      strokeWidth: 1.5, 
+      markerEnd: marker('sequenceflow-end', 'white',BLACK), 
       });
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:MyConnection': (p, element) => {
       var attrs = computeStyle(attrs, {
-        stroke: BLACK,
-        strokeWidth: 1.5,
-        markerEnd: marker('sequenceflow-end', 'white', BLACK),
+        stroke: BLACK, 
+        strokeWidth: 1.5, 
+        markerEnd: marker('sequenceflow-end', 'white',BLACK),
       });
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:DashedLine': (p, element) => {
-      var attrs = computeStyle(attrs, {
-        stroke: BLACK,
-        strokeWidth: 1.5,
-        strokeDasharray: [10, 7]
-      });
-      return svgAppend(p, createLine(element.waypoints, attrs));
+        var attrs = computeStyle(attrs, {
+          stroke: BLACK, 
+          strokeWidth: 1.5, 
+          strokeDasharray: [10,7] 
+        });
+        return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:RFCStateConnection': (p, element) => {
       var attrs = computeStyle(attrs, {
-        stroke: BLACK,
-        strokeWidth: 1.5,
-        strokeDasharray: [10, 7]
+        stroke: BLACK, 
+        strokeWidth: 1.5, 
+        strokeDasharray: [10,7] 
       });
       return svgAppend(p, createLine(element.waypoints, attrs));
-    },
+  },
     'PPINOT:AggregatedConnection': (p, element) => {
       var attrs = {
-        stroke: BLACK,
-        strokeWidth: 1.5,
+        stroke: BLACK, 
+        strokeWidth: 1.5, 
         markerStart: marker('conditional-flow-marker', 'white', BLACK),
       };
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:GroupedBy': (p, element) => {
       var attrs = {
-        stroke: BLACK,
-        strokeWidth: 1.5,
-        strokeDasharray: [8, 5],
-        markerStart: marker('conditional-flow-marker', 'white', BLACK)
+        stroke: BLACK, 
+        strokeWidth: 1.5, 
+        strokeDasharray: [8,5],
+        markerStart: marker('conditional-flow-marker', 'white',BLACK),      
       };
-      return svgAppend(p, createLine(element.waypoints, attrs));
+      
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
+     
     'PPINOT:ToConnection': (p, element) => {
-      var attrs = {
+      var attrs = computeStyle({}, {
         stroke: BLACK,
         strokeWidth: 1.5,
-        strokeDasharray: [8, 5],
+        strokeDasharray: '8,5',
         markerStart: marker('messageflow-start', 'black', BLACK),
-        markerEnd: marker('messageflow-start', 'black', BLACK)
-      };
-      return svgAppend(p, createLine(element.waypoints, attrs));
+        markerEnd: marker('messageflow-start', 'black', BLACK),
+      });
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:FromConnection': (p, element) => {
-      var attrs = {
+      var attrs = computeStyle({}, {
         stroke: BLACK,
         strokeWidth: 1.5,
         strokeDasharray: [8, 5],
         markerStart: marker('messageflow-start', 'white', BLACK),
-        markerEnd: marker('messageflow-start', 'white', BLACK)
-      };
-      return svgAppend(p, createLine(element.waypoints, attrs));
+        markerEnd: marker('messageflow-start', 'white', BLACK),
+      });
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:EndConnection': (p, element) => {
       var attrs = {
-        stroke: BLACK,
-        strokeWidth: 1.5,
-        strokeDasharray: [8, 5],
-        markerEnd: marker('messageflow-start', 'black', BLACK),
+        stroke: BLACK, 
+        strokeWidth: 1.5, 
+        strokeDasharray: [8,5],
+        markerEnd: marker('messageflow-start', 'black',BLACK),
       };
       return svgAppend(p, createLine(element.waypoints, attrs));
     },
     'PPINOT:StartConnection': (p, element) => {
       var attrs = {
-        stroke: BLACK,
-        strokeWidth: 1.5,
-        strokeDasharray: [8, 5],
-        markerEnd: marker('messageflow-start', 'white', BLACK),
+        stroke: BLACK, 
+        strokeWidth: 1.5, 
+        strokeDasharray: [8,5],
+        markerEnd: marker('messageflow-start', 'white',BLACK),
       };
       return svgAppend(p, createLine(element.waypoints, attrs));
-    }
+    },
+    'label': (p, element) => {
+      return self.renderExternalLabel(p, element);
+    },
   };
 
-  // Finally, you have to define the paths
-  // Using this property you define and delimit the connectivity area of the element
+  
+
   this.paths = {
     'PPINOT:BaseMeasure': (element) => {
       var x = element.x,
@@ -1021,11 +962,10 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         width = element.width,
         height = element.height;
 
-      // Ajustamos las coordenadas y tamaño del path para que coincida con la imagen reducida
-      var offsetX = 6; // Mismo offset que en drawBaseMeasure
-      var offsetY = 4; // Mismo offset que en drawBaseMeasure
-      var scaledWidth = width * 0.8; // Mismo factor que en drawBaseMeasure
-      var scaledHeight = height * 0.8; // Mismo factor que en drawBaseMeasure
+      var offsetX = 6; 
+      var offsetY = 4; 
+      var scaledWidth = width * 0.8; 
+      var scaledHeight = height * 0.8; 
 
       var adjustedX = x + offsetX;
       var adjustedY = y + offsetY;
@@ -1053,7 +993,6 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         width = element.width,
         height = element.height;
 
-      // Usamos las dimensiones completas del elemento para el área seleccionable
       var d = [
         ['M', x, y],
         ['h', width],
@@ -1072,7 +1011,6 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
         width = element.width,
         height = element.height;
 
-      // Usamos las dimensiones completas del elemento para el área seleccionable
       var d = [
         ['M', x, y],
         ['h', width],
@@ -2107,7 +2045,6 @@ PPINOTRenderer.prototype.drawLabel = function (parentGfx, element) {
 
   const { width = 150, height = 50 } = element;
 
-  // Centrar el texto en el elemento de etiqueta
   const textElement = this._textRenderer.createText(text, {
     box: { width, height },
     align: 'center-middle',
@@ -2115,7 +2052,7 @@ PPINOTRenderer.prototype.drawLabel = function (parentGfx, element) {
       fontSize: '12px',
       fontFamily: 'Arial, sans-serif',
       fill: '#000',
-      whiteSpace: 'pre',       // para soportar saltos de línea explícitos
+      whiteSpace: 'pre',       
       maxWidth: width,
     }
   });
@@ -2178,30 +2115,32 @@ this.drawConnection = function (p, element) {
 this.getConnectionPath = function (connection) {
     var waypoints = connection.waypoints || [];
 
-    // Validate that we have at least two valid waypoints
     if (waypoints.length < 2) {
       return 'M0,0 L0,0';
     }
 
-    // Ensure all waypoints have valid coordinates
     waypoints = waypoints.map(function (p) {
       var point = p.original || p;
       return {
-        x: typeof point.x === 'number' ? point.x : 0,
-        y: typeof point.y === 'number' ? point.y : 0
+        x: typeof point.x === 'number' && !isNaN(point.x) && isFinite(point.x) ? point.x : 0,
+        y: typeof point.y === 'number' && !isNaN(point.y) && isFinite(point.y) ? point.y : 0
       };
-  });
+    });
 
-  var connectionPath = [
-    ['M', waypoints[0].x, waypoints[0].y]
-  ];
-
-  waypoints.forEach(function (waypoint, index) {
-    if (index !== 0) {
-      connectionPath.push(['L', waypoint.x, waypoint.y]);
+    if (!waypoints[0] || typeof waypoints[0].x !== 'number' || typeof waypoints[0].y !== 'number') {
+      return 'M0,0 L0,0';
     }
-  });
 
-  return componentsToPath(connectionPath);
+    var connectionPath = [
+      ['M', waypoints[0].x, waypoints[0].y]
+    ];
+
+    waypoints.forEach(function (waypoint, index) {
+      if (index !== 0) {
+        connectionPath.push(['L', waypoint.x, waypoint.y]);
+      }
+    });
+
+    return componentsToPath(connectionPath);
 };
 }

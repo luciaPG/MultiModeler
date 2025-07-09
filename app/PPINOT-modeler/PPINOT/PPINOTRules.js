@@ -16,13 +16,12 @@ import {isLabel} from "bpmn-js/lib/util/LabelUtil";
 
 var HIGH_PRIORITY = 1500;
 
-//To create restrictions of connection you have to use these functions
-//this function checks if an element is some of PPINOT elements
+
 function isPPINOT(element) {
   return element && /^PPINOT:/.test(element.type);
 }
 
-//this function checks if an element is a task or event
+
 function isDefaultValid(element) {
   return element && (is(element, 'bpmn:Task') || is(element, 'bpmn:Event') || is(element, 'bpmn:Pool') || is(element, 'bpmn:DataObjectReference')) 
 }
@@ -41,12 +40,16 @@ inherits(PPINOTRules, RuleProvider);
 PPINOTRules.$inject = [ 'eventBus' ];
 
 
-// This function defines the connection
-// you must define some conditions and check these conditions for the target, the source and the connection type 
-// and if all conditions are correct, the connection will be created without problemas 
+
 function connect(source, target, connection) {
   if (nonExistingOrLabel(source) || nonExistingOrLabel(target)) {
     return null;
+  }
+  
+      
+
+  if(connection && connection.startsWith('PPINOT:')) {
+    return {type: connection};
   }
   
   if(connection === 'PPINOT:MyConnection'){
@@ -135,11 +138,9 @@ function connect(source, target, connection) {
       return {type: 'PPINOT:ResourceArc'}
     }
     else if((isPPINOTAggregatedElement(source) && isPPINOTShape(target)) )
-    return {type: 'PPINOT:AggregatedConnection'
-    }
+      return {type: 'PPINOT:AggregatedConnection'}
     else if (isPPINOTAggregatedElement(source) && is(target, 'bpmn:DataObjectReference') )
-      return {type: 'PPINOT:GroupedBy'
-    }
+      return {type: 'PPINOT:GroupedBy'}
     else
       return
   }
@@ -153,19 +154,16 @@ PPINOTRules.prototype.init = function() {
    */
   function canCreate(shape, target) {
 
-    // only judge about PPINOT elements
     if (!isPPINOT(shape)) {
       return;
     }
 
     var allowedContainer = is(target, 'bpmn:Process') || is(target, 'bpmn:Participant') || is(target, 'bpmn:Collaboration');
 
-    //In this case, we define that Ppi element can contain any PPINOT element
     if (isPPINOT(shape)) {
       allowedContainer = allowedContainer || is(target, 'PPINOT:Ppi');
     }
 
-    // allow creation on processes
     return allowedContainer;
   }
 

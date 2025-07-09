@@ -7,10 +7,8 @@ export default function MultiNotationRenderer(config, eventBus, styles, pathMap,
   BpmnRenderer.call(this, config, eventBus, styles, pathMap, canvas, textRenderer);
   this._ppinotRenderer = new PPINOTRenderer(styles, canvas, textRenderer);
 
-  // Add event listener to handle connection preview errors
   eventBus.on('connectionPreview.shown', function(event) {
     if (event.connection && event.connection.waypoints) {
-      // Ensure waypoints are valid
       event.connection.waypoints = event.connection.waypoints.map(function(p) {
         return {
           x: typeof p.x === 'number' ? p.x : 0,

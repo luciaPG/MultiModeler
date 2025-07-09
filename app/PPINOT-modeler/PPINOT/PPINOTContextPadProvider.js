@@ -28,13 +28,14 @@ export default function PPINOTContextPadProvider(
   this._autoPlace = (config && config.autoPlace !== false) ? injector.get('autoPlace', false) : null;
 }
 
-PPINOTContextPadProvider.prototype.appendConnectAction = function(type, className, title, groupName = 'ppinot-connect') {
+PPINOTContextPadProvider.prototype.appendConnectAction = function (type, className, title, groupName = 'ppinot-connect') {
   const connect = this._connect;
-  
+
   function startConnect(event, element) {
-    connect.start(event, element, null, { type: type });
+    console.log('➡️ Tipo de conexión al iniciar:', type);
+    connect.start(event, element, { type: type });
   }
-  
+
   return {
     group: groupName,
     className: className,
@@ -46,7 +47,7 @@ PPINOTContextPadProvider.prototype.appendConnectAction = function(type, classNam
   };
 };
 
-PPINOTContextPadProvider.prototype.getContextPadEntries = function(element) {
+PPINOTContextPadProvider.prototype.getContextPadEntries = function (element) {
   const businessObject = element.businessObject;
   const actions = {};
 
@@ -91,7 +92,7 @@ PPINOTContextPadProvider.prototype.getContextPadEntries = function(element) {
     assign(actions, {
       'connect5': this.appendConnectAction(
         'PPINOT:DashedLine',
-        '.icon-PPINOT-dashed-line',
+        'icon-PPINOT-dashed-line',
         'Connect using dashed line',
         'ppinot-dashed'
       )
@@ -120,7 +121,7 @@ PPINOTContextPadProvider.prototype.getContextPadEntries = function(element) {
     assign(actions, {
       'connect1': this.appendConnectAction(
         'PPINOT:ToConnection',
-        'icon-toConnector',
+        'icon-PPINOT-toConnector',
         'Connect using To connection',
         'ppinot-time'
       ),
@@ -145,13 +146,13 @@ PPINOTContextPadProvider.prototype.getContextPadEntries = function(element) {
     assign(actions, {
       'connect10': this.appendConnectAction(
         'PPINOT:StartConnection',
-        'icon-startConnector',
+        'icon-PPINOT-startConnector',
         'Connect using Start connection',
         'ppinot-count'
       ),
       'connect11': this.appendConnectAction(
         'PPINOT:EndConnection',
-        'icon-endConnector',
+        'icon-PPINOT-endConnector',
         'Connect using End connection',
         'ppinot-count'
       )
@@ -192,14 +193,13 @@ PPINOTContextPadProvider.prototype.getContextPadEntries = function(element) {
     }
   });
 
-  // Remove 'replace' for PPINOT:Ppi
   if (businessObject && (businessObject.$type === 'PPINOT:Ppi' || businessObject.type === 'PPINOT:Ppi')) {
-  
+
     delete actions.replace;
   }
 
   return actions;
-};// Match the order of the constructor for injection
+};
 PPINOTContextPadProvider.$inject = [
   'config',
   'injector',

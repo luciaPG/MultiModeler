@@ -2,7 +2,7 @@ import PPINOTRenderer from './PPINOTRenderer';
 import PPINOTRules from './PPINOTRules';
 import PPINOTUpdater from './PPINOTUpdater';
 import PPINOTNotationPalette from './PPINOTNotationPalette';
-// import PPINOTContextPadProvider from './PPINOTContextPadProvider';
+import PPINOTContextPadProvider from './PPINOTContextPadProvider';
 import PPINOTReplaceMenuProvider from './PPINOTReplaceMenuProvider';
 import PPINOTLabelProvider from './PPINOTLabelProvider';
 import PPINOTConnect from './PPINOTConnect';
@@ -15,7 +15,7 @@ export default {
     'PPINOTRenderer',
     'PPINOTRules',
     'PPINOTUpdater',
-    // 'PPINOTContextPadProvider',
+    'PPINOTContextPadProvider',
     'PPINOTReplaceMenuProvider',
     'PPINOTLabelProvider',
     'PPINOTConnect',
@@ -26,7 +26,7 @@ export default {
   PPINOTRenderer: ['type', PPINOTRenderer],
   PPINOTRules: ['type', PPINOTRules],
   PPINOTUpdater: ['type', PPINOTUpdater],
-  // PPINOTContextPadProvider: [ 'type', PPINOTContextPadProvider ],
+  PPINOTContextPadProvider: ['type', PPINOTContextPadProvider],
   PPINOTReplaceMenuProvider: ['type', PPINOTReplaceMenuProvider],
   ppinotNotationPalette: ['type', PPINOTNotationPalette],
   PPINOTLabelProvider: ['type', PPINOTLabelProvider],
