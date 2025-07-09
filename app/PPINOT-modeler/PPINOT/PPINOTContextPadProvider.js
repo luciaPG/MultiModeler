@@ -119,18 +119,19 @@ PPINOTContextPadProvider.prototype.getContextPadEntries = function (element) {
     element.type !== 'label'
   ) {
     assign(actions, {
-      'connect1': this.appendConnectAction(
+       'connect1': this.appendConnectAction(
+        'PPINOT:FromConnection',
+        'icon-PPINOT-fromConnector',
+        'Connect using From connection',
+        'ppinot-time'
+      ),
+      'connect2': this.appendConnectAction(
         'PPINOT:ToConnection',
         'icon-PPINOT-toConnector',
         'Connect using To connection',
         'ppinot-time'
       ),
-      'connect2': this.appendConnectAction(
-        'PPINOT:FromConnection',
-        'icon-PPINOT-fromConnector',
-        'Connect using From connection',
-        'ppinot-time'
-      )
+     
     });
   }
 
