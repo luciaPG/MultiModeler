@@ -3,10 +3,18 @@ import {
 } from 'min-dash';
  import Cat from './SVGs'
 
-// Definición de la paleta del editor RALph
-// Para añadir un icono usa:
-// 'RALph-Person': createAction("RALph:Person", 'resources','icon-RALph2-person')
-// El primer argumento es el tipo, el segundo el grupo, el tercero el icono definido en index.html
+/**
+ * here is defined the palette of the editor
+ */
+
+ /*To define an icon in the palette you have to use this function:
+    
+    'RALph-Person': createAction(
+      "RALph:Person", 'resources','icon-RALph2-person' //'icon-RALph-person'
+    ),
+
+    The first argument is the element linked to the icon, the second is a group separator, and the third is the icon, which is defined in the index.html 
+ */
 export default function PaletteProvider(
     palette, create, elementFactory,
     spaceTool, lassoTool, handTool,
@@ -47,11 +55,11 @@ PaletteProvider.prototype.getPaletteEntries = function(element) {
       globalConnect = this._globalConnect,
       translate = this._translate;
 
-  // Asocia iconos de la paleta a objetos:
-  // type: tipo de objeto
-  // group: grupo en la paleta
-  // className: icono en index.html
-  // title: texto al pasar el ratón
+  //this function links the palette icons to objects, and requires this parameters:
+  //type:object to be linked
+  //group: group to which the icon belongs, inside the palette
+  //className:name of the icon in the index.html
+  //title:text that appears when you highlight the icon
 
   function createAction(type, group, className,title, options) {
 
@@ -105,7 +113,7 @@ PaletteProvider.prototype.getPaletteEntries = function(element) {
     create.start(event, elementFactory.createParticipantShape(collapsed));
   }
 
-    // Definición de los iconos de la paleta mediante assign
+  //here we define the icons of the palette with the assign function, which determines the elements to renderer in the palette
   assign(actions, {
     'hand-tool': {
       group: 'tools',
@@ -201,13 +209,13 @@ PaletteProvider.prototype.getPaletteEntries = function(element) {
         'bpmn:Group', 'artifact', 'bpmn-icon-group',
         translate('Create Group')
     ),
-    // Para crear grupos en la paleta se necesita un separador:
+    //to create groups in the palette it is needed a separator:
     'resources-entities-separator': {
       group: 'resources',
       separator: true
     },
-    // Se usa createAction para asignar un icono a la paleta
-    // El primer argumento es el tipo, el segundo el grupo, el tercero el icono definido en index.html
+    //it is used the function createAction to assign an icon to the palette 
+    //the first argument is the element linked to the icon, the second the group separator, and the third is the icon, which is defined in the index.html 
     'RALph-Person': createAction(
       "RALph:Person", 'resources','icon-RALph2-person' //'icon-RALph-person'
     ),
