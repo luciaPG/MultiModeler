@@ -57,13 +57,6 @@ export function setLabel(element, text, isExternal) {
     else
         return basicSetLabel(element, text, isExternal);
 }
-
-/**
- * Returns true if the given semantic is an external label
- *
- * @param {BpmnElement} semantic
- * @return {Boolean} true if is label
- */
 export function isLabelExternal(semantic) {
     return is(semantic, 'bpmn:Event') ||
         is(semantic, 'bpmn:Gateway') ||
@@ -77,23 +70,14 @@ export function isLabelExternal(semantic) {
         isAny(semantic, externalLabel);
 }
 
-/**
- * Check if an element is a label
- */
 export function isLabel(element) {
     return element && element.type === 'label';
 }
 
-/**
- * Check if an element has an external label
- */
 export function hasExternalLabel(element) {
     return element && element.label;
 }
 
-/**
- * Get the mid point of an external label relative to its element
- */
 export function getExternalLabelMid(element) {
     if (!element) {
         return undefined;
@@ -105,36 +89,14 @@ export function getExternalLabelMid(element) {
     };
 }
 
-
-/**
- * Get the position for sequence flow labels
- *
- * @param  {Array<Point>} waypoints
- * @return {Point} the label position
- */
 export function getFlowLabelPosition(waypoints) {
     return labelUtils.getFlowLabelPosition(waypoints)
 }
 
-
-/**
- * Get the middle of a number of waypoints
- *
- * @param  {Array<Point>} waypoints
- * @return {Point} the mid point
- */
 export function getWaypointsMid(waypoints) {
     return labelUtils.getWaypointsMid(waypoints)
 }
 
-
-/**
- * Returns the bounds of an elements label, parsed from the elements DI or
- * generated from its bounds.
- *
- * @param {BpmnElement} semantic
- * @param {djs.model.Base} element
- */
 export function getExternalLabelBounds(semantic, element) {
     const di= getDi(semantic)
     if(di)
@@ -150,18 +112,11 @@ export function getExternalLabelBounds(semantic, element) {
     }
 }
 
-/**
- * Check if element is a PPINOT element
- */
 export function isPPINOTElement(element) {
     return element && element.type && element.type.startsWith('PPINOT:');
 }
 
-/**
- * Update label for PPINOT elements
- */
 export function updateLabel(element) {
     // For now, just trigger a visual update
-    // This can be expanded later if needed
     return element;
 }

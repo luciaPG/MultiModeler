@@ -14,7 +14,7 @@ export default class MultiNotationModeler extends Modeler {
       additionalModules: [
         BaseModule,
         PPINOTModule,
-       // RALPHModule,
+        RALPHModule, 
         ...(options.additionalModules || [])
       ]
     });
@@ -54,21 +54,17 @@ export default class MultiNotationModeler extends Modeler {
       attrs.target = elementRegistry.get(PPINOTElement.target);
     }
 
-    // Ensure parent (semantic parent) has the correct array for custom connections
-    // The parent is usually the root element (process, participant, or collaboration)
     const canvas = this.get('canvas');
     let parent = null;
     if (attrs.parent) {
       parent = attrs.parent.businessObject || attrs.parent;
     } else {
-      // Try to get the root element's businessObject
       const root = canvas.getRootElement && canvas.getRootElement();
       if (root && root.businessObject) {
         parent = root.businessObject;
       }
     }
     if (parent) {
-      // BPMN usually expects flowElements or artifacts
       if (!parent.flowElements && !parent.artifacts) {
         parent.flowElements = [];
       }

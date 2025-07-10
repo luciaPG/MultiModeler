@@ -3,7 +3,7 @@ import { isAny } from 'bpmn-js/lib/features/modeling/util/ModelingUtil';
 import { assign } from 'min-dash';
 import { myConnectionElements, aggregatedElements } from "./Types";
 
-// Clase/fábrica auxiliar: SOLO devuelve las acciones para el context pad de PPINOT
+// Devuelve las acciones para el context pad de PPINOT
 export default function PPINOTContextPadProvider(
   config,
   injector,
@@ -51,7 +51,7 @@ PPINOTContextPadProvider.prototype.getContextPadEntries = function (element) {
   const businessObject = element.businessObject;
   const actions = {};
 
-  // PPINOT-specific connection actions based on element type
+  // Acciones específicas de conexión PPINOT según el tipo de elemento
   if (isAny(businessObject, aggregatedElements) && element.type !== 'label') {
     assign(actions, {
       'connect3': this.appendConnectAction(
@@ -168,7 +168,8 @@ PPINOTContextPadProvider.prototype.getContextPadEntries = function (element) {
         'ppinot-general'
       )
     });
-  }  // Add replace action before delete
+  }
+  // Acción de reemplazo
   assign(actions, {
     'replace': {
       group: 'edit',
@@ -181,6 +182,7 @@ PPINOTContextPadProvider.prototype.getContextPadEntries = function (element) {
       }
     }
   });
+  // Acción de borrado
   assign(actions, {
     'delete': {
       group: 'edit',

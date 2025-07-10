@@ -1,13 +1,5 @@
-import {
-    asTRBL,
-    getMid
-} from 'diagram-js/lib/layout/LayoutUtil';
-import { getNewShapePosition } from "bpmn-js/lib/features/auto-place/BpmnAutoPlaceUtil";
-import { assign } from "min-dash";
-
-/**
- * Handles connection creation between BPMN and PPINOT elements
- */
+import { getMid } from 'diagram-js/lib/layout/LayoutUtil';
+// Maneja la creación de conexiones entre elementos BPMN y PPINOT
 export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
 
     function canConnect(source, target, type) {
@@ -55,43 +47,25 @@ export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
         }
 
         var canExecute = canConnect(source, target, connectionType);
-
         if (!canExecute) {
-            console.log('🚫 Connection not allowed by rules');
             return false;
         }
-
-        console.log('🔗 Attempting connection:', {
-            source: source.type,
-            target: target.type, 
-            connectionType: connectionType,
-            canExecute: canExecute
-        });
-
         try {
-            var connection = modeling.connect(source, target, connectionType ? {
-                type: connectionType
-            } : null);
-            
-            console.log('✅ Connection created successfully:', connection ? connection.type : 'no connection created');
-            
-            // Disparar evento personalizado para que PPINOTLabelProvider pueda crear el label
+            var connection = modeling.connect(source, target, connectionType ? { type: connectionType } : null);
+            // Evento personalizado para que PPINOTLabelProvider cree el label
             if (connection && connection.type && connection.type.startsWith('PPINOT:')) {
-                console.log('🚀 Firing ppinot.connection.created event for:', connection.type, connection.id);
                 eventBus.fire('ppinot.connection.created', {
                     connection: connection
                 });
             }
-            
             return connection;
         } catch (error) {
-            console.error('❌ Error al conectar:', error);
             return false;
         }
     });
 
 
-    // Public API
+    // API pública
     this.start = function (event, source, sourcePosition, autoActivate) {
         var hints = {};
         var realSourcePosition = getMid(source);
@@ -99,7 +73,6 @@ export default function PPINOTConnect(eventBus, dragging, modeling, rules) {
 
         if (typeof sourcePosition === 'object' && sourcePosition.type) {
             hints = sourcePosition;
-            console.log('🚀 PPINOTConnect.start called with hints:', hints);
         } else {
             if (typeof sourcePosition !== 'object') {
                 autoActivate = sourcePosition;

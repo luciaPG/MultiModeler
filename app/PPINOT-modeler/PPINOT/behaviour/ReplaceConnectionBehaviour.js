@@ -23,20 +23,11 @@ export default function ReplaceConnectionBehavior(eventBus, modeling, bpmnRules,
             target = connection.target,
             parent = connection.parent;
 
-        // do not do anything if connection
-        // is already deleted (may happen due to other
-        // behaviors plugged-in before)
-        if (!parent) {
-            return;
-        }
-
-        // For PPINOT connections, we want to preserve them
+        if (!parent) return; // conexión ya eliminada
+        // Para PPINOT, preservar waypoints
         if (isPPINOTConnection(connection.type)) {
-            // Ensure waypoints are preserved
             if (connection.waypoints) {
-                connection.businessObject.waypoints = connection.waypoints.map(function(p) {
-                    return { x: p.x, y: p.y };
-                });
+                connection.businessObject.waypoints = connection.waypoints.map(p => ({ x: p.x, y: p.y }));
             }
             return;
         }
@@ -44,50 +35,17 @@ export default function ReplaceConnectionBehavior(eventBus, modeling, bpmnRules,
         var replacementType,
             remove;
 
-        /**
-         * Check if incoming or outgoing connections
-         * can stay or could be substituted with an
-         * appropriate replacement.
-         *
-         * This holds true for SequenceFlow <> MessageFlow.
-         */
-
+        // Comprobar si la conexión debe ser eliminada o reemplazada
         if (is(connection, 'bpmn:SequenceFlow')) {
-            if (!bpmnRules.canConnectSequenceFlow(source, target)) {
-                remove = true;
-            }
-
-            if (bpmnRules.canConnectMessageFlow(source, target)) {
-                replacementType = 'bpmn:MessageFlow';
-            }
+            if (!bpmnRules.canConnectSequenceFlow(source, target)) remove = true;
+            if (bpmnRules.canConnectMessageFlow(source, target)) replacementType = 'bpmn:MessageFlow';
         }
-
-        // transform message flows into sequence flows, if possible
-
         if (is(connection, 'bpmn:MessageFlow')) {
-
-            if (!bpmnRules.canConnectMessageFlow(source, target)) {
-                remove = true;
-            }
-
-            if (bpmnRules.canConnectSequenceFlow(source, target)) {
-                replacementType = 'bpmn:SequenceFlow';
-            }
+            if (!bpmnRules.canConnectMessageFlow(source, target)) remove = true;
+            if (bpmnRules.canConnectSequenceFlow(source, target)) replacementType = 'bpmn:SequenceFlow';
         }
-
-        if (is(connection, 'bpmn:Association') && !bpmnRules.canConnectAssociation(source, target)) {
-            remove = true;
-        }
-
-
-        // remove invalid connection,
-        // unless it has been removed already
-        if (remove) {
-            modeling.removeConnection(connection);
-        }
-
-        // replace SequenceFlow <> MessageFlow
-
+        if (is(connection, 'bpmn:Association') && !bpmnRules.canConnectAssociation(source, target)) remove = true;
+        if (remove) modeling.removeConnection(connection);
         if (replacementType) {
             modeling.connect(source, target, {
                 type: replacementType,
@@ -97,8 +55,6 @@ export default function ReplaceConnectionBehavior(eventBus, modeling, bpmnRules,
     }
 
     function replaceReconnectedConnection(event) {
-        console.log("replaceReconnectedConnection")
-        console.log(event)
         var context = event.context,
             connection = context.connection,
             source = context.newSource || connection.source,
@@ -127,27 +83,16 @@ export default function ReplaceConnectionBehavior(eventBus, modeling, bpmnRules,
         }
     }
 
-    // monkey-patch selection saved in dragging in order to not re-select non-existing connection
     function cleanDraggingSelection(oldConnection, newConnection) {
         var context = dragging.context(),
             previousSelection = context && context.payload.previousSelection,
             index;
 
-        // do nothing if not dragging or no selection was present
-        if (!previousSelection || !previousSelection.length) {
-            return;
-        }
-
+        if (!previousSelection || !previousSelection.length) return;
         index = previousSelection.indexOf(oldConnection);
-
-        if (index === -1) {
-            return;
-        }
-
+        if (index === -1) return;
         previousSelection.splice(index, 1, newConnection);
     }
-
-    // lifecycle hooks
 
     this.postExecuted('elements.move', function(context) {
 
@@ -169,7 +114,6 @@ export default function ReplaceConnectionBehavior(eventBus, modeling, bpmnRules,
             businessObject = element.businessObject,
             connection;
 
-        // remove condition expression when morphing to default flow
         if (properties.default) {
             connection = find(
                 element.outgoing,
@@ -181,7 +125,6 @@ export default function ReplaceConnectionBehavior(eventBus, modeling, bpmnRules,
             }
         }
 
-        // remove default property from source when morphing to conditional flow
         if (properties.conditionExpression && businessObject.sourceRef.default === businessObject) {
             modeling.updateProperties(element.source, { default: undefined });
         }

@@ -13,22 +13,19 @@ import {
 } from 'diagram-js/lib/util/Collections';
 
 import { is } from 'bpmn-js/lib/util/ModelUtil';
-import { isExternalLabel, isPPINOTConnection } from './Types';
+import { isExternalLabel } from './Types';
 
-/**
- * A handler responsible for updating the PPINOT element's businessObject
- * once changes on the diagram happen.
- */
+// Actualiza el businessObject de elementos PPINOT cuando hay cambios en el diagrama
 export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
 
   CommandInterceptor.call(this, eventBus);
 
-  // Initialize PPINOTElements array if it doesn't exist
+  // Inicializa el array PPINOTElements si no existe
   if (!bpmnjs._PPINOTElements) {
     bpmnjs._PPINOTElements = [];
   }
 
-  // Helper function to initialize arrays on parent containers
+  // Inicializa arrays en los contenedores padre
   function initializeParentArrays(parent) {
     if (!parent || !parent.businessObject) {
       return;
@@ -36,10 +33,10 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
 
     var parentBO = parent.businessObject;
     
-    // Handle pools specially
+    // Pools
     if (is(parent, 'bpmn:Participant') && parentBO.processRef) {
       var process = parentBO.processRef;
-      // Initialize all necessary arrays that BpmnUpdater expects
+      // Inicializa arrays requeridos por BpmnUpdater
       if (!process.flowElements) {
         process.flowElements = [];
       }
@@ -50,7 +47,7 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
         process.children = [];
       }
     } else if (is(parent, 'bpmn:Collaboration')) {
-      // For collaboration, ensure arrays exist
+      // Colaboraciones: asegurar arrays
       if (!parentBO.participants) {
         parentBO.participants = [];
       }
@@ -61,7 +58,7 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
         parentBO.artifacts = [];
       }
     } else if (is(parent, 'bpmn:Process')) {
-      // For direct process containers
+      // Procesos directos
       if (!parentBO.flowElements) {
         parentBO.flowElements = [];
       }
@@ -71,18 +68,18 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
     }
   }
 
-  // Listen for element replacement events to handle labels
+  // Escucha reemplazo de elementos para manejar labels
   eventBus.on('shape.replace', function(event) {
     const oldShape = event.oldShape;
     const newShape = event.newShape;
     
-    // If the old shape had a label and the new shape should have one too
+    // Si el shape antiguo tenía label y el nuevo debe tenerlo
     if (oldShape.label && isExternalLabel(newShape)) {
-      // Ensure the new shape has the label reference
+      // El nuevo shape debe tener la referencia al label
       newShape.label = oldShape.label;
       newShape._hasExternalLabel = true;
       
-      // Update the label's target reference
+      // Actualiza el labelTarget
       if (oldShape.label.labelTarget) {
         oldShape.label.labelTarget = newShape;
       }
@@ -100,40 +97,40 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
 
     var parent = shape.parent;
 
-    // Initialize parent arrays FIRST to prevent BpmnUpdater errors
+    // Inicializa arrays del padre para evitar errores de BpmnUpdater
     initializeParentArrays(parent);
 
-    // Ensure PPINOTElements exists
+    // Asegura que PPINOTElements existe
     var PPINOTElements = bpmnjs._PPINOTElements = bpmnjs._PPINOTElements || [];
 
-    // make sure element is added / removed from bpmnjs.PPINOTElements
+    // Añade o elimina el elemento de bpmnjs.PPINOTElements
     if (!parent) {
       collectionRemove(PPINOTElements, businessObject);
     } else {
       collectionAdd(PPINOTElements, businessObject);
     }
 
-    // save PPINOT element position
+    // Guarda la posición del elemento PPINOT
     assign(businessObject, pick(shape, [ 'x', 'y' ]));
     
-    // Special handling for pool creation
+    // Manejo especial para creación de pools
     if (is(parent, 'bpmn:Participant') || is(parent, 'bpmn:Collaboration')) {
-      // Ensure proper containment for PPINOT elements in pools
+      // Contención correcta de elementos PPINOT en pools
       var process = parent.businessObject.processRef;
       if (process) {
-        // Initialize children array if it doesn't exist
+        // Inicializa array children si no existe
         if (!process.children) {
           process.children = [];
         }
         
-        // If process exists, ensure PPINOT element is in the process
+        // Si el proceso existe, asegura que el elemento PPINOT está en el proceso
         if (businessObject.$parent !== process) {
-          // Remove from current parent
+          // Elimina del padre actual
           if (businessObject.$parent && businessObject.$parent.children) {
             collectionRemove(businessObject.$parent.children, businessObject);
           }
           
-          // Add to process
+          // Añade al proceso
           process.children.push(businessObject);
           businessObject.$parent = process;
         }
@@ -154,25 +151,25 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
 
     var parent = connection.parent;
     
-    // Initialize parent arrays FIRST to prevent BpmnUpdater errors
+    // Inicializa arrays del padre para evitar errores
     initializeParentArrays(parent);
     
-    // Ensure PPINOTElements exists and is an array
+    // Asegura que PPINOTElements es un array
     var PPINOTElements = bpmnjs._PPINOTElements = bpmnjs._PPINOTElements || [];
 
-    // Check for existing similar connections
+    // Comprueba si ya existe una conexión similar
     var existingSimilarConnection = PPINOTElements.find(function(element) {
       return element && element.type === businessObject.type &&
              element.source === source.id &&
              element.target === target.id;
     });
 
-    // If we're creating a new connection and a similar one exists, prevent the duplicate
+    // Si se crea una conexión nueva y ya existe una similar, evita duplicados
     if (e.command === 'connection.create' && existingSimilarConnection) {
       return false;
     }
 
-    // make sure element is added / removed from bpmnjs.PPINOTElements
+    // Añade o elimina el elemento de bpmnjs.PPINOTElements
     if (!parent) {
       collectionRemove(PPINOTElements, businessObject);
     } else if (!existingSimilarConnection) {
@@ -180,27 +177,27 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
       collectionAdd(PPINOTElements, businessObject);
     }
 
-    // Validate and filter waypoints
+    // Valida y filtra waypoints
     if (connection.waypoints) {
-      // Filter out any invalid waypoints
+      // Filtra waypoints inválidos
       var validWaypoints = connection.waypoints.filter(function(p) {
         return p && typeof p.x === 'number' && typeof p.y === 'number' && 
                !isNaN(p.x) && !isNaN(p.y) && isFinite(p.x) && isFinite(p.y);
       });
 
-      // Only update if we have valid waypoints
+      // Solo actualiza si hay waypoints válidos
       if (validWaypoints.length >= 2) {
         assign(businessObject, {
           waypoints: validWaypoints.map(function(p) {
             return { x: p.x, y: p.y };
           })
         });
-        // Update the connection's waypoints to only include valid ones
+        // Actualiza los waypoints de la conexión
         connection.waypoints = validWaypoints;
       }
     }
 
-    // update source and target references
+    // Actualiza referencias de source y target
     if (source && target) {
       assign(businessObject, {
         source: source.id,
@@ -211,7 +208,7 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
     return true;
   }
 
-  // Handle parent updates directly
+  // Maneja actualizaciones de padre directamente
   eventBus.on('element.updateParent', function(event) {
     var context = event.context;
     var element = context.element;
@@ -222,36 +219,36 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
       return;
     }
     
-    // Initialize arrays for both old and new parents
+    // Inicializa arrays para ambos padres
     initializeParentArrays(oldParent);
     initializeParentArrays(newParent);
     
     var businessObject = element.businessObject;
     
-    // Handle parent change
+    // Maneja cambio de padre
     if (newParent) {
       var newParentBO = newParent.businessObject;
       
-      // Handle pools specially
+      // Pools
       if (is(newParent, 'bpmn:Participant') && newParentBO.processRef) {
         newParentBO = newParentBO.processRef;
       }
       
-      // Ensure children array exists
+      // Asegura que existe el array children
       if (!newParentBO.children) {
         newParentBO.children = [];
       }
       
-      // Remove from old parent
+      // Elimina del padre anterior
       if (businessObject.$parent && businessObject.$parent.children) {
         collectionRemove(businessObject.$parent.children, businessObject);
       }
       
-      // Add to new parent
+      // Añade al nuevo padre
       newParentBO.children.push(businessObject);
       businessObject.$parent = newParentBO;
     } else if (oldParent && businessObject.$parent) {
-      // Remove from old parent only
+      // Solo elimina del padre anterior
       if (businessObject.$parent.children) {
         collectionRemove(businessObject.$parent.children, businessObject);
       }
@@ -292,10 +289,7 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
   ], ifPPINOTElement(updatePPINOTConnection));
 
 
-  /**
-   * When morphing a Process into a Collaboration or vice-versa,
-   * make sure that the existing PPINOT elements get their parents updated.
-   */
+  // Al transformar un Process en Collaboration o viceversa, actualiza los padres de los elementos PPINOT
   function updatePPINOTElementsRoot(event) {
     var context = event.context,
         oldRoot = context.oldRoot,

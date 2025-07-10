@@ -1,6 +1,6 @@
-import { forEach } from 'min-dash';
 
-export default function BendpointBehavior(eventBus, canvas) {
+
+export default function BendpointBehavior(eventBus) {
   function validatePoint(point) {
     return point && 
            typeof point.x === 'number' && 
@@ -9,14 +9,12 @@ export default function BendpointBehavior(eventBus, canvas) {
            isFinite(point.x) && isFinite(point.y);
   }
 
-  // Intercept bendpoint addition
   eventBus.on('bendpoint.move.move', function(event) {
     var context = event.context,
         connection = context.connection,
         originalWaypoints = connection.waypoints.slice(),
         bendpoint = context.bendpoint;
 
-    // Validate the bendpoint being moved
     if (!validatePoint(bendpoint)) {
       event.stopPropagation();
       connection.waypoints = originalWaypoints;
@@ -24,7 +22,6 @@ export default function BendpointBehavior(eventBus, canvas) {
     }
   });
 
-  // Validate waypoints before they're used
   eventBus.on(['bendpoint.move.cleanup', 'connect.cleanup'], function(event) {
     var context = event.context,
         connection = context.connection;
@@ -32,7 +29,6 @@ export default function BendpointBehavior(eventBus, canvas) {
     if (connection && connection.waypoints) {
       connection.waypoints = connection.waypoints.filter(validatePoint);
 
-      // Ensure we have at least source and target points
       if (connection.waypoints.length < 2) {
         var source = connection.source,
             target = connection.target;
@@ -47,7 +43,6 @@ export default function BendpointBehavior(eventBus, canvas) {
     }
   });
 
-  // Validate connection preview
   eventBus.on(['connection.preview', 'connection.move'], function(event) {
     var context = event.context,
         hints = context.hints || {};
@@ -56,6 +51,8 @@ export default function BendpointBehavior(eventBus, canvas) {
       hints.waypoints = hints.waypoints.filter(validatePoint);
     }
   });
+  // Validación de puntos y waypoints en eventos de bendpoint y conexión
+  // Solo se mantienen comentarios mínimos para claridad
 }
 
 BendpointBehavior.$inject = [ 'eventBus', 'canvas' ]; 
