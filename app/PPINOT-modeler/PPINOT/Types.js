@@ -81,7 +81,9 @@ export const externalLabel = [
     'PPINOT:GroupAbsence',
     'PPINOT:Clock',
     'PPINOT:Avion',
-    'PPINOT:Ppi',
+    'PPINOT:AggregatedMeasure',
+
+    'PPINOT:BaseMeasure',
     'PPINOT:MyConnection',
     'PPINOT:StartConnection',
     'PPINOT:EndConnection',
@@ -89,17 +91,9 @@ export const externalLabel = [
     'PPINOT:AggregatedConnection',
     'PPINOT:GroupedBy',
     'PPINOT:ToConnection',
+    'PPINOT:DerivedMultiInstanceMeasure',
+    'PPINOT:DerivedSingleInstanceMeasure',
     'PPINOT:FromConnection',
-    'PPINOT:AggregatedMeasure',
-    'PPINOT:TimeAggregatedMeasure',
-    'PPINOT:CyclicTimeAggregatedMeasure',
-    'PPINOT:CountAggregatedMeasure',
-    'PPINOT:CountMeasure',
-    'PPINOT:DataAggregatedMeasure',
-    'PPINOT:DataMeasure',
-    'PPINOT:TimeMeasure',
-    'PPINOT:CyclicTimeMeasure',
-    'PPINOT:BaseMeasure',
     'PPINOT:StateConditionMeasure',
     'PPINOT:StateConditionAggregatedMeasure',
     'PPINOT:RFCStateConnection',
@@ -108,22 +102,42 @@ export const externalLabel = [
     'PPINOT:StateCondAggMeasureAll',
     'PPINOT:StateCondAggMeasureAtLeastOne',
     'PPINOT:StateCondAggMeasureNo',
+    'PPINOT:CyclicTimeAggregatedMeasure',
     'PPINOT:CyclicTimeAggregatedMeasureMAX',
     'PPINOT:CyclicTimeAggregatedMeasureSUM',
     'PPINOT:CyclicTimeAggregatedMeasureMIN',
     'PPINOT:CyclicTimeAggregatedMeasureAVG',
+    'PPINOT:CyclicTimeMeasure',
     'PPINOT:CyclicTimeMeasureSUM',
     'PPINOT:CyclicTimeMeasureMAX',
     'PPINOT:CyclicTimeMeasureMIN',
     'PPINOT:CyclicTimeMeasureAVG',
-    'PPINOT:TimeAggregatedMeasureSUM',
-    'PPINOT:TimeAggregatedMeasureMAX',
-    'PPINOT:TimeAggregatedMeasureMIN',
-    'PPINOT:TimeAggregatedMeasureAVG',
+    'PPINOT:CountMeasure',
+    'PPINOT:CountMeasureSUM',
+    'PPINOT:CountMeasureMAX',
+    'PPINOT:CountMeasureMIN',
+    'PPINOT:CountMeasureAVG',
+    'PPINOT:CountAggregatedMeasure',
     'PPINOT:CountAggregatedMeasureSUM',
     'PPINOT:CountAggregatedMeasureMAX',
     'PPINOT:CountAggregatedMeasureMIN',
     'PPINOT:CountAggregatedMeasureAVG',
+    'PPINOT:TimeMeasure',
+    'PPINOT:TimeMeasureSUM',
+    'PPINOT:TimeMeasureMAX',
+    'PPINOT:TimeMeasureMIN',
+    'PPINOT:TimeMeasureAVG',
+    'PPINOT:TimeAggregatedMeasure',
+    'PPINOT:TimeAggregatedMeasureSUM',
+    'PPINOT:TimeAggregatedMeasureMAX',
+    'PPINOT:TimeAggregatedMeasureMIN',
+    'PPINOT:TimeAggregatedMeasureAVG',
+    'PPINOT:DataMeasure',
+    'PPINOT:DataMeasureSUM',
+    'PPINOT:DataMeasureMAX',
+    'PPINOT:DataMeasureMIN',
+    'PPINOT:DataMeasureAVG',
+    'PPINOT:DataAggregatedMeasure',
     'PPINOT:DataAggregatedMeasureSUM',
     'PPINOT:DataAggregatedMeasureMAX',
     'PPINOT:DataAggregatedMeasureMIN',
@@ -169,6 +183,7 @@ export const directEdit = [
     'PPINOT:TimeMeasure',
     'PPINOT:CyclicTimeMeasure',
     'PPINOT:Ppi',
+    // Conexiones PPINOT:
     'PPINOT:MyConnection',
     'PPINOT:StartConnection',
     'PPINOT:EndConnection',
@@ -177,40 +192,19 @@ export const directEdit = [
     'PPINOT:GroupedBy',
     'PPINOT:ToConnection',
     'PPINOT:FromConnection',
+    'PPINOT:RFCStateConnection',
+    // ...agrega aquí cualquier otro tipo de conexión PPINOT que quieras editar...
     'PPINOT:StateConditionMeasure',
     'PPINOT:StateConditionAggregatedMeasure',
     'PPINOT:BaseMeasure',
-    'PPINOT:RFCStateConnection',
     'PPINOT:StateCondAggMeasureNumber',
     'PPINOT:StateCondAggMeasurePercentage',
     'PPINOT:StateCondAggMeasureAll',
     'PPINOT:StateCondAggMeasureAtLeastOne',
-    'PPINOT:StateCondAggMeasureNo',
-    'PPINOT:CyclicTimeAggregatedMeasureMAX',
-    'PPINOT:CyclicTimeAggregatedMeasureSUM',
-    'PPINOT:CyclicTimeAggregatedMeasureMIN',
-    'PPINOT:CyclicTimeAggregatedMeasureAVG',
-    'PPINOT:CyclicTimeMeasureSUM',
-    'PPINOT:CyclicTimeMeasureMAX',
-    'PPINOT:CyclicTimeMeasureMIN',
-    'PPINOT:CyclicTimeMeasureAVG',
-    'PPINOT:TimeAggregatedMeasureSUM',
-    'PPINOT:TimeAggregatedMeasureMAX',
-    'PPINOT:TimeAggregatedMeasureMIN',
-    'PPINOT:TimeAggregatedMeasureAVG',
-    'PPINOT:CountAggregatedMeasureSUM',
-    'PPINOT:CountAggregatedMeasureMAX',
-    'PPINOT:CountAggregatedMeasureMIN',
-    'PPINOT:CountAggregatedMeasureAVG',
-    'PPINOT:DataAggregatedMeasureSUM',
-    'PPINOT:DataAggregatedMeasureMAX',
-    'PPINOT:DataAggregatedMeasureMIN',
-    'PPINOT:DataAggregatedMeasureAVG',
-    'PPINOT:AggregatedMeasureSUM',
-    'PPINOT:AggregatedMeasureMAX',
-    'PPINOT:AggregatedMeasureMIN',
-    'PPINOT:AggregatedMeasureAVG'
-    
+    'PPINOT:StateCondAggMeasureNo'
+    // NOTE: Aggregated measure variants with built-in function labels (SUM, MAX, MIN, AVG) 
+    // are deliberately excluded from directEdit to prevent interference with their function labels.
+    // These elements should not be directly editable since they have built-in labels.
 ]
 
 // The elements which are included in "myConnectionElements" could be connect by 'PPINOT:MyConnection'
@@ -453,9 +447,8 @@ export function isExternalLabel(type) {
 
 export function isPPINOTShape(type) {
     if (typeof type === 'object')
-        type = type.type
-
-    return type.includes('PPINOT:') && !connections.includes(type)
+        type = type.type || type.$type;
+    return type && type.includes('PPINOT:');
 }
 
 export function isPPINOTConnection(type) {

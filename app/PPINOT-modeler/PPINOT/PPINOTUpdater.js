@@ -13,6 +13,7 @@ import {
 } from 'diagram-js/lib/util/Collections';
 
 import { is } from 'bpmn-js/lib/util/ModelUtil';
+import { isExternalLabel, isPPINOTConnection } from './Types';
 
 /**
  * A handler responsible for updating the PPINOT element's businessObject
@@ -21,6 +22,72 @@ import { is } from 'bpmn-js/lib/util/ModelUtil';
 export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
 
   CommandInterceptor.call(this, eventBus);
+
+  // Initialize PPINOTElements array if it doesn't exist
+  if (!bpmnjs._PPINOTElements) {
+    bpmnjs._PPINOTElements = [];
+  }
+
+  // Helper function to initialize arrays on parent containers
+  function initializeParentArrays(parent) {
+    if (!parent || !parent.businessObject) {
+      return;
+    }
+
+    var parentBO = parent.businessObject;
+    
+    // Handle pools specially
+    if (is(parent, 'bpmn:Participant') && parentBO.processRef) {
+      var process = parentBO.processRef;
+      // Initialize all necessary arrays that BpmnUpdater expects
+      if (!process.flowElements) {
+        process.flowElements = [];
+      }
+      if (!process.artifacts) {
+        process.artifacts = [];
+      }
+      if (!process.children) {
+        process.children = [];
+      }
+    } else if (is(parent, 'bpmn:Collaboration')) {
+      // For collaboration, ensure arrays exist
+      if (!parentBO.participants) {
+        parentBO.participants = [];
+      }
+      if (!parentBO.messageFlows) {
+        parentBO.messageFlows = [];
+      }
+      if (!parentBO.artifacts) {
+        parentBO.artifacts = [];
+      }
+    } else if (is(parent, 'bpmn:Process')) {
+      // For direct process containers
+      if (!parentBO.flowElements) {
+        parentBO.flowElements = [];
+      }
+      if (!parentBO.artifacts) {
+        parentBO.artifacts = [];
+      }
+    }
+  }
+
+  // Listen for element replacement events to handle labels
+  eventBus.on('shape.replace', function(event) {
+    const oldShape = event.oldShape;
+    const newShape = event.newShape;
+    
+    // If the old shape had a label and the new shape should have one too
+    if (oldShape.label && isExternalLabel(newShape)) {
+      // Ensure the new shape has the label reference
+      newShape.label = oldShape.label;
+      newShape._hasExternalLabel = true;
+      
+      // Update the label's target reference
+      if (oldShape.label.labelTarget) {
+        oldShape.label.labelTarget = newShape;
+      }
+    }
+  });
 
   function updatePPINOTElement(e) {
     var context = e.context,
@@ -33,7 +100,11 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
 
     var parent = shape.parent;
 
-    var PPINOTElements = bpmnjs._PPINOTElements;
+    // Initialize parent arrays FIRST to prevent BpmnUpdater errors
+    initializeParentArrays(parent);
+
+    // Ensure PPINOTElements exists
+    var PPINOTElements = bpmnjs._PPINOTElements = bpmnjs._PPINOTElements || [];
 
     // make sure element is added / removed from bpmnjs.PPINOTElements
     if (!parent) {
@@ -74,27 +145,59 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
     var context = e.context,
         connection = context.connection,
         source = connection.source,
-        target = connection.target,
+        target = context.target || connection.target,
         businessObject = connection.businessObject;
 
-    var parent = connection.parent;
+    if (!businessObject || !source || !target) {
+      return false;
+    }
 
-    var PPINOTElements = bpmnjs._PPINOTElements;
+    var parent = connection.parent;
+    
+    // Initialize parent arrays FIRST to prevent BpmnUpdater errors
+    initializeParentArrays(parent);
+    
+    // Ensure PPINOTElements exists and is an array
+    var PPINOTElements = bpmnjs._PPINOTElements = bpmnjs._PPINOTElements || [];
+
+    // Check for existing similar connections
+    var existingSimilarConnection = PPINOTElements.find(function(element) {
+      return element && element.type === businessObject.type &&
+             element.source === source.id &&
+             element.target === target.id;
+    });
+
+    // If we're creating a new connection and a similar one exists, prevent the duplicate
+    if (e.command === 'connection.create' && existingSimilarConnection) {
+      return false;
+    }
 
     // make sure element is added / removed from bpmnjs.PPINOTElements
     if (!parent) {
       collectionRemove(PPINOTElements, businessObject);
-    } else {
+    } else if (!existingSimilarConnection) {
+      // Only add if no similar connection exists
       collectionAdd(PPINOTElements, businessObject);
     }
 
-    // update waypoints and preserve them
+    // Validate and filter waypoints
     if (connection.waypoints) {
-      assign(businessObject, {
-        waypoints: connection.waypoints.map(function(p) {
-          return { x: p.x, y: p.y };
-        })
+      // Filter out any invalid waypoints
+      var validWaypoints = connection.waypoints.filter(function(p) {
+        return p && typeof p.x === 'number' && typeof p.y === 'number' && 
+               !isNaN(p.x) && !isNaN(p.y) && isFinite(p.x) && isFinite(p.y);
       });
+
+      // Only update if we have valid waypoints
+      if (validWaypoints.length >= 2) {
+        assign(businessObject, {
+          waypoints: validWaypoints.map(function(p) {
+            return { x: p.x, y: p.y };
+          })
+        });
+        // Update the connection's waypoints to only include valid ones
+        connection.waypoints = validWaypoints;
+      }
     }
 
     // update source and target references
@@ -104,6 +207,8 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
         target: target.id
       });
     }
+
+    return true;
   }
 
   // Handle parent updates directly
@@ -116,6 +221,10 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
     if (!isPPINOT(element)) {
       return;
     }
+    
+    // Initialize arrays for both old and new parents
+    initializeParentArrays(oldParent);
+    initializeParentArrays(newParent);
     
     var businessObject = element.businessObject;
     

@@ -1,44 +1,40 @@
-import PPINOTContextPadProvider from './PPINOTContextPadProvider';
-import PPINOTElementFactory from './PPINOTElementFactory';
-import PPINOTOrderingProvider from './PPINOTOrderingProvider';
-import PPINOTPalette from './PPINOTPalette';
 import PPINOTRenderer from './PPINOTRenderer';
 import PPINOTRules from './PPINOTRules';
 import PPINOTUpdater from './PPINOTUpdater';
 import PPINOTBpmnUpdater from './PPINOTBpmnUpdater';
-import PPINOTLabelEditingProvider from "./PPINOTLabelEditingProvider";
-import PPINOTModeling from "./PPINOTModeling";
-import PPINOTConnect from "./PPINOTConnect";
-import PPINOTReplaceConnectionBehavior from "./behaviour/ReplaceConnectionBehaviour";
-import PPINOTReplaceMenuProvider from "./PPINOTReplaceMenuProvider";
-
+import PPINOTNotationPalette from './PPINOTNotationPalette';
+import PPINOTContextPadProvider from './PPINOTContextPadProvider';
+import PPINOTReplaceMenuProvider from './PPINOTReplaceMenuProvider';
+import PPINOTLabelProvider from './PPINOTLabelProvider';
+import PPINOTConnect from './PPINOTConnect';
+import PPINOTOrderingProvider from './PPINOTOrderingProvider';
+import ReplaceConnectionBehavior from './behaviour/ReplaceConnectionBehaviour.js';
+import BendpointBehavior from './behaviour/BendpointBehavior';
 
 export default {
   __init__: [
-    'contextPadProvider',
-    'PPINOTOrderingProvider',
     'PPINOTRenderer',
     'PPINOTRules',
     'PPINOTUpdater',
-    'paletteProvider',
-    'PPINOTLabelEditingProvider',
-    'modeling',
+    'PPINOTContextPadProvider',
+    'PPINOTReplaceMenuProvider',
+    'PPINOTLabelProvider',
     'connect',
+    'PPINOTOrderingProvider',
     'replaceConnectionBehavior',
-    'replaceMenuProvider',
+    'bendpointBehavior',
     'bpmnUpdater'
   ],
-  contextPadProvider: [ 'type', PPINOTContextPadProvider ],
-  PPINOTOrderingProvider: [ 'type', PPINOTOrderingProvider ],
-  PPINOTRenderer: [ 'type', PPINOTRenderer ],
-  PPINOTRules: [ 'type', PPINOTRules ],
-  PPINOTUpdater: [ 'type', PPINOTUpdater ],
-  elementFactory: [ 'type', PPINOTElementFactory ],
-  paletteProvider: [ 'type', PPINOTPalette ],
-  PPINOTLabelEditingProvider: [ 'type', PPINOTLabelEditingProvider ],
-  modeling: [ 'type', PPINOTModeling ],
-  connect: [ 'type', PPINOTConnect],
-  replaceConnectionBehavior: [ 'type', PPINOTReplaceConnectionBehavior],
-  replaceMenuProvider: ['type', PPINOTReplaceMenuProvider],
-  bpmnUpdater: [ 'type', PPINOTBpmnUpdater ]
+  PPINOTRenderer: ['type', PPINOTRenderer],
+  PPINOTRules: ['type', PPINOTRules],
+  PPINOTUpdater: ['type', PPINOTUpdater],
+  PPINOTContextPadProvider: ['type', PPINOTContextPadProvider],
+  PPINOTReplaceMenuProvider: ['type', PPINOTReplaceMenuProvider],
+  ppinotNotationPalette: ['type', PPINOTNotationPalette],
+  PPINOTLabelProvider: ['type', PPINOTLabelProvider],
+  connect: ['type', PPINOTConnect],
+  PPINOTOrderingProvider: ['type', PPINOTOrderingProvider],
+  replaceConnectionBehavior: ['type', ReplaceConnectionBehavior],
+  bendpointBehavior: ['type', BendpointBehavior],
+  bpmnUpdater: ['type', PPINOTBpmnUpdater]
 };
