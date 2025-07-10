@@ -2,13 +2,13 @@ import PPINOTRenderer from './PPINOTRenderer';
 import PPINOTRules from './PPINOTRules';
 import PPINOTUpdater from './PPINOTUpdater';
 import PPINOTBpmnUpdater from './PPINOTBpmnUpdater';
-import PPINOTNotationPalette from './PPINOTNotationPalette';
+import PPINOTPalette from './PPINOTPalette';
 import PPINOTContextPadProvider from './PPINOTContextPadProvider';
 import PPINOTReplaceMenuProvider from './PPINOTReplaceMenuProvider';
 import PPINOTLabelProvider from './PPINOTLabelProvider';
 import PPINOTConnect from './PPINOTConnect';
 import PPINOTOrderingProvider from './PPINOTOrderingProvider';
-import ReplaceConnectionBehavior from './behaviour/ReplaceConnectionBehaviour.js';
+import PPINOTReplaceConnectionBehavior from './behaviour/ReplaceConnectionBehaviour.js';
 import BendpointBehavior from './behaviour/BendpointBehavior';
 
 export default {
@@ -19,22 +19,24 @@ export default {
     'PPINOTContextPadProvider',
     'PPINOTReplaceMenuProvider',
     'PPINOTLabelProvider',
-    'connect',
+    'PPINOTConnect',
     'PPINOTOrderingProvider',
-    'replaceConnectionBehavior',
+    'PPINOTReplaceConnectionBehavior',
+    'PPINOTRenderer',
     'bendpointBehavior',
-    'bpmnUpdater'
+    'bpmnUpdater',
+    'PPINOTPalette'
   ],
-  PPINOTRenderer: ['type', PPINOTRenderer],
   PPINOTRules: ['type', PPINOTRules],
   PPINOTUpdater: ['type', PPINOTUpdater],
   PPINOTContextPadProvider: ['type', PPINOTContextPadProvider],
   PPINOTReplaceMenuProvider: ['type', PPINOTReplaceMenuProvider],
-  ppinotNotationPalette: ['type', PPINOTNotationPalette],
+  PPINOTPalette: ['type', PPINOTPalette],
   PPINOTLabelProvider: ['type', PPINOTLabelProvider],
-  connect: ['type', PPINOTConnect],
+  PPINOTConnect: ['type', PPINOTConnect],
   PPINOTOrderingProvider: ['type', PPINOTOrderingProvider],
-  replaceConnectionBehavior: ['type', ReplaceConnectionBehavior],
+  PPINOTReplaceConnectionBehavior: ['type', PPINOTReplaceConnectionBehavior],
   bendpointBehavior: ['type', BendpointBehavior],
-  bpmnUpdater: ['type', PPINOTBpmnUpdater]
+  bpmnUpdater: ['type', PPINOTBpmnUpdater],
+  PPINOTRenderer: ['type', PPINOTRenderer]
 };

@@ -11,7 +11,7 @@ import CommandInterceptor from 'diagram-js/lib/command/CommandInterceptor';
 import {is} from "bpmn-js/lib/util/ModelUtil";
 
 
-export default function ReplaceConnectionBehavior(eventBus, modeling, bpmnRules, customRules, injector) {
+export default function ReplaceConnectionBehavior(eventBus, modeling, bpmnRules, ralphRules, injector) {
 
     CommandInterceptor.call(this, eventBus);
 
@@ -95,7 +95,7 @@ export default function ReplaceConnectionBehavior(eventBus, modeling, bpmnRules,
             allowed,
             replacement;
 
-        allowed = customRules.canConnect(source, target, context.connection)
+        allowed = ralphRules.canConnect(source, target, context.connection)
         if (!allowed || allowed.type === connection.type) {
             return;
         }
@@ -183,6 +183,6 @@ ReplaceConnectionBehavior.$inject = [
     'eventBus',
     'modeling',
     'bpmnRules',
-    'customRules',
+    'RALphRules',
     'injector'
 ];

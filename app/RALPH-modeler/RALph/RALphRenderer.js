@@ -1,228 +1,27 @@
-import inherits from 'inherits';
-
-import BaseRenderer from 'diagram-js/lib/draw/BaseRenderer';
-import BpmnRenderer from "bpmn-js/lib/draw/BpmnRenderer";
-
-import {componentsToPath, createLine} from 'diagram-js/lib/util/RenderUtil';
-import {query as domQuery} from 'min-dom';
-import Cat from './SVGs';
-import {append as svgAppend, attr as svgAttr, classes as svgClasses, create as svgCreate} from 'tiny-svg';
-import {getFillColor, getSemantic, getStrokeColor} from "bpmn-js/lib/draw/BpmnRenderUtil";
-import {assign} from "min-dash";
+import { componentsToPath, createLine } from 'diagram-js/lib/util/RenderUtil';
+import { query as domQuery } from 'min-dom';
+import { append as svgAppend, attr as svgAttr, classes as svgClasses, create as svgCreate } from 'tiny-svg';
+import { getSemantic } from "bpmn-js/lib/draw/BpmnRenderUtil";
+import { assign } from "min-dash";
 import Ids from 'ids';
-import {getLabel} from "./utils/LabelUtil"
-import BaseElementFactory from "diagram-js/lib/core/ElementFactory";
+import { getLabel } from "./utils/LabelUtil";
+import Cat from './SVGs';
 
+var RENDERER_IDS = new Ids();
 
-//this module declares what should be rendered in the editor when an object is created
-//If you want to render a SVG as an element (not a connection), you should define what svg is going to be rendered, for instance in a function like this:
-/*
-function drawReportsTo(shape){
-
-    var catGfx = svgCreate('image', {
-      x: 0,
-      y: 0,
-      width: shape.width,
-      height: shape.height,
-      href:Cat.dataReports2
-    });
-
-    return  catGfx;
-  }
-
-  Where svgCreate transforms the element to svg,using the parameter href where receives the element in base64.
-
-  Addititonally you will have to call that function in the variable renderers when your new object appears. For example:
-
-   'RALph:Position':(p,element) =>{
-      let pos=drawPosition(element)
-
-      svgAppend(p,pos)//svgAppend links the shape to an element
-      //renderEmbeddedLabel(p,element,'center-middle')
-      return pos;
-
-    }
-
-    And you should define a path (canvas of the object in svg coordinates) in the variable paths:
-
-    'RALph:History-AnyInstanceInTime-Red':(element)=>{
-      var x = element.x,
-      y = element.y,
-      width = element.width,
-      height = element.height,
-      borderRadius=30;
-    
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-
-      This is important to be allowed to move objects and to regulate where the connections appears.
-
-      Furthermore, if you want to add an internal label to an object, you should use the function "renderEmbeddedLabel(parentGfx, element, align)" in the variable renderers.
-      With the option align you can define the position of the label, using some default parameters. (Apart from adding your object in the label array in Types.js)
-
-      If you want to add an external label to an object label, you should indicate in Types.js that your elements in label and externalLabel. 
-*/
-
-var RENDERER_IDS = new Ids();//generates the ids of the elements
-
-var COLOR_GREEN = '#52B415',
-    COLOR_RED = '#cc0000',
-    COLOR_YELLOW = '#ffc800',
+var COLOR_RED = '#cc0000',
     BLACK = '#000',
-    GRAY='#807e7e',
-    WHITE="#fff";
-
+    GRAY = '#807e7e';
 
 /**
  * A renderer that knows how to render RALph elements.
  */
-export default function RALphRenderer(eventBus, styles, canvas, textRenderer) {
-
-  BaseRenderer.call(this, eventBus, 2000);//forces to call this renderer, instead of calling the original renderer of bpmn.js
-
+export default function RALphRenderer(styles, canvas, textRenderer) {
+  
+  this._textRenderer = textRenderer;
   var computeStyle = styles.computeStyle;
-
   var rendererId = RENDERER_IDS.next();
-
   var markers = {};
-
-  //if you want to create a connection you will have to receive the points that delimit the connection, the source and target points.
-  //If it is not a simple line, you will have to create a function with a path defining coordinates, you can preview line shapes in this page: https://yqnn.github.io/svg-path-editor/.
-  //Moreover you will have to change the function getConnectionPath.
-
-  //Additionally, you can find more information about creating connections with different shape in this link: https://forum.bpmn.io/t/bezier-curve-drawing/1130
-
-  //This function and drawCrossedLine2 create red lines in the center of a simple connection to generate a negated connection
-  function drawCrossedLine(points,attrs){
-    var line = svgCreate('polyline');//it will be created a polyline
-    var result='';
-      //the middlepoint of the simple connection (to be negated) is calculated to put the red cross in that position.
-      var middlePosition=points.length/2;
-      middlePosition=Math.round(middlePosition)
-
-      var middlePointX=(points[middlePosition].x+points[middlePosition-1].x)/2;
-      var middlePointY=(points[middlePosition].y+points[middlePosition-1].y)/2;
-      result +=(middlePointX-20).toString()+ ',' + (middlePointY+20).toString()+ ','+(middlePointX+20).toString()+ ',' +  parseInt(middlePointY-20).toString();
-      
-      svgAttr(line, {points: result });
-
-
-    if (attrs) {
-      svgAttr(line, attrs);
-    }
-
-
-    return line
-  }
-
-
-  function drawCrossedLine2(points,attrs){
-
-    var line = svgCreate('polyline');
-    var result='';
-    
-    var middlePosition;
-
-    middlePosition=points.length/2;
-    middlePosition=Math.round(middlePosition)
-
-    var middlePointX=(points[middlePosition].x+points[middlePosition-1].x)/2;
-    var middlePointY=(points[middlePosition].y+points[middlePosition-1].y)/2;
-
-    result +=(middlePointX+20).toString()+ ',' + (middlePointY+20).toString()+ ','+(middlePointX-20).toString()+ ',' +  parseInt(middlePointY-20).toString();
-    svgAttr(line, {points: result });
-    
-
-    if (attrs) {
-      svgAttr(line, attrs);
-    }
-
-    return line
-  }
-
-
-
-  //function to render labels in objects.
-  function renderLabel(parentGfx, label, options) {
-    options = assign({
-      size: {
-        width: 100
-      }
-    }, options);
-
-    var text = textRenderer.createText(label || '', options);//text renderer defines the text to be rendered
-
-    svgClasses(text).add('djs-label');
-
-    svgAppend(parentGfx, text);
-
-    return text;
-  }
-
-  //function to render labels inside of the objects.
-  function renderEmbeddedLabel(parentGfx, element, align) {
-    var semantic = getSemantic(element);
-
-    return renderLabel(parentGfx,semantic.text, {
-      box: element,//size of the object text box
-      align: align,//position of the text
-      padding: 3,//it declares the length of a line
-      style: {
-        fill: element.color
-      }
-    });
-  }
-
-  //function to render the labels of the history connectors in certain time:
-  function renderEmbeddedLabelHistoryAnyInTime(parentGfx, element, align,size,weight) {
-    var semantic = getSemantic(element);
-
-    return renderLabel(parentGfx,semantic.text, {
-      box: element,
-      align: align,
-      padding:35,
-      style: {
-        fill: element.color,
-        fontSize:  size + 'px',//it declares the size of the letters
-        fontWeight: weight //it declares the thickness of the letters
-      }
-    });
-  }
-
-  function renderExternalLabel(parentGfx, element) {
-    var box = {
-      width: 90,
-      height: 10,
-      x: element.width / 2, //+ element.x,
-      y: element.height /2 //+ element.y
-    };
-    return renderLabel(parentGfx, getLabel(element), {
-      box: box,
-      fitBox: true,
-      style: assign(
-          {},
-          textRenderer.getExternalStyle(),
-          {
-            fill: element.color
-          }
-      )
-    });
-  }
-
-  
-  
 
   function addMarker(id, options) {
     var attrs = assign({
@@ -233,7 +32,6 @@ export default function RALphRenderer(eventBus, styles, canvas, textRenderer) {
     }, options.attrs);
 
     var ref = options.ref || { x: 0, y: 0 };
-
     var scale = options.scale || 1;
 
     if (attrs.strokeDasharray === 'none') {
@@ -241,9 +39,7 @@ export default function RALphRenderer(eventBus, styles, canvas, textRenderer) {
     }
 
     var marker = svgCreate('marker');
-
     svgAttr(options.element, attrs);
-
     svgAppend(marker, options.element);
 
     svgAttr(marker, {
@@ -260,12 +56,9 @@ export default function RALphRenderer(eventBus, styles, canvas, textRenderer) {
 
     if (!defs) {
       defs = svgCreate('defs');
-
       svgAppend(canvas._svg, defs);
     }
-
     svgAppend(defs, marker);
-
     markers[id] = marker;
   }
 
@@ -273,8 +66,6 @@ export default function RALphRenderer(eventBus, styles, canvas, textRenderer) {
     return str.replace(/[()\s,#]+/g, '_');
   }
 
-  //with this function, diverse shapes can be added to a connection (for instance an arrow),
-  //To add a marker to a function, you have to call this function as a the value of markerStart or markerEnd in the computeStyle variable of an element 
   function marker(type, fill, stroke) {
     var id = type + '-' + colorEscape(fill) + '-' + colorEscape(stroke) + '-' + rendererId;
 
@@ -285,259 +76,125 @@ export default function RALphRenderer(eventBus, styles, canvas, textRenderer) {
     return 'url(#' + id + ')';
   }
 
-  //the shapes that can be added to a connection are declared in svg coordinates
   function createMarker(id, type, fill, stroke) {
-
-
-    if (type === 'sequenceflow-end') {
-      var sequenceflowEnd = svgCreate('path');
-      svgAttr(sequenceflowEnd, { d: 'M 1 5 L 11 10 L 1 15 Z' });
+    if (type === 'ralph-connection-end') {
+      var connectionEnd = svgCreate('path');
+      svgAttr(connectionEnd, { d: 'M 1 5 L 11 10 L 1 15 Z' });
 
       addMarker(id, {
-        element: sequenceflowEnd,
+        element: connectionEnd,
         ref: { x: 11, y: 10 },
-        scale: 1.5,
+        scale: 0.5,
         attrs: {
           fill: stroke,
           stroke: stroke
         }
       });
     }
-
-    if (type === 'timedistance-start') {
-      var sequenceflowEnd = svgCreate('path');
-      svgAttr(sequenceflowEnd, { d: 'M -10 -5 L 20 10 L -10 25 L 20 10  Z' });
-
-      addMarker(id, {
-        element: sequenceflowEnd,
-        ref: { x: 5, y: 10 },
-        scale: 0.8,
-        attrs: {
-          fill: '#fff',
-          stroke: stroke,
-          strokeWidth: 1.5,
-          fillOpacity: 0
-        }
-      });
-    }
-
-    if (type === 'timedistance-end') {
-      var sequenceflowEnd = svgCreate('path');
-      svgAttr(sequenceflowEnd, { d: 'M 35 0 L 0 15 L 35 30 L 0 15  Z' });
-
-      addMarker(id, {
-        element: sequenceflowEnd,
-        ref: { x: 14, y: 15 },
-        scale: 0.8,
-        attrs: {
-          fill: '#fff',
-          stroke: stroke,
-          strokeWidth: 1.5,
-          fillOpacity: 0
-        }
-      });
-    }
-    if(type === "doubleArrow"){
-      var dobleFlecha=svgCreate('path');
-     
-      svgAttr(dobleFlecha,{d:'M 0 0 L 3 3 L 0 6 M 3 6 L 6 3 L 3 0'}); 
-      addMarker(id, {
-        element: dobleFlecha,
-        attrs: {
-          fill:stroke,
-          stroke: stroke
-        },
-        ref: {x:6,y:3},
-        scale: 3
-      });
-
-    }
-
-    if(type === "simpleArrow"){
-      var simpleFlecha=svgCreate('path');
-     
-      svgAttr(simpleFlecha,{d:'M 0 0 L 3 3 M 3 3 L 0 6'});
-  
-      addMarker(id, {
-        element: simpleFlecha,
-        attrs: {
-          stroke: stroke
-        },
-        ref: {x:3,y:3},
-        scale: 3
-      });
-
-    }
-
-    if (type === 'messageflow-start') {
-      var messageflowStart = svgCreate('circle');
-      svgAttr(messageflowStart, { cx: 6, cy: 6, r: 3.5 });
-
-      addMarker(id, {
-        element: messageflowStart,
-        attrs: {
-          fill: fill,
-          stroke: stroke
-        },
-        ref: { x: 6, y: 6 }
-      });
-    }
-
-    if (type === 'history-source-another-start') {
-      var messageflowStart = svgCreate('circle');
-      svgAttr(messageflowStart, { cx: 6, cy: 6, r: 5.5 });
-
-      addMarker(id, {
-        element: messageflowStart,
-        attrs: {
-          fill:WHITE,
-          stroke: stroke
-        },
-        scale:2.5,
-        ref: { x: 7, y: 7 }
-      });
-    }
-
-
-    if (type === 'history-source-another-end') {
-      var messageflowStart = svgCreate('circle');
-      svgAttr(messageflowStart, { cx: 6, cy: 6, r: 3.5 });
-
-      addMarker(id, {
-        element: messageflowStart,
-        attrs: {
-          fill:BLACK,
-          stroke: stroke
-        },
-        ref: { x: 6, y: 6 }
-      });
-    }
-
-    if (type === 'messageflow-end') {
-      var messageflowEnd = svgCreate('path');
-      svgAttr(messageflowEnd, { d: 'm 1 5 l 0 -3 l 7 3 l -7 3 z' });
-
-      addMarker(id, {
-        element: messageflowEnd,
-        attrs: {
-          fill: fill,
-          stroke: stroke,
-          strokeLinecap: 'butt'
-        },
-        ref: { x: 8.5, y: 5 }
-      });
-    }
-
-
-    if (type === 'association-start') {
-      var associationStart = svgCreate('path');
-      svgAttr(associationStart, { d: 'M 11 5 L 1 10 L 11 15' });
-
-      addMarker(id, {
-        element: associationStart,
-        attrs: {
-          fill: 'none',
-          stroke: stroke,
-          strokeWidth: 1.5
-        },
-        ref: { x: 1, y: 10 },
-        scale: 0.5
-      });
-    }
-
-    if (type === 'association-end') {
-      var associationEnd = svgCreate('path');
-      svgAttr(associationEnd, { d: 'M 1 5 L 11 10 L 1 15' });
-
-      addMarker(id, {
-        element: associationEnd,
-        attrs: {
-          fill: 'none',
-          stroke: stroke,
-          strokeWidth: 1.5
-        },
-        ref: { x: 12, y: 10 },
-        scale: 0.5
-      });
-    }
-
-    if (type === 'conditional-flow-marker') {
-      var conditionalflowMarker = svgCreate('path');
-      svgAttr(conditionalflowMarker, { d: 'M 0 10 L 8 6 L 16 10 L 8 14 Z' });
-
-      addMarker(id, {
-        element: conditionalflowMarker,
-        attrs: {
-          fill: fill,
-          stroke: stroke
-        },
-        ref: { x: -1, y: 10 },
-        scale: 0.5
-      });
-    }
-
-    if (type === 'conditional-default-flow-marker') {
-      var conditionaldefaultflowMarker = svgCreate('path');
-      svgAttr(conditionaldefaultflowMarker, { d: 'M 6 4 L 10 16' });
-
-      addMarker(id, {
-        element: conditionaldefaultflowMarker,
-        attrs: {
-          stroke: stroke
-        },
-        ref: { x: 0, y: 10 },
-        scale: 0.5
-      });
-    }
-
-
-
-    if(type === "negated"){
-      var dobleFlecha=svgCreate('path');
-      //var dpath='';
-      
-      var zero=parseInt('0');
-      var ten=parseInt('10');
-      var x1=parseInt(x)
-      var x2=parseInt(x2)
-      var y1=parseInt(y1)
-      var y2=parseInt(y2)
-
-      var dpath='M '+zero+' '+zero+' L '+ten+' '+ten+' M '+ten+' '+zero+' L '+zero+' '+ ten
-
-      svgAttr(dobleFlecha,{d:dpath,orient:'auto'});
-      addMarker(id, {
-        element: dobleFlecha,
-        attrs: {
-          stroke: 'red'
-        },
-        ref: {x:90 , y:5}, //{ x: 50, y: 5},
-        orient:'auto',
-        scale: 4.0
-      });
-
-    }
-
-    if(type === "negated2"){
-      var dobleFlecha=svgCreate('path');
-     
-      svgAttr(dobleFlecha,{d:'M 10 0 L 0 10',orient:'auto'});
-     
-      addMarker(id, {
-        element: dobleFlecha,
-        attrs: {
-          stroke: 'red'
-        },
-        ref: { x: -100, y: 5},
-        orient:'auto',
-        scale: 0.5
-      });
-    }
   }
 
-  
+  function renderLabel(parentGfx, label, options) {
+    options = assign({
+      size: {
+        width: 100
+      }
+    }, options);
 
-  //these functions define the shape to be rendered, adding the svgs as a href:
+    var text = textRenderer.createText(label || '', options);
+    svgClasses(text).add('djs-label');
+    svgAppend(parentGfx, text);
+    return text;
+  }
+
+  function renderEmbeddedLabel(parentGfx, element, align) {
+    var semantic = getSemantic(element);
+
+    return renderLabel(parentGfx, semantic.text, {
+      box: element,
+      align: align,
+      padding: 3,
+      style: {
+        fill: element.color
+      }
+    });
+  }
+
+  function renderEmbeddedLabelHistoryAnyInTime(parentGfx, element, align, size, weight) {
+    var semantic = getSemantic(element);
+
+    return renderLabel(parentGfx, semantic.text, {
+      box: element,
+      align: align,
+      padding: 35,
+      style: {
+        fill: element.color,
+        fontSize: size + 'px',
+        fontWeight: weight
+      }
+    });
+  }
+
+  function renderExternalLabel(parentGfx, element) {
+    var box = {
+      width: 90,
+      height: 30,
+      x: element.width / 2 + element.x,
+      y: element.height + element.y
+    };
+
+    return renderLabel(parentGfx, getLabel(element), {
+      box: box,
+      fitBox: true,
+      style: assign(
+        {},
+        textRenderer.getExternalStyle(),
+        {
+          fill: 'black'
+        }
+      )
+    });
+  }
+
+  // Helper functions for crossed lines
+  function drawCrossedLine(points, attrs) {
+    var line = svgCreate('polyline');
+    var result = '';
+    var middlePosition = points.length / 2;
+    middlePosition = Math.round(middlePosition);
+
+    var middlePointX = (points[middlePosition].x + points[middlePosition - 1].x) / 2;
+    var middlePointY = (points[middlePosition].y + points[middlePosition - 1].y) / 2;
+    result += (middlePointX - 20).toString() + ',' + (middlePointY + 20).toString() + ',' + (middlePointX + 20).toString() + ',' + parseInt(middlePointY - 20).toString();
+
+    svgAttr(line, { points: result });
+
+    if (attrs) {
+      svgAttr(line, attrs);
+    }
+
+    return line;
+  }
+
+  function drawCrossedLine2(points, attrs) {
+    var line = svgCreate('polyline');
+    var result = '';
+    var middlePosition = points.length / 2;
+    middlePosition = Math.round(middlePosition);
+
+    var middlePointX = (points[middlePosition].x + points[middlePosition - 1].x) / 2;
+    var middlePointY = (points[middlePosition].y + points[middlePosition - 1].y) / 2;
+
+    result += (middlePointX + 20).toString() + ',' + (middlePointY + 20).toString() + ',' + (middlePointX - 20).toString() + ',' + parseInt(middlePointY - 20).toString();
+    svgAttr(line, { points: result });
+
+    if (attrs) {
+      svgAttr(line, attrs);
+    }
+
+    return line;
+  }
+
+
 
   function drawDataField(shape){
 
@@ -1678,10 +1335,6 @@ export default function RALphRenderer(eventBus, styles, canvas, textRenderer) {
   }
 }
 
-inherits(RALphRenderer, BaseRenderer);
-
-//RALphRenderer.$inject = [ 'eventBus', 'styles', 'canvas', 'textRenderer' ];
-RALphRenderer.$inject = [ 'eventBus', 'styles', 'canvas', 'textRenderer' ];
 
 RALphRenderer.prototype.canRender = function(element) {
   return (/^RALph:/.test(element.type) || element.type === 'label') //|| (/^persons:/.test(element.type) || element.type === 'label') 

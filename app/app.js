@@ -9,8 +9,9 @@
 import $ from 'jquery';
 import MultiNotationModeler from './MultiNotationModeler/index.js';
 import BpmnModdle from 'bpmn-moddle';
-import PPINOTDescriptor from './PPINOT-modeler/PPINOT/PPINOT.json';
-import RALPHDescriptor from './RALPH-modeler/RALph/RALPH.json';
+import PPINOTModdle from './PPINOT-modeler/PPINOT/PPINOTModdle.json';
+import RALphModdle from './RALPH-modeler/RALph/RALPHModdle.json';
+
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import 'diagram-js/assets/diagram-js.css';
@@ -27,8 +28,8 @@ function initializeModeler() {
   modeler = new MultiNotationModeler({
     container: '#js-canvas',
     moddleExtensions: {
-      PPINOT: PPINOTDescriptor,
-      RALPH: RALPHDescriptor
+      PPINOT: PPINOTModdle,
+      RALph: RALphModdle
     }
   });
   window.modeler = modeler;

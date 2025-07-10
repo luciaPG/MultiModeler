@@ -1,3 +1,5 @@
+// import inherits from 'inherits';
+// import BaseRenderer from 'diagram-js/lib/draw/BaseRenderer';
 import { componentsToPath, createLine } from 'diagram-js/lib/util/RenderUtil';
 import { query as domQuery } from 'min-dom';
 import { append as svgAppend, attr as svgAttr, classes as svgClasses, create as svgCreate } from 'tiny-svg';
@@ -12,7 +14,9 @@ var RENDERER_IDS = new Ids();
 
 var BLACK = '#000';
 
-// Renderizador de elementos PPINOT
+/**
+ * A renderer that knows how to render PPINOT elements.
+ */
 export default function PPINOTRenderer(styles, canvas, textRenderer) {
   
   this._textRenderer = textRenderer;
@@ -89,7 +93,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
       });
     }
 
-    // Flecha sin relleno y palas grandes
+    //this is to draw a unfilled arrow and large blades
     if (type === 'timedistance-start') {
       var timedistanceStart = svgCreate('path');
       svgAttr(timedistanceStart, { d: 'M -10 -5 L 20 10 L -10 25 L 20 10  Z' });
@@ -107,7 +111,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
       });
     }
 
-    // Flecha con dos palas
+    //this is to draw an arrow with ony two blades
     if (type === 'timedistance-end') {
       var timedistanceEnd = svgCreate('path');
       svgAttr(timedistanceEnd, { d: 'M 35 0 L 0 15 L 35 30 L 0 15  Z' });
@@ -125,7 +129,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
       });
     }
 
-    // Círculo
+    //this is to draw a circle
     if (type === 'messageflow-start') {
       var messageflowStart = svgCreate('circle');
       svgAttr(messageflowStart, { cx: 6, cy: 6, r: 3.5 });
@@ -140,7 +144,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
       });
     }
 
-    // Flecha sin relleno
+    //this is to draw a unfilled arrow 
     if (type === 'messageflow-end') {
       var messageflowEnd = svgCreate('path');
       svgAttr(messageflowEnd, { d: 'm 1 5 l 0 -3 l 7 3 l -7 3 z' });
@@ -157,7 +161,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
       });
     }
 
-    // Flecha con palas invertidas
+    //this is to draw an arrow with inverse blades
     if (type === 'association-start') {
       var associationStart = svgCreate('path');
       svgAttr(associationStart, { d: 'M 11 5 L 1 10 L 11 15' });
@@ -174,7 +178,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
       });
     }
 
-    // Flecha pequeña sin relleno
+    //this is to draw a small unfilled arrow 
     if (type === 'association-end') {
       var associationEnd = svgCreate('path');
       svgAttr(associationEnd, { d: 'M 1 5 L 11 10 L 1 15' });
@@ -191,7 +195,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
       });
     }
 
-    // Diamante
+    //this is to draw a diamond
     if (type === 'conditional-flow-marker') {
       var conditionalflowMarker = svgCreate('path');
       svgAttr(conditionalflowMarker, { d: 'M 0 10 L 8 6 L 16 10 L 8 14 Z' });
@@ -207,7 +211,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
       });
     }
 
-    // Línea pequeña
+    //this is to draw a small line
     if (type === 'conditional-default-flow-marker') {
       var conditionaldefaultflowMarker = svgCreate('path');
       svgAttr(conditionaldefaultflowMarker, { d: 'M 6 4 L 10 16' });
@@ -250,7 +254,7 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
       return null;
     }
 
-    // Para Scope y Target mini se necesita tratamiento especial
+    // For scope and target mini elements we need special treatment bc of place 
     if (align === 'right-middle' && element.parent && element.parent.type === 'PPINOT:Ppi' &&
       (element.type === 'PPINOT:Scope' || element.type === 'PPINOT:Target')) {
 

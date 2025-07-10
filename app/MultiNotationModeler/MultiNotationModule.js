@@ -7,6 +7,7 @@ import MultiNotationElementFactory from './MultiNotationElementFactory';
 import MultiNotationRenderer from './MultiNotationRenderer';
 import MultiNotationLabelProvider from './MultiNotationLabelProvider';
 import MultiNotationMenuProvider from './MultiNotationMenuProvider';
+import MultiNotationModeling from './MultiNotationModeling';
 export default {
   __depends__: [
     ReplaceModule,
@@ -20,7 +21,8 @@ export default {
     'contextPadProvider',
     'multiNotationLabelProvider',
     'elementFactory',
-    'multiNotationMenuProvider'
+    'multiNotationMenuProvider',
+    'modeling'
   ],
 
   multiNotationPaletteProvider:    ['type', MultiNotationPaletteProvider],
@@ -28,5 +30,6 @@ export default {
   contextPadProvider:     ['type', MultiNotationContextPadProvider],
   multiNotationLabelProvider:      ['type', MultiNotationLabelProvider],
   elementFactory:         ['type', MultiNotationElementFactory],
-  multiNotationMenuProvider: ['type', MultiNotationMenuProvider]
+  multiNotationMenuProvider: ['type', MultiNotationMenuProvider],
+  modeling:  ['type', MultiNotationModeling]
 };

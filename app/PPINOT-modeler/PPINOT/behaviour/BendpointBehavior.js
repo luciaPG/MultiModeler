@@ -9,12 +9,14 @@ export default function BendpointBehavior(eventBus) {
            isFinite(point.x) && isFinite(point.y);
   }
 
+  // Interceptar adición de bendpoint
   eventBus.on('bendpoint.move.move', function(event) {
     var context = event.context,
         connection = context.connection,
         originalWaypoints = connection.waypoints.slice(),
         bendpoint = context.bendpoint;
 
+    // Validar el bendpoint movido
     if (!validatePoint(bendpoint)) {
       event.stopPropagation();
       connection.waypoints = originalWaypoints;
@@ -22,6 +24,7 @@ export default function BendpointBehavior(eventBus) {
     }
   });
 
+  // Validar waypoints antes de usarlos
   eventBus.on(['bendpoint.move.cleanup', 'connect.cleanup'], function(event) {
     var context = event.context,
         connection = context.connection;
@@ -29,6 +32,7 @@ export default function BendpointBehavior(eventBus) {
     if (connection && connection.waypoints) {
       connection.waypoints = connection.waypoints.filter(validatePoint);
 
+      // Asegurar que haya al menos source y target
       if (connection.waypoints.length < 2) {
         var source = connection.source,
             target = connection.target;
@@ -43,6 +47,7 @@ export default function BendpointBehavior(eventBus) {
     }
   });
 
+  // Validar previsualización de conexión
   eventBus.on(['connection.preview', 'connection.move'], function(event) {
     var context = event.context,
         hints = context.hints || {};
@@ -51,8 +56,6 @@ export default function BendpointBehavior(eventBus) {
       hints.waypoints = hints.waypoints.filter(validatePoint);
     }
   });
-  // Validación de puntos y waypoints en eventos de bendpoint y conexión
-  // Solo se mantienen comentarios mínimos para claridad
 }
 
 BendpointBehavior.$inject = [ 'eventBus', 'canvas' ]; 

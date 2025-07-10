@@ -5,13 +5,16 @@ import { is } from 'bpmn-js/lib/util/ModelUtil';
 
 export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, canvas, elementRegistry) {
 
+  // Sistema de edición personalizado solo para conexiones PPINOT
   let activeInput = null;
 
+  // Listener para doble click - solo para conexiones PPINOT
   eventBus.on('element.dblclick', function(event) {
     const element = event.element;
     
     if (canEditPPINOTConnection(element)) {
       
+      // Si el elemento tiene un label, editar el label. Si no, editar el elemento.
       let targetElement = element;
       if (element.label && element.type !== 'label') {
         targetElement = element.label;
@@ -21,16 +24,29 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
     }
   });
 
-  // Editor de texto flotante para conexiones PPINOT
   function createCustomEditor(element) {
-    if (activeInput) { activeInput.remove(); activeInput = null; }
+    // Limpiar editor anterior si existe
+    if (activeInput) {
+      activeInput.remove();
+      activeInput = null;
+    }
+
+
+    // Obtener el contenedor del canvas
     const canvasContainer = canvas.getContainer();
     const canvasRect = canvasContainer.getBoundingClientRect();
+    
+    // Calcular posición del elemento en la pantalla
     const viewbox = canvas.viewbox();
     const zoom = canvas.zoom();
+    
     const elementScreenX = (element.x - viewbox.x) * zoom + canvasRect.left;
     const elementScreenY = (element.y - viewbox.y) * zoom + canvasRect.top;
+    
+    // Obtener texto actual
     const currentText = getPPINOTDefaultText(element.labelTarget || element);
+    
+    // Crear input overlay
     const input = document.createElement('input');
     input.type = 'text';
     input.value = currentText;
@@ -46,24 +62,46 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
     input.style.backgroundColor = 'white';
     input.style.zIndex = '1000';
     input.style.outline = 'none';
+    
+    // Agregar al DOM
     document.body.appendChild(input);
     activeInput = input;
+    
+    // Seleccionar todo el texto y enfocar
     input.select();
     input.focus();
+    
+    
+    // Manejar eventos
     function finishEditing(save = true) {
       if (!activeInput) return;
+      
       if (save) {
         const newText = input.value.trim();
         updatePPINOTConnectionLabel(element, newText);
       }
+      
       input.remove();
       activeInput = null;
     }
+    
+    // Enter para guardar
     input.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') { e.preventDefault(); finishEditing(true); }
-      else if (e.key === 'Escape') { e.preventDefault(); finishEditing(false); }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        finishEditing(true);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        finishEditing(false);
+      }
     });
-    input.addEventListener('blur', function() { finishEditing(true); });
+    
+    // Perder foco para guardar
+    input.addEventListener('blur', function() {
+      finishEditing(true);
+    });
+    
+    // Click fuera para guardar
     document.addEventListener('click', function onDocumentClick(e) {
       if (e.target !== input) {
         document.removeEventListener('click', onDocumentClick);
@@ -72,47 +110,89 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
     });
   }
 
-  // Solo permite editar conexiones PPINOT y sus labels
   function canEditPPINOTConnection(element) {
+    // Solo puede editar conexiones PPINOT y sus labels
     if (element.type === 'label' && element.labelTarget && element.labelTarget.type && element.labelTarget.type.startsWith('PPINOT:')) {
       return isPPINOTConnection(element.labelTarget);
     }
+    
     if (element.type && element.type.startsWith('PPINOT:') && isPPINOTConnection(element)) {
       return true;
     }
+    
     return false;
   }
 
-  // Devuelve el texto por defecto para conexiones PPINOT
   function getPPINOTDefaultText(element) {
-    if (!element || !element.type) return '';
-    const currentText = getLabel(element);
-    if (currentText && currentText.trim() !== '') return currentText;
-    if (isPPINOTConnection(element)) {
-      if (is(element, 'PPINOT:ToConnection')) return 'to';
-      if (is(element, 'PPINOT:FromConnection')) return 'from';
-      if (is(element, 'PPINOT:AggregatedConnection')) return 'aggregates';
-      if (is(element, 'PPINOT:GroupedBy')) return 'isGroupedBy';
-      if (is(element, 'PPINOT:StartConnection')) return 'start';
-      if (is(element, 'PPINOT:EndConnection')) return 'end';
+    // Verificar que el elemento existe
+    if (!element || !element.type) {
+      return '';
     }
+
+    // Primero obtener el texto actual
+    const currentText = getLabel(element);
+    
+    // Si ya tiene texto, devolverlo
+    if (currentText && currentText.trim() !== '') {
+      return currentText;
+    }
+
+    // Solo asignar texto por defecto para conexiones PPINOT
+    if (isPPINOTConnection(element)) {
+      if (is(element, 'PPINOT:ToConnection')) {
+        return 'to';
+      }
+      if (is(element, 'PPINOT:FromConnection')) {
+        return 'from';
+      }
+      if (is(element, 'PPINOT:AggregatedConnection')) {
+        return 'aggregates';
+      }
+      if (is(element, 'PPINOT:GroupedBy')) {
+        return 'isGroupedBy';
+      }
+      if (is(element, 'PPINOT:StartConnection')) {
+        return 'start';
+      }
+      if (is(element, 'PPINOT:EndConnection')) {
+        return 'end';
+      }
+    }
+    
     return '';
   }
 
-  // Actualiza el label de una conexión PPINOT
   function updatePPINOTConnectionLabel(element, newText) {
     const safeText = (newText == null || newText === undefined) ? '' : String(newText);
+    
+    
+    // Para labels externos de conexiones
     if (element.type === 'label' && element.labelTarget) {
-      if (!element.businessObject) element.businessObject = { $type: 'bpmn:Label' };
+      // Actualizar el businessObject del label
+      if (!element.businessObject) {
+        element.businessObject = { $type: 'bpmn:Label' };
+      }
       element.businessObject.name = safeText;
-      if (!element.labelTarget.businessObject) element.labelTarget.businessObject = {};
+      
+      // Actualizar el businessObject del target también  
+      if (!element.labelTarget.businessObject) {
+        element.labelTarget.businessObject = {};
+      }
       element.labelTarget.businessObject.name = safeText;
+      
+      // Forzar re-render
       eventBus.fire('element.changed', { element: element });
+      
     } else {
-      if (!element.businessObject) element.businessObject = {};
+      // Para conexiones sin label externo
+      if (!element.businessObject) {
+        element.businessObject = {};
+      }
       element.businessObject.name = safeText;
+      
       eventBus.fire('element.changed', { element: element });
     }
+    
   }
 
   // Listener específico para conexiones PPINOT creadas

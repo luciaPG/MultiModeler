@@ -1,9 +1,6 @@
 import {
-    asTRBL,
     getMid
 } from 'diagram-js/lib/layout/LayoutUtil';
-import {getNewShapePosition} from "bpmn-js/lib/features/auto-place/AutoPlaceUtil";
-import {assign} from "min-dash";
 
 //this module allows to define connections
 

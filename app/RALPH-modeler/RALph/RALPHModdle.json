@@ -1,0 +1,351 @@
+{
+    "name": "RALph",
+    "prefix": "RALph",
+    "uri": "http://ralph.org",
+    "xml": {
+      "tagAlias": "lowerCase"
+    },
+    "types": [
+      {
+        "name": "Person",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "RoleRALph",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "Personcap",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "Orgunit",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "Position",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "DelegateTo",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "History-Same",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "History-Any",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "History-Any-Red",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "History-Any-Green",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "History-Same-Green",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "History-Same-Red",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "History-AnyInstanceInTime-Green",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "History-AnyInstanceInTime-Red",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "Complex-Assignment-AND",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "Complex-Assignment-OR",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "HistoryConnectorActivityInstance",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "dataField",
+        "superClass": ["bpmn:FlowNode"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "ResourceArc",
+        "superClass": ["bpmn:SequenceFlow"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "negatedAssignment",
+        "superClass": ["bpmn:SequenceFlow"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "solidLine",
+        "superClass": ["bpmn:SequenceFlow"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "solidLineWithCircle",
+        "superClass": ["bpmn:SequenceFlow"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "dashedLine",
+        "superClass": ["bpmn:SequenceFlow"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "dashedLineWithCircle",
+        "superClass": ["bpmn:SequenceFlow"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "simpleArrow",
+        "superClass": ["bpmn:SequenceFlow"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "doubleArrow",
+        "superClass": ["bpmn:SequenceFlow"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "reportsTo",
+        "superClass": ["bpmn:SequenceFlow"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "reportsDirectly",
+        "superClass": ["bpmn:SequenceFlow"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "reportsTransitively",
+        "superClass": ["bpmn:SequenceFlow"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "delegatesDirectly",
+        "superClass": ["bpmn:SequenceFlow"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      },
+      {
+        "name": "delegatesTransitively",
+        "superClass": ["bpmn:SequenceFlow"],
+        "properties": [
+          {
+            "name": "flowElements",
+            "isMany": true,
+            "type": "Element"
+          }
+        ]
+      }
+    ]
+  } 

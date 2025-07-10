@@ -23,11 +23,17 @@ export default function ReplaceConnectionBehavior(eventBus, modeling, bpmnRules,
             target = connection.target,
             parent = connection.parent;
 
-        if (!parent) return; // conexión ya eliminada
-        // Para PPINOT, preservar waypoints
+        // No hacer nada si la conexión ya está eliminada
+        if (!parent) {
+            return;
+        }
+
+        // Para conexiones PPINOT, preservar waypoints
         if (isPPINOTConnection(connection.type)) {
             if (connection.waypoints) {
-                connection.businessObject.waypoints = connection.waypoints.map(p => ({ x: p.x, y: p.y }));
+                connection.businessObject.waypoints = connection.waypoints.map(function(p) {
+                    return { x: p.x, y: p.y };
+                });
             }
             return;
         }
@@ -35,17 +41,43 @@ export default function ReplaceConnectionBehavior(eventBus, modeling, bpmnRules,
         var replacementType,
             remove;
 
-        // Comprobar si la conexión debe ser eliminada o reemplazada
+        // Comprobar si la conexión puede quedarse o debe ser reemplazada (SequenceFlow <> MessageFlow)
+
         if (is(connection, 'bpmn:SequenceFlow')) {
-            if (!bpmnRules.canConnectSequenceFlow(source, target)) remove = true;
-            if (bpmnRules.canConnectMessageFlow(source, target)) replacementType = 'bpmn:MessageFlow';
+            if (!bpmnRules.canConnectSequenceFlow(source, target)) {
+                remove = true;
+            }
+
+            if (bpmnRules.canConnectMessageFlow(source, target)) {
+                replacementType = 'bpmn:MessageFlow';
+            }
         }
+
+        // Transformar message flows en sequence flows si es posible
+
         if (is(connection, 'bpmn:MessageFlow')) {
-            if (!bpmnRules.canConnectMessageFlow(source, target)) remove = true;
-            if (bpmnRules.canConnectSequenceFlow(source, target)) replacementType = 'bpmn:SequenceFlow';
+
+            if (!bpmnRules.canConnectMessageFlow(source, target)) {
+                remove = true;
+            }
+
+            if (bpmnRules.canConnectSequenceFlow(source, target)) {
+                replacementType = 'bpmn:SequenceFlow';
+            }
         }
-        if (is(connection, 'bpmn:Association') && !bpmnRules.canConnectAssociation(source, target)) remove = true;
-        if (remove) modeling.removeConnection(connection);
+
+        if (is(connection, 'bpmn:Association') && !bpmnRules.canConnectAssociation(source, target)) {
+            remove = true;
+        }
+
+
+        // Eliminar conexión inválida si no ha sido eliminada ya
+        if (remove) {
+            modeling.removeConnection(connection);
+        }
+
+        // Reemplazar SequenceFlow <> MessageFlow
+
         if (replacementType) {
             modeling.connect(source, target, {
                 type: replacementType,
@@ -83,16 +115,27 @@ export default function ReplaceConnectionBehavior(eventBus, modeling, bpmnRules,
         }
     }
 
+    // Parchear selección guardada en dragging para no re-seleccionar conexiones eliminadas
     function cleanDraggingSelection(oldConnection, newConnection) {
         var context = dragging.context(),
             previousSelection = context && context.payload.previousSelection,
             index;
 
-        if (!previousSelection || !previousSelection.length) return;
+        // No hacer nada si no hay dragging o no hay selección
+        if (!previousSelection || !previousSelection.length) {
+            return;
+        }
+
         index = previousSelection.indexOf(oldConnection);
-        if (index === -1) return;
+
+        if (index === -1) {
+            return;
+        }
+
         previousSelection.splice(index, 1, newConnection);
     }
+
+    // Hooks de ciclo de vida
 
     this.postExecuted('elements.move', function(context) {
 
@@ -114,6 +157,7 @@ export default function ReplaceConnectionBehavior(eventBus, modeling, bpmnRules,
             businessObject = element.businessObject,
             connection;
 
+        // Eliminar expresión de condición al convertir a default flow
         if (properties.default) {
             connection = find(
                 element.outgoing,
@@ -125,6 +169,7 @@ export default function ReplaceConnectionBehavior(eventBus, modeling, bpmnRules,
             }
         }
 
+        // Eliminar propiedad default del source al convertir a conditional flow
         if (properties.conditionExpression && businessObject.sourceRef.default === businessObject) {
             modeling.updateProperties(element.source, { default: undefined });
         }

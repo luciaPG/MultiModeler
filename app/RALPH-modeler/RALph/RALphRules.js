@@ -9,8 +9,6 @@ import {
   is
 } from 'bpmn-js/lib/util/ModelUtil';
 
-import customModeler from'./RALphModeling';
-
 import RuleProvider from 'diagram-js/lib/features/rules/RuleProvider';
 import {isAny} from "bpmn-js/lib/features/modeling/util/ModelingUtil";
 import {resourceArcElements} from "./Types";

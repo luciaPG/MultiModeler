@@ -164,6 +164,7 @@ PPINOTReplaceMenuProvider.prototype.getHeaderEntries = function(element) {
       action: () => this._replacePPINOTElement(element, { type: 'PPINOT:CyclicTimeMeasure' })
     }];
   }
+
   // cyclic time measure variants
   if (/^PPINOT:CyclicTimeMeasure(SUM|MAX|MIN|AVG)?$/.test(boType)) {
     const variants = ['SUM', 'MAX', 'MIN', 'AVG'];
@@ -174,6 +175,7 @@ PPINOTReplaceMenuProvider.prototype.getHeaderEntries = function(element) {
       action: () => this._replacePPINOTElement(element, { type: `PPINOT:CyclicTimeMeasure${fn}` })
     }));
   }
+
   return [];
 };
 
@@ -205,18 +207,28 @@ PPINOTReplaceMenuProvider.prototype._getStateConditionVariantHeaders = function(
   }));
 };
 
-// Reemplazo custom para elementos PPINOT (preserva nombre y label externo)
+// Custom replacement method for PPINOT elements that avoids BPMN property system
 PPINOTReplaceMenuProvider.prototype._replacePPINOTElement = function(element, newTarget) {
   const oldBusinessObject = element.businessObject;
+  
+  // Ensure we have valid coordinates and dimensions
   const x = isFinite(element.x) ? element.x : 0;
   const y = isFinite(element.y) ? element.y : 0;
   const width = isFinite(element.width) && element.width > 0 ? element.width : 100;
   const height = isFinite(element.height) && element.height > 0 ? element.height : 80;
+  
+  // Get the parent
   const parent = element.parent;
+  
+  // Store the name before removing the element
   const preservedName = oldBusinessObject.name || '';
+  
+  // Store external label information if it exists
   const oldLabel = element.label;
   let labelData = null;
+  
   if (oldLabel) {
+    // Store exact position and dimensions of the old label
     labelData = {
       x: oldLabel.x,
       y: oldLabel.y,
@@ -225,17 +237,33 @@ PPINOTReplaceMenuProvider.prototype._replacePPINOTElement = function(element, ne
       text: oldLabel.businessObject ? oldLabel.businessObject.name || '' : ''
     };
   }
+  
+  // Create new element using elementFactory to ensure proper structure
   const newElement = this._elementFactory.create('shape', {
     type: newTarget.type,
     width: width,
     height: height
   });
-  if (preservedName && newElement.businessObject) newElement.businessObject.name = preservedName;
-  if (this._shouldHaveExternalLabel(newTarget.type)) newElement._hasExternalLabel = true;
+  
+  // Preserve the name if it exists
+  if (preservedName && newElement.businessObject) {
+    newElement.businessObject.name = preservedName;
+  }
+  
+  // Add the _hasExternalLabel property if the new element type should have an external label
+  if (this._shouldHaveExternalLabel(newTarget.type)) {
+    newElement._hasExternalLabel = true;
+  }
+  
+  // Remove the old element first
   this._modeling.removeShape(element);
+  
+  // Add the new element at the exact same position - use center coordinates
   const centerX = x + width / 2;
   const centerY = y + height / 2;
   const newShape = this._modeling.createShape(newElement, { x: centerX, y: centerY }, parent);
+  
+  // Create external label if needed and we have the old label data
   if (labelData && this._shouldHaveExternalLabel(newTarget.type)) {
     const labelShape = this._elementFactory.createLabel({
       businessObject: newShape.businessObject,
@@ -244,19 +272,31 @@ PPINOTReplaceMenuProvider.prototype._replacePPINOTElement = function(element, ne
       width: labelData.width,
       height: labelData.height
     });
+    
+    // Use the exact position of the old label
     const position = {
-      x: labelData.x + labelData.width / 2,
-      y: labelData.y + labelData.height / 2
+      x: labelData.x + labelData.width / 2, // centerX of label
+      y: labelData.y + labelData.height / 2  // centerY of label
     };
+    
+    // Create the label at the exact same position
     const createdLabel = this._modeling.createShape(labelShape, position, parent);
+    
+    // Ensure the label is linked to the new shape
     newShape.label = createdLabel;
     createdLabel.labelTarget = newShape;
-    if (labelData.text && createdLabel.businessObject) createdLabel.businessObject.name = labelData.text;
+    
+    // Preserve the label text if it exists
+    if (labelData.text && createdLabel.businessObject) {
+      createdLabel.businessObject.name = labelData.text;
+    }
   }
+  
   return newShape;
 };
 
-// Indica si un tipo debe tener label externo
+// Helper method to check if an element type should have an external label
 PPINOTReplaceMenuProvider.prototype._shouldHaveExternalLabel = function(type) {
+  // Import the external label types array
   return externalLabel.includes(type);
 };

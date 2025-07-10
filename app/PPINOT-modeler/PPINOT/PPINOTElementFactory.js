@@ -1,4 +1,5 @@
 export class PPINOTNotation {
+  // Devuelve el tamaño de cada tipo de elemento PPINOT
   static getElementSize(type) {
     const shapes = {
       __default: { width: 100, height: 80 },
@@ -54,14 +55,17 @@ export class PPINOTNotation {
     return shapes[type] || shapes.__default;
   }
 
-  // Crea el businessObject de un elemento PPINOT (dimensiones se gestionan en el factory)
+  // Crea el businessObject de un elemento PPINOT
   static createBO(elementType, attrs, moddle) {
     const businessObject = moddle.create(elementType, attrs);
-    if (!businessObject.$type) businessObject.$type = elementType;
+    if (!businessObject.$type) {
+      businessObject.$type = elementType;
+    }
     if (!businessObject.id) {
       const prefix = elementType.replace('PPINOT:', '') + '_';
       businessObject.id = moddle.ids.nextPrefixed(prefix, businessObject);
     }
+    // No agregamos dimensiones al business object, eso se maneja en el factory
     return businessObject;
   }
 }

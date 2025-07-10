@@ -22,7 +22,9 @@ export default class MultiNotationModeler extends Modeler {
     super(enhancedOptions);
     
     this._customElements = [];
-  }  clear() {
+  }
+
+  clear() {
     this._customElements = [];
     return super.clear();
   }
@@ -34,6 +36,7 @@ export default class MultiNotationModeler extends Modeler {
   addCustomElements(elements) {
     this._customElements.push(...elements);
   }
+
   _addPPINOTShape(PPINOTElement) {
     this._customElements.push(PPINOTElement);
     const shape = this.get('elementFactory').create('shape', assign({ businessObject: PPINOTElement }, PPINOTElement));
@@ -54,17 +57,21 @@ export default class MultiNotationModeler extends Modeler {
       attrs.target = elementRegistry.get(PPINOTElement.target);
     }
 
+    // Ensure parent (semantic parent) has the correct array for custom connections
+    // The parent is usually the root element (process, participant, or collaboration)
     const canvas = this.get('canvas');
     let parent = null;
     if (attrs.parent) {
       parent = attrs.parent.businessObject || attrs.parent;
     } else {
+      // Try to get the root element's businessObject
       const root = canvas.getRootElement && canvas.getRootElement();
       if (root && root.businessObject) {
         parent = root.businessObject;
       }
     }
     if (parent) {
+      // BPMN usually expects flowElements or artifacts
       if (!parent.flowElements && !parent.artifacts) {
         parent.flowElements = [];
       }
@@ -82,6 +89,7 @@ export default class MultiNotationModeler extends Modeler {
       ? this._addPPINOTConnection(PPINOTElement)
       : this._addPPINOTShape(PPINOTElement);
   }
+
   importPPINOTDiagram(PPINOTElements) {
     PPINOTElements.forEach(el => this.addPPINOTElement(el));
   }
@@ -116,6 +124,7 @@ export default class MultiNotationModeler extends Modeler {
       ? this._addRALPHConnection(RALPHElement)
       : this._addRALPHShape(RALPHElement);
   }
+
   importRALPHDiagram(RALPHElements) {
     RALPHElements.forEach(el => this.addRALPHElement(el));
   }
@@ -127,7 +136,9 @@ export default class MultiNotationModeler extends Modeler {
     if (mixedData.ralph) {
       this.importRALPHDiagram(mixedData.ralph);
     }
-  }  setColors(idAndColorList) {
+  }
+
+  setColors(idAndColorList) {
     const modeling = this.get('modeling');
     const elementRegistry = this.get('elementRegistry');
     idAndColorList.forEach(obj => {
