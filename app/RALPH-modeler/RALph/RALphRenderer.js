@@ -11,7 +11,8 @@ var RENDERER_IDS = new Ids();
 
 var COLOR_RED = '#cc0000',
     BLACK = '#000',
-    GRAY = '#807e7e';
+    GRAY = '#807e7e',
+    WHITE = '#fff';
 
 /**
  * A renderer that knows how to render RALph elements.
@@ -22,7 +23,8 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
   var computeStyle = styles.computeStyle;
   var rendererId = RENDERER_IDS.next();
   var markers = {};
-
+  
+ 
   function addMarker(id, options) {
     var attrs = assign({
       fill: 'black',
@@ -32,6 +34,7 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
     }, options.attrs);
 
     var ref = options.ref || { x: 0, y: 0 };
+
     var scale = options.scale || 1;
 
     if (attrs.strokeDasharray === 'none') {
@@ -39,7 +42,9 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
     }
 
     var marker = svgCreate('marker');
+
     svgAttr(options.element, attrs);
+
     svgAppend(marker, options.element);
 
     svgAttr(marker, {
@@ -56,9 +61,12 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
 
     if (!defs) {
       defs = svgCreate('defs');
+
       svgAppend(canvas._svg, defs);
     }
+
     svgAppend(defs, marker);
+
     markers[id] = marker;
   }
 
@@ -66,6 +74,8 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
     return str.replace(/[()\s,#]+/g, '_');
   }
 
+  //with this function, diverse shapes can be added to a connection (for instance an arrow),
+  //To add a marker to a function, you have to call this function as a the value of markerStart or markerEnd in the computeStyle variable of an element 
   function marker(type, fill, stroke) {
     var id = type + '-' + colorEscape(fill) + '-' + colorEscape(stroke) + '-' + rendererId;
 
@@ -76,23 +86,287 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
     return 'url(#' + id + ')';
   }
 
+  //the shapes that can be added to a connection are declared in svg coordinates
   function createMarker(id, type, fill, stroke) {
-    if (type === 'ralph-connection-end') {
-      var connectionEnd = svgCreate('path');
-      svgAttr(connectionEnd, { d: 'M 1 5 L 11 10 L 1 15 Z' });
+
+
+    if (type === 'sequenceflow-end') {
+      var sequenceflowEnd = svgCreate('path');
+      svgAttr(sequenceflowEnd, { d: 'M 1 5 L 11 10 L 1 15 Z' });
 
       addMarker(id, {
-        element: connectionEnd,
+        element: sequenceflowEnd,
         ref: { x: 11, y: 10 },
-        scale: 0.5,
+        scale: 1.5,
         attrs: {
           fill: stroke,
           stroke: stroke
         }
       });
     }
+
+    if (type === 'timedistance-start') {
+      var sequenceflowEnd = svgCreate('path');
+      svgAttr(sequenceflowEnd, { d: 'M -10 -5 L 20 10 L -10 25 L 20 10  Z' });
+
+      addMarker(id, {
+        element: sequenceflowEnd,
+        ref: { x: 5, y: 10 },
+        scale: 0.8,
+        attrs: {
+          fill: '#fff',
+          stroke: stroke,
+          strokeWidth: 1.5,
+          fillOpacity: 0
+        }
+      });
+    }
+
+    if (type === 'timedistance-end') {
+      var sequenceflowEnd = svgCreate('path');
+      svgAttr(sequenceflowEnd, { d: 'M 35 0 L 0 15 L 35 30 L 0 15  Z' });
+
+      addMarker(id, {
+        element: sequenceflowEnd,
+        ref: { x: 14, y: 15 },
+        scale: 0.8,
+        attrs: {
+          fill: '#fff',
+          stroke: stroke,
+          strokeWidth: 1.5,
+          fillOpacity: 0
+        }
+      });
+    }
+    if(type === "doubleArrow"){
+      var dobleFlecha=svgCreate('path');
+     
+      svgAttr(dobleFlecha,{d:'M 0 0 L 3 3 L 0 6 M 3 6 L 6 3 L 3 0'}); 
+      addMarker(id, {
+        element: dobleFlecha,
+        attrs: {
+          fill:stroke,
+          stroke: stroke
+        },
+        ref: {x:6,y:3},
+        scale: 3
+      });
+
+    }
+
+    if(type === "simpleArrow"){
+      var simpleFlecha=svgCreate('path');
+     
+      svgAttr(simpleFlecha,{d:'M 0 0 L 3 3 M 3 3 L 0 6'});
+  
+      addMarker(id, {
+        element: simpleFlecha,
+        attrs: {
+          stroke: stroke
+        },
+        ref: {x:3,y:3},
+        scale: 3
+      });
+
+    }
+
+    if (type === 'messageflow-start') {
+      var messageflowStart = svgCreate('circle');
+      svgAttr(messageflowStart, { cx: 6, cy: 6, r: 3.5 });
+
+      addMarker(id, {
+        element: messageflowStart,
+        attrs: {
+          fill: fill,
+          stroke: stroke
+        },
+        ref: { x: 6, y: 6 }
+      });
+    }
+
+    if (type === 'history-source-another-start') {
+      var messageflowStart = svgCreate('circle');
+      svgAttr(messageflowStart, { cx: 6, cy: 6, r: 5.5 });
+
+      addMarker(id, {
+        element: messageflowStart,
+        attrs: {
+          fill:WHITE,
+          stroke: stroke
+        },
+        scale:2.5,
+        ref: { x: 7, y: 7 }
+      });
+    }
+
+
+    if (type === 'history-source-another-end') {
+      var messageflowStart = svgCreate('circle');
+      svgAttr(messageflowStart, { cx: 6, cy: 6, r: 3.5 });
+
+      addMarker(id, {
+        element: messageflowStart,
+        attrs: {
+          fill:BLACK,
+          stroke: stroke
+        },
+        ref: { x: 6, y: 6 }
+      });
+    }
+
+    if (type === 'messageflow-end') {
+      var messageflowEnd = svgCreate('path');
+      svgAttr(messageflowEnd, { d: 'm 1 5 l 0 -3 l 7 3 l -7 3 z' });
+
+      addMarker(id, {
+        element: messageflowEnd,
+        attrs: {
+          fill: fill,
+          stroke: stroke,
+          strokeLinecap: 'butt'
+        },
+        ref: { x: 8.5, y: 5 }
+      });
+    }
+
+
+    if (type === 'association-start') {
+      var associationStart = svgCreate('path');
+      svgAttr(associationStart, { d: 'M 11 5 L 1 10 L 11 15' });
+
+      addMarker(id, {
+        element: associationStart,
+        attrs: {
+          fill: 'none',
+          stroke: stroke,
+          strokeWidth: 1.5
+        },
+        ref: { x: 1, y: 10 },
+        scale: 0.5
+      });
+    }
+
+    if (type === 'association-end') {
+      var associationEnd = svgCreate('path');
+      svgAttr(associationEnd, { d: 'M 1 5 L 11 10 L 1 15' });
+
+      addMarker(id, {
+        element: associationEnd,
+        attrs: {
+          fill: 'none',
+          stroke: stroke,
+          strokeWidth: 1.5
+        },
+        ref: { x: 12, y: 10 },
+        scale: 0.5
+      });
+    }
+
+    if (type === 'conditional-flow-marker') {
+      var conditionalflowMarker = svgCreate('path');
+      svgAttr(conditionalflowMarker, { d: 'M 0 10 L 8 6 L 16 10 L 8 14 Z' });
+
+      addMarker(id, {
+        element: conditionalflowMarker,
+        attrs: {
+          fill: fill,
+          stroke: stroke
+        },
+        ref: { x: -1, y: 10 },
+        scale: 0.5
+      });
+    }
+
+    if (type === 'conditional-default-flow-marker') {
+      var conditionaldefaultflowMarker = svgCreate('path');
+      svgAttr(conditionaldefaultflowMarker, { d: 'M 6 4 L 10 16' });
+
+      addMarker(id, {
+        element: conditionaldefaultflowMarker,
+        attrs: {
+          stroke: stroke
+        },
+        ref: { x: 0, y: 10 },
+        scale: 0.5
+      });
+    }
+
+
+
+    if(type === "negated"){
+      var dobleFlecha=svgCreate('path');
+      //var dpath='';
+      
+      var zero=parseInt('0');
+      var ten=parseInt('10');
+      var x1=parseInt(x)
+      var x2=parseInt(x2)
+      var y1=parseInt(y1)
+      var y2=parseInt(y2)
+
+      var dpath='M '+zero+' '+zero+' L '+ten+' '+ten+' M '+ten+' '+zero+' L '+zero+' '+ ten
+
+      svgAttr(dobleFlecha,{d:dpath,orient:'auto'});
+      addMarker(id, {
+        element: dobleFlecha,
+        attrs: {
+          stroke: 'red'
+        },
+        ref: {x:90 , y:5}, //{ x: 50, y: 5},
+        orient:'auto',
+        scale: 4.0
+      });
+
+    }
+
+    if(type === "negated2"){
+      var dobleFlecha=svgCreate('path');
+     
+      svgAttr(dobleFlecha,{d:'M 10 0 L 0 10',orient:'auto'});
+     
+      addMarker(id, {
+        element: dobleFlecha,
+        attrs: {
+          stroke: 'red'
+        },
+        ref: { x: -100, y: 5},
+        orient:'auto',
+        scale: 0.5
+      });
+    }
   }
 
+  
+
+  //these functions define the shape to be rendered, adding the svgs as a href:
+
+  function drawDataField(shape){
+
+    var catGfx = svgCreate('image', {
+      x: 0,
+      y: 0,
+      width: shape.width,
+      height: shape.height,
+      href:Cat.dataField
+    });
+
+    return  catGfx;
+  }
+
+  function drawReportsTo(shape){
+
+    var catGfx = svgCreate('image', {
+      x: 0,
+      y: 0,
+      width: shape.width,
+      height: shape.height,
+      href:Cat.dataReports2
+    });
+
+    return  catGfx;
+  }
+
+  
   function renderLabel(parentGfx, label, options) {
     options = assign({
       size: {
@@ -1331,6 +1605,115 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
       
       return componentsToPath(d);
 
+    },
+    'RALph:simpleArrow': (element) => {
+      var x = element.x,
+          y = element.y,
+          width = element.width,
+          height = element.height;
+
+      var arrowPath = [
+        ['M', x, y],
+        ['l', width, 0],
+        ['l', -10, -5],
+        ['l', 0, 10],
+        ['l', 10, -5],
+        ['z']
+      ];
+
+      return componentsToPath(arrowPath);
+    },
+    'RALph:doubleArrow': (element) => {
+      var x = element.x,
+          y = element.y,
+          width = element.width,
+          height = element.height;
+
+      var doubleArrowPath = [
+        ['M', x, y],
+        ['l', width - 20, 0],
+        ['l', -10, -5],
+        ['l', 0, 10],
+        ['l', 10, -5],
+        ['l', 20, 0],
+        ['l', -10, -5],
+        ['l', 0, 10],
+        ['l', 10, -5],
+        ['z']
+      ];
+
+      return componentsToPath(doubleArrowPath);
+    },
+    'RALph:solidLine': (element) => {
+      var x = element.x,
+          y = element.y,
+          width = element.width,
+          height = element.height;
+
+      var solidLinePath = [
+        ['M', x, y],
+        ['l', width, 0]
+      ];
+
+      return componentsToPath(solidLinePath);
+    },
+    'RALph:solidLineWithCircle': (element) => {
+      var x = element.x,
+          y = element.y,
+          width = element.width,
+          height = element.height;
+
+      var solidLineWithCirclePath = [
+        ['M', x, y],
+        ['l', width - 10, 0],
+        ['a', 5, 5, 0, 0, 1, 5, 5],
+        ['a', 5, 5, 0, 0, 1, -5, 5],
+        ['l', width - 10, 0]
+      ];
+
+      return componentsToPath(solidLineWithCirclePath);
+    },
+    'RALph:dashedLine': (element) => {
+      var x = element.x,
+          y = element.y,
+          width = element.width,
+          height = element.height;
+
+      var dashedLinePath = [
+        ['M', x, y],
+        ['l', width, 0]
+      ];
+
+      return componentsToPath(dashedLinePath);
+    },
+    'RALph:dashedLineWithCircle': (element) => {
+      var x = element.x,
+          y = element.y,
+          width = element.width,
+          height = element.height;
+
+      var dashedLineWithCirclePath = [
+        ['M', x, y],
+        ['l', width - 10, 0],
+        ['a', 5, 5, 0, 0, 1, 5, 5],
+        ['a', 5, 5, 0, 0, 1, -5, 5],
+        ['l', width - 10, 0]
+      ];
+
+      return componentsToPath(dashedLineWithCirclePath);
+    },
+    'RALph:ConsequenceFlow': (element) => {
+      var x = element.x,
+          y = element.y,
+          width = element.width,
+          height = element.height;
+
+      var consequenceFlowPath = [
+        ['M', x, y],
+        ['l', width, 0]
+      ];
+
+      return componentsToPath(consequenceFlowPath);
     }
   }
 }
@@ -1356,7 +1739,25 @@ RALphRenderer.prototype.getShapePath = function(shape) {
   var h = this.paths[type];
 
   /* jshint -W040 */
-  return h(shape);
+  if (h && typeof h === 'function') {
+    return h(shape);
+  } else {
+    // Fallback to a default rectangle path if no specific path is defined
+    var x = shape.x,
+        y = shape.y,
+        width = shape.width,
+        height = shape.height;
+    
+    var defaultPath = [
+      ['M', x, y],
+      ['l', width, 0],
+      ['l', 0, height],
+      ['l', -width, 0],
+      ['z']
+    ];
+    
+    return componentsToPath(defaultPath);
+  }
 };
 
 RALphRenderer.prototype.drawConnection = function(p, element) {
@@ -1414,3 +1815,5 @@ RALphRenderer.prototype.getConnectionPath = function(connection) {
   return componentsToPath(connectionPath);
 
 };
+
+RALphRenderer.$inject = ['styles', 'canvas', 'textRenderer'];

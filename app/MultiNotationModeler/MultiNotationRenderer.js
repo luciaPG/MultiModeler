@@ -4,52 +4,13 @@ import PPINOTRenderer from '../PPINOT-modeler/PPINOT/PPINOTRenderer';
 import inherits from 'inherits';
 import RALphRenderer from '../RALPH-modeler/RALph/RALphRenderer';
 
-// Helper function to validate and sanitize waypoints
-function validateAndSanitizeWaypoints(waypoints) {
-  if (!Array.isArray(waypoints)) {
-    return [];
-  }
-  
-  return waypoints.filter(function(point) {
-    return point && 
-           typeof point.x === 'number' && 
-           typeof point.y === 'number' && 
-           !isNaN(point.x) && !isNaN(point.y) && 
-           isFinite(point.x) && isFinite(point.y);
-  }).map(function(point) {
-    // Ensure coordinates are finite numbers
-    return {
-      x: isFinite(point.x) ? point.x : 0,
-      y: isFinite(point.y) ? point.y : 0,
-      original: point.original ? {
-        x: isFinite(point.original.x) ? point.original.x : 0,
-        y: isFinite(point.original.y) ? point.original.y : 0
-      } : null
-    };
-  });
-}
 
 export default function MultiNotationRenderer(config, eventBus, styles, pathMap, canvas, textRenderer) {
   BpmnRenderer.call(this, config, eventBus, styles, pathMap, canvas, textRenderer);
   this._ppinotRenderer = new PPINOTRenderer(styles, canvas, textRenderer);
-  this._ralphRenderer = new RALphRenderer(eventBus, styles, canvas, textRenderer);
+  this._ralphRenderer = new RALphRenderer( styles, canvas, textRenderer);
   
-  // Validate waypoints for connection previews
-  eventBus.on('connectionPreview.shown', function(event) {
-    if (event.connection && event.connection.waypoints) {
-      event.connection.waypoints = validateAndSanitizeWaypoints(event.connection.waypoints);
-    }
-  });
 
-  // Validate waypoints for all connections
-  eventBus.on(['connection.create', 'connection.updateWaypoints', 'bendpoint.move.cleanup'], function(event) {
-    var context = event.context,
-        connection = context && context.connection;
-
-    if (connection && connection.waypoints) {
-      connection.waypoints = validateAndSanitizeWaypoints(connection.waypoints);
-    }
-  });
 }
 
 inherits(MultiNotationRenderer, BpmnRenderer);
