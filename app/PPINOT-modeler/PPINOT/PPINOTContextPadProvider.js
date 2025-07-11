@@ -32,7 +32,6 @@ PPINOTContextPadProvider.prototype.appendConnectAction = function (type, classNa
   const connect = this._connect;
 
   function startConnect(event, element) {
-
     connect.start(event, element, { type: type });
   }
 

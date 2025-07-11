@@ -5,8 +5,7 @@ import RALphRenderer from './RALphRenderer';
 import RALphRules from './RALphRules';
 import RALphUpdater from './RALphUpdater';
 import RALphLabelEditingProvider from "./RALphLabelEditingProvider";
-import RALphConnect from "./RALphConnect";
-import RALphReplaceConnectionBehavior from "./behaviour/ReplaceConnectionBehaviour";
+import BendpointBehavior from './behaviour/BendpointBehavior';
 
 export default {
   __init__: [
@@ -17,8 +16,7 @@ export default {
     'RALphUpdater',
     'RALphPalette',
     'RALphLabelEditingProvider',
-    'RALphConnect',
-    'RALphReplaceConnectionBehavior'
+    'bendpointBehavior'
   ],
   RALphContextPadProvider: [ 'type', RALphContextPadProvider ],
   RALphOrderingProvider: [ 'type', RALphOrderingProvider ],
@@ -27,6 +25,5 @@ export default {
   RALphUpdater: [ 'type', RALphUpdater ],
   RALphPalette: [ 'type', RALphPalette ],
   RALphLabelEditingProvider: [ 'type', RALphLabelEditingProvider ],
-  RALphConnect: [ 'type', RALphConnect],
-  RALphReplaceConnectionBehavior: [ 'type', RALphReplaceConnectionBehavior],
+  bendpointBehavior: [ 'type', BendpointBehavior ]
 };

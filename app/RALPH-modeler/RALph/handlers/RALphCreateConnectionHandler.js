@@ -5,9 +5,28 @@ export default function CreateConnectionHandler(canvas, layouter) {
 
 CreateConnectionHandler.$inject = [ 'canvas', 'layouter' ];
 
+// Helper function to validate and sanitize waypoints
+function validateAndSanitizeWaypoints(waypoints) {
+    if (!Array.isArray(waypoints)) {
+        return [];
+    }
+    
+    return waypoints.filter(function(point) {
+        return point && 
+               typeof point.x === 'number' && 
+               typeof point.y === 'number' && 
+               !isNaN(point.x) && !isNaN(point.y) && 
+               isFinite(point.x) && isFinite(point.y);
+    }).map(function(point) {
+        // Ensure coordinates are finite numbers
+        return {
+            x: isFinite(point.x) ? point.x : 0,
+            y: isFinite(point.y) ? point.y : 0
+        };
+    });
+}
 
 // api //////////////////////
-
 
 /**
  * Appends a shape to a target shape
@@ -42,6 +61,30 @@ CreateConnectionHandler.prototype.execute = function(context) {
 
     if (!connection.waypoints) {
         connection.waypoints = this._layouter.layoutConnection(connection, hints);
+    }
+
+    // Validate and sanitize waypoints before adding connection
+    if (connection.waypoints) {
+        connection.waypoints = validateAndSanitizeWaypoints(connection.waypoints);
+        
+        // Ensure we have at least source and target points
+        if (connection.waypoints.length < 2) {
+            var sourceX = source.x + (source.width || 0) / 2;
+            var sourceY = source.y + (source.height || 0) / 2;
+            var targetX = target.x + (target.width || 0) / 2;
+            var targetY = target.y + (target.height || 0) / 2;
+            
+            // Ensure coordinates are finite
+            sourceX = isFinite(sourceX) ? sourceX : 0;
+            sourceY = isFinite(sourceY) ? sourceY : 0;
+            targetX = isFinite(targetX) ? targetX : 0;
+            targetY = isFinite(targetY) ? targetY : 0;
+            
+            connection.waypoints = [
+                { x: sourceX, y: sourceY },
+                { x: targetX, y: targetY }
+            ];
+        }
     }
 
     // add connection

@@ -7,7 +7,7 @@ import MultiNotationElementFactory from './MultiNotationElementFactory';
 import MultiNotationRenderer from './MultiNotationRenderer';
 import MultiNotationLabelProvider from './MultiNotationLabelProvider';
 import MultiNotationReplaceMenuProvider from './MultiNotationReplaceMenuProvider';
-import MultiNotationModeling from './MultiNotationModeling';
+import MultiNotationConnect from './MultiNotationConnect';
 export default {
   __depends__: [
     ReplaceModule,
@@ -22,7 +22,7 @@ export default {
     'multiNotationLabelProvider',
     'elementFactory',
     'multiNotationReplaceMenuProvider',
-    'modeling'
+    'connect',
   ],
 
   multiNotationPaletteProvider:    ['type', MultiNotationPaletteProvider],
@@ -31,5 +31,5 @@ export default {
   multiNotationLabelProvider:      ['type', MultiNotationLabelProvider],
   elementFactory:         ['type', MultiNotationElementFactory],
   multiNotationReplaceMenuProvider: ['type', MultiNotationReplaceMenuProvider],
-  modeling:  ['type', MultiNotationModeling]
+  connect: ['type', MultiNotationConnect],
 };

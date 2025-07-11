@@ -6,7 +6,6 @@ import PPINOTPalette from './PPINOTPalette';
 import PPINOTContextPadProvider from './PPINOTContextPadProvider';
 import PPINOTReplaceMenuProvider from './PPINOTReplaceMenuProvider';
 import PPINOTLabelProvider from './PPINOTLabelProvider';
-import PPINOTConnect from './PPINOTConnect';
 import PPINOTOrderingProvider from './PPINOTOrderingProvider';
 import PPINOTReplaceConnectionBehavior from './behaviour/ReplaceConnectionBehaviour.js';
 import BendpointBehavior from './behaviour/BendpointBehavior';
@@ -19,10 +18,8 @@ export default {
     'PPINOTContextPadProvider',
     'PPINOTReplaceMenuProvider',
     'PPINOTLabelProvider',
-    'PPINOTConnect',
     'PPINOTOrderingProvider',
     'PPINOTReplaceConnectionBehavior',
-    'PPINOTRenderer',
     'bendpointBehavior',
     'bpmnUpdater',
     'PPINOTPalette'
@@ -33,7 +30,6 @@ export default {
   PPINOTReplaceMenuProvider: ['type', PPINOTReplaceMenuProvider],
   PPINOTPalette: ['type', PPINOTPalette],
   PPINOTLabelProvider: ['type', PPINOTLabelProvider],
-  PPINOTConnect: ['type', PPINOTConnect],
   PPINOTOrderingProvider: ['type', PPINOTOrderingProvider],
   PPINOTReplaceConnectionBehavior: ['type', PPINOTReplaceConnectionBehavior],
   bendpointBehavior: ['type', BendpointBehavior],

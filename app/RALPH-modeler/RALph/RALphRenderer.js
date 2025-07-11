@@ -1380,6 +1380,26 @@ RALphRenderer.prototype.getConnectionPath = function(connection) {
     return p.original || p;
   });
 
+  // Validate and sanitize waypoints
+  waypoints = waypoints.filter(function(point) {
+    return point && 
+           typeof point.x === 'number' && 
+           typeof point.y === 'number' && 
+           !isNaN(point.x) && !isNaN(point.y) && 
+           isFinite(point.x) && isFinite(point.y);
+  }).map(function(point) {
+    // Ensure coordinates are finite numbers
+    return {
+      x: isFinite(point.x) ? point.x : 0,
+      y: isFinite(point.y) ? point.y : 0
+    };
+  });
+
+  // Ensure we have at least two waypoints
+  if (waypoints.length < 2) {
+    return '';
+  }
+
   var connectionPath = [
     ['M', waypoints[0].x, waypoints[0].y]
   ];

@@ -17,6 +17,26 @@ import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import 'diagram-js/assets/diagram-js.css';
 import './css/app.css';
 
+// Helper function to validate and sanitize waypoints
+function validateAndSanitizeWaypoints(waypoints) {
+  if (!Array.isArray(waypoints)) {
+    return [];
+  }
+  
+  return waypoints.filter(function(point) {
+    return point && 
+           typeof point.x === 'number' && 
+           typeof point.y === 'number' && 
+           !isNaN(point.x) && !isNaN(point.y) && 
+           isFinite(point.x) && isFinite(point.y);
+  }).map(function(point) {
+    // Ensure coordinates are finite numbers
+    return {
+      x: isFinite(point.x) ? point.x : 0,
+      y: isFinite(point.y) ? point.y : 0
+    };
+  });
+}
 
 const moddle = new BpmnModdle({});
 const container = $('#js-drop-zone');
@@ -32,6 +52,29 @@ function initializeModeler() {
       RALph: RALphModdle
     }
   });
+  
+  // Add global waypoint validation
+  if (modeler && modeler.get('eventBus')) {
+    const eventBus = modeler.get('eventBus');
+    
+    // Validate waypoints for all connections
+    eventBus.on(['connection.create', 'connection.updateWaypoints', 'bendpoint.move.cleanup'], function(event) {
+      var context = event.context,
+          connection = context && context.connection;
+
+      if (connection && connection.waypoints) {
+        connection.waypoints = validateAndSanitizeWaypoints(connection.waypoints);
+      }
+    });
+
+    // Validate waypoints for connection previews
+    eventBus.on('connectionPreview.shown', function(event) {
+      if (event.connection && event.connection.waypoints) {
+        event.connection.waypoints = validateAndSanitizeWaypoints(event.connection.waypoints);
+      }
+    });
+  }
+  
   window.modeler = modeler;
 }
 

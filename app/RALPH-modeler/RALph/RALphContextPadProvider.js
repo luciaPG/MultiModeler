@@ -33,7 +33,7 @@ RALphContextPadProvider.prototype.appendConnectAction = function(type, className
   const elementFactory = this._elementFactory;
 
   function startConnect(event, element) {
-    connect.RALphStart(event, element, type, elementFactory);
+    connect.start(event, element, { type: type });
   }
 
   return {
