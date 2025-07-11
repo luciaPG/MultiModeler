@@ -8,6 +8,9 @@ import MultiNotationRenderer from './MultiNotationRenderer';
 import MultiNotationLabelProvider from './MultiNotationLabelProvider';
 import MultiNotationReplaceMenuProvider from './MultiNotationReplaceMenuProvider';
 import MultiNotationConnect from './MultiNotationConnect';
+import BendpointBehavior from './behaviour/BendpointBehavior';
+import ReplaceConnectionBehaviour from './behaviour/ReplaceConnectionBehaviour';
+
 export default {
   __depends__: [
     ReplaceModule,
@@ -23,6 +26,8 @@ export default {
     'elementFactory',
     'multiNotationReplaceMenuProvider',
     'connect',
+    'bendpointBehavior',
+    'replaceConnectionBehaviour'
   ],
 
   multiNotationPaletteProvider:    ['type', MultiNotationPaletteProvider],
@@ -32,4 +37,6 @@ export default {
   elementFactory:         ['type', MultiNotationElementFactory],
   multiNotationReplaceMenuProvider: ['type', MultiNotationReplaceMenuProvider],
   connect: ['type', MultiNotationConnect],
+  bendpointBehavior: ['type', BendpointBehavior],
+  replaceConnectionBehaviour: ['type', ReplaceConnectionBehaviour]
 };

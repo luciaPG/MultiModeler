@@ -5,7 +5,6 @@ import RALphRenderer from './RALphRenderer';
 import RALphRules from './RALphRules';
 import RALphUpdater from './RALphUpdater';
 import RALphLabelEditingProvider from "./RALphLabelEditingProvider";
-import BendpointBehavior from './behaviour/BendpointBehavior';
 
 export default {
   __init__: [
@@ -16,7 +15,6 @@ export default {
     'RALphUpdater',
     'RALphPalette',
     'RALphLabelEditingProvider',
-    'bendpointBehavior'
   ],
   RALphContextPadProvider: [ 'type', RALphContextPadProvider ],
   RALphOrderingProvider: [ 'type', RALphOrderingProvider ],
@@ -25,5 +23,4 @@ export default {
   RALphUpdater: [ 'type', RALphUpdater ],
   RALphPalette: [ 'type', RALphPalette ],
   RALphLabelEditingProvider: [ 'type', RALphLabelEditingProvider ],
-  bendpointBehavior: [ 'type', BendpointBehavior ]
 };
