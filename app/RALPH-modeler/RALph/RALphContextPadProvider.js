@@ -1,277 +1,205 @@
+import { is } from "bpmn-js/lib/util/ModelUtil";
+import { isAny } from 'bpmn-js/lib/features/modeling/util/ModelingUtil';
+import { assign } from 'min-dash';
 import inherits from 'inherits';
-
 import ContextPadProvider from 'bpmn-js/lib/features/context-pad/ContextPadProvider';
 
-import {is} from "bpmn-js/lib/util/ModelUtil";
-
 import {
-  isAny
-} from 'bpmn-js/lib/features/modeling/util/ModelingUtil';
+  resourceArcElements,
+  negatedElements,
+  solidLineElements
+} from "./Types";
 
-import {
-  assign,
-  bind
-} from 'min-dash';
-import {isLabel} from "./utils/LabelUtil";
-
-import {resourceArcElements,negatedElements,solidLineElements} from "./Types";
-
-//This module is used to generate the icons of an object inside the diagram
-export default function RALphContextPadProvider(config, injector, elementFactory, connect, create, translate,modeling) {
-
-    injector.invoke(ContextPadProvider, this);
-
-    var cached = bind(this.getContextPadEntries, this);
-
-    let autoPlace = config.autoPlace
-    if (autoPlace !== false) {
-        autoPlace = injector.get('autoPlace', false);
-    }
-
-    function appendAction(type, className, title, options) {
-        if (typeof title !== 'string') {
-            options = title;
-            title = translate('Append {type}', { type: type.replace(/^bpmn:/, '') });
-        }
-
-        function appendStart(event, element) {
-            var shape = elementFactory.createShape(assign({ type: type }, options));
-            create.start(event, shape, {
-                source: element
-            });
-        }
-
-        function append(event, element) {
-            var shape = elementFactory.createShape(assign({ type: type }, options));
-
-            autoPlace.append(element, shape);
-        }
-
-
-        return {
-            group: 'model',
-            className: className,
-            title: title,
-            action: {
-                dragstart: appendStart,
-                click: autoPlace ? append : appendStart
-            }
-        };
-    }
-
-    function appendConnectAction(type, className, title) {
-        if (typeof title !== 'string') {
-            title = translate('Append {type}', { type: type.replace(/^RALph:/, '') });
-        }
-
-        function connectStart(event, element, autoActivate) {
-            connect.RALphStart(event, element, type, elementFactory, autoActivate);
-        }
-
-
-        return {
-            group: 'connect',
-            className: className,
-            title: title,
-            action: {
-                dragstart: connectStart,
-                click: connectStart
-            }
-        };
-    }
-
-    this.getContextPadEntries = function(element) {
-    var actions = cached(element);
-    var businessObject = element.businessObject;
-
-    function startConnect(event, element, autoActivate) {
-      connect.start(event, element, autoActivate);
-    }
-
-    function startConnect2(event, element, autoActivate) {
-        connect.start(event, element, autoActivate);
-      }
-
-    function startConnectConsequence(event, element, autoActivate) {
-      connect.RALphStart(event, element, 'RALph:ConsequenceFlow', autoActivate);
-    }
-
-    function startConnectConsequenceTimed(event, element, autoActivate) {
-      connect.RALphStart2(event, element, 'RALph:ConsequenceTimedFlow', elementFactory, autoActivate);
-    }
-
-    function startConnectTimeDistance(event, element, autoActivate) {
-        connect.RALphStart2(event, element, 'RALph:ConsequenceTimedFlow', elementFactory, autoActivate);
-    }
-
-    //here we declared the conditions to show an icon
-
-    //for instance, in this case the element (businessObject) must be contained in the list of resourceArcElements to have his corresponding button and it must not be a label
-    if (isAny(businessObject, resourceArcElements) && element.type !== 'label') {
-        //in the case that the element accomplishes the conditions, with the function assign we state which button should appear, 
-        //additionally, with the function appendConnectAction ,it is linked an element defined in the renderer(RALph:ResourceArc in this case) 
-        //to an icon which is defined in the index.html (icon-RALph-solidLineDef in this case), and a description is added ('Connect using simple resource assignment' in this case)
-        assign(actions, {
-            'connect1': appendConnectAction(//
-                'RALph:ResourceArc',
-                'icon-RALph-solidLineDef',
-                'Connect using simple resource assignment'
-            ),
-            
-
-        });
-    }
-
-
-    if (isAny(businessObject,negatedElements) && element.type !== 'label') {
-        assign(actions, {
-        
-            
-            'connect2': appendConnectAction(
-                    'RALph:negatedAssignment',
-                    'icon-RALph-negatedDef',//'icon-RALph-Negated',
-                    'Connect using negated connection'
-                )
-        });
-    }
-
-
-
-
-
-    /*
-    if (is(businessObject, 'RALph:Position') && element.type !== 'label') {
-        assign(actions, {
-            'connectPos': appendConnectAction(
-                'RALph:Delegate',
-                'icon-RALph-Delegate',
-                'Connect using delegate'
-            ),
-        });
-    }*/
-    if(isAny(businessObject,['RALph:reportsDirectly'])){
-        assign(actions, {
-            'replaceReportsDirectly': {
-                className: 'icon-RALph2-reportsTransitively',
-                title: translate('Replace for reports transitively'),
-                action: {
-                  click: function(event, element) {
-                    let newElementData = elementFactory.createShape({ type: 'RALph:reportsTransitively' });
-                    newElementData.x = element.x + (newElementData.width || element.width) / 2;
-                    newElementData.y = element.y + (newElementData.height || element.height) / 2;
-                    modeling.replaceShape(element, newElementData);
-                  }
-                }
-              }
-            })
-    }
-
-    if(isAny(businessObject,['RALph:reportsTransitively'])){
-        assign(actions, {
-            'replaceReportsDirectly': {
-                className: 'icon-RALph2-reportsDirectly',
-                title: translate('Replace for reports directly'),
-                action: {
-                  click: function(event, element) {
-                    let newElementData = elementFactory.createShape({ type: 'RALph:reportsDirectly' });
-                    newElementData.x = element.x + (newElementData.width || element.width) / 2;
-                    newElementData.y = element.y + (newElementData.height || element.height) / 2;
-                    modeling.replaceShape(element, newElementData);
-                  }
-                }
-              }
-            })
-    }
-
-    if(isAny(businessObject,['RALph:delegatesTransitively'])){
-        assign(actions, {
-            'replaceDelegatesDirectly': {
-                className: 'icon-RALph2-delegatesDirectly',
-                title: translate('Replace for delegates directly'),
-                action: {
-                  click: function(event, element) {
-                    let newElementData = elementFactory.createShape({ type: 'RALph:delegatesDirectly' });
-                    newElementData.x = element.x + (newElementData.width || element.width) / 2;
-                    newElementData.y = element.y + (newElementData.height || element.height) / 2;
-                    modeling.replaceShape(element, newElementData);
-                  }
-                }
-              }
-            })
-    }
-
-    if(isAny(businessObject,['RALph:delegatesDirectly'])){
-        assign(actions, {
-            'replaceDelegatesTransitively': {
-                className: 'icon-RALph2-delegatesTransitively',
-                title: translate('Replace for delegates Transitively'),
-                action: {
-                  click: function(event, element) {
-                    let newElementData = elementFactory.createShape({ type: 'RALph:delegatesTransitively' });
-                    newElementData.x = element.x + (newElementData.width || element.width) / 2;
-                    newElementData.y = element.y + (newElementData.height || element.height) / 2;
-                    modeling.replaceShape(element, newElementData);
-                  }
-                }
-              }
-            })
-    }
-    
-    if(isAny(businessObject,solidLineElements) && element.type !== 'label') {
-        assign(actions, {
-            'connect1': appendConnectAction(
-                'RALph:solidLine',
-                'icon-RALph-solidLineDef',//'icon-RALph-SolidLine',
-                'Connect using a solid line'
-            ),'connect2': appendConnectAction(
-                'RALph:solidLineWithCircle',
-                'icon-RALph-solidLineWithCircleDef',
-                'Connect using a solid line with a circle'
-            ),'connect3': appendConnectAction(
-                'RALph:dashedLine',
-                'icon-RALph-dashedLineDef',//'icon-RALph-dashedLine2',
-                'Connect using a dashed line'
-            ),'connect4': appendConnectAction(
-                'RALph:dashedLineWithCircle',
-                'icon-RALph-dashedLineWithCircle',//'bpmn-icon-connection-multi',
-                'Connect using a dashed line with circle'
-            )
-        });
-    }
-
-    if(is(businessObject, 'bpmn:Task') && element.type !== 'label') {//it is also possible to limit the icons for an unique object.
-        assign(actions, {
-            'connect2': appendConnectAction(
-                'bpmn:DataOutputAssociation',
-                'bpmn-icon-connection-multi',//'bpmn-icon-connection-multi',
-                'Connect using data output association'
-            ),
-           
-            
-        });
-    }
-
-    if(is(businessObject, 'bpmn:DataObjectReference') && element.type !== 'label') {
-        assign(actions, {
-            'connect4': appendConnectAction(
-                'RALph:dataFieldConnection',
-                'bpmn-icon-connection-multi',
-                'Connect using data field connection')
-        });
-    }
-
-    return actions;
-  };
+export default function RALphContextPadProvider(
+  config,
+  injector,
+  elementFactory,
+  connect,
+  create,
+  translate,
+  modeling
+) {
+  this._elementFactory = elementFactory;
+  this._connect = connect;
+  this._create = create;
+  this._translate = translate;
+  this._modeling = modeling;
+  this._autoPlace = (config && config.autoPlace !== false) ? injector.get('autoPlace', false) : null;
 }
 
-inherits(RALphContextPadProvider, ContextPadProvider);
+// Helper para crear acciones de conexión
+RALphContextPadProvider.prototype.appendConnectAction = function(type, className, title, group = 'ralph-connect') {
+  const connect = this._connect;
+  const elementFactory = this._elementFactory;
+
+  function startConnect(event, element) {
+    connect.RALphStart(event, element, type, elementFactory);
+  }
+
+  return {
+    group: group,
+    className: className,
+    title: title,
+    action: {
+      click: startConnect,
+      dragstart: startConnect
+    }
+  };
+};
+
+RALphContextPadProvider.prototype.getContextPadEntries = function(element) {
+  const businessObject = element.businessObject;
+  const modeling = this._modeling;
+  const elementFactory = this._elementFactory;
+  const actions = {};
+
+  if (element.type === 'label') {
+    return {};
+  }
+
+  // Recursos
+  if (isAny(businessObject, resourceArcElements)) {
+    assign(actions, {
+      'connect-resource': this.appendConnectAction(
+        'RALph:ResourceArc',
+        'icon-RALph-solidLineDef',
+        'Connect using simple resource assignment'
+      )
+    });
+  }
+
+  // Conexiones negadas
+  if (isAny(businessObject, negatedElements)) {
+    assign(actions, {
+      'connect-negated': this.appendConnectAction(
+        'RALph:negatedAssignment',
+        'icon-RALph-negatedDef',
+        'Connect using negated connection'
+      )
+    });
+  }
+
+  // Líneas y conexiones especiales
+  if (isAny(businessObject, solidLineElements)) {
+    assign(actions, {
+      'connect-solid': this.appendConnectAction(
+        'RALph:solidLine',
+        'icon-RALph-solidLineDef',
+        'Connect using solid line'
+      ),
+      'connect-solid-circle': this.appendConnectAction(
+        'RALph:solidLineWithCircle',
+        'icon-RALph-solidLineWithCircleDef',
+        'Connect using solid line with circle'
+      ),
+      'connect-dashed': this.appendConnectAction(
+        'RALph:dashedLine',
+        'icon-RALph-dashedLineDef',
+        'Connect using dashed line'
+      ),
+      'connect-dashed-circle': this.appendConnectAction(
+        'RALph:dashedLineWithCircle',
+        'icon-RALph-dashedLineWithCircle',
+        'Connect using dashed line with circle'
+      )
+    });
+  }
+
+  // Reemplazos directos/transitivos
+  if (is(businessObject, 'RALph:reportsDirectly')) {
+    assign(actions, {
+      'replace-to-transitive': {
+        group: 'edit',
+        className: 'icon-RALph2-reportsTransitively',
+        title:  this._translate('Replace for reports transitively'),
+        action: {
+          click: function(event, element) {
+            const newElement = elementFactory.createShape({ type: 'RALph:reportsTransitively' });
+            newElement.x = element.x + (newElement.width || element.width) / 2;
+            newElement.y = element.y + (newElement.height || element.height) / 2;
+            modeling.replaceShape(element, newElement);
+          }
+        }
+      }
+    });
+  }
+
+  if (is(businessObject, 'RALph:reportsTransitively')) {
+    assign(actions, {
+      'replace-to-direct': {
+        group: 'edit',
+        className: 'icon-RALph2-reportsDirectly',
+        title:  this._translate('Replace for reports directly'),
+        action: {
+          click: function(event, element) {
+            const newElement = elementFactory.createShape({ type: 'RALph:reportsDirectly' });
+            newElement.x = element.x + (newElement.width || element.width) / 2;
+            newElement.y = element.y + (newElement.height || element.height) / 2;
+            modeling.replaceShape(element, newElement);
+          }
+        }
+      }
+    });
+  }
+
+  if (is(businessObject, 'RALph:delegatesDirectly')) {
+    assign(actions, {
+      'replace-to-delegates-transitive': {
+        group: 'edit',
+        className: 'icon-RALph2-delegatesTransitively',
+        title: this._translate('Replace for delegates transitively'),
+        action: {
+          click: function(event, element) {
+            const newElement = elementFactory.createShape({ type: 'RALph:delegatesTransitively' });
+            newElement.x = element.x + (newElement.width || element.width) / 2;
+            newElement.y = element.y + (newElement.height || element.height) / 2;
+            modeling.replaceShape(element, newElement);
+          }
+        }
+      }
+    });
+  }
+
+  if (is(businessObject, 'RALph:delegatesTransitively')) {
+    assign(actions, {
+      'replace-to-delegates-direct': {
+        group: 'edit',
+        className: 'icon-RALph2-delegatesDirectly',
+        title: this._translate('Replace for delegates directly'),
+        action: {
+          click: function(event, element) {
+            const newElement = elementFactory.createShape({ type: 'RALph:delegatesDirectly' });
+            newElement.x = element.x + (newElement.width || element.width) / 2;
+            newElement.y = element.y + (newElement.height || element.height) / 2;
+            modeling.replaceShape(element, newElement);
+          }
+        }
+      }
+    });
+  }
+  // Acción de borrado
+  assign(actions, {
+    'delete': {
+      group: 'edit',
+      className: 'bpmn-icon-trash',
+      title: this._translate('Remove'),
+      action: {
+        click: (event, element) => {
+          this._modeling.removeElements([element]);
+        }
+      }
+    }
+  });
+
+  return actions;
+};
 
 RALphContextPadProvider.$inject = [
-    'config',
-    'injector',
-    'elementFactory',
-    'connect',
-    'create',
-    'translate',
-    'modeling'
+  'config',
+  'injector',
+  'elementFactory',
+  'connect',
+  'create',
+  'translate',   
+  'modeling'
 ];

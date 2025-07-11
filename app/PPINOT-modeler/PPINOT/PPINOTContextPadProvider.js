@@ -32,7 +32,7 @@ PPINOTContextPadProvider.prototype.appendConnectAction = function (type, classNa
   const connect = this._connect;
 
   function startConnect(event, element) {
-    console.log('➡️ Tipo de conexión al iniciar:', type);
+
     connect.start(event, element, { type: type });
   }
 

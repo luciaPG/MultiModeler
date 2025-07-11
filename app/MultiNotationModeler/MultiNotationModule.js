@@ -6,7 +6,7 @@ import MultiNotationContextPadProvider from './MultiNotationContextPadProvider';
 import MultiNotationElementFactory from './MultiNotationElementFactory';
 import MultiNotationRenderer from './MultiNotationRenderer';
 import MultiNotationLabelProvider from './MultiNotationLabelProvider';
-import MultiNotationMenuProvider from './MultiNotationMenuProvider';
+import MultiNotationReplaceMenuProvider from './MultiNotationReplaceMenuProvider';
 import MultiNotationModeling from './MultiNotationModeling';
 export default {
   __depends__: [
@@ -21,7 +21,7 @@ export default {
     'contextPadProvider',
     'multiNotationLabelProvider',
     'elementFactory',
-    'multiNotationMenuProvider',
+    'multiNotationReplaceMenuProvider',
     'modeling'
   ],
 
@@ -30,6 +30,6 @@ export default {
   contextPadProvider:     ['type', MultiNotationContextPadProvider],
   multiNotationLabelProvider:      ['type', MultiNotationLabelProvider],
   elementFactory:         ['type', MultiNotationElementFactory],
-  multiNotationMenuProvider: ['type', MultiNotationMenuProvider],
+  multiNotationReplaceMenuProvider: ['type', MultiNotationReplaceMenuProvider],
   modeling:  ['type', MultiNotationModeling]
 };

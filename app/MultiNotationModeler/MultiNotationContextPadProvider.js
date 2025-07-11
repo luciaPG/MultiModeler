@@ -1,6 +1,8 @@
 import { isPPINOTShape } from '../PPINOT-modeler/PPINOT/Types';
 import ContextPadProvider from 'bpmn-js/lib/features/context-pad/ContextPadProvider';
 import PPINOTContextPadProvider from '../PPINOT-modeler/PPINOT/PPINOTContextPadProvider';
+import { isRalphShape } from '../RALPH-modeler/RALph/Types';
+import RALphContextPadProvider from '../RALPH-modeler/RALph/RALphContextPadProvider';
 
 class MultiNotationContextPadProvider extends ContextPadProvider {
   constructor(
@@ -38,20 +40,9 @@ class MultiNotationContextPadProvider extends ContextPadProvider {
     this._popupMenu = popupMenu;
     this._translate = translate;
 
-    
-    this._ppinotProvider = new PPINOTContextPadProvider(
-      config,
-      injector,
-      contextPad,
-      modeling,
-      elementFactory,
-      connect,
-      create,
-      popupMenu,
-      canvas,
-      rules,
-      translate
-    );
+
+    this._ppinotProvider = injector.instantiate(PPINOTContextPadProvider);
+    this._ralphProvider = injector.instantiate(RALphContextPadProvider);
 
 
     contextPad.registerProvider(this);
@@ -61,23 +52,25 @@ class MultiNotationContextPadProvider extends ContextPadProvider {
     let entries = {};
     if (isPPINOTShape(element)) {
       return this._ppinotProvider.getContextPadEntries(element) || {};
-    } else if (!isPPINOTShape(element) && element.type !== 'label') {
+    } else if (isRalphShape(element)) {
+      return this._ralphProvider.getContextPadEntries(element) || {};
+    } else {
       entries = super.getContextPadEntries(element) || {};
-      if (!entries.replace) {
-        entries.replace = {
-          group: 'edit',
-          className: 'bpmn-icon-screw-wrench',
-          title: this._translate('Replace'),
-          action: {
-            click: (event, elt) => {
-              this._popupMenu.open(elt, 'replace', {
-                x: event.x,
-                y: event.y
-              });
-            }
-          }
-        };
-      }
+      // if (!entries.replace) {
+      //   entries.replace = {
+      //     group: 'edit',
+      //     className: 'bpmn-icon-screw-wrench',
+      //     title: this._translate('Replace'),
+      //     action: {
+      //       click: (event, elt) => {
+      //         this._popupMenu.open(elt, 'replace', {
+      //           x: event.x,
+      //           y: event.y
+      //         });
+      //       }
+      //     }
+      //   };
+      // }
       return entries;
     }
   }

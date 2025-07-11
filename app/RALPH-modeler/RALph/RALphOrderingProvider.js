@@ -1,7 +1,7 @@
 import inherits from 'inherits';
 import { isAny } from 'bpmn-js/lib/features/modeling/util/ModelingUtil';
 
-import {connections, isCustomConnection} from "./Types";
+import {connections, isRalphConnection} from "./Types";
 
 import OrderingProvider from 'diagram-js/lib/features/ordering/OrderingProvider';
 
@@ -24,7 +24,7 @@ export default function RALphOrderingProvider(eventBus, canvas) {
       };
     }
 
-    else if (isCustomConnection(element.type)) {
+    else if (isRalphConnection(element.type)) {
 
       // always move to end of root element
       // to display always on top
