@@ -48,9 +48,13 @@ module.exports = {
                     from: 'app/css',
                     to: 'css'
                 },
-                {
-                    from: 'app/PPINOT-modeler/PPINOT/PPINOT.json',
-                    to: 'PPINOT.json'
+                               {
+                    from: 'app/PPINOT-modeler/PPINOT/PPINOTModdle.json',
+                    to: 'PPINOTModdle.json'
+                },
+                   {
+                    from: 'app/RALPH-modeler/RALph/RALphModdle.json',
+                    to: 'RALPHModdle.json'
                 }
             ]
         })

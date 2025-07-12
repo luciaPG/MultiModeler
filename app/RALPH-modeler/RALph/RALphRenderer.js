@@ -1,229 +1,30 @@
-import inherits from 'inherits';
-
-import BaseRenderer from 'diagram-js/lib/draw/BaseRenderer';
-import BpmnRenderer from "bpmn-js/lib/draw/BpmnRenderer";
-
-import {componentsToPath, createLine} from 'diagram-js/lib/util/RenderUtil';
-import {query as domQuery} from 'min-dom';
-import Cat from './SVGs';
-import {append as svgAppend, attr as svgAttr, classes as svgClasses, create as svgCreate} from 'tiny-svg';
-import {getFillColor, getSemantic, getStrokeColor} from "bpmn-js/lib/draw/BpmnRenderUtil";
-import {assign} from "min-dash";
+import { componentsToPath, createLine } from 'diagram-js/lib/util/RenderUtil';
+import { query as domQuery } from 'min-dom';
+import { append as svgAppend, attr as svgAttr, classes as svgClasses, create as svgCreate } from 'tiny-svg';
+import { getSemantic } from "bpmn-js/lib/draw/BpmnRenderUtil";
+import { assign } from "min-dash";
 import Ids from 'ids';
-import {getLabel} from "./utils/LabelUtil"
-import BaseElementFactory from "diagram-js/lib/core/ElementFactory";
 
+import Cat from './SVGs';
 
-//this module declares what should be rendered in the editor when an object is created
-//If you want to render a SVG as an element (not a connection), you should define what svg is going to be rendered, for instance in a function like this:
-/*
-function drawReportsTo(shape){
+var RENDERER_IDS = new Ids();
 
-    var catGfx = svgCreate('image', {
-      x: 0,
-      y: 0,
-      width: shape.width,
-      height: shape.height,
-      href:Cat.dataReports2
-    });
-
-    return  catGfx;
-  }
-
-  Where svgCreate transforms the element to svg,using the parameter href where receives the element in base64.
-
-  Addititonally you will have to call that function in the variable renderers when your new object appears. For example:
-
-   'RALph:Position':(p,element) =>{
-      let pos=drawPosition(element)
-
-      svgAppend(p,pos)//svgAppend links the shape to an element
-      //renderEmbeddedLabel(p,element,'center-middle')
-      return pos;
-
-    }
-
-    And you should define a path (canvas of the object in svg coordinates) in the variable paths:
-
-    'RALph:History-AnyInstanceInTime-Red':(element)=>{
-      var x = element.x,
-      y = element.y,
-      width = element.width,
-      height = element.height,
-      borderRadius=30;
-    
-      var d = [
-        ['M', x + borderRadius, y],
-        ['l', width - borderRadius * 2, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, borderRadius],
-        ['l', 0, height - borderRadius * 2],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, borderRadius],
-        ['l', borderRadius * 2 - width, 0],
-        ['a', borderRadius, borderRadius, 0, 0, 1, -borderRadius, -borderRadius],
-        ['l', 0, borderRadius * 2 - height],
-        ['a', borderRadius, borderRadius, 0, 0, 1, borderRadius, -borderRadius],
-        ['z']
-      ];
-
-      return componentsToPath(d);
-
-      This is important to be allowed to move objects and to regulate where the connections appears.
-
-      Furthermore, if you want to add an internal label to an object, you should use the function "renderEmbeddedLabel(parentGfx, element, align)" in the variable renderers.
-      With the option align you can define the position of the label, using some default parameters. (Apart from adding your object in the label array in Types.js)
-
-      If you want to add an external label to an object label, you should indicate in Types.js that your elements in label and externalLabel. 
-*/
-
-var RENDERER_IDS = new Ids();//generates the ids of the elements
-
-var COLOR_GREEN = '#52B415',
-    COLOR_RED = '#cc0000',
-    COLOR_YELLOW = '#ffc800',
+var COLOR_RED = '#cc0000',
     BLACK = '#000',
-    GRAY='#807e7e',
-    WHITE="#fff";
-
+    GRAY = '#807e7e',
+    WHITE = '#fff';
 
 /**
  * A renderer that knows how to render RALph elements.
  */
-export default function RALphRenderer(eventBus, styles, canvas, textRenderer) {
-
-  BaseRenderer.call(this, eventBus, 2000);//forces to call this renderer, instead of calling the original renderer of bpmn.js
-
+export default function RALphRenderer(styles, canvas, textRenderer) {
+  
+  this._textRenderer = textRenderer;
   var computeStyle = styles.computeStyle;
-
   var rendererId = RENDERER_IDS.next();
-
   var markers = {};
-
-  //if you want to create a connection you will have to receive the points that delimit the connection, the source and target points.
-  //If it is not a simple line, you will have to create a function with a path defining coordinates, you can preview line shapes in this page: https://yqnn.github.io/svg-path-editor/.
-  //Moreover you will have to change the function getConnectionPath.
-
-  //Additionally, you can find more information about creating connections with different shape in this link: https://forum.bpmn.io/t/bezier-curve-drawing/1130
-
-  //This function and drawCrossedLine2 create red lines in the center of a simple connection to generate a negated connection
-  function drawCrossedLine(points,attrs){
-    var line = svgCreate('polyline');//it will be created a polyline
-    var result='';
-      //the middlepoint of the simple connection (to be negated) is calculated to put the red cross in that position.
-      var middlePosition=points.length/2;
-      middlePosition=Math.round(middlePosition)
-
-      var middlePointX=(points[middlePosition].x+points[middlePosition-1].x)/2;
-      var middlePointY=(points[middlePosition].y+points[middlePosition-1].y)/2;
-      result +=(middlePointX-20).toString()+ ',' + (middlePointY+20).toString()+ ','+(middlePointX+20).toString()+ ',' +  parseInt(middlePointY-20).toString();
-      
-      svgAttr(line, {points: result });
-
-
-    if (attrs) {
-      svgAttr(line, attrs);
-    }
-
-
-    return line
-  }
-
-
-  function drawCrossedLine2(points,attrs){
-
-    var line = svgCreate('polyline');
-    var result='';
-    
-    var middlePosition;
-
-    middlePosition=points.length/2;
-    middlePosition=Math.round(middlePosition)
-
-    var middlePointX=(points[middlePosition].x+points[middlePosition-1].x)/2;
-    var middlePointY=(points[middlePosition].y+points[middlePosition-1].y)/2;
-
-    result +=(middlePointX+20).toString()+ ',' + (middlePointY+20).toString()+ ','+(middlePointX-20).toString()+ ',' +  parseInt(middlePointY-20).toString();
-    svgAttr(line, {points: result });
-    
-
-    if (attrs) {
-      svgAttr(line, attrs);
-    }
-
-    return line
-  }
-
-
-
-  //function to render labels in objects.
-  function renderLabel(parentGfx, label, options) {
-    options = assign({
-      size: {
-        width: 100
-      }
-    }, options);
-
-    var text = textRenderer.createText(label || '', options);//text renderer defines the text to be rendered
-
-    svgClasses(text).add('djs-label');
-
-    svgAppend(parentGfx, text);
-
-    return text;
-  }
-
-  //function to render labels inside of the objects.
-  function renderEmbeddedLabel(parentGfx, element, align) {
-    var semantic = getSemantic(element);
-
-    return renderLabel(parentGfx,semantic.text, {
-      box: element,//size of the object text box
-      align: align,//position of the text
-      padding: 3,//it declares the length of a line
-      style: {
-        fill: element.color
-      }
-    });
-  }
-
-  //function to render the labels of the history connectors in certain time:
-  function renderEmbeddedLabelHistoryAnyInTime(parentGfx, element, align,size,weight) {
-    var semantic = getSemantic(element);
-
-    return renderLabel(parentGfx,semantic.text, {
-      box: element,
-      align: align,
-      padding:35,
-      style: {
-        fill: element.color,
-        fontSize:  size + 'px',//it declares the size of the letters
-        fontWeight: weight //it declares the thickness of the letters
-      }
-    });
-  }
-
-  function renderExternalLabel(parentGfx, element) {
-    var box = {
-      width: 90,
-      height: 10,
-      x: element.width / 2, //+ element.x,
-      y: element.height /2 //+ element.y
-    };
-    return renderLabel(parentGfx, getLabel(element), {
-      box: box,
-      fitBox: true,
-      style: assign(
-          {},
-          textRenderer.getExternalStyle(),
-          {
-            fill: element.color
-          }
-      )
-    });
-  }
-
   
-  
-
+ 
   function addMarker(id, options) {
     var attrs = assign({
       fill: 'black',
@@ -566,6 +367,150 @@ export default function RALphRenderer(eventBus, styles, canvas, textRenderer) {
   }
 
   
+  function renderLabel(parentGfx, label, options) {
+    options = assign({
+      size: {
+        width: 100
+      }
+    }, options);
+
+    var text = textRenderer.createText(label || '', options);
+    svgClasses(text).add('djs-label');
+    svgAppend(parentGfx, text);
+    return text;
+  }
+
+  function renderEmbeddedLabel(parentGfx, element, align) {
+    var semantic = getSemantic(element);
+    
+    // Verificar si hay texto para renderizar - usar name como PPINOT
+    var text = semantic.name || semantic.text;
+    if (!text || text.trim() === '') {
+      return null; // No renderizar si no hay texto
+    }
+
+    return renderLabel(parentGfx, text, {
+      box: element,
+      align: align,
+      padding: 5,
+      style: {
+        fill: element.color || '#000000',
+        fontSize: '11px',
+        fontWeight: 'bold'
+      }
+    });
+  }
+
+  function renderEmbeddedLabelHistoryAnyInTime(parentGfx, element, align, size, weight) {
+    var semantic = getSemantic(element);
+
+    return renderLabel(parentGfx, semantic.text, {
+      box: element,
+      align: align,
+      padding: 35,
+      style: {
+        fill: element.color,
+        fontSize: size + 'px',
+        fontWeight: weight
+      }
+    });
+  }
+
+  function renderExternalLabel(parentGfx, element) {
+    var box = {
+      width: 90,
+      height: 30,
+      x: element.width / 2 + element.x,
+      y: element.height + element.y
+    };
+
+    // Get text from businessObject.name
+    var text = '';
+    if (element.businessObject && element.businessObject.name) {
+      text = element.businessObject.name;
+    }
+
+    return renderLabel(parentGfx, text, {
+      box: box,
+      fitBox: true,
+      style: assign(
+        {},
+        textRenderer.getExternalStyle(),
+        {
+          fill: 'black'
+        }
+      )
+    });
+  }
+
+  // Helper functions for crossed lines
+  function drawCrossedLine(points, attrs) {
+    var line = svgCreate('polyline');
+    var result = '';
+    var middlePosition = points.length / 2;
+    middlePosition = Math.round(middlePosition);
+
+    var middlePointX = (points[middlePosition].x + points[middlePosition - 1].x) / 2;
+    var middlePointY = (points[middlePosition].y + points[middlePosition - 1].y) / 2;
+    result += (middlePointX - 20).toString() + ',' + (middlePointY + 20).toString() + ',' + (middlePointX + 20).toString() + ',' + parseInt(middlePointY - 20).toString();
+
+    svgAttr(line, { points: result });
+
+    if (attrs) {
+      svgAttr(line, attrs);
+    }
+
+    return line;
+  }
+
+  function drawCrossedLine2(points, attrs) {
+    var line = svgCreate('polyline');
+    var result = '';
+    var middlePosition = points.length / 2;
+    middlePosition = Math.round(middlePosition);
+
+    var middlePointX = (points[middlePosition].x + points[middlePosition - 1].x) / 2;
+    var middlePointY = (points[middlePosition].y + points[middlePosition - 1].y) / 2;
+
+    result += (middlePointX + 20).toString() + ',' + (middlePointY + 20).toString() + ',' + (middlePointX - 20).toString() + ',' + parseInt(middlePointY - 20).toString();
+    svgAttr(line, { points: result });
+
+    if (attrs) {
+      svgAttr(line, attrs);
+    }
+
+    return line;
+  }
+
+
+
+  function drawDataField(shape){
+
+    var catGfx = svgCreate('image', {
+      x: 0,
+      y: 0,
+      width: shape.width,
+      height: shape.height,
+      href:Cat.dataField
+    });
+
+    return  catGfx;
+  }
+
+  function drawReportsTo(shape){
+
+    var catGfx = svgCreate('image', {
+      x: 0,
+      y: 0,
+      width: shape.width,
+      height: shape.height,
+      href:Cat.dataReports2
+    });
+
+    return  catGfx;
+  }
+
+  
 
   function drawPosition(shape){
 
@@ -818,6 +763,7 @@ export default function RALphRenderer(eventBus, styles, canvas, textRenderer) {
  
   //this property determines which shape must be rendered depending on the object.
    this.renderers = {
+    // Removed generic label renderer - using drawLabel function instead
     
     'RALph:Position':(p,element) =>{
       let pos=drawPosition(element)
@@ -873,6 +819,7 @@ export default function RALphRenderer(eventBus, styles, canvas, textRenderer) {
 
       svgAppend(p,org)
       
+      // Don't render external label here - let the label provider handle it
 
       return org;
 
@@ -881,18 +828,26 @@ export default function RALphRenderer(eventBus, styles, canvas, textRenderer) {
       
       svgAppend(p,cap)
 
+      // Don't render external label here - let the label provider handle it
+
       return cap;
 
     },'RALph:Person':(p,element)=>{
         let person=drawPerson(element)
         
         svgAppend(p,person)
+        
+        // Don't render external label here - let the label provider handle it
+        
         return person;
 
     },'RALph:RoleRALph':(p,element)=>{
         let role=drawRoleRALph(element)
 
         svgAppend(p,role)
+        
+        // Don't render external label here - let the label provider handle it
+        
         return role;
 
     },'RALph:History-Same':(p,element)=>{
@@ -952,12 +907,18 @@ export default function RALphRenderer(eventBus, styles, canvas, textRenderer) {
       let delegate=drawDelegateTo(element)
       
       svgAppend(p,delegate)
+      
+      // Don't render external label here - let the label provider handle it
+      
       return delegate;
 
     },'RALph:reportsTo':(p,element)=>{
       let report = drawReportsTo(element);
 
       svgAppend(p,report)
+      
+      // Don't render external label here - let the label provider handle it
+      
       return report;
 
     },'RALph:ResourceArc': (p, element) => {
@@ -1081,11 +1042,8 @@ export default function RALphRenderer(eventBus, styles, canvas, textRenderer) {
       };
 
       return svgAppend(p, createLine(element.waypoints, attrs));
-    },
-    'label': (p, element) => {
-      return renderExternalLabel(p, element);
-    },
-  };
+    }
+  }
 
   /*
    function getConnectionPath(connection) {
@@ -1104,6 +1062,14 @@ export default function RALphRenderer(eventBus, styles, canvas, textRenderer) {
      });
      return componentsToPath(connectionPath);
    }*/
+
+   // Check if this renderer can render the given element
+   this.canRender = function(element) {
+     return element.type && (
+       element.type.startsWith('RALph:') || 
+       (element.type === 'label' && element.labelTarget && element.labelTarget.type && element.labelTarget.type.startsWith('RALph:'))
+     );
+   };
 
    //this property determines the area of connectivity in a shape:
    this.paths = {
@@ -1674,28 +1640,170 @@ export default function RALphRenderer(eventBus, styles, canvas, textRenderer) {
       
       return componentsToPath(d);
 
+    },
+    'RALph:simpleArrow': (element) => {
+      var x = element.x,
+          y = element.y,
+          width = element.width,
+          height = element.height;
+
+      var arrowPath = [
+        ['M', x, y],
+        ['l', width, 0],
+        ['l', -10, -5],
+        ['l', 0, 10],
+        ['l', 10, -5],
+        ['z']
+      ];
+
+      return componentsToPath(arrowPath);
+    },
+    'RALph:doubleArrow': (element) => {
+      var x = element.x,
+          y = element.y,
+          width = element.width,
+          height = element.height;
+
+      var doubleArrowPath = [
+        ['M', x, y],
+        ['l', width - 20, 0],
+        ['l', -10, -5],
+        ['l', 0, 10],
+        ['l', 10, -5],
+        ['l', 20, 0],
+        ['l', -10, -5],
+        ['l', 0, 10],
+        ['l', 10, -5],
+        ['z']
+      ];
+
+      return componentsToPath(doubleArrowPath);
+    },
+    'RALph:solidLine': (element) => {
+      var x = element.x,
+          y = element.y,
+          width = element.width,
+          height = element.height;
+
+      var solidLinePath = [
+        ['M', x, y],
+        ['l', width, 0]
+      ];
+
+      return componentsToPath(solidLinePath);
+    },
+    'RALph:solidLineWithCircle': (element) => {
+      var x = element.x,
+          y = element.y,
+          width = element.width,
+          height = element.height;
+
+      var solidLineWithCirclePath = [
+        ['M', x, y],
+        ['l', width - 10, 0],
+        ['a', 5, 5, 0, 0, 1, 5, 5],
+        ['a', 5, 5, 0, 0, 1, -5, 5],
+        ['l', width - 10, 0]
+      ];
+
+      return componentsToPath(solidLineWithCirclePath);
+    },
+    'RALph:dashedLine': (element) => {
+      var x = element.x,
+          y = element.y,
+          width = element.width,
+          height = element.height;
+
+      var dashedLinePath = [
+        ['M', x, y],
+        ['l', width, 0]
+      ];
+
+      return componentsToPath(dashedLinePath);
+    },
+    'RALph:dashedLineWithCircle': (element) => {
+      var x = element.x,
+          y = element.y,
+          width = element.width,
+          height = element.height;
+
+      var dashedLineWithCirclePath = [
+        ['M', x, y],
+        ['l', width - 10, 0],
+        ['a', 5, 5, 0, 0, 1, 5, 5],
+        ['a', 5, 5, 0, 0, 1, -5, 5],
+        ['l', width - 10, 0]
+      ];
+
+      return componentsToPath(dashedLineWithCirclePath);
+    },
+    'RALph:ConsequenceFlow': (element) => {
+      var x = element.x,
+          y = element.y,
+          width = element.width,
+          height = element.height;
+
+      var consequenceFlowPath = [
+        ['M', x, y],
+        ['l', width, 0]
+      ];
+
+      return componentsToPath(consequenceFlowPath);
     }
   }
 }
 
-inherits(RALphRenderer, BaseRenderer);
-
-//RALphRenderer.$inject = [ 'eventBus', 'styles', 'canvas', 'textRenderer' ];
-RALphRenderer.$inject = [ 'eventBus', 'styles', 'canvas', 'textRenderer' ];
 
 RALphRenderer.prototype.canRender = function(element) {
   return (/^RALph:/.test(element.type) || element.type === 'label') //|| (/^persons:/.test(element.type) || element.type === 'label') 
 };
 
-RALphRenderer.prototype.drawShape = function(p, element) {
-  var type = element.type;
-  var h = this.renderers[type];
-  if(element.color == null)
-    element.color= "#000"
+RALphRenderer.prototype.drawShape = function (p, element) {
+    var type = element.type;
+    var h = this.renderers[type];
+    if(element.color == null)
+      element.color= "#000"
 
-  /* jshint -W040 */
-  return h(p, element);
-};
+    // Special handling for RALPH labels
+    if (type === 'label' && element.labelTarget && element.labelTarget.type && element.labelTarget.type.startsWith('RALph:')) {
+      return this.drawLabel(p, element);
+    }
+
+    /* jshint -W040 */
+    return h(p, element);
+  };
+
+  // Special function to draw RALPH labels (similar to PPINOT)
+  RALphRenderer.prototype.drawLabel = function (parentGfx, element) {
+    if (!element) return null;
+
+    const text = (element.businessObject && typeof element.businessObject.name === 'string')
+      ? element.businessObject.name
+      : '';
+
+    if (!text.trim()) {
+      return null;
+    }
+
+    const { width = 150, height = 50 } = element;
+
+    const textElement = this._textRenderer.createText(text, {
+      box: { width, height },
+      align: 'center-middle',
+      style: {
+        fontSize: '12px',
+        fontFamily: 'Arial, sans-serif',
+        fill: '#000',
+        whiteSpace: 'pre',       
+        maxWidth: width,
+      }
+    });
+
+    svgClasses(textElement).add('ralph-label');
+    svgAppend(parentGfx, textElement);
+
+    return textElement;
+  };
 
 RALphRenderer.prototype.getShapePath = function(shape) {
 
@@ -1703,7 +1811,25 @@ RALphRenderer.prototype.getShapePath = function(shape) {
   var h = this.paths[type];
 
   /* jshint -W040 */
-  return h(shape);
+  if (h && typeof h === 'function') {
+    return h(shape);
+  } else {
+    // Fallback to a default rectangle path if no specific path is defined
+    var x = shape.x,
+        y = shape.y,
+        width = shape.width,
+        height = shape.height;
+    
+    var defaultPath = [
+      ['M', x, y],
+      ['l', width, 0],
+      ['l', 0, height],
+      ['l', -width, 0],
+      ['z']
+    ];
+    
+    return componentsToPath(defaultPath);
+  }
 };
 
 RALphRenderer.prototype.drawConnection = function(p, element) {
@@ -1727,6 +1853,26 @@ RALphRenderer.prototype.getConnectionPath = function(connection) {
     return p.original || p;
   });
 
+  // Validate and sanitize waypoints
+  waypoints = waypoints.filter(function(point) {
+    return point && 
+           typeof point.x === 'number' && 
+           typeof point.y === 'number' && 
+           !isNaN(point.x) && !isNaN(point.y) && 
+           isFinite(point.x) && isFinite(point.y);
+  }).map(function(point) {
+    // Ensure coordinates are finite numbers
+    return {
+      x: isFinite(point.x) ? point.x : 0,
+      y: isFinite(point.y) ? point.y : 0
+    };
+  });
+
+  // Ensure we have at least two waypoints
+  if (waypoints.length < 2) {
+    return '';
+  }
+
   var connectionPath = [
     ['M', waypoints[0].x, waypoints[0].y]
   ];
@@ -1741,3 +1887,5 @@ RALphRenderer.prototype.getConnectionPath = function(connection) {
   return componentsToPath(connectionPath);
 
 };
+
+RALphRenderer.$inject = ['styles', 'canvas', 'textRenderer'];

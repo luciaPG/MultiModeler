@@ -48,11 +48,11 @@ export const connections = [//this array states which elements are connections
 ]
 
 export const directEdit = [
-    //'RALph:Person',
-    //'RALph:RoleRALph',
-    //'RALph:Personcap',
-    //'RALph:Orgunit',
-    //'RALph:Position',
+    'RALph:Person',
+    'RALph:RoleRALph',
+    'RALph:Personcap',
+    'RALph:Orgunit',
+    'RALph:Position',
     
  
 
@@ -124,7 +124,7 @@ export const HistoryConnectorPreviousInstanceElements =[//linea con rayas con pu
 ]
 
 
-export const custom = [//this array states which elements are RALph elements
+export const Ralph = [//this array states which elements are RALph elements
     
     'RALph:ResourceArc',
     'RALph:Person',
@@ -157,21 +157,21 @@ export const custom = [//this array states which elements are RALph elements
  
 ]
 
-export function isCustomShape(type) {
+export function isRalphShape(type) {
     if (typeof type === 'object')
         type = type.type
 
     return type.includes('RALph:') && !connections.includes(type)
 }
 
-export function isCustomConnection(type) {
+export function isRalphConnection(type) {
     if (typeof type === 'object') {
         type = type.type
     }
     return type.includes('RALph:') && connections.includes(type)
 }
 
-export function isCustomResourceArcElement(type) {
+export function isRalphResourceArcElement(type) {
 
     if (typeof type === 'object') {
         type = type.type
@@ -212,4 +212,24 @@ export function isHistoryConnectorPreviousInstanceElements(type) {
     }
 
     return HistoryConnectorPreviousInstanceElements.includes(type)
+}
+
+export function isExternalLabel(type) {
+    if (typeof type === 'object') {
+        type = type.type
+    }
+    return externalLabel.includes(type)
+}
+
+export function isRALPHShape(type) {
+    if (typeof type === 'object')
+        type = type.type || type.$type;
+    return type && type.includes('RALph:');
+}
+
+export function isRALPHConnection(type) {
+    if (typeof type === 'object') {
+        type = type.type
+    }
+    return type.includes('RALph:') && connections.includes(type)
 }

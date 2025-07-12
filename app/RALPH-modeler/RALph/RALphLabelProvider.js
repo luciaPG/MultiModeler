@@ -1,18 +1,18 @@
 import { assign } from 'min-dash';
-import { isExternalLabel, isPPINOTConnection } from './Types';
+import { isExternalLabel, isRALPHConnection } from './Types';
 import { getLabel } from 'bpmn-js/lib/features/label-editing/LabelUtil';
 import { is } from 'bpmn-js/lib/util/ModelUtil';
 
-export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, canvas, elementRegistry) {
+export default function RALPHLabelProvider(eventBus, modeling, elementFactory, canvas, elementRegistry) {
 
-  // Sistema de edición personalizado solo para conexiones PPINOT
+  // Sistema de edición personalizado para elementos RALPH
   let activeInput = null;
 
-  // Listener para doble click - solo para conexiones PPINOT
+  // Listener para doble click - para elementos RALPH
   eventBus.on('element.dblclick', function(event) {
     const element = event.element;
     
-    if (canEditPPINOTConnection(element)) {
+    if (canEditRALPHElement(element)) {
       
       // Si el elemento tiene un label, editar el label. Si no, editar el elemento.
       let targetElement = element;
@@ -31,7 +31,6 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
       activeInput = null;
     }
 
-
     // Obtener el contenedor del canvas
     const canvasContainer = canvas.getContainer();
     const canvasRect = canvasContainer.getBoundingClientRect();
@@ -44,7 +43,7 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
     const elementScreenY = (element.y - viewbox.y) * zoom + canvasRect.top;
     
     // Obtener texto actual
-    const currentText = getPPINOTDefaultText(element.labelTarget || element);
+    const currentText = getRALPHDefaultText(element.labelTarget || element);
     
     // Crear input overlay
     const input = document.createElement('input');
@@ -53,8 +52,8 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
     input.style.position = 'fixed';
     input.style.left = elementScreenX + 'px';
     input.style.top = elementScreenY + 'px';
-    input.style.width = Math.max(80, element.width * zoom) + 'px';
-    input.style.height = Math.max(20, element.height * zoom) + 'px';
+    input.style.width = Math.max(150, element.width * zoom) + 'px';
+    input.style.height = Math.max(50, element.height * zoom) + 'px';
     input.style.fontSize = (12 * zoom) + 'px';
     input.style.textAlign = 'center';
     input.style.border = '2px solid #0086e6';
@@ -71,14 +70,13 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
     input.select();
     input.focus();
     
-    
     // Manejar eventos
     function finishEditing(save = true) {
       if (!activeInput) return;
       
       if (save) {
         const newText = input.value.trim();
-        updatePPINOTConnectionLabel(element, newText);
+        updateRALPHLabel(element, newText);
       }
       
       input.remove();
@@ -110,20 +108,20 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
     });
   }
 
-  function canEditPPINOTConnection(element) {
-    // Solo puede editar conexiones PPINOT y sus labels
-    if (element.type === 'label' && element.labelTarget && element.labelTarget.type && element.labelTarget.type.startsWith('PPINOT:')) {
-      return isPPINOTConnection(element.labelTarget);
+  function canEditRALPHElement(element) {
+    // Solo puede editar elementos RALPH y sus labels
+    if (element.type === 'label' && element.labelTarget && element.labelTarget.type && element.labelTarget.type.startsWith('RALph:')) {
+      return isExternalLabel(element.labelTarget);
     }
     
-    if (element.type && element.type.startsWith('PPINOT:') && isPPINOTConnection(element)) {
+    if (element.type && element.type.startsWith('RALph:') && isExternalLabel(element)) {
       return true;
     }
     
     return false;
   }
 
-  function getPPINOTDefaultText(element) {
+  function getRALPHDefaultText(element) {
     // Verificar que el elemento existe
     if (!element || !element.type) {
       return '';
@@ -137,36 +135,36 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
       return currentText;
     }
 
-    // Solo asignar texto por defecto para conexiones PPINOT
-    if (isPPINOTConnection(element)) {
-      if (is(element, 'PPINOT:ToConnection')) {
-        return 'to';
-      }
-      if (is(element, 'PPINOT:FromConnection')) {
-        return 'from';
-      }
-      if (is(element, 'PPINOT:AggregatedConnection')) {
-        return 'aggregates';
-      }
-      if (is(element, 'PPINOT:GroupedBy')) {
-        return 'isGroupedBy';
-      }
-      if (is(element, 'PPINOT:StartConnection')) {
-        return 'start';
-      }
-      if (is(element, 'PPINOT:EndConnection')) {
-        return 'end';
-      }
+    // Solo asignar texto por defecto para elementos RALPH
+    if (is(element, 'RALph:Position')) {
+      return 'Position';
+    }
+    if (is(element, 'RALph:Complex-Assignment-OR')) {
+      return 'OR';
+    }
+    if (is(element, 'RALph:Complex-Assignment-AND')) {
+      return 'AND';
+    }
+    if (is(element, 'RALph:Orgunit')) {
+      return 'Organizational Unit';
+    }
+    if (is(element, 'RALph:Personcap')) {
+      return 'Person Capability';
+    }
+    if (is(element, 'RALph:Person')) {
+      return 'Person';
+    }
+    if (is(element, 'RALph:RoleRALph')) {
+      return 'Role';
     }
     
     return '';
   }
 
-  function updatePPINOTConnectionLabel(element, newText) {
+  function updateRALPHLabel(element, newText) {
     const safeText = (newText == null || newText === undefined) ? '' : String(newText);
     
-    
-    // Para labels externos de conexiones
+    // Para labels externos
     if (element.type === 'label' && element.labelTarget) {
       // Actualizar el businessObject del label
       if (!element.businessObject) {
@@ -184,7 +182,7 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
       eventBus.fire('element.changed', { element: element });
       
     } else {
-      // Para conexiones sin label externo
+      // Para elementos sin label externo
       if (!element.businessObject) {
         element.businessObject = {};
       }
@@ -192,97 +190,11 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
       
       eventBus.fire('element.changed', { element: element });
     }
-    
   }
 
-  // Listener específico para conexiones PPINOT creadas
-  eventBus.on('ppinot.connection.created', function(event) {
-    const connection = event.connection;
-
-    if (!connection.label && shouldCreateExternalLabel(connection)) {
-      createConnectionLabel(connection, getExternalLabelPosition(connection));
-    }
-  });
-
-  function createConnectionLabel(target, position) {
-    if (target.label || !target || !position || 
-        typeof position.x !== 'number' || typeof position.y !== 'number') {
-      return;
-    }
-
-    const defaultText = getPPINOTDefaultText(target);
-
-    // Asegurar que el businessObject del target tiene el nombre establecido
-    if (target.businessObject) {
-      target.businessObject.name = defaultText;
-    } else {
-      target.businessObject = { name: defaultText };
-    }
-
-    // Crear label específico para conexiones con dimensiones pequeñas
-    const labelBusinessObject = {
-      $type: 'bpmn:Label',
-      name: defaultText
-    };
-
-    const labelElement = elementFactory.createLabel({
-      id: target.id + '_label',
-      businessObject: labelBusinessObject,
-      type: 'label',
-      labelTarget: target,
-      width: 80,
-      height: 20
-    });
-
-    assign(labelElement, {
-      x: position.x - labelElement.width / 2,
-      y: position.y - labelElement.height / 2,
-      hidden: false,
-      isLabel: true,
-      _isLabel: true,
-      movable: true,
-      dragable: true,
-      parent: canvas.findRoot(target) || canvas.getRootElement()
-    });
-
-    target.label = labelElement;
-    labelElement.labelTarget = target;
-
-    const parent = canvas.findRoot(target) || canvas.getRootElement();
-
-    modeling.createShape(labelElement, {
-      x: position.x,
-      y: position.y
-    }, parent);
-
-  }
-
-  // Funcionalidad estándar para elementos PPINOT (no conexiones) - aproximación simple
-  
-  // Listen for element replacement to ensure labels are properly preserved
-  eventBus.on('shape.replace', function(event) {
-    const oldShape = event.oldShape;
-    const newShape = event.newShape;
-    
-    // If the old element had a label and the new one should have one too
-    if (oldShape.label && isExternalLabel(newShape) && !newShape.label) {
-      // Transfer the label to the new shape
-      const oldLabel = oldShape.label;
-      newShape.label = oldLabel;
-      oldLabel.labelTarget = newShape;
-      
-      // Ensure the new shape has the flag set
-      newShape._hasExternalLabel = true;
-    }
-  });
-
+  // Listener para elementos RALPH creados
   eventBus.on('create.end', 500, function(event) {
     const shape = event.context.shape;
-
-    // Para conexiones PPINOT, no crear aquí (se maneja en ppinot.connection.created)
-    if (isPPINOTConnection(shape)) {
-      return;
-    }
 
     if (!shape.labelTarget && !shape.hidden && !shape.label && shouldCreateExternalLabel(shape)) {
       createLabel(shape, getExternalLabelPosition(shape));
@@ -291,16 +203,11 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
 
   eventBus.on('import.done', function() {
     elementRegistry.forEach(function(element) {
-      // Para conexiones PPINOT, no crear aquí
-      if (isPPINOTConnection(element)) {
-        return;
-      }
-      
       if (shouldCreateExternalLabel(element) && !element.label) {
         createLabel(element, getExternalLabelPosition(element));
       }
 
-      if (element.type && element.type.startsWith('PPINOT:')) {
+      if (element.type && element.type.startsWith('RALph:')) {
         element._skipInternalLabel = true;
       }
     });
@@ -347,6 +254,7 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
     });
 
     target.label = labelElement;
+    labelElement.labelTarget = target;
 
     const parent = canvas.findRoot(target) || canvas.getRootElement();
 
@@ -374,19 +282,6 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
   }
 
   function getExternalLabelMid(element) {
-    // Para conexiones, calcular punto medio de los waypoints
-    if (element.waypoints && Array.isArray(element.waypoints) && element.waypoints.length > 1) {
-      const midIndex = Math.floor(element.waypoints.length / 2);
-      const start = element.waypoints[midIndex - 1];
-      const end = element.waypoints[midIndex];
-      const x = (start.x + end.x) / 2;
-      const y = (start.y + end.y) / 2;
-      return {
-        x: x,
-        y: y - 15
-      };
-    }
-    
     // Para elementos normales
     if (!element || typeof element.x !== 'number' || typeof element.y !== 'number' || 
         typeof element.width !== 'number' || typeof element.height !== 'number') {
@@ -405,10 +300,10 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
   }
 }
 
-PPINOTLabelProvider.$inject = [
+RALPHLabelProvider.$inject = [
   'eventBus',
   'modeling',
   'elementFactory',
   'canvas',
   'elementRegistry'
-];
+]; 

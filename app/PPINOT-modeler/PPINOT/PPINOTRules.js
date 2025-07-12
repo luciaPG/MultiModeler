@@ -12,12 +12,12 @@ import RuleProvider from 'diagram-js/lib/features/rules/RuleProvider';
 import {isPPINOTResourceArcElement, isPPINOTShape, isPPINOTAggregatedElement} from "./Types";
 import {isLabel as bpmnIsLabel} from "bpmn-js/lib/util/LabelUtil";
 
-// Custom isLabel function that recognizes PPINOT labels
+// Reconoce labels de PPINOT
 function isLabel(element) {
   return element && (element.type === 'label' || bpmnIsLabel(element));
 }
 
-// This module defines the rules of connection for the different types of connectors and elements created
+// Reglas de conexión para los diferentes tipos de conectores y elementos PPINOT
 
 var HIGH_PRIORITY = 1500;
 
@@ -32,9 +32,7 @@ function isDefaultValid(element) {
 }
 
 
-/**
- * Specific rules for PPINOT elements
- */
+// Reglas específicas para elementos PPINOT
 export default function PPINOTRules(eventBus) {
   RuleProvider.call(this, eventBus);
 
@@ -180,7 +178,6 @@ PPINOTRules.prototype.init = function() {
 
     // Special handling for single PPINOT label movement
     if (shapes.length === 1 && isLabel(shapes[0]) && shapes[0].labelTarget && isPPINOT(shapes[0].labelTarget)) {
-      console.log('🎯 PPINOTRules: Allowing single PPINOT label movement for:', shapes[0].id);
       return true;
     }
 
@@ -192,7 +189,6 @@ PPINOTRules.prototype.init = function() {
       
       // Allow PPINOT labels to be moved freely in groups too
       if (isLabel(s) && s.labelTarget && isPPINOT(s.labelTarget)) {
-        console.log('🎯 PPINOTRules: PPINOT label in group movement:', s.id);
         return result !== false; // Don't change result if it's already false, otherwise allow
       }
       
@@ -224,11 +220,9 @@ PPINOTRules.prototype.init = function() {
 
     // Allow PPINOT labels to be moved freely with highest priority
     if (isLabel(shape) && shape.labelTarget && isPPINOT(shape.labelTarget)) {
-      console.log('🎯 PPINOTRules: Allowing PPINOT label move for:', shape.id);
       return true;
     }
     
-    console.log('🚫 PPINOTRules: shape.move not handled for:', shape.type, shape.id);
   });
 
   // Add additional rule for element movement with even higher priority
@@ -236,7 +230,6 @@ PPINOTRules.prototype.init = function() {
     var element = context.element || context.shape;
 
     if (isLabel(element) && element.labelTarget && isPPINOT(element.labelTarget)) {
-      console.log('🚀 PPINOTRules: Allowing PPINOT label element.move for:', element.id);
       return true;
     }
   });

@@ -14,7 +14,7 @@ export default class MultiNotationModeler extends Modeler {
       additionalModules: [
         BaseModule,
         PPINOTModule,
-       // RALPHModule,
+        RALPHModule, 
         ...(options.additionalModules || [])
       ]
     });
@@ -22,7 +22,9 @@ export default class MultiNotationModeler extends Modeler {
     super(enhancedOptions);
     
     this._customElements = [];
-  }  clear() {
+  }
+
+  clear() {
     this._customElements = [];
     return super.clear();
   }
@@ -34,6 +36,7 @@ export default class MultiNotationModeler extends Modeler {
   addCustomElements(elements) {
     this._customElements.push(...elements);
   }
+
   _addPPINOTShape(PPINOTElement) {
     this._customElements.push(PPINOTElement);
     const shape = this.get('elementFactory').create('shape', assign({ businessObject: PPINOTElement }, PPINOTElement));
@@ -86,6 +89,7 @@ export default class MultiNotationModeler extends Modeler {
       ? this._addPPINOTConnection(PPINOTElement)
       : this._addPPINOTShape(PPINOTElement);
   }
+
   importPPINOTDiagram(PPINOTElements) {
     PPINOTElements.forEach(el => this.addPPINOTElement(el));
   }
@@ -120,8 +124,44 @@ export default class MultiNotationModeler extends Modeler {
       ? this._addRALPHConnection(RALPHElement)
       : this._addRALPHShape(RALPHElement);
   }
+
   importRALPHDiagram(RALPHElements) {
     RALPHElements.forEach(el => this.addRALPHElement(el));
+  }
+
+  getRALPHElements() {
+    const elementRegistry = this.get('elementRegistry');
+    const ralphElements = [];
+    
+    elementRegistry.forEach(element => {
+      if (element.type && element.type.startsWith('RALph:')) {
+        const elementData = {
+          id: element.id,
+          type: element.type,
+          x: element.x,
+          y: element.y,
+          width: element.width,
+          height: element.height,
+          name: element.businessObject ? element.businessObject.name : ''
+        };
+        
+        // Add label data if it exists
+        if (element.label) {
+          elementData.label = {
+            id: element.label.id,
+            x: element.label.x,
+            y: element.label.y,
+            width: element.label.width,
+            height: element.label.height,
+            name: element.label.businessObject ? element.label.businessObject.name : ''
+          };
+        }
+        
+        ralphElements.push(elementData);
+      }
+    });
+    
+    return ralphElements;
   }
 
   importMixedDiagram(mixedData) {
@@ -131,7 +171,9 @@ export default class MultiNotationModeler extends Modeler {
     if (mixedData.ralph) {
       this.importRALPHDiagram(mixedData.ralph);
     }
-  }  setColors(idAndColorList) {
+  }
+
+  setColors(idAndColorList) {
     const modeling = this.get('modeling');
     const elementRegistry = this.get('elementRegistry');
     idAndColorList.forEach(obj => {

@@ -5,8 +5,11 @@ import MultiNotationPaletteProvider from './MultiNotationPaletteProvider';
 import MultiNotationContextPadProvider from './MultiNotationContextPadProvider';
 import MultiNotationElementFactory from './MultiNotationElementFactory';
 import MultiNotationRenderer from './MultiNotationRenderer';
-import MultiNotationLabelProvider from './MultiNotationLabelProvider';
-import MultiNotationMenuProvider from './MultiNotationMenuProvider';
+import MultiNotationReplaceMenuProvider from './MultiNotationReplaceMenuProvider';
+import MultiNotationConnect from './MultiNotationConnect';
+import BendpointBehavior from './behaviour/BendpointBehavior';
+import ReplaceConnectionBehaviour from './behaviour/ReplaceConnectionBehaviour';
+
 export default {
   __depends__: [
     ReplaceModule,
@@ -18,15 +21,19 @@ export default {
     'multiNotationPaletteProvider',
     'bpmnRenderer',
     'contextPadProvider',
-    'multiNotationLabelProvider',
     'elementFactory',
-    'multiNotationMenuProvider'
+    'multiNotationReplaceMenuProvider',
+    'connect',
+    'bendpointBehavior',
+    'replaceConnectionBehaviour'
   ],
 
   multiNotationPaletteProvider:    ['type', MultiNotationPaletteProvider],
   bpmnRenderer:           ['type', MultiNotationRenderer],
   contextPadProvider:     ['type', MultiNotationContextPadProvider],
-  multiNotationLabelProvider:      ['type', MultiNotationLabelProvider],
   elementFactory:         ['type', MultiNotationElementFactory],
-  multiNotationMenuProvider: ['type', MultiNotationMenuProvider]
+  multiNotationReplaceMenuProvider: ['type', MultiNotationReplaceMenuProvider],
+  connect: ['type', MultiNotationConnect],
+  bendpointBehavior: ['type', BendpointBehavior],
+  replaceConnectionBehaviour: ['type', ReplaceConnectionBehaviour]
 };

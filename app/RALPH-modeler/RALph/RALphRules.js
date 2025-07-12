@@ -9,8 +9,6 @@ import {
   is
 } from 'bpmn-js/lib/util/ModelUtil';
 
-import customModeler from'./RALphModeling';
-
 import RuleProvider from 'diagram-js/lib/features/rules/RuleProvider';
 import {isAny} from "bpmn-js/lib/features/modeling/util/ModelingUtil";
 import {resourceArcElements} from "./Types";
@@ -269,11 +267,22 @@ RALphRules.prototype.init = function() {
     var target = context.target,
         shapes = context.shapes;
 
+    // Special handling for single RALPH label movement
+    if (shapes.length === 1 && isLabel(shapes[0]) && shapes[0].labelTarget && isRALph(shapes[0].labelTarget)) {
+      return true;
+    }
+
     var type;
 
     // do not allow mixed movements of custom / BPMN shapes
     // if any shape cannot be moved, the group cannot be moved, too
     var allowed = reduce(shapes, function(result, s) {
+      
+      // Allow RALPH labels to be moved freely in groups too
+      if (isLabel(s) && s.labelTarget && isRALph(s.labelTarget)) {
+        return result !== false; // Don't change result if it's already false, otherwise allow
+      }
+      
       if (type === undefined) {
         type = isRALph(s);
       }

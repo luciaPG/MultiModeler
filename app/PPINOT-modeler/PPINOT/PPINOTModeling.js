@@ -5,7 +5,6 @@ import { isAny } from 'bpmn-js/lib/features/modeling/util/ModelingUtil';
 import {label} from "./Types";
 
 import PPINOTUpdateLabelHandler from "./handlers/PPINOTUpdateLabelHandler";
-import PPINOTCreateConnectionHandler from "./handlers/PPINOTCreateConnectionHandler";
 import CreateConnectionHandler from "diagram-js/lib/features/modeling/cmd/CreateConnectionHandler";
 
 
@@ -19,7 +18,8 @@ export default class PPINOTModeling extends Modeling {
     getHandlers() {
         let handlers = super.getHandlers();
         handlers['element.PPINOTUpdateLabel'] = PPINOTUpdateLabelHandler;
-        handlers['connection.create'] = PPINOTCreateConnectionHandler;
+        // Use the generic CreateConnectionHandler from diagram-js
+        handlers['connection.create'] = CreateConnectionHandler;
 
         return handlers;
     }
