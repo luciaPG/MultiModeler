@@ -41,8 +41,13 @@ export default function RALphUpdater(eventBus, modeling, bpmnjs) {
       collectionAdd(RALphElements, businessObject);
     }
 
-    // save RALph element position
+    // save RALph element position and name
     assign(businessObject, pick(shape, [ 'x', 'y' ]));
+    
+    // Save the name if it exists
+    if (shape.businessObject && shape.businessObject.name) {
+      businessObject.name = shape.businessObject.name;
+    }
   }
 
   function updateCustomConnection(e) {
@@ -110,6 +115,84 @@ export default function RALphUpdater(eventBus, modeling, bpmnjs) {
     'connection.layout',
     'connection.move'
   ], ifCustomElement(updateCustomConnection));
+
+  // Handle property updates for RALPH elements and their labels
+  this.executed([
+    'element.updateProperties'
+  ], function(event) {
+    var context = event.context,
+        element = context.element,
+        properties = context.properties;
+
+    // Handle RALPH element updates
+    if (isCustom(element)) {
+      if (properties.name !== undefined) {
+        element.businessObject.name = properties.name;
+      }
+    }
+
+    // Handle label updates
+    if (element && element.type === 'label' && element.labelTarget && isCustom(element.labelTarget)) {
+      if (properties.name !== undefined) {
+        element.businessObject.name = properties.name;
+        element.labelTarget.businessObject.name = properties.name;
+      }
+    }
+  });
+
+  this.reverted([
+    'element.updateProperties'
+  ], function(event) {
+    var context = event.context,
+        element = context.element,
+        properties = context.properties;
+
+    // Handle RALPH element updates
+    if (isCustom(element)) {
+      if (properties.name !== undefined) {
+        element.businessObject.name = properties.name;
+      }
+    }
+
+    // Handle label updates
+    if (element && element.type === 'label' && element.labelTarget && isCustom(element.labelTarget)) {
+      if (properties.name !== undefined) {
+        element.businessObject.name = properties.name;
+        element.labelTarget.businessObject.name = properties.name;
+      }
+    }
+  });
+
+  // Handle direct editing completion for RALPH elements
+  this.executed([
+    'directEditing.complete'
+  ], function(event) {
+    var element = event.element;
+    var text = event.text;
+
+    if (element && element.type && element.type.startsWith('RALph:')) {
+      if (element.businessObject) {
+        element.businessObject.name = text;
+      }
+      
+      // Update external label if it exists
+      if (element.label && element.label.businessObject) {
+        element.label.businessObject.name = text;
+      }
+    }
+
+    if (element && element.type === 'label' && element.labelTarget && element.labelTarget.type && element.labelTarget.type.startsWith('RALph:')) {
+      if (element.businessObject) {
+        element.businessObject.name = text;
+      }
+      
+      if (element.labelTarget && element.labelTarget.businessObject) {
+        element.labelTarget.businessObject.name = text;
+      }
+    }
+  });
+
+
 
 
   /**

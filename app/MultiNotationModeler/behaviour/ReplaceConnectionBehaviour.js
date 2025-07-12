@@ -86,8 +86,6 @@ export default function ReplaceConnectionBehavior(eventBus, modeling, bpmnRules,
     }
 
     function replaceReconnectedConnection(event) {
-        console.log("replaceReconnectedConnection")
-        console.log(event)
         var context = event.context,
             connection = context.connection,
             source = context.newSource || connection.source,

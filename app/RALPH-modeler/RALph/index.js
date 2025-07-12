@@ -4,7 +4,7 @@ import RALphPalette from './RALphPalette';
 import RALphRenderer from './RALphRenderer';
 import RALphRules from './RALphRules';
 import RALphUpdater from './RALphUpdater';
-import RALphLabelEditingProvider from "./RALphLabelEditingProvider";
+import RALPHLabelProvider from './RALphLabelProvider';
 
 export default {
   __init__: [
@@ -14,7 +14,7 @@ export default {
     'RALphRules',
     'RALphUpdater',
     'RALphPalette',
-    'RALphLabelEditingProvider',
+    'RALPHLabelProvider',
   ],
   RALphContextPadProvider: [ 'type', RALphContextPadProvider ],
   RALphOrderingProvider: [ 'type', RALphOrderingProvider ],
@@ -22,5 +22,5 @@ export default {
   RALphRules: [ 'type', RALphRules ],
   RALphUpdater: [ 'type', RALphUpdater ],
   RALphPalette: [ 'type', RALphPalette ],
-  RALphLabelEditingProvider: [ 'type', RALphLabelEditingProvider ],
+  RALPHLabelProvider: [ 'type', RALPHLabelProvider ],
 };

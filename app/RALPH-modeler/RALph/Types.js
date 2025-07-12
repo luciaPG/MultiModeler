@@ -48,11 +48,11 @@ export const connections = [//this array states which elements are connections
 ]
 
 export const directEdit = [
-    //'RALph:Person',
-    //'RALph:RoleRALph',
-    //'RALph:Personcap',
-    //'RALph:Orgunit',
-    //'RALph:Position',
+    'RALph:Person',
+    'RALph:RoleRALph',
+    'RALph:Personcap',
+    'RALph:Orgunit',
+    'RALph:Position',
     
  
 
@@ -212,4 +212,24 @@ export function isHistoryConnectorPreviousInstanceElements(type) {
     }
 
     return HistoryConnectorPreviousInstanceElements.includes(type)
+}
+
+export function isExternalLabel(type) {
+    if (typeof type === 'object') {
+        type = type.type
+    }
+    return externalLabel.includes(type)
+}
+
+export function isRALPHShape(type) {
+    if (typeof type === 'object')
+        type = type.type || type.$type;
+    return type && type.includes('RALph:');
+}
+
+export function isRALPHConnection(type) {
+    if (typeof type === 'object') {
+        type = type.type
+    }
+    return type.includes('RALph:') && connections.includes(type)
 }

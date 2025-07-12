@@ -4,7 +4,7 @@ import { append as svgAppend, attr as svgAttr, classes as svgClasses, create as 
 import { getSemantic } from "bpmn-js/lib/draw/BpmnRenderUtil";
 import { assign } from "min-dash";
 import Ids from 'ids';
-import { getLabel } from "./utils/LabelUtil";
+
 import Cat from './SVGs';
 
 var RENDERER_IDS = new Ids();
@@ -382,13 +382,21 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
 
   function renderEmbeddedLabel(parentGfx, element, align) {
     var semantic = getSemantic(element);
+    
+    // Verificar si hay texto para renderizar - usar name como PPINOT
+    var text = semantic.name || semantic.text;
+    if (!text || text.trim() === '') {
+      return null; // No renderizar si no hay texto
+    }
 
-    return renderLabel(parentGfx, semantic.text, {
+    return renderLabel(parentGfx, text, {
       box: element,
       align: align,
-      padding: 3,
+      padding: 5,
       style: {
-        fill: element.color
+        fill: element.color || '#000000',
+        fontSize: '11px',
+        fontWeight: 'bold'
       }
     });
   }
@@ -416,7 +424,13 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
       y: element.height + element.y
     };
 
-    return renderLabel(parentGfx, getLabel(element), {
+    // Get text from businessObject.name
+    var text = '';
+    if (element.businessObject && element.businessObject.name) {
+      text = element.businessObject.name;
+    }
+
+    return renderLabel(parentGfx, text, {
       box: box,
       fitBox: true,
       style: assign(
@@ -749,6 +763,7 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
  
   //this property determines which shape must be rendered depending on the object.
    this.renderers = {
+    // Removed generic label renderer - using drawLabel function instead
     
     'RALph:Position':(p,element) =>{
       let pos=drawPosition(element)
@@ -804,6 +819,7 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
 
       svgAppend(p,org)
       
+      // Don't render external label here - let the label provider handle it
 
       return org;
 
@@ -812,18 +828,26 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
       
       svgAppend(p,cap)
 
+      // Don't render external label here - let the label provider handle it
+
       return cap;
 
     },'RALph:Person':(p,element)=>{
         let person=drawPerson(element)
         
         svgAppend(p,person)
+        
+        // Don't render external label here - let the label provider handle it
+        
         return person;
 
     },'RALph:RoleRALph':(p,element)=>{
         let role=drawRoleRALph(element)
 
         svgAppend(p,role)
+        
+        // Don't render external label here - let the label provider handle it
+        
         return role;
 
     },'RALph:History-Same':(p,element)=>{
@@ -883,12 +907,18 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
       let delegate=drawDelegateTo(element)
       
       svgAppend(p,delegate)
+      
+      // Don't render external label here - let the label provider handle it
+      
       return delegate;
 
     },'RALph:reportsTo':(p,element)=>{
       let report = drawReportsTo(element);
 
       svgAppend(p,report)
+      
+      // Don't render external label here - let the label provider handle it
+      
       return report;
 
     },'RALph:ResourceArc': (p, element) => {
@@ -1012,11 +1042,8 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
       };
 
       return svgAppend(p, createLine(element.waypoints, attrs));
-    },
-    'label': (p, element) => {
-      return renderExternalLabel(p, element);
-    },
-  };
+    }
+  }
 
   /*
    function getConnectionPath(connection) {
@@ -1035,6 +1062,14 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
      });
      return componentsToPath(connectionPath);
    }*/
+
+   // Check if this renderer can render the given element
+   this.canRender = function(element) {
+     return element.type && (
+       element.type.startsWith('RALph:') || 
+       (element.type === 'label' && element.labelTarget && element.labelTarget.type && element.labelTarget.type.startsWith('RALph:'))
+     );
+   };
 
    //this property determines the area of connectivity in a shape:
    this.paths = {
@@ -1723,15 +1758,52 @@ RALphRenderer.prototype.canRender = function(element) {
   return (/^RALph:/.test(element.type) || element.type === 'label') //|| (/^persons:/.test(element.type) || element.type === 'label') 
 };
 
-RALphRenderer.prototype.drawShape = function(p, element) {
-  var type = element.type;
-  var h = this.renderers[type];
-  if(element.color == null)
-    element.color= "#000"
+RALphRenderer.prototype.drawShape = function (p, element) {
+    var type = element.type;
+    var h = this.renderers[type];
+    if(element.color == null)
+      element.color= "#000"
 
-  /* jshint -W040 */
-  return h(p, element);
-};
+    // Special handling for RALPH labels
+    if (type === 'label' && element.labelTarget && element.labelTarget.type && element.labelTarget.type.startsWith('RALph:')) {
+      return this.drawLabel(p, element);
+    }
+
+    /* jshint -W040 */
+    return h(p, element);
+  };
+
+  // Special function to draw RALPH labels (similar to PPINOT)
+  RALphRenderer.prototype.drawLabel = function (parentGfx, element) {
+    if (!element) return null;
+
+    const text = (element.businessObject && typeof element.businessObject.name === 'string')
+      ? element.businessObject.name
+      : '';
+
+    if (!text.trim()) {
+      return null;
+    }
+
+    const { width = 150, height = 50 } = element;
+
+    const textElement = this._textRenderer.createText(text, {
+      box: { width, height },
+      align: 'center-middle',
+      style: {
+        fontSize: '12px',
+        fontFamily: 'Arial, sans-serif',
+        fill: '#000',
+        whiteSpace: 'pre',       
+        maxWidth: width,
+      }
+    });
+
+    svgClasses(textElement).add('ralph-label');
+    svgAppend(parentGfx, textElement);
+
+    return textElement;
+  };
 
 RALphRenderer.prototype.getShapePath = function(shape) {
 

@@ -92,12 +92,13 @@ async function createNewDiagram() {
   }
 }
 
-async function openDiagram(xml, cbpmn) {
+async function openDiagram(xml, cbpmn, ralph) {
   try {
     await modeler.clear();
     await modeler.importXML(xml);
     container.removeClass('with-error').addClass('with-diagram');
     if (cbpmn) modeler.addPPINOTElements(cbpmn);
+    if (ralph) modeler.importRALPHDiagram(ralph);
     body.addClass('shown');
     updateUI('Diagrama cargado exitosamente.');
   } catch (err) {
@@ -115,11 +116,17 @@ function saveDiagram(done) {
           obj.get('flowElements').forEach((el) => {
             if (el.$type && el.$type.includes('Task')) fixTaskData(el);
             else if (el.$type === 'bpmn:DataObjectReference' && !el.get('name')) el.set('name', '');
+            // Ensure RALPH elements have their names saved
+            else if (el.$type && el.$type.startsWith('RALph:')) {
+              if (!el.get('name')) el.set('name', '');
+            }
           });
         }
       });
       moddle.toXML(def, { format: true }, (err, res) => {
-        done(err, res, modeler.getPPINOTElements ? modeler.getPPINOTElements() : null);
+        const ppinotElements = modeler.getPPINOTElements ? modeler.getPPINOTElements() : null;
+        const ralphElements = modeler.getRALPHElements ? modeler.getRALPHElements() : null;
+        done(err, res, { ppinot: ppinotElements, ralph: ralphElements });
       });
     });
   });
@@ -130,30 +137,60 @@ function saveSVG(done) {
 }
 
 function handleFiles(files, callback) {
-  let bpmn, cbpmnFile;
+  let bpmn, cbpmnFile, ralphFile;
   if (files[0].name.includes('.bpmn')) {
     bpmn = files[0];
     if (files[1] && files[1].name.includes('.cbpmn')) cbpmnFile = files[1];
     else if (files[1]) window.alert('El segundo archivo no es cbpmn');
+    if (files[2] && files[2].name.includes('.ralph')) ralphFile = files[2];
+    else if (files[2]) window.alert('El tercer archivo no es ralph');
   } else if (files[1] && files[1].name.includes('.bpmn')) {
     bpmn = files[1];
     if (files[0] && files[0].name.includes('.cbpmn')) cbpmnFile = files[0];
     else if (files[0]) window.alert('El segundo archivo no es cbpmn');
+    if (files[2] && files[2].name.includes('.ralph')) ralphFile = files[2];
+    else if (files[2]) window.alert('El tercer archivo no es ralph');
+  } else if (files[2] && files[2].name.includes('.bpmn')) {
+    bpmn = files[2];
+    if (files[0] && files[0].name.includes('.cbpmn')) cbpmnFile = files[0];
+    else if (files[0]) window.alert('El segundo archivo no es cbpmn');
+    if (files[1] && files[1].name.includes('.ralph')) ralphFile = files[1];
+    else if (files[1]) window.alert('El tercer archivo no es ralph');
   } else if (files[0].name.includes('.cbpmn')) cbpmnFile = files[0];
+  else if (files[0].name.includes('.ralph')) ralphFile = files[0];
 
   const reader = new FileReader();
   if (bpmn) {
     reader.onload = (e) => {
       const xml = e.target.result;
-      if (cbpmnFile) {
+      if (cbpmnFile && ralphFile) {
         const reader1 = new FileReader();
         reader1.onload = (e) => {
           const cbpmn = JSON.parse(e.target.result);
-          callback(xml, cbpmn);
+          const reader2 = new FileReader();
+          reader2.onload = (e) => {
+            const ralph = JSON.parse(e.target.result);
+            callback(xml, cbpmn, ralph);
+          };
+          reader2.readAsText(ralphFile);
         };
         reader1.readAsText(cbpmnFile);
+      } else if (cbpmnFile) {
+        const reader1 = new FileReader();
+        reader1.onload = (e) => {
+          const cbpmn = JSON.parse(e.target.result);
+          callback(xml, cbpmn, null);
+        };
+        reader1.readAsText(cbpmnFile);
+      } else if (ralphFile) {
+        const reader1 = new FileReader();
+        reader1.onload = (e) => {
+          const ralph = JSON.parse(e.target.result);
+          callback(xml, null, ralph);
+        };
+        reader1.readAsText(ralphFile);
       } else {
-        callback(xml, null);
+        callback(xml, null, null);
       }
     };
     reader.readAsText(bpmn);
@@ -163,6 +200,12 @@ function handleFiles(files, callback) {
       if (modeler.addPPINOTElements) modeler.addPPINOTElements(cbpmn);
     };
     reader.readAsText(cbpmnFile);
+  } else if (ralphFile) {
+    reader.onload = (e) => {
+      const ralph = JSON.parse(e.target.result);
+      if (modeler.importRALPHDiagram) modeler.importRALPHDiagram(ralph);
+    };
+    reader.readAsText(ralphFile);
   }
 }
 
@@ -279,9 +322,10 @@ $(function() {
     saveSVG((err, svg) => {
       setEncoded($('#js-download-svg'), 'diagram.svg', err ? null : svg);
     });
-    saveDiagram((err, xml) => {
-      const cbpmn = modeler.getJson ? modeler.getJson() : null;
-      setMultipleEncoded($('#js-download-diagram'), 'diagram.bpmn', err ? null : [xml, cbpmn]);
+    saveDiagram((err, xml, data) => {
+      const cbpmn = data && data.ppinot ? data.ppinot : (modeler.getJson ? modeler.getJson() : null);
+      const ralph = data && data.ralph ? data.ralph : null;
+      setMultipleEncoded($('#js-download-diagram'), 'diagram.bpmn', err ? null : [xml, cbpmn, ralph]);
     });
   }, 500);
   if (modeler.on) modeler.on('commandStack.changed', exportArtifacts);
@@ -306,6 +350,9 @@ function setMultipleEncoded(link, name, data) {
   if (data) {
     window.localStorage.setItem('diagram', encodeURIComponent(data[0]));
     window.localStorage.setItem('PPINOT', encodeURIComponent(JSON.stringify(data[1])));
+    if (data[2]) {
+      window.localStorage.setItem('RALPH', encodeURIComponent(JSON.stringify(data[2])));
+    }
   } else {
     link.removeClass('active');
   }

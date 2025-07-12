@@ -46,6 +46,28 @@ export class RalphNotation {
       businessObject.id = moddle.ids.nextPrefixed(prefix, businessObject);
     }
 
+    // Asignar texto por defecto basado en el tipo de elemento - usar name como PPINOT
+    if (!businessObject.name) {
+      businessObject.name = this.getDefaultText(elementType);
+    }
+
     return businessObject;
+  }
+
+  /**
+   * Obtiene el texto por defecto para un tipo de elemento RALph
+   */
+  static getDefaultText(elementType) {
+    const defaultTexts = {
+      'RALph:Person': 'Person',
+      'RALph:RoleRALph': 'Role',
+      'RALph:Personcap': 'Capability',
+      'RALph:Orgunit': 'Organizational Unit',
+      'RALph:Position': 'Position',
+      'RALph:DelegateTo': 'Delegate To',
+      'RALph:reportsTo': 'Reports To'
+    };
+
+    return defaultTexts[elementType] || '';
   }
 }

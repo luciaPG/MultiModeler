@@ -5,7 +5,6 @@ import MultiNotationPaletteProvider from './MultiNotationPaletteProvider';
 import MultiNotationContextPadProvider from './MultiNotationContextPadProvider';
 import MultiNotationElementFactory from './MultiNotationElementFactory';
 import MultiNotationRenderer from './MultiNotationRenderer';
-import MultiNotationLabelProvider from './MultiNotationLabelProvider';
 import MultiNotationReplaceMenuProvider from './MultiNotationReplaceMenuProvider';
 import MultiNotationConnect from './MultiNotationConnect';
 import BendpointBehavior from './behaviour/BendpointBehavior';
@@ -22,7 +21,6 @@ export default {
     'multiNotationPaletteProvider',
     'bpmnRenderer',
     'contextPadProvider',
-    'multiNotationLabelProvider',
     'elementFactory',
     'multiNotationReplaceMenuProvider',
     'connect',
@@ -33,7 +31,6 @@ export default {
   multiNotationPaletteProvider:    ['type', MultiNotationPaletteProvider],
   bpmnRenderer:           ['type', MultiNotationRenderer],
   contextPadProvider:     ['type', MultiNotationContextPadProvider],
-  multiNotationLabelProvider:      ['type', MultiNotationLabelProvider],
   elementFactory:         ['type', MultiNotationElementFactory],
   multiNotationReplaceMenuProvider: ['type', MultiNotationReplaceMenuProvider],
   connect: ['type', MultiNotationConnect],

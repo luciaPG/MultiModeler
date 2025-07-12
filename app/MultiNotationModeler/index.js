@@ -129,6 +129,41 @@ export default class MultiNotationModeler extends Modeler {
     RALPHElements.forEach(el => this.addRALPHElement(el));
   }
 
+  getRALPHElements() {
+    const elementRegistry = this.get('elementRegistry');
+    const ralphElements = [];
+    
+    elementRegistry.forEach(element => {
+      if (element.type && element.type.startsWith('RALph:')) {
+        const elementData = {
+          id: element.id,
+          type: element.type,
+          x: element.x,
+          y: element.y,
+          width: element.width,
+          height: element.height,
+          name: element.businessObject ? element.businessObject.name : ''
+        };
+        
+        // Add label data if it exists
+        if (element.label) {
+          elementData.label = {
+            id: element.label.id,
+            x: element.label.x,
+            y: element.label.y,
+            width: element.label.width,
+            height: element.label.height,
+            name: element.label.businessObject ? element.label.businessObject.name : ''
+          };
+        }
+        
+        ralphElements.push(elementData);
+      }
+    });
+    
+    return ralphElements;
+  }
+
   importMixedDiagram(mixedData) {
     if (mixedData.ppinot) {
       this.importPPINOTDiagram(mixedData.ppinot);
