@@ -10,7 +10,7 @@ import $ from 'jquery';
 import MultiNotationModeler from './MultiNotationModeler/index.js';
 import BpmnModdle from 'bpmn-moddle';
 import PPINOTModdle from './PPINOT-modeler/PPINOT/PPINOTModdle.json';
-import RALphModdle from './RALPH-modeler/RALph/RALPHModdle.json';
+import RALphModdle from './RALPH-modeler/RALph/RALphModdle.json';
 
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
