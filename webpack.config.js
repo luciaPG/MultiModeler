@@ -54,7 +54,7 @@ module.exports = {
                 },
                    {
                     from: 'app/RALPH-modeler/RALph/RALphModdle.json',
-                    to: 'RALPHModdle.json'
+                    to: 'RALphModdle.json'
                 }
             ]
         })
