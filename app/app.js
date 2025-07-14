@@ -17,6 +17,8 @@ import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import 'diagram-js/assets/diagram-js.css';
 import './css/app.css';
 
+console.log('App.js loaded successfully');
+
 // Helper function to validate and sanitize waypoints
 function validateAndSanitizeWaypoints(waypoints) {
   // Handle null, undefined, or non-array inputs
@@ -64,20 +66,36 @@ function validateAndSanitizeWaypoints(waypoints) {
   return uniqueWaypoints;
 }
 
+console.log('Initializing moddle and container');
+
 const moddle = new BpmnModdle({});
-const container = $('#js-drop-zone');
+const container = $('.panel:first-child');
 const body = $('body');
 let modeler = null;
 let currentFile = null;
 
+console.log('Container found:', container.length > 0);
+
 function initializeModeler() {
-  modeler = new MultiNotationModeler({
-    container: '#js-canvas',
-    moddleExtensions: {
-      PPINOT: PPINOTModdle,
-      RALph: RALphModdle
-    }
-  });
+  console.log('Initializing modeler...');
+  
+  try {
+    modeler = new MultiNotationModeler({
+      container: '#js-canvas',
+      moddleExtensions: {
+        PPINOT: PPINOTModdle,
+        RALph: RALphModdle
+      }
+    });
+    
+    console.log('Modeler created successfully');
+    
+    // Make modeler globally accessible for HTML scripts
+    window.bpmnModeler = modeler;
+  } catch (error) {
+    console.error('Error initializing modeler:', error);
+    return;
+  }
   
   // Add global waypoint validation
   if (modeler && modeler.get('eventBus')) {
@@ -436,19 +454,31 @@ function handleFiles(files, callback) {
 }
 
 function registerFileDrop(container, callback) {
+  if (!container || !container.get(0)) {
+    console.warn('Container is not available for file drop registration');
+    return;
+  }
+  
   const handleFileSelect = (e) => {
     e.stopPropagation();
     e.preventDefault();
     const files = e.dataTransfer.files;
     handleFiles(files, callback);
   };
+  
   const handleDragOver = (e) => {
     e.stopPropagation();
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
   };
-  container.get(0).addEventListener('dragover', handleDragOver, false);
-  container.get(0).addEventListener('drop', handleFileSelect, false);
+  
+  try {
+    container.get(0).addEventListener('dragover', handleDragOver, false);
+    container.get(0).addEventListener('drop', handleFileSelect, false);
+    console.log('File drop event listeners added successfully');
+  } catch (error) {
+    console.error('Error registering file drop:', error);
+  }
 }
 
 function fixTaskData(task) {
@@ -476,111 +506,175 @@ function fixTaskData(task) {
   return task;
 }
 
-function updateUI() {
-  $('#notation-status').text('Modo: Unificado (BPMN + PPINOT + RALPH)');
-  $('.mode-btn').removeClass('active');
-  $('#hybrid-mode').addClass('active');
+function updateUI(message = '') {
+  // Update status bar if message is provided
+  if (message) {
+    $('.status-item:first-child span').text(message);
+  }
+  
+  // Update mode indicator
+  $('.status-item:nth-child(2) span').text('Modo: Edición');
 }
 
 // ==== INICIALIZACIÓN DOCUMENTO Y BOTONES ====
 $(function() {
-  if (!window.FileList || !window.FileReader) {
-    window.alert('Tu navegador no soporta drag and drop. Usa Chrome/Firefox/IE > 10.');
-    return;
-  }
-  initializeModeler();
-  createNewDiagram();
-  registerFileDrop(container, openDiagram);
-  $('#js-open-diagram').click((e) => {
-    e.preventDefault();
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.multiple = true;
-    input.click();
-    input.addEventListener('input', (evt) => {
-      handleFiles(evt.target.files, openDiagram);
-    });
-  });
-  $('.js-create-diagram').click((e) => {
-    e.preventDefault();
-    createNewDiagram();
-  });
-  $('#js-download-diagram').click((e) => {
-    e.preventDefault();
-    saveDiagram((err, xml) => {
-      if (err) return alert('Error guardando: ' + err.message);
-      const filename = currentFile || 'diagram.bpmn';
-      downloadFile(xml, filename);
-      updateUI('Diagrama guardado.');
-    });
-  });
-  $('#js-download-svg').click((e) => {
-    e.preventDefault();
-    saveSVG((err, svg) => {
-      if (err) return alert('Error exportando SVG: ' + err.message);
-      const filename = 'diagram.svg';
-      downloadFile(svg, filename, 'image/svg+xml');
-      updateUI('SVG exportado.');
-    });
-  });
-  $('#js-add-colors').click((e) => {
-    e.preventDefault();
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.multiple = false;
-    input.click();
-    input.addEventListener('input', (evt) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (modeler.setColors) modeler.setColors(JSON.parse(e.target.result));
-      };
-      reader.readAsText(evt.target.files[0]);
-    });
-  });
-  $('.buttons a').click(function(e) {
-    if (!$(this).is('.active')) {
-      e.preventDefault();
-      e.stopPropagation();
+  console.log('Document ready, initializing application...');
+  
+  try {
+    if (!window.FileList || !window.FileReader) {
+      window.alert('Tu navegador no soporta drag and drop. Usa Chrome/Firefox/IE > 10.');
+      return;
     }
-  });
-  const exportArtifacts = debounce(() => {
-    saveSVG((err, svg) => {
-      setEncoded($('#js-download-svg'), 'diagram.svg', err ? null : svg);
+    
+    console.log('Browser supports file operations');
+    
+    initializeModeler();
+    createNewDiagram();
+    
+    // Register file drop after a short delay to ensure DOM is ready
+    setTimeout(() => {
+      const canvasContainer = $('#js-canvas');
+      if (canvasContainer.length > 0) {
+        registerFileDrop(canvasContainer, openDiagram);
+        console.log('File drop registered successfully');
+      } else {
+        console.warn('Canvas container not found, skipping file drop registration');
+      }
+    }, 100);
+    
+    console.log('Basic initialization complete');
+    
+    // Handle file operations with new button structure
+    $('.tool-btn').click(function(e) {
+      e.preventDefault();
+      const buttonText = $(this).text().trim();
+      
+      console.log('Button clicked:', buttonText);
+      
+      if (buttonText.includes('Nuevo')) {
+        createNewDiagram();
+      } else if (buttonText.includes('Abrir')) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.multiple = true;
+        input.click();
+        input.addEventListener('input', (evt) => {
+          handleFiles(evt.target.files, openDiagram);
+        });
+      } else if (buttonText.includes('Guardar')) {
+        saveDiagram((err, xml) => {
+          if (err) return alert('Error guardando: ' + err.message);
+          const filename = currentFile || 'diagram.bpmn';
+          downloadFile(xml, filename);
+          updateUI('Diagrama guardado.');
+        });
+      } else if (buttonText.includes('Deshacer')) {
+        if (modeler && modeler.get('commandStack')) {
+          modeler.get('commandStack').undo();
+        }
+      } else if (buttonText.includes('Rehacer')) {
+        if (modeler && modeler.get('commandStack')) {
+          modeler.get('commandStack').redo();
+        }
+      } else if (buttonText.includes('Validar')) {
+        // Validation functionality
+        console.log('Validation clicked');
+      }
     });
-    saveDiagram((err, xml, data) => {
-      const cbpmn = data && data.ppinot ? data.ppinot : (modeler.getJson ? modeler.getJson() : null);
-      const ralph = data && data.ralph ? data.ralph : null;
-      setMultipleEncoded($('#js-download-diagram'), 'diagram.bpmn', err ? null : [xml, cbpmn, ralph]);
+    
+    console.log('Button handlers attached');
+    
+    // Handle SVG export (could be added to toolbar)
+    const exportSVG = () => {
+      saveSVG((err, svg) => {
+        if (err) return alert('Error exportando SVG: ' + err.message);
+        const filename = 'diagram.svg';
+        downloadFile(svg, filename, 'image/svg+xml');
+        updateUI('SVG exportado.');
+      });
+    };
+    
+    // Add color functionality if needed
+    const addColors = () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.multiple = false;
+      input.click();
+      input.addEventListener('input', (evt) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          if (modeler.setColors) modeler.setColors(JSON.parse(e.target.result));
+        };
+        reader.readAsText(evt.target.files[0]);
+      });
+    };
+    
+    // Handle panel buttons
+    $('.panel-btn').click(function(e) {
+      e.preventDefault();
+      const btn = $(this);
+      const panel = btn.closest('.panel');
+      
+      if (btn.find('.fa-times').length) {
+        // Close panel
+        panel.fadeOut(300, function() {
+          $(this).remove();
+        });
+      } else if (btn.find('.fa-expand').length) {
+        // Maximize panel
+        if (panel.css('width') === '100%') {
+          panel.css({
+            width: '',
+            height: '',
+            position: '',
+            zIndex: ''
+          });
+        } else {
+          panel.css({
+            width: '100%',
+            height: '100%',
+            position: 'absolute',
+            zIndex: '20'
+          });
+        }
+      }
     });
-  }, 500);
-  if (modeler.on) modeler.on('commandStack.changed', exportArtifacts);
-  updateUI('Aplicación híbrida lista ✔️');
+    
+    // Handle tabs
+    $('.tab').click(function() {
+      $(this).siblings().removeClass('active');
+      $(this).addClass('active');
+    });
+    
+    const exportArtifacts = debounce(() => {
+      // Export functionality is now handled directly in button handlers
+      // This function is kept for potential future use
+      console.log('Export artifacts triggered');
+    }, 500);
+    
+    if (modeler && modeler.on) modeler.on('commandStack.changed', exportArtifacts);
+    updateUI('Aplicación híbrida lista ✔️');
+    
+    console.log('Application initialization complete');
+    
+  } catch (error) {
+    console.error('Error during application initialization:', error);
+    alert('Error inicializando la aplicación: ' + error.message);
+  }
 });
 
 // ==== HELPERS ====
 
 function setEncoded(link, name, data) {
-  const encodedData = encodeURIComponent(data);
-  if (data) {
-    link.addClass('active').attr({
-      href: `data:application/bpmn20-xml;charset=UTF-8,${encodedData}`,
-      download: name
-    });
-  } else {
-    link.removeClass('active');
-  }
+  // This function is not needed in the new structure
+  // The download functionality is handled directly in the button handlers
+  console.log('setEncoded called:', name, data ? 'data available' : 'no data');
 }
 
 function setMultipleEncoded(link, name, data) {
-  if (data) {
-    window.localStorage.setItem('diagram', encodeURIComponent(data[0]));
-    window.localStorage.setItem('PPINOT', encodeURIComponent(JSON.stringify(data[1])));
-    if (data[2]) {
-      window.localStorage.setItem('RALPH', encodeURIComponent(JSON.stringify(data[2])));
-    }
-  } else {
-    link.removeClass('active');
-  }
+  // This function is not needed in the new structure
+  // The download functionality is handled directly in the button handlers
+  console.log('setMultipleEncoded called:', name, data ? 'data available' : 'no data');
 }
 
 function downloadFile(content, filename, type = 'application/xml') {

@@ -7,18 +7,18 @@ export default function MultiNotationPaletteProvider(palette, create, elementFac
   BpmnPaletteProvider.call(this, palette, create, elementFactory, spaceTool, lassoTool, handTool, globalConnect, translate);
   this._injector = injector;
   
-  // Get the palette services through dependency injection - safely
+  // Create the palette services directly instead of trying to get them through dependency injection
   try {
-    this.ppinotNotationPalette = injector.get('PPINOTPalette');
+    this.ppinotNotationPalette = new PPINOTPalette(create, elementFactory, translate);
   } catch (error) {
-    console.warn('PPINOTPalette not available:', error.message);
+    console.warn('Failed to create PPINOTPalette:', error.message);
     this.ppinotNotationPalette = null;
   }
   
   try {
-    this.ralphNotationPalette = injector.get('RALphPalette');
+    this.ralphNotationPalette = new RALphPalette(create, elementFactory, translate);
   } catch (error) {
-    console.warn('RALphPalette not available:', error.message);
+    console.warn('Failed to create RALphPalette:', error.message);
     this.ralphNotationPalette = null;
   }
 }

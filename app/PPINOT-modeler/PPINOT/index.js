@@ -17,14 +17,12 @@ export default {
     'PPINOTReplaceMenuProvider',
     'PPINOTLabelProvider',
     'PPINOTOrderingProvider',
-    'bpmnUpdater',
-    'PPINOTPalette'
+    'bpmnUpdater'
   ],
   PPINOTRules: ['type', PPINOTRules],
   PPINOTUpdater: ['type', PPINOTUpdater],
   PPINOTContextPadProvider: ['type', PPINOTContextPadProvider],
   PPINOTReplaceMenuProvider: ['type', PPINOTReplaceMenuProvider],
-  PPINOTPalette: ['type', PPINOTPalette],
   PPINOTLabelProvider: ['type', PPINOTLabelProvider],
   PPINOTOrderingProvider: ['type', PPINOTOrderingProvider],
   bpmnUpdater: ['type', PPINOTBpmnUpdater],

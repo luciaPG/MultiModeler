@@ -2,27 +2,1542 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PPINOT-RALPH Hybrid Modeler</title>
-  <link rel="stylesheet" href="css/app.css">
-
-  <!-- Diagram-js CSS (core diagram functionality, includes labels and hit areas) -->
-  <link rel="stylesheet" href="vendor/diagram-js/diagram-js.css" />
-  <!-- BPMN-js CSS (BPMN-specific styles) -->
-  <link rel="stylesheet" href="vendor/bpmn-js/bpmn-js.css" />
-  <!-- BPMN font CSS -->
-  <link rel="stylesheet" href="vendor/bpmn-js/bpmn-font/css/bpmn.css" />
-  <link rel="stylesheet" href="vendor/bpmn-js/bpmn-font/css/bpmn-embedded.css" />
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="vendor/diagram-js/diagram-js.css">
+  <link rel="stylesheet" href="vendor/bpmn-js/bpmn-js.css">
+  <link rel="stylesheet" href="vendor/bpmn-js/bpmn-font/css/bpmn.css">
   
-  <!-- Dependencias de bpmn-js si es necesario, si no van en el bundle -->
-</head><body>
-  <!-- Canvas ocupa todo lo demás -->
-  <div id="js-drop-zone" style="width:100vw; height:100vh ; position:relative;">
-    <div id="js-canvas" style="width:100%; height:100%;"></div>
+  <style>
+    :root {
+      --header-height: 64px;
+      --panel-min-width: 320px;
+      --panel-header-height: 36px;
+      --primary-color: #4361ee;
+      --primary-dark: #3a56d4;
+      --secondary-color: #3f37c9;
+      --dark-bg: #2b2d42;
+      --light-bg: #f8f9fa;
+      --border-color: #e9ecef;
+      --text-dark: #212529;
+      --text-light: #6c757d;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+      --transition: all 0.3s ease;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      color: var(--text-dark);
+      background-color: var(--light-bg);
+    }
+    
+    /* Header */
+    .app-header {
+      height: var(--header-height);
+      background: white;
+      color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+      z-index: 10;
+    }
+    
+    .logo {
+      font-weight: 600;
+      font-size: 1.25rem;
+      margin-right: 32px;
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .logo i {
+      font-size: 1.5rem;
+    }
+    
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex: 1;
+    }
+    
+    .tool-group {
+      display: flex;
+      gap: 8px;
+      padding: 0 12px;
+      border-right: 1px solid var(--border-color);
+    }
+    
+    .tool-group:last-child {
+      border-right: none;
+      margin-left: auto;
+    }
+    
+    .tool-btn {
+      background: white;
+      color: var(--text-dark);
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: var(--transition);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .tool-btn i {
+      font-size: 0.9rem;
+    }
+    
+    .tool-btn:hover {
+      background: #f1f3f5;
+      border-color: #ced4da;
+    }
+    
+    .tool-btn.primary {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-dark);
+    }
+    
+    .tool-btn.primary:hover {
+      background: var(--primary-dark);
+    }
+    
+    .tool-btn.danger {
+      background: #ef233c;
+      color: white;
+      border-color: #d90429;
+    }
+    
+    .tool-btn.danger:hover {
+      background: #d90429;
+    }
+    
+    /* Panel minimizado */
+    .panel.minimized {
+      display: none;
+    }
+    
+    .panel.maximized {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      z-index: 100 !important;
+      margin: 0 !important;
+      border-radius: 0 !important;
+    }
+    
+    /* Zonas de snap */
+    .snap-zones {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 5;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    
+    .snap-zones.visible {
+      opacity: 1;
+    }
+    
+    .snap-zone {
+      position: absolute;
+      border: 2px dashed rgba(67, 97, 238, 0.3);
+      background: rgba(67, 97, 238, 0.05);
+      border-radius: 8px;
+    }
+    
+    .snap-zone.active {
+      border-color: rgba(67, 97, 238, 0.8);
+      background: rgba(67, 97, 238, 0.1);
+    }
+    
+    .snap-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: rgba(67, 97, 238, 0.8);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    
+    .snap-zone.visible .snap-label {
+      opacity: 1;
+    }
+    
+    .snap-zone.active .snap-label {
+      opacity: 1;
+      color: rgba(67, 97, 238, 1);
+    }
+    
+    /* Botones de restaurar en header */
+    .restore-buttons {
+      display: flex;
+      gap: 8px;
+      margin-left: 16px;
+    }
+    
+    .restore-btn {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 500;
+      transition: var(--transition);
+    }
+    
+    .restore-btn:hover {
+      background: var(--primary-dark);
+    }
+    
+    .restore-btn.hidden {
+      display: none;
+    }
+    
+    /* Área de trabajo principal */
+    .workspace {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+      background: #f1f3f5;
+    }
+    
+    /* Contenedor de paneles */
+    .panel-container {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+      gap: 8px;
+    }
+    
+    /* Panel individual */
+    .panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: var(--panel-min-width);
+      background: white;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+      border-radius: 8px;
+      margin: 8px;
+      transition: transform 0.2s ease;
+    }
+    
+    /* Bordes redimensionables */
+    .panel-resize-handle {
+      position: absolute;
+      background: transparent;
+      z-index: 10;
+    }
+    
+    .panel-resize-handle.right {
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 6px;
+      cursor: col-resize;
+    }
+    
+    .panel-resize-handle.left {
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 6px;
+      cursor: col-resize;
+    }
+    
+    .panel-resize-handle.bottom {
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      cursor: row-resize;
+    }
+    
+    .panel-resize-handle.top {
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      cursor: row-resize;
+    }
+    
+    .panel-resize-handle:hover {
+      background: rgba(67, 97, 238, 0.1);
+    }
+    
+    .panel-resize-handle.resizing {
+      background: rgba(67, 97, 238, 0.2);
+    }
+    
+    .panel-header {
+      height: var(--panel-header-height);
+      background: white;
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: move;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-dark);
+      user-select: none;
+      position: relative;
+    }
+    
+    .panel-header:hover {
+      background: #f8f9fa;
+    }
+    
+    .panel-header:active {
+      cursor: grabbing;
+    }
+    
+    .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+    }
+    
+    .panel-title i {
+      color: var(--primary-color);
+      font-size: 0.9rem;
+    }
+    
+    .panel-actions {
+      display: flex;
+      gap: 4px;
+    }
+    
+    .panel-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.8rem;
+      color: var(--text-light);
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: var(--transition);
+    }
+    
+    .panel-btn:hover {
+      background: #f1f3f5;
+      color: var(--text-dark);
+    }
+    
+    .panel-content {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      background: white;
+    }
+    
+    /* Estilos para el canvas */
+    .bpmn-container {
+      width: 100%;
+      height: 100%;
+    }
+    
+    /* Gutter para Split.js */
+    .gutter {
+      background-color: #f1f3f5;
+      background-repeat: no-repeat;
+      background-position: 50%;
+      position: relative;
+      z-index: 1;
+      transition: background-color 0.2s ease;
+    }
+    
+    .gutter:hover {
+      background-color: #dee2e6;
+    }
+    
+    .gutter.gutter-horizontal {
+      background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
+      cursor: col-resize;
+      height: 100%;
+      margin: 0 -4px;
+      width: 8px;
+    }
+    
+    .gutter.gutter-vertical {
+      background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFAQMAAABo7865AAAABlBMVEVHcEzMzMzyAv2sAAAAAXRSTlMAQObYZgAAABBJREFUeF5jOAMEEAIEEFwAn3kMwcB6I2AAAAAASUVORK5CYII=');
+      cursor: row-resize;
+      width: 100%;
+      margin: -4px 0;
+      height: 8px;
+    }
+    
+    /* Layout selector */
+    .layout-selector {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      z-index: 100;
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 6px;
+      display: flex;
+      gap: 6px;
+      box-shadow: var(--shadow-md);
+    }
+    
+    .layout-btn {
+      width: 36px;
+      height: 36px;
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-light);
+      transition: var(--transition);
+    }
+    
+    .layout-btn:hover {
+      background: #f8f9fa;
+      color: var(--primary-color);
+    }
+    
+    .layout-btn.active {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-dark);
+    }
+    
+    /* Status bar */
+    .status-bar {
+      height: 24px;
+      background: var(--dark-bg);
+      color: white;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 16px;
+    }
+    
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .status-item i {
+      font-size: 0.7rem;
+      color: #adb5bd;
+    }
+    
+    /* Panel de propiedades */
+    .properties-panel {
+      padding: 16px;
+      overflow-y: auto;
+      height: 100%;
+    }
+    
+    .property-group {
+      margin-bottom: 16px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    .property-group-header {
+      padding: 8px 12px;
+      background: #f8f9fa;
+      font-weight: 500;
+      font-size: 0.875rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .property-group-content {
+      padding: 12px;
+    }
+    
+    .form-group {
+      margin-bottom: 12px;
+    }
+    
+    .form-label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-dark);
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 0.875rem;
+    }
+    
+    /* Tabs */
+    .panel-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 12px;
+    }
+    
+    .tab {
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-light);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: var(--transition);
+    }
+    
+    .tab:hover {
+      color: var(--primary-color);
+    }
+    
+    .tab.active {
+      color: var(--primary-color);
+      border-bottom-color: var(--primary-color);
+    }
+    
+    /* Animaciones */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .panel {
+      animation: fadeIn 0.3s ease-out;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header con herramientas -->
+  <header class="app-header">
+    <div class="logo">
+      <i class="fas fa-project-diagram"></i>
+      <span>PPINOT-RALPH Modeler</span>
+    </div>
+    
+    <div class="toolbar">
+      <div class="tool-group">
+        <button class="tool-btn primary">
+          <i class="fas fa-file"></i> Nuevo
+        </button>
+        <button class="tool-btn">
+          <i class="fas fa-folder-open"></i> Abrir
+        </button>
+        <button class="tool-btn">
+          <i class="fas fa-save"></i> Guardar
+        </button>
+      </div>
+      
+      <div class="tool-group">
+        <button class="tool-btn">
+          <i class="fas fa-undo"></i> Deshacer
+        </button>
+        <button class="tool-btn">
+          <i class="fas fa-redo"></i> Rehacer
+        </button>
+      </div>
+      
+      <div class="tool-group">
+        <button class="tool-btn">
+          <i class="fas fa-search"></i> Buscar
+        </button>
+        <button class="tool-btn">
+          <i class="fas fa-cog"></i> Configuración
+        </button>
+      </div>
+      
+      <div class="tool-group">
+        <button class="tool-btn danger">
+          <i class="fas fa-play"></i> Validar
+        </button>
+      </div>
+      
+      <!-- Botones de restaurar paneles -->
+      <div class="restore-buttons">
+        <button class="restore-btn hidden" id="restore-bpmn" data-panel="bpmn">
+          <i class="fas fa-diagram-project"></i> Restaurar BPMN
+        </button>
+        <button class="restore-btn hidden" id="restore-ppinot" data-panel="ppinot">
+          <i class="fas fa-sliders"></i> Restaurar PPINOT
+        </button>
+      </div>
+    </div>
+  </header>
+  
+  <!-- Área de trabajo con paneles -->
+  <div class="workspace">
+    <div class="panel-container" id="panel-container">
+      <!-- Zonas de snap -->
+      <div class="snap-zones" id="snap-zones">
+        <div class="snap-zone" data-zone="left" style="top: 0; left: 0; width: 50%; height: 100%;">
+          <div class="snap-label">Izquierda (1/2)</div>
+        </div>
+        <div class="snap-zone" data-zone="right" style="top: 0; right: 0; width: 50%; height: 100%;">
+          <div class="snap-label">Derecha (1/2)</div>
+        </div>
+        <div class="snap-zone" data-zone="top" style="top: 0; left: 0; width: 100%; height: 50%;">
+          <div class="snap-label">Arriba (1/2)</div>
+        </div>
+        <div class="snap-zone" data-zone="bottom" style="bottom: 0; left: 0; width: 100%; height: 50%;">
+          <div class="snap-label">Abajo (1/2)</div>
+        </div>
+      </div>
+      <!-- Panel izquierdo (editor BPMN) -->
+      <div class="panel" id="bpmn-panel" data-panel-type="bpmn">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i class="fas fa-diagram-project"></i>
+            <span>Diagrama BPMN</span>
+          </div>
+          <div class="panel-actions">
+            <button class="panel-btn" title="Minimizar"><i class="fas fa-minus"></i></button>
+            <button class="panel-btn" title="Maximizar"><i class="fas fa-expand"></i></button>
+            <button class="panel-btn" title="Cerrar"><i class="fas fa-times"></i></button>
+          </div>
+        </div>
+        <div class="panel-content">
+          <div id="js-canvas" class="bpmn-container"></div>
+        </div>
+        <!-- Handles de redimensionamiento -->
+        <div class="panel-resize-handle right"></div>
+        <div class="panel-resize-handle bottom"></div>
+        <div class="panel-resize-handle top"></div>
+      </div>
+      
+      <!-- Panel derecho (propiedades/PPINOT) -->
+      <div class="panel" id="ppinot-panel" data-panel-type="ppinot">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i class="fas fa-sliders"></i>
+            <span>Propiedades PPINOT</span>
+          </div>
+          <div class="panel-actions">
+            <button class="panel-btn" title="Minimizar"><i class="fas fa-minus"></i></button>
+            <button class="panel-btn" title="Maximizar"><i class="fas fa-expand"></i></button>
+            <button class="panel-btn" title="Cerrar"><i class="fas fa-times"></i></button>
+          </div>
+        </div>
+        
+        <div class="panel-tabs">
+          <div class="tab active">Métricas</div>
+          <div class="tab">Configuración</div>
+          <div class="tab">Simulación</div>
+        </div>
+        
+        <div class="panel-content">
+          <div class="properties-panel">
+            <div class="property-group">
+              <div class="property-group-header">
+                <span>Métrica de Tiempo</span>
+                <i class="fas fa-chevron-down"></i>
+              </div>
+              <div class="property-group-content">
+                <div class="form-group">
+                  <label class="form-label">Nombre</label>
+                  <input type="text" class="form-control" placeholder="Ej: Tiempo de aprobación">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Tipo</label>
+                  <select class="form-control">
+                    <option>Tiempo entre eventos</option>
+                    <option>Tiempo de ciclo</option>
+                    <option>Tiempo de espera</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            
+            <div class="property-group">
+              <div class="property-group-header">
+                <span>Métrica de Costo</span>
+                <i class="fas fa-chevron-down"></i>
+              </div>
+              <div class="property-group-content">
+                <div class="form-group">
+                  <label class="form-label">Nombre</label>
+                  <input type="text" class="form-control" placeholder="Ej: Costo total">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Valor unitario</label>
+                  <input type="number" class="form-control" placeholder="0.00">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Handles de redimensionamiento -->
+        <div class="panel-resize-handle left"></div>
+        <div class="panel-resize-handle bottom"></div>
+        <div class="panel-resize-handle top"></div>
+      </div>
+    </div>
+    
+    <!-- Selector de layout -->
+    <div class="layout-selector">
+      <button class="layout-btn active" data-layout="horizontal" title="Dos paneles horizontal">
+        <i class="fas fa-columns"></i>
+      </button>
+      <button class="layout-btn" data-layout="vertical" title="Dos paneles vertical">
+        <i class="fas fa-grip-lines-vertical"></i>
+      </button>
+      <button class="layout-btn" data-layout="grid" title="Cuatro paneles en cuadrícula">
+        <i class="fas fa-th-large"></i>
+      </button>
+    </div>
   </div>
+  
+  <!-- Barra de estado -->
+  <div class="status-bar">
+    <div class="status-item">
+      <i class="fas fa-circle-info"></i>
+      <span>Listo</span>
+    </div>
+    <div class="status-item">
+      <i class="fas fa-bolt"></i>
+      <span>Modo: Edición</span>
+    </div>
+    <div class="status-item" style="margin-left: auto;">
+      <i class="fas fa-user"></i>
+      <span>Usuario: admin</span>
+    </div>
+  </div>
+  
   <input type="file" id="file-input" accept=".bpmn,.xml,.cbpmn" style="display:none" />
+  
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
   <script src="bundle.js"></script>
+  
+  <script>
+    // Función para redibujar el canvas BPMN
+    function resizeCanvas() {
+      if (window.bpmnModeler) {
+        setTimeout(() => {
+          try {
+            const canvas = window.bpmnModeler.get('canvas');
+            if (canvas && typeof canvas.resized === 'function') {
+              canvas.resized();
+            }
+          } catch (error) {
+            console.warn('Error resizing canvas:', error);
+          }
+        }, 50);
+      }
+    }
+    
+    // Sistema de redimensionamiento estilo Windows
+    interact('.panel-resize-handle').draggable({
+      modifiers: [
+        interact.modifiers.restrictEdges({
+          outer: 'parent',
+          endOnly: true
+        }),
+        interact.modifiers.restrictSize({
+          min: { width: 300, height: 200 }
+        })
+      ],
+      listeners: {
+        start(event) {
+          const panel = event.target.closest('.panel');
+          const handle = event.target;
+          const container = panel.parentElement;
+          const panels = Array.from(container.children).filter(el => el.classList.contains('panel'));
+          
+          handle.classList.add('resizing');
+          
+          // Guardar información inicial
+          panel._initialWidth = panel.offsetWidth;
+          panel._initialHeight = panel.offsetHeight;
+          panel._initialX = event.clientX;
+          panel._initialY = event.clientY;
+          
+          // Guardar información de todos los paneles
+          panels.forEach(p => {
+            p._initialWidth = p.offsetWidth;
+            p._initialHeight = p.offsetHeight;
+          });
+          
+          // Encontrar paneles adyacentes
+          const panelIndex = panels.indexOf(panel);
+          panel._adjacentPanels = {
+            left: panelIndex > 0 ? panels[panelIndex - 1] : null,
+            right: panelIndex < panels.length - 1 ? panels[panelIndex + 1] : null,
+            top: panelIndex > 0 ? panels[panelIndex - 1] : null,
+            bottom: panelIndex < panels.length - 1 ? panels[panelIndex + 1] : null
+          };
+          
+          // Detectar si el layout es vertical
+          panel._isVerticalLayout = container.style.flexDirection === 'column';
+        },
+        move(event) {
+          const panel = event.target.closest('.panel');
+          const handle = event.target;
+          const container = panel.parentElement;
+          const deltaX = event.clientX - panel._initialX;
+          const deltaY = event.clientY - panel._initialY;
+          
+          // Aplicar redimensionamiento según el tipo de handle y layout
+          if (panel._isVerticalLayout) {
+            // Layout vertical: redimensionar altura
+            if (handle.classList.contains('bottom')) {
+              const newHeight = Math.max(200, panel._initialHeight + deltaY);
+              const heightDiff = newHeight - panel._initialHeight;
+              
+              // Redimensionar panel actual
+              panel.style.height = newHeight + 'px';
+              panel.style.flex = 'none';
+              
+              // Redimensionar panel inferior si existe
+              if (panel._adjacentPanels.bottom) {
+                const bottomPanel = panel._adjacentPanels.bottom;
+                const newBottomHeight = Math.max(200, bottomPanel._initialHeight - heightDiff);
+                bottomPanel.style.height = newBottomHeight + 'px';
+                bottomPanel.style.flex = 'none';
+              }
+            } else if (handle.classList.contains('top')) {
+              const newHeight = Math.max(200, panel._initialHeight - deltaY);
+              const heightDiff = panel._initialHeight - newHeight;
+              
+              // Redimensionar panel actual
+              panel.style.height = newHeight + 'px';
+              panel.style.flex = 'none';
+              
+              // Redimensionar panel superior si existe
+              if (panel._adjacentPanels.top) {
+                const topPanel = panel._adjacentPanels.top;
+                const newTopHeight = Math.max(200, topPanel._initialHeight + heightDiff);
+                topPanel.style.height = newTopHeight + 'px';
+                topPanel.style.flex = 'none';
+              }
+            }
+          } else {
+            // Layout horizontal: redimensionar ancho
+            if (handle.classList.contains('right')) {
+              const newWidth = Math.max(300, panel._initialWidth + deltaX);
+              const widthDiff = newWidth - panel._initialWidth;
+              
+              // Redimensionar panel actual
+              panel.style.width = newWidth + 'px';
+              panel.style.flex = 'none';
+              
+              // Redimensionar panel derecho si existe
+              if (panel._adjacentPanels.right) {
+                const rightPanel = panel._adjacentPanels.right;
+                const newRightWidth = Math.max(300, rightPanel._initialWidth - widthDiff);
+                rightPanel.style.width = newRightWidth + 'px';
+                rightPanel.style.flex = 'none';
+              }
+            } else if (handle.classList.contains('left')) {
+              const newWidth = Math.max(300, panel._initialWidth - deltaX);
+              const widthDiff = panel._initialWidth - newWidth;
+              
+              // Redimensionar panel actual
+              panel.style.width = newWidth + 'px';
+              panel.style.flex = 'none';
+              
+              // Redimensionar panel izquierdo si existe
+              if (panel._adjacentPanels.left) {
+                const leftPanel = panel._adjacentPanels.left;
+                const newLeftWidth = Math.max(300, leftPanel._initialWidth + widthDiff);
+                leftPanel.style.width = newLeftWidth + 'px';
+                leftPanel.style.flex = 'none';
+              }
+            }
+          }
+        },
+        end(event) {
+          const handle = event.target;
+          handle.classList.remove('resizing');
+          resizeCanvas();
+        }
+      }
+    });
+    
+    // Función para calcular la posición de snap más cercana
+    function getSnapPosition(panel, x, y) {
+      const container = document.getElementById('panel-container');
+      const containerRect = container.getBoundingClientRect();
+      const panelRect = panel.getBoundingClientRect();
+      
+      // Posiciones de snap disponibles (simplificadas)
+      const snapPositions = [
+        { x: 0, y: 0, name: 'left', zone: 'left' },
+        { x: containerRect.width - panelRect.width, y: 0, name: 'right', zone: 'right' },
+        { x: 0, y: 0, name: 'top', zone: 'top' },
+        { x: 0, y: containerRect.height - panelRect.height, name: 'bottom', zone: 'bottom' }
+      ];
+      
+      // Encontrar la posición más cercana
+      let closestSnap = snapPositions[0];
+      let minDistance = Infinity;
+      
+      snapPositions.forEach(snap => {
+        const distance = Math.sqrt(
+          Math.pow(x - snap.x, 2) + Math.pow(y - snap.y, 2)
+        );
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestSnap = snap;
+        }
+      });
+      
+      return closestSnap;
+    }
+    
+    // Función para mostrar/ocultar zonas de snap
+    function toggleSnapZones(show) {
+      const snapZones = document.getElementById('snap-zones');
+      if (snapZones) {
+        if (show) {
+          snapZones.classList.add('visible');
+        } else {
+          snapZones.classList.remove('visible');
+          // Remover clase active de todas las zonas
+          snapZones.querySelectorAll('.snap-zone').forEach(zone => {
+            zone.classList.remove('active');
+          });
+        }
+      }
+    }
+    
+    // Función para resaltar zona de snap activa
+    function highlightSnapZone(snapPosition) {
+      const snapZones = document.getElementById('snap-zones');
+      if (snapZones) {
+        // Remover clase active de todas las zonas
+        snapZones.querySelectorAll('.snap-zone').forEach(zone => {
+          zone.classList.remove('active');
+        });
+        
+        // Activar la zona correspondiente
+        const activeZone = snapZones.querySelector(`[data-zone="${snapPosition.zone}"]`);
+        if (activeZone) {
+          activeZone.classList.add('active');
+        }
+      }
+    }
+    
+    // Función para detectar el layout óptimo basado en la posición
+    function detectOptimalLayout(snapPosition, panelCount) {
+      const zone = snapPosition.zone;
+      
+      if (panelCount === 1) {
+        return { direction: 'row', flexValues: ['1'] };
+      }
+      
+      if (panelCount === 2) {
+        // Layout horizontal: izquierda/derecha
+        if (zone === 'left' || zone === 'right') {
+          return { direction: 'row', flexValues: ['1', '1'] };
+        }
+        // Layout vertical: arriba/abajo
+        else if (zone === 'top' || zone === 'bottom') {
+          return { direction: 'column', flexValues: ['1', '1'] };
+        }
+        // Layout horizontal por defecto
+        else {
+          return { direction: 'row', flexValues: ['1', '1'] };
+        }
+      }
+      
+      if (panelCount === 3) {
+        // Layout horizontal con 3 paneles
+        if (zone === 'left') {
+          return { direction: 'row', flexValues: ['2', '1', '1'] };
+        } else if (zone === 'right') {
+          return { direction: 'row', flexValues: ['1', '1', '2'] };
+        } else if (zone === 'top') {
+          return { direction: 'column', flexValues: ['2', '1', '1'] };
+        } else if (zone === 'bottom') {
+          return { direction: 'column', flexValues: ['1', '1', '2'] };
+        }
+        // Distribución equitativa
+        else {
+          return { direction: 'row', flexValues: ['1', '1', '1'] };
+        }
+      }
+      
+      // Layout por defecto
+      return { direction: 'row', flexValues: ['1'] };
+    }
+    
+    // Función para reorganizar paneles según la posición de snap
+    function reorganizePanelsForSnap(panel, snapPosition) {
+      const container = document.getElementById('panel-container');
+      const visiblePanels = Array.from(document.querySelectorAll('.panel:not(.closed)'));
+      const zone = snapPosition.zone;
+      
+      // Resetear transformaciones
+      visiblePanels.forEach(p => {
+        p.style.transform = '';
+        p.setAttribute('data-x', '0');
+        p.setAttribute('data-y', '0');
+      });
+      
+      // Determinar el orden de los paneles basado en la zona
+      let panelOrder = [];
+      
+      if (visiblePanels.length === 1) {
+        // Si solo hay un panel, ocupa todo el espacio
+        panelOrder = [panel];
+        container.style.flexDirection = 'row';
+        panel.style.flex = '1';
+      } else if (zone === 'left') {
+        // Panel principal va a la izquierda, otros a la derecha
+        panelOrder = [panel, ...visiblePanels.filter(p => p !== panel)];
+        container.style.flexDirection = 'row';
+        panel.style.flex = '2';
+        visiblePanels.filter(p => p !== panel).forEach(p => p.style.flex = '1');
+      } else if (zone === 'right') {
+        // Panel principal va a la derecha, otros a la izquierda
+        panelOrder = [...visiblePanels.filter(p => p !== panel), panel];
+        container.style.flexDirection = 'row';
+        panel.style.flex = '2';
+        visiblePanels.filter(p => p !== panel).forEach(p => p.style.flex = '1');
+      } else if (zone === 'top') {
+        // Panel principal va arriba, otros abajo
+        panelOrder = [panel, ...visiblePanels.filter(p => p !== panel)];
+        container.style.flexDirection = 'column';
+        panel.style.flex = '2';
+        visiblePanels.filter(p => p !== panel).forEach(p => p.style.flex = '1');
+      } else if (zone === 'bottom') {
+        // Panel principal va abajo, otros arriba
+        panelOrder = [...visiblePanels.filter(p => p !== panel), panel];
+        container.style.flexDirection = 'column';
+        panel.style.flex = '2';
+        visiblePanels.filter(p => p !== panel).forEach(p => p.style.flex = '1');
+      }
+      
+      // Aplicar layout
+      container.style.display = 'flex';
+      container.style.gap = '8px';
+      
+      // Reordenar paneles en el DOM si es necesario
+      if (panelOrder.length > 0) {
+        panelOrder.forEach((p, index) => {
+          if (p.parentNode) {
+            container.appendChild(p);
+          }
+        });
+      }
+      
+      // Redimensionar canvas
+      setTimeout(() => {
+        resizeCanvas();
+      }, 100);
+    }
+    
+    // Función para aplicar snap y reorganizar paneles
+    function applySnapAndReorganize(panel, snapPosition) {
+      reorganizePanelsForSnap(panel, snapPosition);
+    }
+    
+    // Hacer SOLO los headers de panel movibles con snap
+    interact('.panel-header').draggable({
+      inertia: true,
+      modifiers: [
+        interact.modifiers.restrictRect({
+          restriction: 'parent',
+          endOnly: true
+        })
+      ],
+      autoScroll: true,
+      listeners: {
+        start(event) {
+          const panel = event.target.closest('.panel');
+          panel.style.zIndex = 10;
+          panel.style.boxShadow = '0 4px 20px rgba(0,0,0,0.15)';
+          
+          // Mostrar zonas de snap
+          toggleSnapZones(true);
+        },
+        move(event) {
+          const panel = event.target.closest('.panel');
+          const x = (parseFloat(panel.getAttribute('data-x')) || 0) + event.dx;
+          const y = (parseFloat(panel.getAttribute('data-y')) || 0) + event.dy;
+          
+          panel.style.transform = `translate(${x}px, ${y}px)`;
+          panel.setAttribute('data-x', x);
+          panel.setAttribute('data-y', y);
+          
+          // Calcular y resaltar zona de snap más cercana
+          const snapPosition = getSnapPosition(panel, x, y);
+          highlightSnapZone(snapPosition);
+        },
+        end(event) {
+          const panel = event.target.closest('.panel');
+          const x = parseFloat(panel.getAttribute('data-x')) || 0;
+          const y = parseFloat(panel.getAttribute('data-y')) || 0;
+          
+          // Calcular posición de snap
+          const snapPosition = getSnapPosition(panel, x, y);
+          
+          // Aplicar snap y reorganizar
+          applySnapAndReorganize(panel, snapPosition);
+          
+          // Ocultar zonas de snap
+          toggleSnapZones(false);
+          
+          // Limpiar estilos de arrastre
+          panel.style.zIndex = '';
+          panel.style.boxShadow = '';
+        }
+      }
+    });
+    
+    // Manejar cambio de layout (simplificado)
+    document.querySelectorAll('.layout-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const layout = this.getAttribute('data-layout');
+        
+        // Remover clase active de todos los botones
+        document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+        // Agregar active al botón clickeado
+        this.classList.add('active');
+        
+        const panels = document.querySelectorAll('.panel:not(.closed)');
+        
+        // Verificar que hay paneles antes de intentar modificar sus estilos
+        if (panels.length === 0) {
+          console.log('No hay paneles disponibles para cambiar el layout');
+          return;
+        }
+        
+        // Resetear estilos de paneles
+        panels.forEach(panel => {
+          if (panel && panel.parentNode) {
+            panel.style.width = '';
+            panel.style.height = '';
+            panel.style.flex = '';
+            panel.style.transform = '';
+            panel.setAttribute('data-x', '0');
+            panel.setAttribute('data-y', '0');
+          }
+        });
+        
+        // Aplicar layout solo si hay suficientes paneles
+        const container = document.getElementById('panel-container');
+        if (layout === 'horizontal' && panels.length >= 2) {
+          container.style.flexDirection = 'row';
+          if (panels[0] && panels[0].parentNode) panels[0].style.flex = '2';
+          if (panels[1] && panels[1].parentNode) panels[1].style.flex = '1';
+        } else if (layout === 'vertical' && panels.length >= 2) {
+          container.style.flexDirection = 'column';
+          if (panels[0] && panels[0].parentNode) panels[0].style.flex = '2';
+          if (panels[1] && panels[1].parentNode) panels[1].style.flex = '1';
+        } else if (layout === 'grid' && panels.length >= 2) {
+          container.style.flexDirection = 'row';
+          panels.forEach(panel => {
+            if (panel && panel.parentNode) {
+              panel.style.flex = '1';
+            }
+          });
+        }
+        
+        resizeCanvas();
+      });
+    });
+    
+    // Manejar tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        this.parentNode.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+    
+    // Función para maximizar un panel y minimizar el otro
+    function maximizePanel(panelToMaximize) {
+      const allPanels = document.querySelectorAll('.panel:not(.closed)');
+      const restoreButtons = document.querySelectorAll('.restore-btn');
+      
+      // Restaurar todos los paneles primero
+      allPanels.forEach(panel => {
+        if (panel && panel.parentNode) {
+          panel.classList.remove('maximized', 'minimized');
+          panel.style.width = '';
+          panel.style.height = '';
+          panel.style.position = '';
+          panel.style.zIndex = '';
+          panel.style.flex = '';
+          panel.setAttribute('data-x', '0');
+          panel.setAttribute('data-y', '0');
+        }
+      });
+      
+      // Ocultar todos los botones de restaurar
+      restoreButtons.forEach(btn => btn.classList.add('hidden'));
+      
+      // Maximizar el panel seleccionado
+      panelToMaximize.classList.add('maximized');
+      
+      // Minimizar el otro panel
+      allPanels.forEach(panel => {
+        if (panel !== panelToMaximize && panel && panel.parentNode) {
+          panel.classList.add('minimized');
+          
+          // Mostrar botón de restaurar correspondiente
+          const panelType = panel.getAttribute('data-panel-type');
+          const restoreBtn = document.getElementById(`restore-${panelType}`);
+          if (restoreBtn) {
+            restoreBtn.classList.remove('hidden');
+          }
+        }
+      });
+      
+      resizeCanvas();
+    }
+    
+    // Función para restaurar layout compartido
+    function restoreSharedLayout() {
+      const container = document.getElementById('panel-container');
+      const visiblePanels = document.querySelectorAll('.panel:not(.closed)');
+      
+      // Resetear todos los paneles visibles
+      visiblePanels.forEach(panel => {
+        panel.classList.remove('maximized', 'minimized');
+        panel.style.width = '';
+        panel.style.height = '';
+        panel.style.position = '';
+        panel.style.zIndex = '';
+        panel.style.flex = '';
+        panel.setAttribute('data-x', '0');
+        panel.setAttribute('data-y', '0');
+      });
+      
+      // Aplicar layout compartido
+      if (visiblePanels.length >= 2) {
+        container.style.flexDirection = 'row';
+        container.style.display = 'flex';
+        container.style.gap = '8px';
+        visiblePanels[0].style.flex = '2';
+        visiblePanels[1].style.flex = '1';
+      } else if (visiblePanels.length === 1) {
+        container.style.flexDirection = 'row';
+        container.style.display = 'flex';
+        visiblePanels[0].style.flex = '1';
+      }
+      
+      // Ocultar todos los botones de restaurar
+      document.querySelectorAll('.restore-btn').forEach(btn => btn.classList.add('hidden'));
+      
+      // Redimensionar canvas
+      setTimeout(() => {
+        resizeCanvas();
+      }, 100);
+    }
+    
+    // Función para restaurar todos los paneles
+    function restoreAllPanels() {
+      restoreSharedLayout();
+    }
+    
+    // Función para preservar el canvas BPMN
+    function preserveBpmnCanvas() {
+      const canvas = document.getElementById('js-canvas');
+      if (canvas && window.bpmnModeler) {
+        // Guardar el contenido del canvas
+        window._preservedCanvas = canvas.cloneNode(true);
+        window._preservedCanvas.id = 'js-canvas-preserved';
+      }
+    }
+    
+    // Función para restaurar el canvas BPMN
+    function restoreBpmnCanvas() {
+      const canvas = document.getElementById('js-canvas');
+      if (canvas && window._preservedCanvas) {
+        // Restaurar el contenido del canvas
+        canvas.innerHTML = window._preservedCanvas.innerHTML;
+        canvas.className = window._preservedCanvas.className;
+        
+        // Actualizar la referencia del canvas en el modeler
+        if (window.bpmnModeler) {
+          const canvasService = window.bpmnModeler.get('canvas');
+          if (canvasService && canvasService._container) {
+            canvasService._container = canvas;
+          }
+          
+          // Redimensionar el canvas
+          setTimeout(() => {
+            try {
+              canvasService.resized();
+            } catch (error) {
+              console.warn('Error resizing canvas:', error);
+            }
+          }, 100);
+        }
+      }
+    }
+    
+    // Función para crear un panel BPMN (solo se usa si el panel original fue eliminado)
+    function createBpmnPanel() {
+      const panelHtml = `
+        <div class="panel" id="bpmn-panel" data-panel-type="bpmn">
+          <div class="panel-header">
+            <div class="panel-title">
+              <i class="fas fa-diagram-project"></i>
+              <span>Diagrama BPMN</span>
+            </div>
+            <div class="panel-actions">
+              <button class="panel-btn" title="Minimizar"><i class="fas fa-minus"></i></button>
+              <button class="panel-btn" title="Maximizar"><i class="fas fa-expand"></i></button>
+              <button class="panel-btn" title="Cerrar"><i class="fas fa-times"></i></button>
+            </div>
+          </div>
+          <div class="panel-content">
+            <div id="js-canvas" class="bpmn-container"></div>
+          </div>
+          <!-- Handles de redimensionamiento -->
+          <div class="panel-resize-handle right"></div>
+          <div class="panel-resize-handle bottom"></div>
+        </div>
+      `;
+      
+      const container = document.getElementById('panel-container');
+      container.insertAdjacentHTML('beforeend', panelHtml);
+      
+      // Restaurar el canvas preservado si existe
+      restoreBpmnCanvas();
+    }
+    
+    // Función para crear un panel PPINOT
+    function createPpinotPanel() {
+      const panelHtml = `
+        <div class="panel" id="ppinot-panel" data-panel-type="ppinot">
+          <div class="panel-header">
+            <div class="panel-title">
+              <i class="fas fa-sliders"></i>
+              <span>Propiedades PPINOT</span>
+            </div>
+            <div class="panel-actions">
+              <button class="panel-btn" title="Minimizar"><i class="fas fa-minus"></i></button>
+              <button class="panel-btn" title="Maximizar"><i class="fas fa-expand"></i></button>
+              <button class="panel-btn" title="Cerrar"><i class="fas fa-times"></i></button>
+            </div>
+          </div>
+          
+          <div class="panel-tabs">
+            <div class="tab active">Métricas</div>
+            <div class="tab">Configuración</div>
+            <div class="tab">Simulación</div>
+          </div>
+          
+          <div class="panel-content">
+            <div class="properties-panel">
+              <div class="property-group">
+                <div class="property-group-header">
+                  <span>Métrica de Tiempo</span>
+                  <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="property-group-content">
+                  <div class="form-group">
+                    <label class="form-label">Nombre</label>
+                    <input type="text" class="form-control" placeholder="Ej: Tiempo de aprobación">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Tipo</label>
+                    <select class="form-control">
+                      <option>Tiempo entre eventos</option>
+                      <option>Tiempo de ciclo</option>
+                      <option>Tiempo de espera</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="property-group">
+                <div class="property-group-header">
+                  <span>Métrica de Costo</span>
+                  <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="property-group-content">
+                  <div class="form-group">
+                    <label class="form-label">Nombre</label>
+                    <input type="text" class="form-control" placeholder="Ej: Costo total">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Valor unitario</label>
+                    <input type="number" class="form-control" placeholder="0.00">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Handles de redimensionamiento -->
+          <div class="panel-resize-handle left"></div>
+          <div class="panel-resize-handle bottom"></div>
+        </div>
+      `;
+      
+      const container = document.getElementById('panel-container');
+      container.insertAdjacentHTML('beforeend', panelHtml);
+    }
+    
+    // Manejar botones de panel
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('.panel-btn')) {
+        const btn = e.target.closest('.panel-btn');
+        const panel = btn.closest('.panel');
+        
+        if (btn.querySelector('.fa-times')) {
+          // Cerrar panel y maximizar el otro
+          const allPanels = Array.from(document.querySelectorAll('.panel:not(.closed)'));
+          const otherPanel = allPanels.find(p => p !== panel && p && p.parentNode);
+          
+          if (otherPanel) {
+            // Maximizar el panel restante
+            maximizePanel(otherPanel);
+            // Preservar el canvas BPMN si es el panel BPMN
+            if (panel.getAttribute('data-panel-type') === 'bpmn') {
+              preserveBpmnCanvas();
+            }
+            // Ocultar el panel cerrado en lugar de eliminarlo
+            panel.style.display = 'none';
+            panel.classList.add('closed');
+          } else {
+            // Si no hay otro panel, simplemente cerrar
+            if (panel) {
+              panel.style.animation = 'fadeIn 0.3s ease-out reverse';
+              setTimeout(() => {
+                if (panel && panel.parentNode) {
+                  panel.style.display = 'none';
+                  panel.classList.add('closed');
+                }
+              }, 300);
+            }
+          }
+        } else if (btn.querySelector('.fa-expand')) {
+          // Maximizar panel
+          maximizePanel(panel);
+        } else if (btn.querySelector('.fa-minus')) {
+          // Minimizar panel (maximizar el otro)
+          const allPanels = Array.from(document.querySelectorAll('.panel:not(.closed)'));
+          const otherPanel = allPanels.find(p => p !== panel && p && p.parentNode);
+          if (otherPanel) {
+            maximizePanel(otherPanel);
+          }
+        }
+      }
+    });
+    
+    // Manejar botones de restaurar en el header
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('.restore-btn')) {
+        const btn = e.target.closest('.restore-btn');
+        const panelType = btn.getAttribute('data-panel');
+        
+        if (panelType === 'bpmn') {
+          // Verificar si el panel BPMN existe y está cerrado
+          let panel = document.getElementById('bpmn-panel');
+          if (!panel) {
+            // Crear nuevo panel BPMN solo si no existe
+            createBpmnPanel();
+            panel = document.getElementById('bpmn-panel');
+          } else if (panel.classList.contains('closed')) {
+            // Si existe pero está cerrado, simplemente mostrarlo
+            panel.style.display = '';
+            panel.classList.remove('closed', 'minimized', 'maximized');
+            panel.style.width = '';
+            panel.style.height = '';
+            panel.style.position = '';
+            panel.style.zIndex = '';
+            panel.style.flex = '';
+            panel.setAttribute('data-x', '0');
+            panel.setAttribute('data-y', '0');
+            
+            // Restaurar el canvas BPMN si hay uno preservado
+            if (window._preservedCanvas) {
+              restoreBpmnCanvas();
+            }
+          }
+        } else if (panelType === 'ppinot') {
+          // Verificar si el panel PPINOT existe y está cerrado
+          let panel = document.getElementById('ppinot-panel');
+          if (!panel) {
+            // Crear nuevo panel PPINOT solo si no existe
+            createPpinotPanel();
+            panel = document.getElementById('ppinot-panel');
+          } else if (panel.classList.contains('closed')) {
+            // Si existe pero está cerrado, simplemente mostrarlo
+            panel.style.display = '';
+            panel.classList.remove('closed', 'minimized', 'maximized');
+            panel.style.width = '';
+            panel.style.height = '';
+            panel.style.position = '';
+            panel.style.zIndex = '';
+            panel.style.flex = '';
+            panel.setAttribute('data-x', '0');
+            panel.setAttribute('data-y', '0');
+          }
+        }
+        
+        // Restaurar layout compartido
+        restoreSharedLayout();
+      }
+    });
+    
+    // Redimensionar canvas cuando se carga la página
+    window.addEventListener('load', resizeCanvas);
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Inicializar layout horizontal por defecto
+    document.querySelector('.layout-btn[data-layout="horizontal"]').click();
+  </script>
 </body>
-
+</html>
 </html>
