@@ -983,13 +983,22 @@ RALphLabelEditingProvider.prototype.canActivate = function(element) {
         'RALph:History-Any-Red',
         'RALph:History-Any-Green',
         'RALph:History-Same-Green',
-        'RALph:History-Same-Red',
+        'RALph:History-Same-Red'
+    ];
+    
+    // Allow editing for history instance elements
+    const historyInstanceElements = [
         'RALph:History-AnyInstanceInTime-Green',
         'RALph:History-AnyInstanceInTime-Red'
     ];
     
     if (isAny(element, historyElementsNoEdit)) {
         return false;
+    }
+    
+    // Explicitly allow editing for history instance elements
+    if (isAny(element, historyInstanceElements)) {
+        return true;
     }
     
     // Allow editing for dual label elements
@@ -1024,6 +1033,16 @@ RALphLabelEditingProvider.prototype.activate = function(element) {
     // Block editing for history elements that are not "instance" types
     if (isAny(element, this._historyElementsNoEdit)) {
         return;
+    }
+    
+    // Allow editing for history instance elements
+    const historyInstanceElements = [
+        'RALph:History-AnyInstanceInTime-Green',
+        'RALph:History-AnyInstanceInTime-Red'
+    ];
+    
+    if (isAny(element, historyInstanceElements)) {
+        // Continue with activation for these elements
     }
 
     // Para elementos con dos etiquetas, determinar qué texto mostrar

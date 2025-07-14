@@ -58,7 +58,9 @@ export const directEdit = [
     'RALph:reportsDirectly',
     'RALph:reportsTransitively',
     'RALph:delegatesDirectly',
-    'RALph:delegatesTransitively'
+    'RALph:delegatesTransitively',
+    'RALph:History-AnyInstanceInTime-Green',
+    'RALph:History-AnyInstanceInTime-Red'
 ]
 
 export const resourceArcElements = [//this array states which elements can use resourceArc connector

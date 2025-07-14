@@ -392,6 +392,12 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
       semantic.$type === 'RALph:delegatesTransitively'
     ) {
       text = semantic.text || '';
+    } else if (
+      semantic.$type === 'RALph:History-AnyInstanceInTime-Green' ||
+      semantic.$type === 'RALph:History-AnyInstanceInTime-Red'
+    ) {
+      // Para history instance elements, usar name
+      text = semantic.name || '';
     } else {
       text = semantic.name || semantic.text || '';
     }

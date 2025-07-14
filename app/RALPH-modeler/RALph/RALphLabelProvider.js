@@ -30,9 +30,17 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
     'bpmn:EventBasedGateway'
   ];
 
+  // Elementos que SÍ deben ser editables (específicamente los history instance)
+  const editableHistoryElements = [
+    'RALph:History-AnyInstanceInTime-Green',
+    'RALph:History-AnyInstanceInTime-Red'
+  ];
+
   // Listener para doble click - para elementos RALPH (solo para elementos que NO tienen dos etiquetas)
   eventBus.on('element.dblclick', function(event) {
     const element = event.element;
+    
+    console.log('Double-click event on element:', element.type);
     
     // NO manejar elementos con dos etiquetas aquí - dejar que el label editing provider los maneje
     if (dualLabelElements.includes(element.type) || 
@@ -40,8 +48,14 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
       return; // Dejar que el label editing provider maneje estos elementos
     }
     
-    // Solo manejar elementos RALPH que NO tienen dos etiquetas
+    // NO manejar elementos history instance - dejar que el label editing provider los maneje
+    if (editableHistoryElements.includes(element.type)) {
+      return; // Dejar que el label editing provider maneje estos elementos
+    }
+    
+    // Solo manejar elementos RALPH que NO tienen dos etiquetas y NO son history instance
     if (canEditRALPHElement(element) && !dualLabelElements.includes(element.type)) {
+      console.log('Creating custom editor for element:', element.type);
       
       let targetElement = element;
       
@@ -145,8 +159,12 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
       // Etiqueta externa - usar businessObject.name
       currentText = element.businessObject ? element.businessObject.name || '' : '';
     } else {
-      // Etiqueta interna - usar businessObject.text
+      // Etiqueta interna - usar businessObject.text o businessObject.name
       currentText = getRALPHDefaultText(element.labelTarget || element);
+      // Si no hay texto por defecto, intentar obtener del businessObject
+      if (!currentText && element.businessObject) {
+        currentText = element.businessObject.name || element.businessObject.text || '';
+      }
     }
     
     // Crear input overlay
@@ -207,11 +225,16 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
           eventBus.fire('element.changed', { element: element });
           // NO tocar la etiqueta interna cuando se edita la externa
         } else {
-          // Etiqueta interna - guardar en businessObject.text
+          // Etiqueta interna - guardar en businessObject.text o businessObject.name
           if (!element.businessObject) {
             element.businessObject = {};
           }
-          element.businessObject.text = newText;
+          // Para elementos history instance, usar name
+          if (editableHistoryElements.includes(element.type)) {
+            element.businessObject.name = newText;
+          } else {
+            element.businessObject.text = newText;
+          }
           eventBus.fire('element.changed', { element: element });
           // NO tocar la etiqueta externa cuando se edita la interna
         }
@@ -260,6 +283,18 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
     // Check if it's a label of a non-editable element
     if (element.type === 'label' && element.labelTarget && element.labelTarget.type && nonEditableElements.includes(element.labelTarget.type)) {
       return false;
+    }
+    
+    // Explicitly allow editing for history instance elements
+    if (element.type && editableHistoryElements.includes(element.type)) {
+      console.log('History instance element is editable:', element.type);
+      return true;
+    }
+    
+    // Check if it's a label of a history instance element
+    if (element.type === 'label' && element.labelTarget && element.labelTarget.type && editableHistoryElements.includes(element.labelTarget.type)) {
+      console.log('History instance label is editable:', element.labelTarget.type);
+      return true;
     }
     
     // Para elementos con dos etiquetas (reports/delegates), permitir edición de ambas
@@ -332,6 +367,15 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
     }
     if (is(element, 'RALph:RoleRALph')) {
       return 'Role';
+    }
+    
+    // Default text for history instance elements
+    if (is(element, 'RALph:History-AnyInstanceInTime-Green')) {
+      return 'History Green';
+    }
+    
+    if (is(element, 'RALph:History-AnyInstanceInTime-Red')) {
+      return 'History Red';
     }
     
     return '';
