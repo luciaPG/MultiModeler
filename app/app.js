@@ -19,23 +19,49 @@ import './css/app.css';
 
 // Helper function to validate and sanitize waypoints
 function validateAndSanitizeWaypoints(waypoints) {
-  if (!Array.isArray(waypoints)) {
+  // Handle null, undefined, or non-array inputs
+  if (!waypoints || !Array.isArray(waypoints)) {
     return [];
   }
   
-  return waypoints.filter(function(point) {
+  // Ensure we have at least 2 waypoints for a valid connection
+  const validWaypoints = waypoints.filter(function(point) {
     return point && 
            typeof point.x === 'number' && 
            typeof point.y === 'number' && 
            !isNaN(point.x) && !isNaN(point.y) && 
-           isFinite(point.x) && isFinite(point.y);
+           isFinite(point.x) && isFinite(point.y) &&
+           point.x !== null && point.y !== null;
   }).map(function(point) {
-    // Ensure coordinates are finite numbers
+    // Ensure coordinates are finite numbers with fallback to 0
     return {
-      x: isFinite(point.x) ? point.x : 0,
-      y: isFinite(point.y) ? point.y : 0
+      x: isFinite(point.x) && point.x !== null ? point.x : 0,
+      y: isFinite(point.y) && point.y !== null ? point.y : 0
     };
   });
+  
+  // If we don't have enough waypoints, return empty array to prevent intersection errors
+  if (validWaypoints.length < 2) {
+    return [];
+  }
+  
+  // Ensure waypoints are not identical (which can cause intersection issues)
+  const uniqueWaypoints = [];
+  for (let i = 0; i < validWaypoints.length; i++) {
+    const current = validWaypoints[i];
+    const previous = uniqueWaypoints[uniqueWaypoints.length - 1];
+    
+    if (!previous || (current.x !== previous.x || current.y !== previous.y)) {
+      uniqueWaypoints.push(current);
+    }
+  }
+  
+  // Still need at least 2 waypoints
+  if (uniqueWaypoints.length < 2) {
+    return [];
+  }
+  
+  return uniqueWaypoints;
 }
 
 const moddle = new BpmnModdle({});
@@ -57,22 +83,209 @@ function initializeModeler() {
   if (modeler && modeler.get('eventBus')) {
     const eventBus = modeler.get('eventBus');
     
-    // Validate waypoints for all connections
-    eventBus.on(['connection.create', 'connection.updateWaypoints', 'bendpoint.move.cleanup'], function(event) {
-      var context = event.context,
-          connection = context && context.connection;
-
-      if (connection && connection.waypoints) {
-        connection.waypoints = validateAndSanitizeWaypoints(connection.waypoints);
+    // Validate waypoints for all connections - earlier in the process
+    eventBus.on(['connect.start', 'connect.hover', 'connect.out', 'connect.cleanup', 'connection.create', 'connection.updateWaypoints', 'bendpoint.move.cleanup', 'bendpoint.add', 'bendpoint.move.start', 'bendpoint.move.end', 'drop.start', 'drop.end', 'drag.start', 'drag.end'], function(event) {
+      var context = event.context;
+      
+      // Validate connection waypoints
+      if (context && context.connection && context.connection.waypoints) {
+        context.connection.waypoints = validateAndSanitizeWaypoints(context.connection.waypoints);
       }
-    });
-
-    // Validate waypoints for connection previews
-    eventBus.on('connectionPreview.shown', function(event) {
+      
+      // Validate hints waypoints
+      if (context && context.hints && context.hints.waypoints) {
+        context.hints.waypoints = validateAndSanitizeWaypoints(context.hints.waypoints);
+      }
+      
+      // Validate any waypoints in the event itself
       if (event.connection && event.connection.waypoints) {
         event.connection.waypoints = validateAndSanitizeWaypoints(event.connection.waypoints);
       }
+      
+      // Special handling for gateway connections
+      if (context && context.source && context.source.type && context.source.type.includes('Gateway')) {
+        // Ensure gateway connections have valid waypoints
+        if (context.connection && context.connection.waypoints) {
+          context.connection.waypoints = validateAndSanitizeWaypoints(context.connection.waypoints);
+        }
+        if (context.hints && context.hints.waypoints) {
+          context.hints.waypoints = validateAndSanitizeWaypoints(context.hints.waypoints);
+        }
+      }
+      
+      if (context && context.target && context.target.type && context.target.type.includes('Gateway')) {
+        // Ensure gateway connections have valid waypoints
+        if (context.connection && context.connection.waypoints) {
+          context.connection.waypoints = validateAndSanitizeWaypoints(context.connection.waypoints);
+        }
+        if (context.hints && context.hints.waypoints) {
+          context.hints.waypoints = validateAndSanitizeWaypoints(context.hints.waypoints);
+        }
+      }
     });
+
+    // Validate waypoints for connection previews and drops
+    eventBus.on(['connectionPreview.shown', 'connection.preview', 'connection.move', 'drop.cleanup', 'drag.cleanup'], function(event) {
+      if (event.connection && event.connection.waypoints) {
+        event.connection.waypoints = validateAndSanitizeWaypoints(event.connection.waypoints);
+      }
+      
+      if (event.context && event.context.hints && event.context.hints.waypoints) {
+        event.context.hints.waypoints = validateAndSanitizeWaypoints(event.context.hints.waypoints);
+      }
+      
+      // Also validate any waypoints in the event context
+      if (event.context && event.context.connection && event.context.connection.waypoints) {
+        event.context.connection.waypoints = validateAndSanitizeWaypoints(event.context.connection.waypoints);
+      }
+    });
+    
+    // Additional validation for element registry updates
+    eventBus.on(['elementRegistry.added', 'elementRegistry.removed', 'elementRegistry.updated'], function(event) {
+      if (event.element && event.element.waypoints) {
+        event.element.waypoints = validateAndSanitizeWaypoints(event.element.waypoints);
+      }
+    });
+  }
+  
+  // Add command interceptor to catch waypoint issues before they cause errors
+  if (modeler && modeler.get('commandStack')) {
+    const commandStack = modeler.get('commandStack');
+    
+    // Use the correct API for command interceptors
+    if (commandStack && typeof commandStack.on === 'function') {
+      commandStack.on('commandStack.changed', function(event) {
+        try {
+          // Validate waypoints in the current command context
+          if (event.command && event.command.context) {
+            const context = event.command.context;
+            
+            if (context.connection && context.connection.waypoints) {
+              context.connection.waypoints = validateAndSanitizeWaypoints(context.connection.waypoints);
+            }
+            
+            if (context.connections) {
+              context.connections.forEach(function(connection) {
+                if (connection.waypoints) {
+                  connection.waypoints = validateAndSanitizeWaypoints(connection.waypoints);
+                }
+              });
+            }
+          }
+        } catch (error) {
+          console.warn('Command stack waypoint validation error:', error);
+        }
+      });
+    }
+  }
+  
+  // Add specific validation for DropOnFlowBehavior to prevent intersection errors
+  if (modeler && modeler.get('eventBus')) {
+    const eventBus = modeler.get('eventBus');
+    
+    // Intercept events that might trigger DropOnFlowBehavior
+    eventBus.on(['drop.start', 'drop.end', 'drop.cleanup', 'drag.start', 'drag.end', 'drag.cleanup'], function(event) {
+      try {
+        // Validate any waypoints in the event context
+        if (event.context && event.context.connection && event.context.connection.waypoints) {
+          event.context.connection.waypoints = validateAndSanitizeWaypoints(event.context.connection.waypoints);
+        }
+        
+        // Validate waypoints in hints
+        if (event.context && event.context.hints && event.context.hints.waypoints) {
+          event.context.hints.waypoints = validateAndSanitizeWaypoints(event.context.hints.waypoints);
+        }
+        
+        // Validate any waypoints in the event itself
+        if (event.connection && event.connection.waypoints) {
+          event.connection.waypoints = validateAndSanitizeWaypoints(event.connection.waypoints);
+        }
+        
+        // Validate waypoints in any elements being moved
+        if (event.context && event.context.elements) {
+          event.context.elements.forEach(function(element) {
+            if (element.waypoints) {
+              element.waypoints = validateAndSanitizeWaypoints(element.waypoints);
+            }
+          });
+        }
+      } catch (error) {
+        console.warn('Waypoint validation error:', error);
+        // Prevent the error from propagating
+        return false;
+      }
+    });
+    
+    // Add global error handler for waypoint-related errors
+    eventBus.on(['error'], function(event) {
+      if (event.error && event.error.message && event.error.message.includes('Cannot read properties of undefined')) {
+        console.warn('Intercepted waypoint error:', event.error);
+        // Prevent the error from propagating
+        event.preventDefault();
+        return false;
+      }
+    });
+    
+         // Intercept specific events that trigger DropOnFlowBehavior
+     eventBus.on(['drop.start', 'drop.end'], function(event) {
+       try {
+         // Ensure all connections have valid waypoints before drop operations
+         const elementRegistry = modeler.get('elementRegistry');
+         if (elementRegistry) {
+           elementRegistry.forEach(function(element) {
+             if (element.waypoints && Array.isArray(element.waypoints)) {
+               element.waypoints = validateAndSanitizeWaypoints(element.waypoints);
+             }
+           });
+         }
+         
+         // Validate context waypoints
+         if (event.context) {
+           if (event.context.connection && event.context.connection.waypoints) {
+             event.context.connection.waypoints = validateAndSanitizeWaypoints(event.context.connection.waypoints);
+           }
+           if (event.context.hints && event.context.hints.waypoints) {
+             event.context.hints.waypoints = validateAndSanitizeWaypoints(event.context.hints.waypoints);
+           }
+         }
+       } catch (error) {
+         console.warn('Drop waypoint validation error:', error);
+         return false;
+       }
+     });
+     
+     // Specific validation for AND/OR gateways (bpmn:Gateway)
+     eventBus.on(['element.added', 'element.removed', 'element.changed'], function(event) {
+       try {
+         const element = event.element;
+         
+         // Check if it's a gateway (AND/OR gateways)
+         if (element && element.type && element.type.includes('Gateway')) {
+           // Validate all incoming and outgoing connections
+           const modeling = modeler.get('modeling');
+           if (modeling) {
+             // Get all connections related to this gateway
+             const elementRegistry = modeler.get('elementRegistry');
+             if (elementRegistry) {
+               elementRegistry.forEach(function(connection) {
+                 if (connection.type && connection.type.includes('SequenceFlow')) {
+                   // Check if this connection is connected to the gateway
+                   if ((connection.source && connection.source.id === element.id) ||
+                       (connection.target && connection.target.id === element.id)) {
+                     if (connection.waypoints && Array.isArray(connection.waypoints)) {
+                       connection.waypoints = validateAndSanitizeWaypoints(connection.waypoints);
+                     }
+                   }
+                 }
+               });
+             }
+           }
+         }
+       } catch (error) {
+         console.warn('Gateway waypoint validation error:', error);
+         return false;
+       }
+     });
   }
   
   window.modeler = modeler;
@@ -83,6 +296,19 @@ async function createNewDiagram() {
   try {
     if (typeof modeler.clear === 'function') await modeler.clear();
     await modeler.createDiagram();
+    
+
+    const elementRegistry = modeler.get('elementRegistry');
+    const modeling = modeler.get('modeling');
+  
+    elementRegistry.forEach(element => {
+      if (element.type === 'bpmn:StartEvent') {
+  
+        modeling.moveShape(element, { x: 100, y: 5 });
+        return; 
+      }
+    });
+    
     container.removeClass('with-error').addClass('with-diagram');
     body.addClass('shown');
     updateUI('Nuevo diagrama creado.');
@@ -250,7 +476,7 @@ function fixTaskData(task) {
   return task;
 }
 
-function updateUI(msg) {
+function updateUI() {
   $('#notation-status').text('Modo: Unificado (BPMN + PPINOT + RALPH)');
   $('.mode-btn').removeClass('active');
   $('#hybrid-mode').addClass('active');

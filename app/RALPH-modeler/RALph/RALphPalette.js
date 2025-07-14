@@ -10,6 +10,12 @@ export default function RALphPalette(create, elementFactory, translate) {
   this._translate = translate;
 }
 
+RALphPalette.$inject = [
+  'create',
+  'elementFactory',
+  'translate'
+];
+
 RALphPalette.prototype.getPaletteEntries = function() {
   var create = this._create,
       elementFactory = this._elementFactory,

@@ -16,7 +16,21 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
     'RALph:delegatesTransitively'
   ];
 
-  // Listener para doble click - para elementos RALPH
+  // Elementos que NO deben tener labels (no editables)
+  const nonEditableElements = [
+    // History elements (excepto instance)
+    'RALph:history',
+    'RALph:historyStart',
+    'RALph:historyEnd',
+    // Gateways (AND/OR)
+    'bpmn:ExclusiveGateway',
+    'bpmn:InclusiveGateway',
+    'bpmn:ParallelGateway',
+    'bpmn:ComplexGateway',
+    'bpmn:EventBasedGateway'
+  ];
+
+  // Listener para doble click - para elementos RALPH (solo para elementos que NO tienen dos etiquetas)
   eventBus.on('element.dblclick', function(event) {
     const element = event.element;
     
@@ -26,18 +40,17 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
       return; // Dejar que el label editing provider maneje estos elementos
     }
     
-    if (canEditRALPHElement(element)) {
+    // Solo manejar elementos RALPH que NO tienen dos etiquetas
+    if (canEditRALPHElement(element) && !dualLabelElements.includes(element.type)) {
       
-      // Para elementos con dos etiquetas (reports/delegates), determinar cuál editar
       let targetElement = element;
       
       // Si es un label externo, editar el label externo
       if (element.type === 'label' && element.labelTarget) {
         targetElement = element;
       } 
-      // Si es el elemento principal, editar la etiqueta interna (NO la externa)
+      // Si es el elemento principal, editar la etiqueta interna
       else if (element.type && element.type.startsWith('RALph:')) {
-        // Para otros elementos RALPH, usar la lógica normal
         if (isExternalLabel(element)) {
           // Crear label externo si no existe
           if (!element.label) {
@@ -121,9 +134,9 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
       elementScreenX = (element.x - viewbox.x) * zoom + canvasRect.left + (element.width * zoom) / 2;
       elementScreenY = (element.y - viewbox.y) * zoom + canvasRect.top + (element.height * zoom) / 2;
     } else {
-      // Para otros elementos, usar la posición normal
-      elementScreenX = (element.x - viewbox.x) * zoom + canvasRect.left;
-      elementScreenY = (element.y - viewbox.y) * zoom + canvasRect.top;
+      // Para otros elementos, usar la posición normal centrada
+      elementScreenX = (element.x - viewbox.x) * zoom + canvasRect.left + (element.width * zoom) / 2;
+      elementScreenY = (element.y - viewbox.y) * zoom + canvasRect.top + (element.height * zoom) / 2;
     }
     
     // Obtener texto actual - diferenciar entre etiqueta interna y externa
@@ -141,17 +154,26 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
     input.type = 'text';
     input.value = currentText;
     input.style.position = 'fixed';
-    input.style.left = elementScreenX + 'px';
-    input.style.top = elementScreenY + 'px';
-    input.style.width = Math.max(150, element.width * zoom) + 'px';
-    input.style.height = Math.max(50, element.height * zoom) + 'px';
-    input.style.fontSize = (12 * zoom) + 'px';
+    
+    // Calcular el ancho del input - muy estrecho y corto
+    const inputWidth = Math.max(60, Math.min(100, element.width * zoom));
+    const inputHeight = Math.max(15, Math.min(18, element.height * zoom));
+    
+    // Centrar el input sobre el elemento
+    input.style.left = (elementScreenX - inputWidth / 2) + 'px';
+    input.style.top = (elementScreenY - inputHeight / 2) + 'px';
+    input.style.width = inputWidth + 'px';
+    input.style.height = inputHeight + 'px';
+    input.style.fontSize = (9 * zoom) + 'px';
     input.style.textAlign = 'center';
-    input.style.border = '2px solid #0086e6';
-    input.style.borderRadius = '3px';
+    input.style.border = 'none';
+    input.style.borderRadius = '0px';
     input.style.backgroundColor = 'white';
     input.style.zIndex = '1000';
     input.style.outline = 'none';
+    input.style.padding = '0px';
+    input.style.caretColor = '#000';
+    input.style.color = '#000';
     
     // Agregar al DOM
     document.body.appendChild(input);
@@ -230,18 +252,13 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
   }
 
   function canEditRALPHElement(element) {
-    // Check if element is a history element that should NOT be editable
-    const historyElementsNoEdit = [
-      'RALph:History-Same',
-      'RALph:History-Any',
-      'RALph:History-Any-Red',
-      'RALph:History-Any-Green',
-      'RALph:History-Same-Green',
-      'RALph:History-Same-Red'
-    ];
+    // Check if element should NOT be editable
+    if (element.type && nonEditableElements.includes(element.type)) {
+      return false;
+    }
     
-    // Block editing for history elements that are not "instance" types
-    if (isAny(element, historyElementsNoEdit)) {
+    // Check if it's a label of a non-editable element
+    if (element.type === 'label' && element.labelTarget && element.labelTarget.type && nonEditableElements.includes(element.labelTarget.type)) {
       return false;
     }
     
@@ -280,6 +297,11 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
       return '';
     }
 
+    // Para elementos no editables, no generar texto por defecto
+    if (nonEditableElements.includes(element.type)) {
+      return '';
+    }
+
     // Para elementos con dos etiquetas, usar businessObject.text para la interna
     if (dualLabelElements.includes(element.type)) {
       return element.businessObject ? element.businessObject.text || '' : '';
@@ -304,9 +326,6 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
     }
     if (is(element, 'RALph:Orgunit')) {
       return 'Organizational Unit';
-    }
-    if (is(element, 'RALph:Personcap')) {
-      return 'Person Capability';
     }
     if (is(element, 'RALph:Person')) {
       return 'Person';
@@ -365,8 +384,8 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
   eventBus.on('create.end', 500, function(event) {
     const shape = event.context.shape;
 
-    // Solo asignar texto por defecto a etiquetas internas
-    if (shape.type && shape.type.startsWith('RALph:') && !isExternalLabel(shape)) {
+    // Solo asignar texto por defecto a etiquetas internas de elementos editables
+    if (shape.type && shape.type.startsWith('RALph:') && !isExternalLabel(shape) && !nonEditableElements.includes(shape.type)) {
       if (!shape.businessObject.name) {
         shape.businessObject.name = getRALPHDefaultText(shape);
       }
@@ -375,8 +394,8 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
 
   eventBus.on('import.done', function() {
     elementRegistry.forEach(function(element) {
-      // Solo asignar texto por defecto a etiquetas internas
-      if (element.type && element.type.startsWith('RALph:') && !isExternalLabel(element)) {
+      // Solo asignar texto por defecto a etiquetas internas de elementos editables
+      if (element.type && element.type.startsWith('RALph:') && !isExternalLabel(element) && !nonEditableElements.includes(element.type)) {
         if (!element.businessObject.name) {
           element.businessObject.name = getRALPHDefaultText(element);
         }

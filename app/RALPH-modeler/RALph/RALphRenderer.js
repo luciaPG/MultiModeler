@@ -409,8 +409,7 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
       'text-anchor': 'middle',
       'dominant-baseline': 'middle',
       fill: text ? '#000000' : '#CCCCCC', // Negro si hay texto, gris si está vacío
-      'font-size': '14px',
-      'font-weight': 'bold',
+      'font-size': '10px',
       'pointer-events': 'none' // Evitar que interfiera con los clicks
     });
     textElement.textContent = text || '';
