@@ -22,177 +22,431 @@ import LabelEditingProvider from "bpmn-js/lib/features/label-editing/LabelEditin
 
 export default function RALphLabelEditingProvider(
     eventBus, canvas, directEditing,
-    modeling, resizeHandles, textRenderer) {
+    modeling, resizeHandles, textRenderer, elementFactory) {
 
-    this._canvas = canvas;
-    this._modeling = modeling;
-    this._textRenderer = textRenderer;
-
+    // Override the default label editing behavior for RALPH elements
     directEditing.registerProvider(this);
 
-    // listen to dblclick on non-root elements
+    // Handle double-click events for RALPH elements
     eventBus.on('element.dblclick', function(event) {
-        activateDirectEdit(event.element, true);
-    });
-
-    // complete on followup canvas operation
-    eventBus.on([
-        'element.mousedown',
-        'drag.init',
-        'canvas.viewbox.changing',
-        'autoPlace',
-        'popupMenu.open',
-
-    ], function(event) {
-
-        if (directEditing.isActive()) {
-            directEditing.complete();
-        }
-    });
-
-    // cancel on command stack changes
-    eventBus.on([ 'commandStack.changed' ], function(e) {
-        if (directEditing.isActive()) {
-            directEditing.cancel();
-        }
-    });
-    
-    eventBus.on(['commandStack.shape.create.postExecute'/*connection.create.preExecute'*/], function(event) {
-        /*var element = e.context.shape;
-
-        if (is(element, 'bpmn:Task')) {
-          // when the shape is a task, set custom text
-          element.businessObject.name = 'custom text';
-        }*/
+        const element = event.element;
         
-        var shape = event.context.shape;
-        //console.log(shape);
-
-        if(is(shape,"bpmn:Task")){
-            shape.businessObject.name="";
-        }
-      
-      });
-
-      /*eventBus.on(['commandStack.label.create.preExecute'],500,function(event){
-        var context = event.context,
-        element = context.shape,
-        businessObject,
-        di;
-
-        businessObject = element.businessObject,
-        di = businessObject.di;
-        var canvas = this._canvas;
-
-        
-        var bbox = canvas.getAbsoluteBBox(target);
-    
-        var mid = {
-        x: bbox.x + bbox.width / 2,
-        y: bbox.y + bbox.height / 2
-        };
-
-        // we want to trigger on BPMN elements only
-        if (isAny(element.labelTarget || element, ['RALph:reportsDirectly'])) {
-            assign(di.label.bounds, {
-                width:50,
-                height:20,
-                x: mid.x-50,
-                y: mid.y-30 
-                });
-        
-        return;
-        }
-
-       
-
-      })*/
-    
-      eventBus.on(['commandStack.connection.create.preExecute'],500, function(event) {
-        /*    var element = e.context.shape;
-
-        if (is(element, 'bpmn:Task')) {
-          // when the shape is a task, set custom text
-          element.businessObject.name = 'custom text';
-        }*/
-        //console.log("entra aqui: label editing provider");
-        var connection = event.context.connection;
-        //console.log(event.context)
-        if(is(connection,"bpmn:SequenceFlow")){
-            //console.log("entra aqui: label editing provider1");
-            connection.businessObject.name="";
-        }else if(connection.type ==="RALph:ResourceArc"){
-            //console.log(connection);
-            //console.log("entra aqui: label editing provider2");
-            //connection.businessObject.text="prueba";
-            connection.businessObject.name="";
-            activateDirectEdit(connection);
-            //activateDirectEdit(event.context.connection,true);
-        }
-      
-      });
-
-
-    eventBus.on('directEditing.activate', function(event) {
-        resizeHandles.removeResizers();
-    });
-
-    eventBus.on('create.end', 500, function(event) {
-
-        var context = event.context,
-            element = context.shape,
-            canExecute = event.context.canExecute,
-            isTouch = event.isTouch;
-
-        // TODO(nikku): we need to find a way to support the
-        // direct editing on mobile devices; right now this will
-        // break for desworkflowediting on mobile devices
-        // as it breaks the user interaction workflow
-
-        // TODO(nre): we should temporarily focus the edited element
-        // here and release the focused viewport after the direct edit
-        // operation is finished
-        if (isTouch) {
-            return;
-        }
-
-        if (!canExecute) {
-            return;
-        }
-
-        if (context.hints && context.hints.createElementsBehavior === false) {
-            return;
-        }
-
-        activateDirectEdit(element);
-    });
-
-    /*eventBus.on('autoPlace.end', 500, function(event) {
-        activateDirectEdit(event.context.connection);
-    });*/
-
-    eventBus.on('autoPlace.end', 500, function(event) {
-
-        activateDirectEdit(event.shape);
-        //activateDirectEdit(event.context.connection);
-    });
-
-    function activateDirectEdit(element, force) {
-        let types = [
-            'bpmn:Task',
-            'bpmn:TextAnnotation',
-            'bpmn:Group',
+        // Check if this is a RALPH element
+        if (element.type && element.type.startsWith('RALph:')) {
+            event.preventDefault();
+            event.stopPropagation();
             
-        ].concat(directEdit)
-        //console.log(directEdit)
-        if (force ||
-            isAny(element, types) ||
-            isCollapsedSubProcess(element)|| element.type==='RALph:ResourceArc') {
-            //console.log("bingo")
-            directEditing.activate(element);
+            // Determine if clicking on internal or external label
+            const clickedElement = event.originalEvent.target;
+            const isInternalLabel = clickedElement.classList.contains('djs-label') && 
+                                  clickedElement.parentElement === element;
+            const isExternalLabel = clickedElement.classList.contains('djs-label') && 
+                                  clickedElement.parentElement !== element;
+            
+            if (isInternalLabel || isExternalLabel) {
+                activateDirectEdit(element, isInternalLabel ? 'internal' : 'external');
+            } else {
+                // Clicking on the element itself - edit internal label
+                activateDirectEdit(element, 'internal');
+            }
+        }
+    });
+
+    // Override the activate method to handle dual-label elements
+    this.activate = function(element, context) {
+        if (element.type && element.type.startsWith('RALph:')) {
+            // For RALPH elements, we need to determine which label to edit
+            const labelType = context && context.labelType ? context.labelType : 'internal';
+            return activateDirectEdit(element, labelType);
+        }
+        
+        // For other elements, use default behavior
+        return directEditing.activate(element, context);
+    };
+
+    // Override the getValue method
+    this.getValue = function(element) {
+        if (element.type && element.type.startsWith('RALph:')) {
+            // For internal labels, return the text property
+            if (element.businessObject && element.businessObject.text !== undefined) {
+                return element.businessObject.text || '';
+            }
+            // For external labels, return the name property
+            if (element.businessObject && element.businessObject.name !== undefined) {
+                return element.businessObject.name || '';
+            }
+        }
+        
+        // Default behavior
+        return directEditing.getValue(element);
+    };
+
+    // Override the setValue method
+    this.setValue = function(element, value) {
+        if (element.type && element.type.startsWith('RALph:')) {
+            // For internal labels, set the text property
+            if (element.businessObject) {
+                element.businessObject.text = value;
+            }
+            // For external labels, set the name property
+            if (element.businessObject) {
+                element.businessObject.name = value;
+            }
+        } else {
+            // Default behavior
+            directEditing.setValue(element, value);
+        }
+    };
+
+    // Override the isActive method
+    this.isActive = function(element) {
+        return directEditing.isActive(element);
+    };
+
+    // Override the complete method
+    this.complete = function(element, context) {
+        if (element.type && element.type.startsWith('RALph:')) {
+            // Use custom completion for RALPH elements
+            return completeDirectEdit(element, context);
+        }
+        
+        // Default behavior
+        return directEditing.complete(element, context);
+    };
+
+    // Override the cancel method
+    this.cancel = function(element) {
+        if (element.type && element.type.startsWith('RALph:')) {
+            // Use custom cancellation for RALPH elements
+            return cancelDirectEdit(element);
+        }
+        
+        // Default behavior
+        return directEditing.cancel(element);
+    };
+
+    // Override the getEditingContext method
+    this.getEditingContext = function(element) {
+        if (element.type && element.type.startsWith('RALph:')) {
+            // Return custom context for RALPH elements
+            return getRALPHEditingContext(element);
+        }
+        
+        // Default behavior
+        return directEditing.getEditingContext(element);
+    };
+
+    // Custom activation for RALPH elements
+    function activateDirectEdit(element, labelType) {
+        if (!element || !element.businessObject) {
+            return false;
+        }
+
+        // Create custom editor for RALPH elements
+        createCustomEditor(element, labelType);
+        return true;
+    }
+
+    // Custom completion for RALPH elements
+    function completeDirectEdit(element, context) {
+        // This will be handled by the custom editor
+        return true;
+    }
+
+    // Custom cancellation for RALPH elements
+    function cancelDirectEdit(element) {
+        // This will be handled by the custom editor
+        return true;
+    }
+
+    // Get editing context for RALPH elements
+    function getRALPHEditingContext(element) {
+        return {
+            element: element,
+            labelType: 'internal' // Default to internal label
+        };
+    }
+
+    // Create a custom editor for RALPH elements
+    function createCustomEditor(element, labelType) {
+        // Remove any existing overlay
+        if (window.activeRALPHOverlay) {
+            window.activeRALPHOverlay.remove();
+        }
+
+        // Create overlay
+        const overlay = document.createElement('div');
+        overlay.style.position = 'absolute';
+        overlay.style.zIndex = '1000';
+        overlay.style.backgroundColor = 'white';
+        overlay.style.border = '1px solid #007bff';
+        overlay.style.padding = '4px';
+        overlay.style.fontSize = '12px';
+        overlay.style.minWidth = '100px';
+        overlay.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+        
+        // Create input
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.style.border = 'none';
+        input.style.outline = 'none';
+        input.style.width = '100%';
+        input.style.fontSize = '12px';
+        input.style.padding = '2px';
+        
+        // Set initial value
+        let initialValue = '';
+        if (labelType === 'external') {
+            initialValue = element.businessObject.name || '';
+        } else {
+            initialValue = element.businessObject.text || '';
+        }
+        input.value = initialValue;
+        
+        overlay.appendChild(input);
+        document.body.appendChild(overlay);
+        
+        // Position overlay
+        const elementRect = canvas.getGraphics(element).getBoundingClientRect();
+        const canvasRect = canvas.getContainer().getBoundingClientRect();
+        
+        let left, top;
+        if (labelType === 'external') {
+            // Position for external label
+            left = elementRect.left - canvasRect.left + elementRect.width / 2;
+            top = elementRect.bottom - canvasRect.top + 10;
+        } else {
+            // Position for internal label
+            left = elementRect.left - canvasRect.left + elementRect.width / 2;
+            top = elementRect.top - canvasRect.top + elementRect.height / 2;
+        }
+        
+        overlay.style.left = left + 'px';
+        overlay.style.top = top + 'px';
+        
+        // Focus input
+        input.focus();
+        input.select();
+        
+        // Store overlay reference
+        window.activeRALPHOverlay = overlay;
+        
+        // Event handlers
+        let hasFinished = false;
+        let isFinishing = false;
+        let enterPressed = false;
+        let processingKeyEvent = false;
+        let processingDocumentClick = false;
+        let processingFinishCall = false;
+        let lastInputValue = '';
+        let inputValueHistory = [];
+        
+        // Input value tracking
+        input.addEventListener('input', function(e) {
+            const newValue = e.target.value;
+            lastInputValue = newValue;
+            inputValueHistory.push(newValue);
+        });
+        
+        // Keydown handler
+        input.addEventListener('keydown', function(e) {
+            processingKeyEvent = true;
+            
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                enterPressed = true;
+                
+                const currentValue = e.target.value;
+                const lastValue = lastInputValue;
+                const lastHistoryValue = inputValueHistory.length > 0 ? inputValueHistory[inputValueHistory.length - 1] : '';
+                const finalValue = currentValue || lastValue || lastHistoryValue || '';
+                
+                finishEditingWithValue(true, finalValue);
+                return false;
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                finishEditing(false);
+                return false;
+            }
+            
+            setTimeout(() => {
+                processingKeyEvent = false;
+            }, 100);
+        });
+        
+        // Document click handler
+        document.addEventListener('click', function onDocumentClick(e) {
+            if (!overlay.contains(e.target)) {
+                if (processingDocumentClick || processingFinishCall || hasFinished) {
+            return;
+        }
+
+                processingDocumentClick = true;
+                
+                const currentValue = input && input.value ? input.value : '';
+                const lastValue = lastInputValue;
+                const lastHistoryValue = inputValueHistory.length > 0 ? inputValueHistory[inputValueHistory.length - 1] : '';
+                const finalValue = currentValue || lastValue || lastHistoryValue || '';
+                
+                finishEditingWithValue(true, finalValue);
+                document.removeEventListener('click', onDocumentClick);
+            }
+        });
+        
+        // Blur handler
+        input.addEventListener('blur', function(e) {
+            if (enterPressed) {
+            return;
+        }
+
+            setTimeout(() => {
+                if (window.activeRALPHOverlay && !isFinishing && !enterPressed && !processingKeyEvent && !processingDocumentClick && !processingFinishCall && !hasFinished) {
+                    const activeElement = document.activeElement;
+                    if (!overlay.contains(activeElement)) {
+                        const currentValue = input && input.value ? input.value : '';
+                        const lastValue = lastInputValue;
+                        const lastHistoryValue = inputValueHistory.length > 0 ? inputValueHistory[inputValueHistory.length - 1] : '';
+                        const finalValue = currentValue || lastValue || lastHistoryValue || '';
+                        
+                        finishEditingWithValue(true, finalValue);
+                    }
+                }
+            }, 100);
+        });
+        
+        // Finish editing function
+        function finishEditingWithValue(save = true, capturedValue = null) {
+            if (capturedValue && capturedValue.trim() && !hasFinished && !processingFinishCall) {
+                processingFinishCall = true;
+            } else if (!window.activeRALPHOverlay || isFinishing || hasFinished || processingFinishCall) {
+                return;
+            } else {
+                processingFinishCall = true;
+            }
+            
+            let inputValue = capturedValue;
+            
+            if (inputValue === null || inputValue === undefined || inputValue === '') {
+                if (input && input.value !== undefined) {
+                    const inputValue1 = input.value;
+                    const inputValue2 = input.getAttribute('value');
+                    const inputValue3 = input.defaultValue;
+                    inputValue = inputValue1 || inputValue2 || inputValue3 || '';
+                } else {
+                    inputValue = '';
+                }
+                
+                if (!inputValue && typeof lastInputValue !== 'undefined' && lastInputValue) {
+                    inputValue = lastInputValue;
+                }
+                
+                if (!inputValue && typeof inputValueHistory !== 'undefined' && inputValueHistory.length > 0) {
+                    inputValue = inputValueHistory[inputValueHistory.length - 1];
+                }
+            }
+            
+            function finishEditing(save = true) {
+                return finishEditingWithValue(save, null);
+            }
+            
+            isFinishing = true;
+            enterPressed = false;
+            processingKeyEvent = false;
+            processingDocumentClick = false;
+            
+            if (save) {
+                const newText = inputValue.trim();
+                
+                if (labelType === 'external') {
+                    if (!element.businessObject) {
+                        element.businessObject = { $type: 'bpmn:Label' };
+                    }
+                    element.businessObject.name = newText;
+                    
+                    if (element.labelTarget && !element.labelTarget.businessObject) {
+                        element.labelTarget.businessObject = {};
+                    }
+                    if (element.labelTarget) {
+                        element.labelTarget.businessObject.name = newText;
+                    }
+                } else {
+                    if (!element.businessObject) {
+                        element.businessObject = {};
+                    }
+                    
+                    if (!element.businessObject.$type) {
+                        element.businessObject.$type = element.type;
+                    }
+                    
+                    element.businessObject.text = newText;
+                    
+                    setTimeout(() => {
+                        updateVisualText(element, newText);
+                    }, 50);
+                    
+                    if (element.businessObject) {
+                        element.businessObject.text = newText;
+                    }
+                }
+                
+                try {
+                    eventBus.fire('element.changed', { element: element });
+                    if (element.labelTarget) {
+                        eventBus.fire('element.changed', { element: element.labelTarget });
+                    }
+                } catch (error) {
+                    // Silent error handling
+                }
+            }
+            
+            hasFinished = true;
+            if (window.activeRALPHOverlay) {
+                window.activeRALPHOverlay.remove();
+                window.activeRALPHOverlay = null;
+            }
+            isFinishing = false;
+            processingFinishCall = false;
         }
     }
 
+    // Update visual text directly
+    function updateVisualText(element, newText) {
+        const graphics = canvas.getGraphics(element);
+        if (!graphics) {
+            return;
+        }
+        
+        const textElements = graphics.querySelectorAll('text');
+        
+        if (textElements.length > 0) {
+            const textElement = textElements[0];
+            textElement.textContent = newText;
+            
+            if (newText) {
+                textElement.setAttribute('fill', '#000000');
+            } else {
+                textElement.setAttribute('fill', '#CCCCCC');
+            }
+            
+            try {
+                eventBus.fire('element.changed', { element: element });
+            } catch (error) {
+                // Silent error handling
+            }
+        } else {
+            if (modeling && modeling.updateProperties) {
+                try {
+                    modeling.updateProperties(element, { text: newText });
+                } catch (error) {
+                    // Silent error handling
+                }
+            }
+        }
+    }
 }
 
 RALphLabelEditingProvider.$inject = [
@@ -201,8 +455,46 @@ RALphLabelEditingProvider.$inject = [
     'directEditing',
     'modeling',
     'resizeHandles',
-    'textRenderer'
+    'textRenderer',
+    'elementFactory'
 ];
+
+// Override the default label editing provider for RALPH elements
+RALphLabelEditingProvider.prototype.canActivate = function(element) {
+    // Block history elements that should not be editable
+    const historyElementsNoEdit = [
+        'RALph:History-Same',
+        'RALph:History-Any',
+        'RALph:History-Any-Red',
+        'RALph:History-Any-Green',
+        'RALph:History-Same-Green',
+        'RALph:History-Same-Red'
+    ];
+    
+    if (isAny(element, historyElementsNoEdit)) {
+        return false;
+    }
+    
+    // Allow editing for dual label elements
+    const dualLabelElements = [
+      'RALph:reportsDirectly',
+      'RALph:reportsTransitively', 
+      'RALph:delegatesDirectly',
+      'RALph:delegatesTransitively'
+    ];
+    
+    if (dualLabelElements.includes(element.type)) {
+        return true;
+    }
+    
+    // Allow editing for external labels of dual elements
+    if (element.type === 'label' && element.labelTarget && dualLabelElements.includes(element.labelTarget.type)) {
+        return true;
+    }
+    
+    // Allow editing for other RALPH elements that should be editable
+    return directEdit.includes(element.type);
+};
 
 /**
  * Activate direct editing for activities and text annotations.
@@ -212,16 +504,39 @@ RALphLabelEditingProvider.$inject = [
  * @return {Object} an object with properties bounds (position and size), text and options
  */
 RALphLabelEditingProvider.prototype.activate = function(element) {
+    // Block editing for history elements that are not "instance" types
+    if (isAny(element, this._historyElementsNoEdit)) {
+        return;
+    }
 
-    // text
-    let text = getLabel(element);
-
-    // CUSTOM
-    if(isAny(element, label) && !text)
-        text = '';
-    //END_CUSTOM
-
-
+    // Para elementos con dos etiquetas, determinar qué texto mostrar
+    const dualLabelElements = [
+      'RALph:reportsDirectly',
+      'RALph:reportsTransitively', 
+      'RALph:delegatesDirectly',
+      'RALph:delegatesTransitively'
+    ];
+    
+    let text;
+    
+    // Si es un label externo de un elemento con dos etiquetas
+    if (element.type === 'label' && element.labelTarget && dualLabelElements.includes(element.labelTarget.type)) {
+      text = element.businessObject ? element.businessObject.name || '' : '';
+    } 
+    // Si es el elemento principal de un elemento con dos etiquetas
+    else if (dualLabelElements.includes(element.type)) {
+      // Para elementos con dos etiquetas, SIEMPRE editar la etiqueta interna cuando se hace doble click en la forma
+      text = element.businessObject ? element.businessObject.text || '' : '';
+    }
+    // Para otros elementos, usar la función getLabel normal
+    else {
+      text = getLabel(element);
+      
+      // CUSTOM
+      if(isAny(element, label) && !text)
+          text = '';
+      //END_CUSTOM
+    }
 
     if (text === undefined) {
         return;
@@ -363,26 +678,62 @@ RALphLabelEditingProvider.prototype.getEditingBBox = function(element) {
         });
     }
 
-    if (isAny(element, ['RALph:reportsDirectly','RALph:reportsTransitively']) ||
+    // Para elementos con dos etiquetas (reports/delegates)
+    const dualLabelElements = [
+      'RALph:reportsDirectly',
+      'RALph:reportsTransitively', 
+      'RALph:delegatesDirectly',
+      'RALph:delegatesTransitively'
+    ];
+    
+    if (isAny(element, dualLabelElements) ||
         isCollapsedPool(element) ||
         isCollapsedSubProcess(element)) {
-        //console.log("entra aqui reports label editing provider")    
-        assign(bounds, {
-            width:50,
-            height:20,
-            x: mid.x-25,
-            y: mid.y-10 
-        });
         
-        paddingTop=(7 * zoom);
-        assign(style, {
-            fontSize: externalFontSize + 'px',
-            lineHeight: externalLineHeight,
-            paddingTop: paddingTop + 'px',
-            paddingBottom: paddingBottom + 'px'
-        });
-
-       
+        // Si es un label externo, usar posición externa
+        if (element.type === 'label' && element.labelTarget && dualLabelElements.includes(element.labelTarget.type)) {
+            assign(bounds, {
+                width: 90 * zoom,
+                height: bbox.height + (7 * zoom) + (4 * zoom),
+                x: mid.x - (90 * zoom) / 2,
+                y: bbox.y - (7 * zoom)
+            });
+            
+            assign(style, {
+                fontSize: externalFontSize + 'px',
+                lineHeight: externalLineHeight,
+                paddingTop: (7 * zoom) + 'px',
+                paddingBottom: (4 * zoom) + 'px'
+            });
+        } 
+        // Si es el elemento principal, usar posición interna apropiada
+        else if (dualLabelElements.includes(element.type)) {
+            console.log('Configuring internal label bounds');
+            console.log('Original bbox:', bbox);
+            console.log('Calculated bounds:', {
+                width: bbox.width * 0.8,
+                height: bbox.height * 0.6,
+                x: mid.x - (bbox.width * 0.8) / 2,
+                y: mid.y - (bbox.height * 0.6) / 2
+            });
+            
+            assign(bounds, {
+                width: bbox.width * 0.8,
+                height: bbox.height * 0.6,
+                x: mid.x - (bbox.width * 0.8) / 2,
+                y: mid.y - (bbox.height * 0.6) / 2
+            });
+            
+            assign(style, {
+                fontSize: defaultFontSize + 'px',
+                lineHeight: defaultLineHeight,
+                paddingTop: (7 * zoom) + 'px',
+                paddingBottom: (7 * zoom) + 'px',
+                paddingLeft: (5 * zoom) + 'px',
+                paddingRight: (5 * zoom) + 'px',
+                textAlign: 'center'
+            });
+        }
     }
 
     if (isAny(element, ['RALph:History-AnyInstanceInTime-Green','RALph:History-AnyInstanceInTime-Red']) ||
@@ -436,7 +787,8 @@ RALphLabelEditingProvider.prototype.getEditingBBox = function(element) {
         paddingBottom = 4 * zoom;
 
     // external labels for events, data elements, gateways and connections
-    if (target.labelTarget ) {
+    // EXCLUIR elementos con dos etiquetas de esta lógica
+    if (target.labelTarget && !dualLabelElements.includes(element.type)) {
         assign(bounds, {
             width: width,
             height: bbox.height + paddingTop + paddingBottom,
@@ -455,7 +807,7 @@ RALphLabelEditingProvider.prototype.getEditingBBox = function(element) {
     // external label not yet created
     if (isLabelExternal(target)
         && !hasExternalLabel(target)
-        && !isLabel(target) && !isAny(element, ['RALph:reportsDirectly']) ) {
+        && !isLabel(target) && !isAny(element, dualLabelElements) ) {
 
         var externalLabelMid = getExternalLabelMid(element);
 
@@ -506,7 +858,39 @@ RALphLabelEditingProvider.prototype.getEditingBBox = function(element) {
     return { bounds: bounds, style: style };
 };
 
-RALphLabelEditingProvider.prototype.update = LabelEditingProvider.prototype.update
+RALphLabelEditingProvider.prototype.update = function(element, text) {
+    // Para elementos con dos etiquetas, actualizar el campo correcto
+    const dualLabelElements = [
+      'RALph:reportsDirectly',
+      'RALph:reportsTransitively', 
+      'RALph:delegatesDirectly',
+      'RALph:delegatesTransitively'
+    ];
+    
+    // Si es un label externo de un elemento con dos etiquetas
+    if (element.type === 'label' && element.labelTarget && dualLabelElements.includes(element.labelTarget.type)) {
+        // Actualizar el nombre del businessObject del label externo
+        if (element.businessObject) {
+            element.businessObject.name = text;
+        }
+    } 
+    // Si es el elemento principal de un elemento con dos etiquetas
+    else if (dualLabelElements.includes(element.type)) {
+        // Actualizar el campo text del businessObject del elemento principal
+        if (element.businessObject) {
+            console.log('Updating internal label for element:', element.type);
+            console.log('Old text:', element.businessObject.text);
+            console.log('New text:', text);
+            element.businessObject.text = text;
+            console.log('Updated text:', element.businessObject.text);
+        }
+    }
+    // Para otros elementos, usar el comportamiento por defecto
+    else {
+        // Llamar al método update original
+        LabelEditingProvider.prototype.update.call(this, element, text);
+    }
+};
 
 // helpers //////////////////////
 
@@ -529,3 +913,5 @@ function isExpandedPool(element) {
 function isEmptyText(label) {
     return !label || !label.trim();
 }
+
+

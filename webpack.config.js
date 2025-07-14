@@ -45,6 +45,10 @@ module.exports = {
                     to: 'vendor/bpmn-js'
                 },
                 {
+                    from: 'node_modules/diagram-js/assets/',
+                    to: 'vendor/diagram-js'
+                },
+                {
                     from: 'app/css',
                     to: 'css'
                 },

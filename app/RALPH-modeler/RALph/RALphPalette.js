@@ -87,6 +87,12 @@ RALphPalette.prototype.getPaletteEntries = function() {
     ),
     'RALph-Hierarchy-delegates': createAction(
       'RALph:delegatesDirectly', 'Hierarchy-connectors', 'icon-RALph2-delegatesDirectlyPalette', translate('Create Delegates Directly')
+    ),
+    'RALph-Hierarchy-reports-transitively': createAction(
+      'RALph:reportsTransitively', 'Hierarchy-connectors', 'icon-RALph2-reportsTransitively', translate('Create Reports Transitively')
+    ),
+    'RALph-Hierarchy-delegates-transitively': createAction(
+      'RALph:delegatesTransitively', 'Hierarchy-connectors', 'icon-RALph2-delegatesTransitively', translate('Create Delegates Transitively')
     )
   };
 };

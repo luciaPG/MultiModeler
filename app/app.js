@@ -254,7 +254,6 @@ function updateUI(msg) {
   $('#notation-status').text('Modo: Unificado (BPMN + PPINOT + RALPH)');
   $('.mode-btn').removeClass('active');
   $('#hybrid-mode').addClass('active');
-  if (msg) console.log(msg);
 }
 
 // ==== INICIALIZACIÓN DOCUMENTO Y BOTONES ====

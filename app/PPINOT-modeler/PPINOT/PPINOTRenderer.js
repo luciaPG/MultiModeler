@@ -2126,6 +2126,7 @@ this.drawShape = function (p, element) {
   /* jshint -W040 */
   return h(p, element);
 };
+
 PPINOTRenderer.prototype.drawLabel = function (parentGfx, element) {
   if (!element) return null;
 
@@ -2152,8 +2153,8 @@ PPINOTRenderer.prototype.drawLabel = function (parentGfx, element) {
   svgClasses(textElement).add('ppinot-label');
   svgAppend(parentGfx, textElement);
 
-  return textElement
-}
+  return textElement;
+};
 
 this.getShapePath = function (shape) {
   var type = shape.type;
@@ -2235,4 +2236,6 @@ this.getConnectionPath = function (connection) {
 
     return componentsToPath(connectionPath);
 };
+
+PPINOTRenderer.$inject = ['styles', 'canvas', 'textRenderer'];
 }

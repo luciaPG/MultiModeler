@@ -25,6 +25,8 @@ export const externalLabel = [//this array states which elements should have a l
     'RALph:Personcap',
     'RALph:Orgunit',
     'RALph:Position',
+    'RALph:reportsDirectly',
+    'RALph:reportsTransitively',
     'RALph:delegatesDirectly',
     'RALph:delegatesTransitively',
     //'RALph:History-AnyInstanceInTime-Green'
@@ -53,9 +55,10 @@ export const directEdit = [
     'RALph:Personcap',
     'RALph:Orgunit',
     'RALph:Position',
-    
- 
-
+    'RALph:reportsDirectly',
+    'RALph:reportsTransitively',
+    'RALph:delegatesDirectly',
+    'RALph:delegatesTransitively'
 ]
 
 export const resourceArcElements = [//this array states which elements can use resourceArc connector

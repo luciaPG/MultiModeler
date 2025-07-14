@@ -381,66 +381,42 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
   }
 
   function renderEmbeddedLabel(parentGfx, element, align) {
-    var semantic = getSemantic(element);
+    var semantic = element.businessObject || getSemantic(element);
     
-    // Verificar si hay texto para renderizar - usar name como PPINOT
-    var text = semantic.name || semantic.text;
-    if (!text || text.trim() === '') {
-      return null; // No renderizar si no hay texto
-    }
-
-    return renderLabel(parentGfx, text, {
-      box: element,
-      align: align,
-      padding: 5,
-      style: {
-        fill: element.color || '#000000',
-        fontSize: '11px',
-        fontWeight: 'bold'
-      }
-    });
-  }
-
-  function renderEmbeddedLabelHistoryAnyInTime(parentGfx, element, align, size, weight) {
-    var semantic = getSemantic(element);
-
-    return renderLabel(parentGfx, semantic.text, {
-      box: element,
-      align: align,
-      padding: 35,
-      style: {
-        fill: element.color,
-        fontSize: size + 'px',
-        fontWeight: weight
-      }
-    });
-  }
-
-  function renderExternalLabel(parentGfx, element) {
-    var box = {
-      width: 90,
-      height: 30,
-      x: element.width / 2 + element.x,
-      y: element.height + element.y
-    };
-
-    // Get text from businessObject.name
+    // Para reports y delegated, usar businessObject.text como embedded label
     var text = '';
-    if (element.businessObject && element.businessObject.name) {
-      text = element.businessObject.name;
+    if (
+      semantic.$type === 'RALph:reportsDirectly' ||
+      semantic.$type === 'RALph:reportsTransitively' ||
+      semantic.$type === 'RALph:delegatesDirectly' ||
+      semantic.$type === 'RALph:delegatesTransitively'
+    ) {
+      text = semantic.text || '';
+    } else {
+      text = semantic.name || semantic.text || '';
     }
-
-    return renderLabel(parentGfx, text, {
-      box: box,
-      fitBox: true,
-      style: assign(
-        {},
-        textRenderer.getExternalStyle(),
-        {
-          fill: 'black'
-        }
-      )
+    
+    // Crear un elemento de texto SVG directamente
+    var textElement = svgCreate('text');
+    
+    // Asegurar que el elemento tenga dimensiones válidas
+    var x = (element.width || 50) / 2;
+    var y = (element.height || 50) / 2;
+    
+    svgAttr(textElement, {
+      x: x,
+      y: y,
+      'text-anchor': 'middle',
+      'dominant-baseline': 'middle',
+      fill: text ? '#000000' : '#CCCCCC', // Negro si hay texto, gris si está vacío
+      'font-size': '14px',
+      'font-weight': 'bold',
+      'pointer-events': 'none' // Evitar que interfiera con los clicks
     });
+    textElement.textContent = text || '';
+    
+    svgAppend(parentGfx, textElement);
+    return textElement;
   }
 
   // Helper functions for crossed lines
@@ -792,26 +768,28 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
 
       let reportsDirectly=drawReportsDirectly(element);
       svgAppend(p,reportsDirectly);
-      renderEmbeddedLabel(p,element,'center-middle')
+      renderEmbeddedLabel(p,element,'center-middle');
       return reportsDirectly;
 
     },'RALph:reportsTransitively':(p,element)=>{
 
       let reportsTransitively=drawReportsTransitively(element);
       svgAppend(p,reportsTransitively);
-      renderEmbeddedLabel(p,element,'center-middle')
+      renderEmbeddedLabel(p,element,'center-middle');
       return reportsTransitively;
 
     },'RALph:delegatesDirectly':(p,element)=>{
 
       let delegatesDirectly=drawDelegatesDirectly(element);
       svgAppend(p,delegatesDirectly);
+      renderEmbeddedLabel(p,element,'center-middle');
       return delegatesDirectly;
 
     },'RALph:delegatesTransitively':(p,element)=>{
 
       let delegatesTransitively=drawDelegatesTransitively(element);
       svgAppend(p,delegatesTransitively);
+      renderEmbeddedLabel(p,element,'center-middle');
       return delegatesTransitively;
       
     },'RALph:Orgunit':(p,element) =>{
@@ -892,14 +870,14 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
     },'RALph:History-AnyInstanceInTime-Green':(p,element)=>{
       let HistoryAnyInTimeConnector=drawHistoryAnyInTimeConnectorGreen(element)
 
-      renderEmbeddedLabelHistoryAnyInTime(p,element,'center-middle')//10
+      renderEmbeddedLabel(p,element,'center-middle')
       svgAppend(p,HistoryAnyInTimeConnector)
       return HistoryAnyInTimeConnector;
 
     },'RALph:History-AnyInstanceInTime-Red':(p,element)=>{
       let HistoryAnyInTimeConnector=drawHistoryAnyInTimeConnectorRed(element)
 
-      renderEmbeddedLabelHistoryAnyInTime(p,element,'center-middle')//10
+      renderEmbeddedLabel(p,element,'center-middle')
       svgAppend(p,HistoryAnyInTimeConnector)
       return HistoryAnyInTimeConnector;
 

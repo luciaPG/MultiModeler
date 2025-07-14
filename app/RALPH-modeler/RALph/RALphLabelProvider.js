@@ -1,26 +1,82 @@
 import { assign } from 'min-dash';
 import { isExternalLabel, isRALPHConnection } from './Types';
 import { getLabel } from 'bpmn-js/lib/features/label-editing/LabelUtil';
-import { is } from 'bpmn-js/lib/util/ModelUtil';
+import { is, isAny } from 'bpmn-js/lib/util/ModelUtil';
 
 export default function RALPHLabelProvider(eventBus, modeling, elementFactory, canvas, elementRegistry) {
 
   // Sistema de edición personalizado para elementos RALPH
   let activeInput = null;
+  
+  // Elementos que tienen dos etiquetas (interna y externa)
+  const dualLabelElements = [
+    'RALph:reportsDirectly',
+    'RALph:reportsTransitively', 
+    'RALph:delegatesDirectly',
+    'RALph:delegatesTransitively'
+  ];
 
   // Listener para doble click - para elementos RALPH
   eventBus.on('element.dblclick', function(event) {
     const element = event.element;
     
+    // NO manejar elementos con dos etiquetas aquí - dejar que el label editing provider los maneje
+    if (dualLabelElements.includes(element.type) || 
+        (element.type === 'label' && element.labelTarget && dualLabelElements.includes(element.labelTarget.type))) {
+      return; // Dejar que el label editing provider maneje estos elementos
+    }
+    
     if (canEditRALPHElement(element)) {
       
-      // Si el elemento tiene un label, editar el label. Si no, editar el elemento.
+      // Para elementos con dos etiquetas (reports/delegates), determinar cuál editar
       let targetElement = element;
-      if (element.label && element.type !== 'label') {
-        targetElement = element.label;
+      
+      // Si es un label externo, editar el label externo
+      if (element.type === 'label' && element.labelTarget) {
+        targetElement = element;
+      } 
+      // Si es el elemento principal, editar la etiqueta interna (NO la externa)
+      else if (element.type && element.type.startsWith('RALph:')) {
+        // Para otros elementos RALPH, usar la lógica normal
+        if (isExternalLabel(element)) {
+          // Crear label externo si no existe
+          if (!element.label) {
+            createLabel(element, getExternalLabelPosition(element));
+          }
+          targetElement = element.label;
+        } else {
+          targetElement = element;
+        }
       }
       
       createCustomEditor(targetElement);
+    }
+  });
+  
+  // Listener para crear etiquetas externas cuando el usuario hace doble-click en el área correcta
+  eventBus.on('canvas.click', function(event) {
+    const element = event.element;
+    
+    // Solo para elementos con dos etiquetas que no tienen etiqueta externa
+    if (element && dualLabelElements.includes(element.type) && !element.label) {
+      const position = getExternalLabelPosition(element);
+      if (position) {
+        // Verificar si el click está cerca de donde debería estar la etiqueta externa
+        const clickX = event.x;
+        const clickY = event.y;
+        const labelArea = {
+          x: position.x - 50,
+          y: position.y - 25,
+          width: 100,
+          height: 50
+        };
+        
+        if (clickX >= labelArea.x && clickX <= labelArea.x + labelArea.width &&
+            clickY >= labelArea.y && clickY <= labelArea.y + labelArea.height) {
+          // Crear la etiqueta externa
+          createLabel(element, position);
+        }
+      }
     }
   });
 
@@ -31,6 +87,20 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
       activeInput = null;
     }
 
+    // For external labels, create them if they don't exist (solo para elementos que NO tienen dos etiquetas)
+    // NO crear automáticamente etiquetas externas para elementos con dos etiquetas
+    if (element.type && element.type.startsWith('RALph:') && isExternalLabel(element) && !element.label && !dualLabelElements.includes(element.type)) {
+      createLabel(element, getExternalLabelPosition(element));
+      element = element.label; // Use the created label element
+    }
+
+    // Show the label if it's hidden (only for external labels)
+    // NO mostrar automáticamente etiquetas externas cuando se edita la interna
+    if (element.hidden && element.type === 'label' && element.labelTarget && isExternalLabel(element.labelTarget)) {
+      element.hidden = false;
+      eventBus.fire('element.changed', { element: element });
+    }
+
     // Obtener el contenedor del canvas
     const canvasContainer = canvas.getContainer();
     const canvasRect = canvasContainer.getBoundingClientRect();
@@ -39,11 +109,32 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
     const viewbox = canvas.viewbox();
     const zoom = canvas.zoom();
     
-    const elementScreenX = (element.x - viewbox.x) * zoom + canvasRect.left;
-    const elementScreenY = (element.y - viewbox.y) * zoom + canvasRect.top;
+    let elementScreenX, elementScreenY;
     
-    // Obtener texto actual
-    const currentText = getRALPHDefaultText(element.labelTarget || element);
+    // Para elementos con dos etiquetas, posicionar el editor correctamente
+    if (element.type === 'label' && element.labelTarget && dualLabelElements.includes(element.labelTarget.type)) {
+      // Editor para etiqueta externa - aparecer sobre la etiqueta externa
+      elementScreenX = (element.x - viewbox.x) * zoom + canvasRect.left;
+      elementScreenY = (element.y - viewbox.y) * zoom + canvasRect.top;
+    } else if (dualLabelElements.includes(element.type)) {
+      // Editor para etiqueta interna - aparecer sobre el shape
+      elementScreenX = (element.x - viewbox.x) * zoom + canvasRect.left + (element.width * zoom) / 2;
+      elementScreenY = (element.y - viewbox.y) * zoom + canvasRect.top + (element.height * zoom) / 2;
+    } else {
+      // Para otros elementos, usar la posición normal
+      elementScreenX = (element.x - viewbox.x) * zoom + canvasRect.left;
+      elementScreenY = (element.y - viewbox.y) * zoom + canvasRect.top;
+    }
+    
+    // Obtener texto actual - diferenciar entre etiqueta interna y externa
+    let currentText = '';
+    if (element.type === 'label' && element.labelTarget) {
+      // Etiqueta externa - usar businessObject.name
+      currentText = element.businessObject ? element.businessObject.name || '' : '';
+    } else {
+      // Etiqueta interna - usar businessObject.text
+      currentText = getRALPHDefaultText(element.labelTarget || element);
+    }
     
     // Crear input overlay
     const input = document.createElement('input');
@@ -76,7 +167,37 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
       
       if (save) {
         const newText = input.value.trim();
-        updateRALPHLabel(element, newText);
+        
+        // Diferenciar entre etiqueta interna y externa
+        if (element.type === 'label' && element.labelTarget) {
+          // Etiqueta externa - guardar en businessObject.name
+          if (!element.businessObject) {
+            element.businessObject = { $type: 'bpmn:Label' };
+          }
+          element.businessObject.name = newText;
+          
+          // También actualizar el businessObject del target
+          if (!element.labelTarget.businessObject) {
+            element.labelTarget.businessObject = {};
+          }
+          element.labelTarget.businessObject.name = newText;
+          
+          eventBus.fire('element.changed', { element: element });
+          // NO tocar la etiqueta interna cuando se edita la externa
+        } else {
+          // Etiqueta interna - guardar en businessObject.text
+          if (!element.businessObject) {
+            element.businessObject = {};
+          }
+          element.businessObject.text = newText;
+          eventBus.fire('element.changed', { element: element });
+          // NO tocar la etiqueta externa cuando se edita la interna
+        }
+        
+        // Keep the label visible after editing
+        if (element.hidden === false) {
+          eventBus.fire('element.changed', { element: element });
+        }
       }
       
       input.remove();
@@ -109,12 +230,44 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
   }
 
   function canEditRALPHElement(element) {
-    // Solo puede editar elementos RALPH y sus labels
+    // Check if element is a history element that should NOT be editable
+    const historyElementsNoEdit = [
+      'RALph:History-Same',
+      'RALph:History-Any',
+      'RALph:History-Any-Red',
+      'RALph:History-Any-Green',
+      'RALph:History-Same-Green',
+      'RALph:History-Same-Red'
+    ];
+    
+    // Block editing for history elements that are not "instance" types
+    if (isAny(element, historyElementsNoEdit)) {
+      return false;
+    }
+    
+    // Para elementos con dos etiquetas (reports/delegates), permitir edición de ambas
+    
+    // Si es un label externo de un elemento con dos etiquetas
+    if (element.type === 'label' && element.labelTarget && element.labelTarget.type && dualLabelElements.includes(element.labelTarget.type)) {
+      return true;
+    }
+    
+    // Si es el elemento principal de un elemento con dos etiquetas
+    if (element.type && dualLabelElements.includes(element.type)) {
+      return true;
+    }
+    
+    // Para otros elementos RALPH con etiquetas externas
     if (element.type === 'label' && element.labelTarget && element.labelTarget.type && element.labelTarget.type.startsWith('RALph:')) {
       return isExternalLabel(element.labelTarget);
     }
     
     if (element.type && element.type.startsWith('RALph:') && isExternalLabel(element)) {
+      return true;
+    }
+    
+    // Allow editing for internal labels (elements in label array but not in externalLabel)
+    if (element.type && element.type.startsWith('RALph:') && !isExternalLabel(element)) {
       return true;
     }
     
@@ -127,7 +280,12 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
       return '';
     }
 
-    // Primero obtener el texto actual
+    // Para elementos con dos etiquetas, usar businessObject.text para la interna
+    if (dualLabelElements.includes(element.type)) {
+      return element.businessObject ? element.businessObject.text || '' : '';
+    }
+
+    // Para otros elementos, usar getLabel normal
     const currentText = getLabel(element);
     
     // Si ya tiene texto, devolverlo
@@ -135,7 +293,6 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
       return currentText;
     }
 
-    // Solo asignar texto por defecto para elementos RALPH
     if (is(element, 'RALph:Position')) {
       return 'Position';
     }
@@ -163,6 +320,18 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
 
   function updateRALPHLabel(element, newText) {
     const safeText = (newText == null || newText === undefined) ? '' : String(newText);
+    
+    // Para elementos con dos etiquetas (reports/delegates)
+    if (dualLabelElements.includes(element.type)) {
+      // Para elementos con dos etiquetas, actualizar businessObject.text (etiqueta interna)
+      if (!element.businessObject) {
+        element.businessObject = {};
+      }
+      element.businessObject.text = safeText;
+      
+      eventBus.fire('element.changed', { element: element });
+      return;
+    }
     
     // Para labels externos
     if (element.type === 'label' && element.labelTarget) {
@@ -196,17 +365,22 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
   eventBus.on('create.end', 500, function(event) {
     const shape = event.context.shape;
 
-    if (!shape.labelTarget && !shape.hidden && !shape.label && shouldCreateExternalLabel(shape)) {
-      createLabel(shape, getExternalLabelPosition(shape));
+    // Solo asignar texto por defecto a etiquetas internas
+    if (shape.type && shape.type.startsWith('RALph:') && !isExternalLabel(shape)) {
+      if (!shape.businessObject.name) {
+        shape.businessObject.name = getRALPHDefaultText(shape);
+      }
     }
   });
 
   eventBus.on('import.done', function() {
     elementRegistry.forEach(function(element) {
-      if (shouldCreateExternalLabel(element) && !element.label) {
-        createLabel(element, getExternalLabelPosition(element));
+      // Solo asignar texto por defecto a etiquetas internas
+      if (element.type && element.type.startsWith('RALph:') && !isExternalLabel(element)) {
+        if (!element.businessObject.name) {
+          element.businessObject.name = getRALPHDefaultText(element);
+        }
       }
-
       if (element.type && element.type.startsWith('RALph:')) {
         element._skipInternalLabel = true;
       }
@@ -217,6 +391,12 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
     const element = event.shape;
 
     if (isLabel(element) && element.labelTarget) return;
+
+    // Para elementos con dos etiquetas, NO mover las etiquetas automáticamente
+    
+    if (dualLabelElements.includes(element.type)) {
+      return; // No mover etiquetas para elementos con dos etiquetas
+    }
 
     if (!isLabel(element) && element.label) {
       const labelMid = getExternalLabelMid(element);
@@ -238,6 +418,9 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
       return;
     }
 
+    // External labels should be hidden by default, except for dual label elements
+    const shouldHide = isExternalLabel(target) && !dualLabelElements.includes(target.type);
+
     const labelElement = elementFactory.createLabel({
       id: target.id + '_label',
       businessObject: target.businessObject,
@@ -245,12 +428,14 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
       type: 'label',
       labelTarget: target,
       width: 150,
-      height: 50
+      height: 50,
+      hidden: shouldHide // Hide external labels by default
     });
 
     assign(labelElement, {
       x: position.x - labelElement.width / 2,
-      y: position.y - labelElement.height / 2
+      y: position.y - labelElement.height / 2,
+      hidden: shouldHide // Hide external labels by default
     });
 
     target.label = labelElement;
@@ -295,6 +480,26 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
   }
 
   function getExternalLabelPosition(element) {
+    // Para elementos con dos etiquetas, usar posiciones fijas
+    const dualLabelElements = [
+      'RALph:reportsDirectly',
+      'RALph:reportsTransitively', 
+      'RALph:delegatesDirectly',
+      'RALph:delegatesTransitively'
+    ];
+    
+    if (dualLabelElements.includes(element.type)) {
+      // Posiciones fijas para cada tipo de elemento
+      const positions = {
+        'RALph:reportsDirectly': { x: element.x + element.width / 2, y: element.y - 30 },
+        'RALph:reportsTransitively': { x: element.x + element.width / 2, y: element.y - 30 },
+        'RALph:delegatesDirectly': { x: element.x + element.width / 2, y: element.y + element.height + 30 },
+        'RALph:delegatesTransitively': { x: element.x + element.width / 2, y: element.y + element.height + 30 }
+      };
+      return positions[element.type];
+    }
+    
+    // Para otros elementos, usar la lógica normal
     const mid = getExternalLabelMid(element);
     return mid ? { x: mid.x, y: mid.y } : null;
   }
