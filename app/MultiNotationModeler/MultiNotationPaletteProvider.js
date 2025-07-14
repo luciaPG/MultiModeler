@@ -7,9 +7,20 @@ export default function MultiNotationPaletteProvider(palette, create, elementFac
   BpmnPaletteProvider.call(this, palette, create, elementFactory, spaceTool, lassoTool, handTool, globalConnect, translate);
   this._injector = injector;
   
-  // Get the palette services through dependency injection
-  this.ppinotNotationPalette = injector.get('PPINOTPalette');
-  this.ralphNotationPalette = injector.get('RALphPalette');
+  // Get the palette services through dependency injection - safely
+  try {
+    this.ppinotNotationPalette = injector.get('PPINOTPalette');
+  } catch (error) {
+    console.warn('PPINOTPalette not available:', error.message);
+    this.ppinotNotationPalette = null;
+  }
+  
+  try {
+    this.ralphNotationPalette = injector.get('RALphPalette');
+  } catch (error) {
+    console.warn('RALphPalette not available:', error.message);
+    this.ralphNotationPalette = null;
+  }
 }
 
 MultiNotationPaletteProvider.$inject = [
@@ -33,12 +44,20 @@ MultiNotationPaletteProvider.prototype.getPaletteEntries = function () {
 
   //PPINOT entries
   if (this.ppinotNotationPalette && typeof this.ppinotNotationPalette.getPaletteEntries === 'function') {
-    assign(allEntries, this.ppinotNotationPalette.getPaletteEntries());
+    try {
+      assign(allEntries, this.ppinotNotationPalette.getPaletteEntries());
+    } catch (error) {
+      console.warn('Error getting PPINOT palette entries:', error);
+    }
   }
 
   //RALPH entries
   if (this.ralphNotationPalette && typeof this.ralphNotationPalette.getPaletteEntries === 'function') {
-    assign(allEntries, this.ralphNotationPalette.getPaletteEntries());
+    try {
+      assign(allEntries, this.ralphNotationPalette.getPaletteEntries());
+    } catch (error) {
+      console.warn('Error getting RALPH palette entries:', error);
+    }
   }
 
   return allEntries;
