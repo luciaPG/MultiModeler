@@ -66,19 +66,13 @@ function validateAndSanitizeWaypoints(waypoints) {
   return uniqueWaypoints;
 }
 
-console.log('Initializing moddle and container');
-
 const moddle = new BpmnModdle({});
 const container = $('.panel:first-child');
 const body = $('body');
 let modeler = null;
 let currentFile = null;
 
-console.log('Container found:', container.length > 0);
-
 function initializeModeler() {
-  console.log('Initializing modeler...');
-  
   try {
     modeler = new MultiNotationModeler({
       container: '#js-canvas',
@@ -87,8 +81,6 @@ function initializeModeler() {
         RALph: RALphModdle
       }
     });
-    
-    console.log('Modeler created successfully');
     
     // Make modeler globally accessible for HTML scripts
     window.bpmnModeler = modeler;
@@ -103,65 +95,77 @@ function initializeModeler() {
     
     // Validate waypoints for all connections - earlier in the process
     eventBus.on(['connect.start', 'connect.hover', 'connect.out', 'connect.cleanup', 'connection.create', 'connection.updateWaypoints', 'bendpoint.move.cleanup', 'bendpoint.add', 'bendpoint.move.start', 'bendpoint.move.end', 'drop.start', 'drop.end', 'drag.start', 'drag.end'], function(event) {
-      var context = event.context;
-      
-      // Validate connection waypoints
-      if (context && context.connection && context.connection.waypoints) {
-        context.connection.waypoints = validateAndSanitizeWaypoints(context.connection.waypoints);
-      }
-      
-      // Validate hints waypoints
-      if (context && context.hints && context.hints.waypoints) {
-        context.hints.waypoints = validateAndSanitizeWaypoints(context.hints.waypoints);
-      }
-      
-      // Validate any waypoints in the event itself
-      if (event.connection && event.connection.waypoints) {
-        event.connection.waypoints = validateAndSanitizeWaypoints(event.connection.waypoints);
-      }
-      
-      // Special handling for gateway connections
-      if (context && context.source && context.source.type && context.source.type.includes('Gateway')) {
-        // Ensure gateway connections have valid waypoints
-        if (context.connection && context.connection.waypoints) {
+      try {
+        var context = event.context;
+        
+        // Validate connection waypoints
+        if (context && context.connection && context.connection.waypoints) {
           context.connection.waypoints = validateAndSanitizeWaypoints(context.connection.waypoints);
         }
-        if (context.hints && context.hints.waypoints) {
+        
+        // Validate hints waypoints
+        if (context && context.hints && context.hints.waypoints) {
           context.hints.waypoints = validateAndSanitizeWaypoints(context.hints.waypoints);
         }
-      }
-      
-      if (context && context.target && context.target.type && context.target.type.includes('Gateway')) {
-        // Ensure gateway connections have valid waypoints
-        if (context.connection && context.connection.waypoints) {
-          context.connection.waypoints = validateAndSanitizeWaypoints(context.connection.waypoints);
+        
+        // Validate any waypoints in the event itself
+        if (event.connection && event.connection.waypoints) {
+          event.connection.waypoints = validateAndSanitizeWaypoints(event.connection.waypoints);
         }
-        if (context.hints && context.hints.waypoints) {
-          context.hints.waypoints = validateAndSanitizeWaypoints(context.hints.waypoints);
+        
+        // Special handling for gateway connections
+        if (context && context.source && context.source.type && context.source.type.includes('Gateway')) {
+          // Ensure gateway connections have valid waypoints
+          if (context.connection && context.connection.waypoints) {
+            context.connection.waypoints = validateAndSanitizeWaypoints(context.connection.waypoints);
+          }
+          if (context.hints && context.hints.waypoints) {
+            context.hints.waypoints = validateAndSanitizeWaypoints(context.hints.waypoints);
+          }
         }
+        
+        if (context && context.target && context.target.type && context.target.type.includes('Gateway')) {
+          // Ensure gateway connections have valid waypoints
+          if (context.connection && context.connection.waypoints) {
+            context.connection.waypoints = validateAndSanitizeWaypoints(context.connection.waypoints);
+          }
+          if (context.hints && context.hints.waypoints) {
+            context.hints.waypoints = validateAndSanitizeWaypoints(context.hints.waypoints);
+          }
+        }
+      } catch (error) {
+        // Silent error handling for waypoint validation
       }
     });
 
     // Validate waypoints for connection previews and drops
     eventBus.on(['connectionPreview.shown', 'connection.preview', 'connection.move', 'drop.cleanup', 'drag.cleanup'], function(event) {
-      if (event.connection && event.connection.waypoints) {
-        event.connection.waypoints = validateAndSanitizeWaypoints(event.connection.waypoints);
-      }
-      
-      if (event.context && event.context.hints && event.context.hints.waypoints) {
-        event.context.hints.waypoints = validateAndSanitizeWaypoints(event.context.hints.waypoints);
-      }
-      
-      // Also validate any waypoints in the event context
-      if (event.context && event.context.connection && event.context.connection.waypoints) {
-        event.context.connection.waypoints = validateAndSanitizeWaypoints(event.context.connection.waypoints);
+      try {
+        if (event.connection && event.connection.waypoints) {
+          event.connection.waypoints = validateAndSanitizeWaypoints(event.connection.waypoints);
+        }
+        
+        if (event.context && event.context.hints && event.context.hints.waypoints) {
+          event.context.hints.waypoints = validateAndSanitizeWaypoints(event.context.hints.waypoints);
+        }
+        
+        // Also validate any waypoints in the event context
+        if (event.context && event.context.connection && event.context.connection.waypoints) {
+          event.context.connection.waypoints = validateAndSanitizeWaypoints(event.context.connection.waypoints);
+        }
+      } catch (error) {
+        // Silent error handling for waypoint validation
       }
     });
     
     // Additional validation for element registry updates
     eventBus.on(['elementRegistry.added', 'elementRegistry.removed', 'elementRegistry.updated'], function(event) {
-      if (event.element && event.element.waypoints) {
-        event.element.waypoints = validateAndSanitizeWaypoints(event.element.waypoints);
+      try {
+        if (event.element && event.element.waypoints) {
+          event.element.waypoints = validateAndSanitizeWaypoints(event.element.waypoints);
+        }
+      } catch (error) {
+        // Silent error handling for waypoint validation
       }
     });
   }
@@ -191,7 +195,7 @@ function initializeModeler() {
             }
           }
         } catch (error) {
-          console.warn('Command stack waypoint validation error:', error);
+          // Silent error handling for command stack validation
         }
       });
     }
@@ -228,8 +232,7 @@ function initializeModeler() {
           });
         }
       } catch (error) {
-        console.warn('Waypoint validation error:', error);
-        // Prevent the error from propagating
+        // Silent error handling for waypoint validation
         return false;
       }
     });
@@ -237,7 +240,6 @@ function initializeModeler() {
     // Add global error handler for waypoint-related errors
     eventBus.on(['error'], function(event) {
       if (event.error && event.error.message && event.error.message.includes('Cannot read properties of undefined')) {
-        console.warn('Intercepted waypoint error:', event.error);
         // Prevent the error from propagating
         event.preventDefault();
         return false;
@@ -267,7 +269,7 @@ function initializeModeler() {
            }
          }
        } catch (error) {
-         console.warn('Drop waypoint validation error:', error);
+         // Silent error handling for drop validation
          return false;
        }
      });
@@ -300,7 +302,7 @@ function initializeModeler() {
            }
          }
        } catch (error) {
-         console.warn('Gateway waypoint validation error:', error);
+         // Silent error handling for gateway validation
          return false;
        }
      });
@@ -381,27 +383,38 @@ function saveSVG(done) {
 }
 
 function handleFiles(files, callback) {
+  // Validate files array
+  if (!files || !Array.isArray(files) || files.length === 0) {
+    console.warn('No files provided to handleFiles');
+    return;
+  }
+
   let bpmn, cbpmnFile, ralphFile;
-  if (files[0].name.includes('.bpmn')) {
+  
+  // Validate each file before accessing its name property
+  if (files[0] && files[0].name && files[0].name.includes('.bpmn')) {
     bpmn = files[0];
-    if (files[1] && files[1].name.includes('.cbpmn')) cbpmnFile = files[1];
-    else if (files[1]) window.alert('El segundo archivo no es cbpmn');
-    if (files[2] && files[2].name.includes('.ralph')) ralphFile = files[2];
-    else if (files[2]) window.alert('El tercer archivo no es ralph');
-  } else if (files[1] && files[1].name.includes('.bpmn')) {
+    if (files[1] && files[1].name && files[1].name.includes('.cbpmn')) cbpmnFile = files[1];
+    else if (files[1] && files[1].name) window.alert('El segundo archivo no es cbpmn');
+    if (files[2] && files[2].name && files[2].name.includes('.ralph')) ralphFile = files[2];
+    else if (files[2] && files[2].name) window.alert('El tercer archivo no es ralph');
+  } else if (files[1] && files[1].name && files[1].name.includes('.bpmn')) {
     bpmn = files[1];
-    if (files[0] && files[0].name.includes('.cbpmn')) cbpmnFile = files[0];
-    else if (files[0]) window.alert('El segundo archivo no es cbpmn');
-    if (files[2] && files[2].name.includes('.ralph')) ralphFile = files[2];
-    else if (files[2]) window.alert('El tercer archivo no es ralph');
-  } else if (files[2] && files[2].name.includes('.bpmn')) {
+    if (files[0] && files[0].name && files[0].name.includes('.cbpmn')) cbpmnFile = files[0];
+    else if (files[0] && files[0].name) window.alert('El segundo archivo no es cbpmn');
+    if (files[2] && files[2].name && files[2].name.includes('.ralph')) ralphFile = files[2];
+    else if (files[2] && files[2].name) window.alert('El tercer archivo no es ralph');
+  } else if (files[2] && files[2].name && files[2].name.includes('.bpmn')) {
     bpmn = files[2];
-    if (files[0] && files[0].name.includes('.cbpmn')) cbpmnFile = files[0];
-    else if (files[0]) window.alert('El segundo archivo no es cbpmn');
-    if (files[1] && files[1].name.includes('.ralph')) ralphFile = files[1];
-    else if (files[1]) window.alert('El tercer archivo no es ralph');
-  } else if (files[0].name.includes('.cbpmn')) cbpmnFile = files[0];
-  else if (files[0].name.includes('.ralph')) ralphFile = files[0];
+    if (files[0] && files[0].name && files[0].name.includes('.cbpmn')) cbpmnFile = files[0];
+    else if (files[0] && files[0].name) window.alert('El segundo archivo no es cbpmn');
+    if (files[1] && files[1].name && files[1].name.includes('.ralph')) ralphFile = files[1];
+    else if (files[1] && files[1].name) window.alert('El tercer archivo no es ralph');
+  } else if (files[0] && files[0].name && files[0].name.includes('.cbpmn')) {
+    cbpmnFile = files[0];
+  } else if (files[0] && files[0].name && files[0].name.includes('.ralph')) {
+    ralphFile = files[0];
+  }
 
   const reader = new FileReader();
   if (bpmn) {
@@ -463,7 +476,11 @@ function registerFileDrop(container, callback) {
     e.stopPropagation();
     e.preventDefault();
     const files = e.dataTransfer.files;
-    handleFiles(files, callback);
+    
+    // Only process if there are actual files
+    if (files && files.length > 0) {
+      handleFiles(files, callback);
+    }
   };
   
   const handleDragOver = (e) => {
@@ -518,38 +535,19 @@ function updateUI(message = '') {
 
 // ==== INICIALIZACIÓN DOCUMENTO Y BOTONES ====
 $(function() {
-  console.log('Document ready, initializing application...');
-  
   try {
     if (!window.FileList || !window.FileReader) {
       window.alert('Tu navegador no soporta drag and drop. Usa Chrome/Firefox/IE > 10.');
       return;
     }
     
-    console.log('Browser supports file operations');
-    
-    initializeModeler();
-    createNewDiagram();
-    
-    // Register file drop after a short delay to ensure DOM is ready
-    setTimeout(() => {
-      const canvasContainer = $('#js-canvas');
-      if (canvasContainer.length > 0) {
-        registerFileDrop(canvasContainer, openDiagram);
-        console.log('File drop registered successfully');
-      } else {
-        console.warn('Canvas container not found, skipping file drop registration');
-      }
-    }, 100);
-    
-    console.log('Basic initialization complete');
+    // Initialize panels and modeler
+    initializePanelsAndModeler();
     
     // Handle file operations with new button structure
     $('.tool-btn').click(function(e) {
       e.preventDefault();
       const buttonText = $(this).text().trim();
-      
-      console.log('Button clicked:', buttonText);
       
       if (buttonText.includes('Nuevo')) {
         createNewDiagram();
@@ -559,7 +557,9 @@ $(function() {
         input.multiple = true;
         input.click();
         input.addEventListener('input', (evt) => {
-          handleFiles(evt.target.files, openDiagram);
+          if (evt.target.files && evt.target.files.length > 0) {
+            handleFiles(evt.target.files, openDiagram);
+          }
         });
       } else if (buttonText.includes('Guardar')) {
         saveDiagram((err, xml) => {
@@ -578,11 +578,8 @@ $(function() {
         }
       } else if (buttonText.includes('Validar')) {
         // Validation functionality
-        console.log('Validation clicked');
       }
     });
-    
-    console.log('Button handlers attached');
     
     // Handle SVG export (could be added to toolbar)
     const exportSVG = () => {
@@ -601,11 +598,13 @@ $(function() {
       input.multiple = false;
       input.click();
       input.addEventListener('input', (evt) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          if (modeler.setColors) modeler.setColors(JSON.parse(e.target.result));
-        };
-        reader.readAsText(evt.target.files[0]);
+        if (evt.target.files && evt.target.files.length > 0) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            if (modeler.setColors) modeler.setColors(JSON.parse(e.target.result));
+          };
+          reader.readAsText(evt.target.files[0]);
+        }
       });
     };
     
@@ -616,9 +615,19 @@ $(function() {
       const panel = btn.closest('.panel');
       
       if (btn.find('.fa-times').length) {
-        // Close panel
+        // Close panel - preserve modeler state instead of removing
         panel.fadeOut(300, function() {
-          $(this).remove();
+          // Instead of removing, hide the panel and preserve the modeler
+          $(this).addClass('closed');
+          $(this).hide();
+          
+          // Keep BPMN modeler active even when panel is hidden
+          setTimeout(() => {
+            keepBpmnModelerActive();
+          }, 200);
+          
+          // Reorganize remaining panels
+          restoreSharedLayout();
         });
       } else if (btn.find('.fa-expand').length) {
         // Maximize panel
@@ -649,13 +658,10 @@ $(function() {
     const exportArtifacts = debounce(() => {
       // Export functionality is now handled directly in button handlers
       // This function is kept for potential future use
-      console.log('Export artifacts triggered');
     }, 500);
     
     if (modeler && modeler.on) modeler.on('commandStack.changed', exportArtifacts);
     updateUI('Aplicación híbrida lista ✔️');
-    
-    console.log('Application initialization complete');
     
   } catch (error) {
     console.error('Error during application initialization:', error);
@@ -663,18 +669,749 @@ $(function() {
   }
 });
 
+// ==== PANEL INITIALIZATION ====
+
+async function initializePanelsAndModeler() {
+  try {
+    // Wait for PanelLoader to be available
+    if (typeof PanelLoader === 'undefined') {
+      setTimeout(initializePanelsAndModeler, 100);
+      return;
+    }
+    
+    // Create panel loader instance
+    const panelLoader = new PanelLoader();
+    window.panelLoader = panelLoader; // Make it globally available
+    
+    // Get container
+    const container = document.getElementById('panel-container');
+    
+    if (!container) {
+      return;
+    }
+    
+    // Load BPMN panel
+    const bpmnPanel = await panelLoader.createPanel('bpmn', container);
+    
+    if (!bpmnPanel) {
+      return;
+    }
+    
+    // Load PPINOT panel
+    const ppinotPanel = await panelLoader.createPanel('ppinot', container);
+    
+    if (!ppinotPanel) {
+      return;
+    }
+    
+    // Apply initial layout
+    container.style.flexDirection = 'row';
+    container.style.display = 'flex';
+    container.style.gap = '8px';
+    bpmnPanel.style.flex = '2';
+    ppinotPanel.style.flex = '1';
+    
+    // Initialize modeler after panels are loaded
+    setTimeout(() => {
+      try {
+        initializeModeler();
+        createNewDiagram();
+        
+        // Register file drop
+        const canvasContainer = $('#js-canvas');
+        if (canvasContainer.length > 0) {
+          registerFileDrop(canvasContainer, openDiagram);
+        }
+      } catch (error) {
+        console.error('Error initializing modeler:', error);
+      }
+    }, 200);
+    
+    // Initialize layout events
+    initializeLayoutEvents();
+    
+    // Initialize restore events
+    initializeRestoreEvents();
+    
+    // Initialize drag and drop functionality
+    initializeDragAndDrop();
+    
+    // Add window resize listener
+    window.addEventListener('resize', () => {
+      if (window.bpmnModeler) {
+        setTimeout(() => {
+          try {
+            const canvas = window.bpmnModeler.get('canvas');
+            if (canvas && typeof canvas.resized === 'function') {
+              canvas.resized();
+            }
+          } catch (error) {
+            console.warn('Error resizing canvas:', error);
+          }
+        }, 50);
+      }
+    });
+    
+    // Initialize horizontal layout by default
+    setTimeout(() => {
+      const horizontalBtn = document.querySelector('.layout-btn[data-layout="horizontal"]');
+      if (horizontalBtn) {
+        horizontalBtn.click();
+      }
+    }, 500);
+    
+  } catch (error) {
+    console.error('Error in initializePanelsAndModeler:', error);
+  }
+}
+
+// Initialize layout events
+function initializeLayoutEvents() {
+  document.querySelectorAll('.layout-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const layout = this.getAttribute('data-layout');
+      
+      // Remove active class from all buttons
+      document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+      // Add active to clicked button
+      this.classList.add('active');
+      
+      const panels = document.querySelectorAll('.panel:not(.closed)');
+      
+      if (panels.length === 0) {
+        console.log('No hay paneles disponibles para cambiar el layout');
+        return;
+      }
+      
+      // Reset panel styles
+      panels.forEach(panel => {
+        if (panel && panel.parentNode) {
+          panel.style.width = '';
+          panel.style.height = '';
+          panel.style.flex = '';
+          panel.style.transform = '';
+          panel.setAttribute('data-x', '0');
+          panel.setAttribute('data-y', '0');
+        }
+      });
+      
+      // Apply layout
+      const container = document.getElementById('panel-container');
+      if (layout === 'horizontal' && panels.length >= 2) {
+        container.style.flexDirection = 'row';
+        if (panels[0] && panels[0].parentNode) panels[0].style.flex = '2';
+        if (panels[1] && panels[1].parentNode) panels[1].style.flex = '1';
+      } else if (layout === 'vertical' && panels.length >= 2) {
+        container.style.flexDirection = 'column';
+        if (panels[0] && panels[0].parentNode) panels[0].style.flex = '2';
+        if (panels[1] && panels[1].parentNode) panels[1].style.flex = '1';
+      } else if (layout === 'grid' && panels.length >= 2) {
+        container.style.flexDirection = 'row';
+        panels.forEach(panel => {
+          if (panel && panel.parentNode) {
+            panel.style.flex = '1';
+          }
+        });
+      }
+      
+      // Resize canvas and keep modeler active
+      setTimeout(() => {
+        if (window.bpmnModeler) {
+          try {
+            const canvas = window.bpmnModeler.get('canvas');
+            if (canvas && typeof canvas.resized === 'function') {
+              canvas.resized();
+            }
+            
+            // Mantener el modeler activo después de cambiar layout
+            setTimeout(() => {
+              keepBpmnModelerActive();
+            }, 100);
+          } catch (error) {
+            console.warn('Error resizing canvas:', error);
+          }
+        }
+      }, 50);
+    });
+  });
+}
+
+// Función para manejar el cierre de paneles manteniendo el modeler activo
+function handlePanelClose(panel) {
+  // Ocultar el panel
+  panel.classList.add('closed');
+  panel.style.display = 'none';
+  
+  // Mantener el modeler de BPMN activo incluso cuando se cierra el panel
+  setTimeout(() => {
+    keepBpmnModelerActive();
+  }, 100);
+  
+  // Reorganizar los paneles restantes
+  restoreSharedLayout();
+}
+
+// Initialize restore events
+function initializeRestoreEvents() {
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('.restore-btn')) {
+      const btn = e.target.closest('.restore-btn');
+      const panelType = btn.getAttribute('data-panel');
+      const container = document.getElementById('panel-container');
+      
+      if (panelType === 'bpmn') {
+        let panel = document.getElementById('bpmn-panel');
+        
+        if (!panel) {
+          // Create new BPMN panel
+          if (window.panelLoader) {
+            window.panelLoader.createPanel('bpmn', container).then(panel => {
+              if (panel) {
+                // Restore BPMN canvas if preserved
+                if (window._preservedCanvas) {
+                  restoreBpmnCanvas();
+                }
+                restoreSharedLayout();
+              }
+            });
+          }
+        } else if (panel.classList.contains('closed')) {
+          // Show existing panel
+          panel.style.display = '';
+          panel.classList.remove('closed', 'minimized', 'maximized');
+          panel.style.width = '';
+          panel.style.height = '';
+          panel.style.position = '';
+          panel.style.zIndex = '';
+          panel.style.flex = '';
+          panel.setAttribute('data-x', '0');
+          panel.setAttribute('data-y', '0');
+          
+          // Reinitialize BPMN modeler when panel is restored
+          setTimeout(() => {
+            try {
+              // Check if modeler needs to be reinitialized
+              if (window.bpmnModeler) {
+                const canvas = window.bpmnModeler.get('canvas');
+                if (canvas) {
+                  // Force canvas resize and modeler reactivation
+                  canvas.resized();
+                  keepBpmnModelerActive();
+                  
+                  // Re-register file drop functionality
+                  const canvasContainer = $('#js-canvas');
+                  if (canvasContainer.length > 0) {
+                    registerFileDrop(canvasContainer, openDiagram);
+                  }
+                } else {
+                  // Modeler is broken, reinitialize it
+                  initializeModeler();
+                  createNewDiagram();
+                }
+              } else {
+                // No modeler exists, create new one
+                initializeModeler();
+                createNewDiagram();
+              }
+                    } catch (error) {
+          // Try to reinitialize completely
+          try {
+            initializeModeler();
+            createNewDiagram();
+          } catch (reinitError) {
+            console.error('Failed to reinitialize modeler:', reinitError);
+          }
+        }
+          }, 300);
+          
+          restoreSharedLayout();
+        }
+      } else if (panelType === 'ppinot') {
+        let panel = document.getElementById('ppinot-panel');
+        
+        if (!panel) {
+          // Create new PPINOT panel
+          if (window.panelLoader) {
+            window.panelLoader.createPanel('ppinot', container).then(panel => {
+              if (panel) {
+                restoreSharedLayout();
+              }
+            });
+          }
+        } else if (panel.classList.contains('closed')) {
+          // Show existing panel
+          panel.style.display = '';
+          panel.classList.remove('closed', 'minimized', 'maximized');
+          panel.style.width = '';
+          panel.style.height = '';
+          panel.style.position = '';
+          panel.style.zIndex = '';
+          panel.style.flex = '';
+          panel.setAttribute('data-x', '0');
+          panel.setAttribute('data-y', '0');
+          
+          restoreSharedLayout();
+        }
+      }
+    }
+  });
+  
+  // Event listener para botones de cerrar panel
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('.panel-btn') && e.target.closest('.panel-btn').classList.contains('close-btn')) {
+      const panel = e.target.closest('.panel');
+      if (panel) {
+        handlePanelClose(panel);
+      }
+    }
+  });
+}
+
+// Helper functions for panel restoration
+function restoreBpmnCanvas() {
+  const canvas = document.getElementById('js-canvas');
+  if (canvas && window._preservedCanvas) {
+    canvas.innerHTML = window._preservedCanvas.innerHTML;
+    canvas.className = window._preservedCanvas.className;
+    
+    if (window.bpmnModeler) {
+      const canvasService = window.bpmnModeler.get('canvas');
+      if (canvasService && canvasService._container) {
+        canvasService._container = canvas;
+      }
+      
+      setTimeout(() => {
+        try {
+          canvasService.resized();
+          keepBpmnModelerActive();
+          
+          // Re-register file drop functionality
+          const canvasContainer = $('#js-canvas');
+          if (canvasContainer.length > 0) {
+            registerFileDrop(canvasContainer, openDiagram);
+          }
+        } catch (error) {
+          // If canvas restoration fails, try to reinitialize modeler
+          try {
+            initializeModeler();
+            createNewDiagram();
+          } catch (reinitError) {
+            console.error('Failed to reinitialize modeler after canvas error:', reinitError);
+          }
+        }
+      }, 200);
+    }
+  }
+}
+
+function restoreSharedLayout() {
+  const container = document.getElementById('panel-container');
+  const panels = Array.from(document.querySelectorAll('.panel:not(.closed)'));
+  
+  if (panels.length === 0) {
+    return;
+  }
+  
+  // Reset all panels to default state
+  panels.forEach((panel, index) => {
+    
+    // Reset all styles
+    panel.style.transform = '';
+    panel.style.position = '';
+    panel.style.zIndex = '';
+    panel.style.flex = '';
+    panel.style.width = '';
+    panel.style.height = '';
+    panel.style.top = '';
+    panel.style.left = '';
+    panel.style.right = '';
+    panel.style.bottom = '';
+    panel.style.margin = '';
+    panel.style.padding = '';
+    
+    // Reset data attributes
+    panel.setAttribute('data-x', '0');
+    panel.setAttribute('data-y', '0');
+    
+    // Ensure panel is visible and properly positioned
+    panel.style.display = '';
+    panel.classList.remove('closed', 'minimized', 'maximized');
+  });
+  
+  // Configure container
+  container.style.display = 'flex';
+  container.style.gap = '8px';
+  container.style.alignItems = 'stretch';
+  container.style.height = '100%';
+  
+  // Keep BPMN modeler active after layout changes
+  setTimeout(() => {
+    keepBpmnModelerActive();
+    
+    // Also re-register file drop functionality
+    const canvasContainer = $('#js-canvas');
+    if (canvasContainer.length > 0) {
+      try {
+        registerFileDrop(canvasContainer, openDiagram);
+              } catch (e) {
+          // Silent error handling
+        }
+      }
+    }, 300);
+  
+  if (panels.length === 1) {
+    // Single panel takes full width and height
+    container.style.flexDirection = 'row';
+    panels[0].style.flex = '1';
+    panels[0].style.minWidth = '300px';
+    panels[0].style.margin = '0';
+    panels[0].style.height = '100%';
+  } else if (panels.length === 2) {
+    // Two panels side by side with 2:1 ratio
+    container.style.flexDirection = 'row';
+    panels[0].style.flex = '2';
+    panels[1].style.flex = '1';
+    panels.forEach(panel => {
+      panel.style.minWidth = '300px';
+      panel.style.margin = '0';
+    });
+  } else {
+    // Multiple panels - arrange horizontally with equal width
+    container.style.flexDirection = 'row';
+    panels.forEach(panel => {
+      panel.style.flex = '1';
+      panel.style.minWidth = '250px';
+      panel.style.margin = '0';
+    });
+  }
+  
+  // Ensure all panels are at the same height level
+  panels.forEach(panel => {
+    panel.style.alignSelf = 'stretch';
+    panel.style.height = '100%';
+  });
+  
+  // Reorder panels in the container to ensure proper layout
+  console.log('🔄 Reordenando paneles en el contenedor...');
+  panels.forEach((panel, index) => {
+    if (panel.parentNode) {
+      container.appendChild(panel);
+      console.log(`📦 Panel ${index + 1} (${panel.id}) movido al contenedor`);
+    }
+  });
+  
+  // Force a reflow
+  container.offsetHeight;
+  
+  // Resize canvas after layout changes
+  setTimeout(() => {
+    console.log('🎨 Redimensionando canvas...');
+    resizeCanvas();
+    
+    // Mantener el modeler de BPMN activo después de reorganizar
+    setTimeout(() => {
+      keepBpmnModelerActive();
+    }, 150);
+  }, 100);
+  
+  console.log('✅ Layout restaurado exitosamente');
+}
+
+// Initialize drag and drop functionality
+function initializeDragAndDrop() {
+  if (typeof interact === 'undefined') {
+    console.warn('Interact.js no está disponible');
+    return;
+  }
+
+  // Make panel headers draggable
+  interact('.panel-header').draggable({
+    inertia: true,
+    modifiers: [
+      interact.modifiers.restrictRect({
+        restriction: 'parent',
+        endOnly: true
+      })
+    ],
+    autoScroll: true,
+    listeners: {
+      start(event) {
+        const panel = event.target.closest('.panel');
+        panel.style.zIndex = 10;
+        panel.style.boxShadow = '0 4px 20px rgba(0,0,0,0.15)';
+        toggleSnapZones(true);
+      },
+      move(event) {
+        const panel = event.target.closest('.panel');
+        const x = (parseFloat(panel.getAttribute('data-x')) || 0) + event.dx;
+        const y = (parseFloat(panel.getAttribute('data-y')) || 0) + event.dy;
+        
+        panel.style.transform = `translate(${x}px, ${y}px)`;
+        panel.setAttribute('data-x', x);
+        panel.setAttribute('data-y', y);
+        
+        const snapPosition = getSnapPosition(panel, x, y);
+        highlightSnapZone(snapPosition);
+      },
+      end(event) {
+        const panel = event.target.closest('.panel');
+        const x = parseFloat(panel.getAttribute('data-x')) || 0;
+        const y = parseFloat(panel.getAttribute('data-y')) || 0;
+        
+        const snapPosition = getSnapPosition(panel, x, y);
+        applySnapAndReorganize(panel, snapPosition);
+        
+        toggleSnapZones(false);
+        panel.style.zIndex = '';
+        panel.style.boxShadow = '';
+      }
+    }
+  });
+
+  // Make resize handles draggable
+  interact('.panel-resize-handle').draggable({
+    modifiers: [
+      interact.modifiers.restrictEdges({
+        outer: 'parent',
+        endOnly: true
+      }),
+      interact.modifiers.restrictSize({
+        min: { width: 300, height: 200 }
+      })
+    ],
+    listeners: {
+      start(event) {
+        const panel = event.target.closest('.panel');
+        const handle = event.target;
+        const container = panel.parentElement;
+        const panels = Array.from(container.children).filter(el => el.classList.contains('panel'));
+        
+        handle.classList.add('resizing');
+        
+        panel._initialWidth = panel.offsetWidth;
+        panel._initialHeight = panel.offsetHeight;
+        panel._initialX = event.clientX;
+        panel._initialY = event.clientY;
+        
+        panels.forEach(p => {
+          p._initialWidth = p.offsetWidth;
+          p._initialHeight = p.offsetHeight;
+        });
+        
+        const panelIndex = panels.indexOf(panel);
+        panel._adjacentPanels = {
+          left: panelIndex > 0 ? panels[panelIndex - 1] : null,
+          right: panelIndex < panels.length - 1 ? panels[panelIndex + 1] : null,
+          top: panelIndex > 0 ? panels[panelIndex - 1] : null,
+          bottom: panelIndex < panels.length - 1 ? panels[panelIndex + 1] : null
+        };
+        
+        panel._isVerticalLayout = container.style.flexDirection === 'column';
+      },
+      move(event) {
+        const panel = event.target.closest('.panel');
+        const handle = event.target;
+        const deltaX = event.clientX - panel._initialX;
+        const deltaY = event.clientY - panel._initialY;
+        
+        if (panel._isVerticalLayout) {
+          if (handle.classList.contains('bottom')) {
+            const newHeight = Math.max(200, panel._initialHeight + deltaY);
+            const heightDiff = newHeight - panel._initialHeight;
+            
+            panel.style.height = newHeight + 'px';
+            panel.style.flex = 'none';
+            
+            if (panel._adjacentPanels.bottom) {
+              const bottomPanel = panel._adjacentPanels.bottom;
+              const newBottomHeight = Math.max(200, bottomPanel._initialHeight - heightDiff);
+              bottomPanel.style.height = newBottomHeight + 'px';
+              bottomPanel.style.flex = 'none';
+            }
+          } else if (handle.classList.contains('top')) {
+            const newHeight = Math.max(200, panel._initialHeight - deltaY);
+            const heightDiff = panel._initialHeight - newHeight;
+            
+            panel.style.height = newHeight + 'px';
+            panel.style.flex = 'none';
+            
+            if (panel._adjacentPanels.top) {
+              const topPanel = panel._adjacentPanels.top;
+              const newTopHeight = Math.max(200, topPanel._initialHeight + heightDiff);
+              topPanel.style.height = newTopHeight + 'px';
+              topPanel.style.flex = 'none';
+            }
+          }
+        } else {
+          if (handle.classList.contains('right')) {
+            const newWidth = Math.max(300, panel._initialWidth + deltaX);
+            const widthDiff = newWidth - panel._initialWidth;
+            
+            panel.style.width = newWidth + 'px';
+            panel.style.flex = 'none';
+            
+            if (panel._adjacentPanels.right) {
+              const rightPanel = panel._adjacentPanels.right;
+              const newRightWidth = Math.max(300, rightPanel._initialWidth - widthDiff);
+              rightPanel.style.width = newRightWidth + 'px';
+              rightPanel.style.flex = 'none';
+            }
+          } else if (handle.classList.contains('left')) {
+            const newWidth = Math.max(300, panel._initialWidth - deltaX);
+            const widthDiff = panel._initialWidth - newWidth;
+            
+            panel.style.width = newWidth + 'px';
+            panel.style.flex = 'none';
+            
+            if (panel._adjacentPanels.left) {
+              const leftPanel = panel._adjacentPanels.left;
+              const newLeftWidth = Math.max(300, leftPanel._initialWidth + widthDiff);
+              leftPanel.style.width = newLeftWidth + 'px';
+              leftPanel.style.flex = 'none';
+            }
+          }
+        }
+      },
+      end(event) {
+        const handle = event.target;
+        handle.classList.remove('resizing');
+        resizeCanvas();
+      }
+    }
+  });
+}
+
+// Helper functions for drag and drop
+function toggleSnapZones(show) {
+  const snapZones = document.getElementById('snap-zones');
+  if (snapZones) {
+    if (show) {
+      snapZones.classList.add('visible');
+    } else {
+      snapZones.classList.remove('visible');
+      snapZones.querySelectorAll('.snap-zone').forEach(zone => {
+        zone.classList.remove('active');
+      });
+    }
+  }
+}
+
+function highlightSnapZone(snapPosition) {
+  const snapZones = document.getElementById('snap-zones');
+  if (snapZones) {
+    snapZones.querySelectorAll('.snap-zone').forEach(zone => {
+      zone.classList.remove('active');
+    });
+    
+    const activeZone = snapZones.querySelector(`[data-zone="${snapPosition.zone}"]`);
+    if (activeZone) {
+      activeZone.classList.add('active');
+    }
+  }
+}
+
+function getSnapPosition(panel, x, y) {
+  const container = document.getElementById('panel-container');
+  const containerRect = container.getBoundingClientRect();
+  const panelRect = panel.getBoundingClientRect();
+  
+  const snapPositions = [
+    { x: 0, y: 0, name: 'left', zone: 'left' },
+    { x: containerRect.width - panelRect.width, y: 0, name: 'right', zone: 'right' },
+    { x: 0, y: 0, name: 'top', zone: 'top' },
+    { x: 0, y: containerRect.height - panelRect.height, name: 'bottom', zone: 'bottom' }
+  ];
+  
+  let closestSnap = snapPositions[0];
+  let minDistance = Infinity;
+  
+  snapPositions.forEach(snap => {
+    const distance = Math.sqrt(
+      Math.pow(x - snap.x, 2) + Math.pow(y - snap.y, 2)
+    );
+    if (distance < minDistance) {
+      minDistance = distance;
+      closestSnap = snap;
+    }
+  });
+  
+  return closestSnap;
+}
+
+function applySnapAndReorganize(panel, snapPosition) {
+  reorganizePanelsForSnap(panel, snapPosition);
+}
+
+function reorganizePanelsForSnap(panel, snapPosition) {
+  const container = document.getElementById('panel-container');
+  const visiblePanels = Array.from(document.querySelectorAll('.panel:not(.closed)'));
+  const zone = snapPosition.zone;
+  
+  visiblePanels.forEach(p => {
+    p.style.transform = '';
+    p.setAttribute('data-x', '0');
+    p.setAttribute('data-y', '0');
+  });
+  
+  let panelOrder = [];
+  
+  if (visiblePanels.length === 1) {
+    panelOrder = [panel];
+    container.style.flexDirection = 'row';
+    panel.style.flex = '1';
+  } else if (zone === 'left') {
+    panelOrder = [panel, ...visiblePanels.filter(p => p !== panel)];
+    container.style.flexDirection = 'row';
+    panel.style.flex = '2';
+    visiblePanels.filter(p => p !== panel).forEach(p => p.style.flex = '1');
+  } else if (zone === 'right') {
+    panelOrder = [...visiblePanels.filter(p => p !== panel), panel];
+    container.style.flexDirection = 'row';
+    panel.style.flex = '2';
+    visiblePanels.filter(p => p !== panel).forEach(p => p.style.flex = '1');
+  } else if (zone === 'top') {
+    panelOrder = [panel, ...visiblePanels.filter(p => p !== panel)];
+    container.style.flexDirection = 'column';
+    panel.style.flex = '2';
+    visiblePanels.filter(p => p !== panel).forEach(p => p.style.flex = '1');
+  } else if (zone === 'bottom') {
+    panelOrder = [...visiblePanels.filter(p => p !== panel), panel];
+    container.style.flexDirection = 'column';
+    panel.style.flex = '2';
+    visiblePanels.filter(p => p !== panel).forEach(p => p.style.flex = '1');
+  }
+  
+  container.style.display = 'flex';
+  container.style.gap = '8px';
+  
+  if (panelOrder.length > 0) {
+    panelOrder.forEach((p, index) => {
+      if (p.parentNode) {
+        container.appendChild(p);
+      }
+    });
+  }
+  
+  setTimeout(() => {
+    resizeCanvas();
+    
+    // Mantener el modeler de BPMN activo después de reorganizar por snap
+    setTimeout(() => {
+      keepBpmnModelerActive();
+    }, 300);
+  }, 100);
+}
+
 // ==== HELPERS ====
 
 function setEncoded(link, name, data) {
   // This function is not needed in the new structure
   // The download functionality is handled directly in the button handlers
-  console.log('setEncoded called:', name, data ? 'data available' : 'no data');
 }
 
 function setMultipleEncoded(link, name, data) {
   // This function is not needed in the new structure
   // The download functionality is handled directly in the button handlers
-  console.log('setMultipleEncoded called:', name, data ? 'data available' : 'no data');
 }
 
 function downloadFile(content, filename, type = 'application/xml') {
@@ -687,6 +1424,79 @@ function downloadFile(content, filename, type = 'application/xml') {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// Función para mantener el modeler de BPMN activo y editable
+function keepBpmnModelerActive() {
+  if (window.bpmnModeler) {
+    try {
+      // Asegurar que el modeler esté activo
+      const canvas = window.bpmnModeler.get('canvas');
+      
+      if (canvas && typeof canvas.resized === 'function') {
+        // Solo hacer resize si es necesario
+        try {
+          canvas.resized();
+        } catch (e) {
+          // Silent error handling
+        }
+      }
+      
+      // Solo activar eventos si el modeler está en un estado válido
+      const eventBus = window.bpmnModeler.get('eventBus');
+      if (eventBus && typeof eventBus.fire === 'function') {
+        try {
+          // Solo disparar eventos básicos para mantener la funcionalidad
+          eventBus.fire('canvas.resized');
+        } catch (e) {
+          // Silent error handling
+        }
+      }
+      
+      // Re-register file drop functionality if needed
+      const canvasContainer = $('#js-canvas');
+      if (canvasContainer.length > 0) {
+        try {
+          registerFileDrop(canvasContainer, openDiagram);
+        } catch (e) {
+          // Silent error handling
+        }
+      }
+    } catch (error) {
+      console.warn('Error manteniendo modeler activo:', error);
+    }
+  }
+}
+
+// Función para redibujar el canvas BPMN
+function resizeCanvas() {
+  if (window.bpmnModeler) {
+    setTimeout(() => {
+      try {
+        const canvas = window.bpmnModeler.get('canvas');
+        if (canvas && typeof canvas.resized === 'function') {
+          canvas.resized();
+          
+          // Asegurar que el modeler permanezca editable
+          keepBpmnModelerActive();
+          
+          // Re-register file drop functionality
+          const canvasContainer = $('#js-canvas');
+          if (canvasContainer.length > 0) {
+            registerFileDrop(canvasContainer, openDiagram);
+          }
+        }
+              } catch (error) {
+          // If canvas resize fails, try to reinitialize modeler
+          try {
+            initializeModeler();
+            createNewDiagram();
+          } catch (reinitError) {
+            console.error('Failed to reinitialize modeler after resize error:', reinitError);
+          }
+        }
+    }, 100);
+  }
 }
 
 // Utilidad debounce

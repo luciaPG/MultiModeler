@@ -3,6 +3,209 @@ body {
   margin: 0;
   padding: 0;
   background: #ffffff;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header styles */
+.app-header {
+  height: 64px;
+  background: white;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 1001; /* Mayor que los paneles maximizados */
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* Status bar styles */
+.status-bar {
+  height: 24px;
+  background: #2b2d42;
+  color: white;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  z-index: 1001; /* Mayor que los paneles maximizados */
+  position: relative;
+}
+
+/* Panel styles */
+.panel {
+  background: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  min-height: 400px;
+  overflow: hidden;
+  margin: 0; /* Eliminar márgenes por defecto */
+}
+
+.panel-header {
+  background: #f8f9fa;
+  border-bottom: 1px solid #ddd;
+  padding: 10px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: move;
+  user-select: none;
+}
+
+.panel-title {
+  font-weight: bold;
+  color: #333;
+  margin: 0;
+}
+
+.panel-controls {
+  display: flex;
+  gap: 5px;
+}
+
+.panel-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.panel-btn:hover {
+  background: #e9ecef;
+}
+
+.panel-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel.closed {
+  display: none;
+}
+
+.panel.minimized {
+  height: auto !important;
+  min-height: auto !important;
+}
+
+.panel.maximized {
+  position: fixed !important;
+  top: 64px !important; /* Respetar el header */
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 24px !important; /* Respetar la status bar */
+  z-index: 1000 !important;
+  width: 100vw !important;
+  height: calc(100vh - 64px - 24px) !important; /* Respetar header y status bar */
+}
+
+/* Workspace styles */
+.workspace {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+  background: #f1f3f5;
+  height: calc(100vh - 64px - 24px); /* Restar header y status bar */
+  min-height: 0; /* Importante para que flex funcione correctamente */
+}
+
+#panel-container {
+  display: flex;
+  gap: 8px;
+  height: 100%;
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+#panel-container.horizontal {
+  flex-direction: row;
+}
+
+#panel-container.vertical {
+  flex-direction: column;
+}
+
+#panel-container.grid {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+/* Panel resize handles */
+.panel-resize-handle {
+  position: absolute;
+  background: transparent;
+  z-index: 10;
+  transition: background 0.2s ease;
+}
+
+.panel-resize-handle.right {
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+}
+
+.panel-resize-handle.left {
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+}
+
+.panel-resize-handle.bottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: row-resize;
+}
+
+.panel-resize-handle.top {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: row-resize;
+}
+
+.panel-resize-handle:hover {
+  background: rgba(67, 97, 238, 0.1);
+}
+
+.panel-resize-handle.resizing {
+  background: rgba(67, 97, 238, 0.2);
+}
+
+/* Debug: hacer los handles más visibles temporalmente */
+.panel-resize-handle {
+  background: rgba(67, 97, 238, 0.05) !important;
+}
+
+.panel-resize-handle:hover {
+  background: rgba(67, 97, 238, 0.2) !important;
+}
+
+/* Asegurar que los paneles tengan posición relativa para los handles */
+.panel {
+  position: relative;
 }
 
 .hybrid-container {
