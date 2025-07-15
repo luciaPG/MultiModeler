@@ -14,7 +14,6 @@ export default {
     'RALphRenderer',
     'RALphRules',
     'RALphUpdater',
-    'RALphPalette',
     'RALPHLabelProvider',
     'RALphLabelEditingProvider',
   ],
@@ -23,7 +22,6 @@ export default {
   RALphRenderer: [ 'type', RALphRenderer ],
   RALphRules: [ 'type', RALphRules ],
   RALphUpdater: [ 'type', RALphUpdater ],
-  RALphPalette: [ 'type', RALphPalette ],
   RALPHLabelProvider: [ 'type', RALPHLabelProvider ],
   RALphLabelEditingProvider: [ 'type', RALphLabelEditingProvider ],
 };

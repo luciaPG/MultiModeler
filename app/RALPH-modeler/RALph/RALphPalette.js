@@ -10,6 +10,12 @@ export default function RALphPalette(create, elementFactory, translate) {
   this._translate = translate;
 }
 
+RALphPalette.$inject = [
+  'create',
+  'elementFactory',
+  'translate'
+];
+
 RALphPalette.prototype.getPaletteEntries = function() {
   var create = this._create,
       elementFactory = this._elementFactory,
@@ -83,10 +89,10 @@ RALphPalette.prototype.getPaletteEntries = function() {
       'RALph:Complex-Assignment-AND', 'Complex-assignments', 'icon-RALph2-AND', translate('Create AND')
     ),
     'RALph-Hierarchy-reports': createAction(
-      'RALph:reportsDirectly', 'Hierarchy-connectors', 'icon-RALph2-reportsDirectlyPalette', translate('Create Reports Directly')
+      'RALph:reportsDirectly', 'Hierarchy-connectors', 'icon-RALph2-reportsDirectly', translate('Create Reports Directly')
     ),
     'RALph-Hierarchy-delegates': createAction(
-      'RALph:delegatesDirectly', 'Hierarchy-connectors', 'icon-RALph2-delegatesDirectlyPalette', translate('Create Delegates Directly')
+      'RALph:delegatesDirectly', 'Hierarchy-connectors', 'icon-RALph2-delegatesDirectly', translate('Create Delegates Directly')
     ),
     'RALph-Hierarchy-reports-transitively': createAction(
       'RALph:reportsTransitively', 'Hierarchy-connectors', 'icon-RALph2-reportsTransitively', translate('Create Reports Transitively')

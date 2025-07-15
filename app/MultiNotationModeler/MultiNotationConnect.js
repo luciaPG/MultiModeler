@@ -47,15 +47,25 @@ export default function MultiNotationConnect(eventBus, dragging, modeling, rules
             var context = event.context;
             
             // Validar que source existe y tiene las propiedades necesarias
-            if (context.source && (!context.source.x || !context.source.y || !context.source.width || !context.source.height)) {
-                console.warn('Source element missing required properties for connection preview');
-                return;
+            if (context.source) {
+                if (!context.source.x || !context.source.y || !context.source.width || !context.source.height) {
+                    // Set default values if missing
+                    context.source.x = context.source.x || 0;
+                    context.source.y = context.source.y || 0;
+                    context.source.width = context.source.width || 100;
+                    context.source.height = context.source.height || 80;
+                }
             }
             
             // Validar que target existe y tiene las propiedades necesarias (si existe)
-            if (context.target && (!context.target.x || !context.target.y || !context.target.width || !context.target.height)) {
-                console.warn('Target element missing required properties for connection preview');
-                return;
+            if (context.target) {
+                if (!context.target.x || !context.target.y || !context.target.width || !context.target.height) {
+                    // Set default values if missing
+                    context.target.x = context.target.x || 0;
+                    context.target.y = context.target.y || 0;
+                    context.target.width = context.target.width || 100;
+                    context.target.height = context.target.height || 80;
+                }
             }
             
             // Validar waypoints si existen

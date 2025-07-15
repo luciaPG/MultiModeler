@@ -2,27 +2,687 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PPINOT-RALPH Hybrid Modeler</title>
-  <link rel="stylesheet" href="css/app.css">
-
-  <!-- Diagram-js CSS (core diagram functionality, includes labels and hit areas) -->
-  <link rel="stylesheet" href="vendor/diagram-js/diagram-js.css" />
-  <!-- BPMN-js CSS (BPMN-specific styles) -->
-  <link rel="stylesheet" href="vendor/bpmn-js/bpmn-js.css" />
-  <!-- BPMN font CSS -->
-  <link rel="stylesheet" href="vendor/bpmn-js/bpmn-font/css/bpmn.css" />
-  <link rel="stylesheet" href="vendor/bpmn-js/bpmn-font/css/bpmn-embedded.css" />
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="vendor/diagram-js/diagram-js.css">
+  <link rel="stylesheet" href="vendor/bpmn-js/bpmn-js.css">
+  <link rel="stylesheet" href="vendor/bpmn-js/bpmn-font/css/bpmn.css">
   
-  <!-- Dependencias de bpmn-js si es necesario, si no van en el bundle -->
-</head><body>
-  <!-- Canvas ocupa todo lo demás -->
-  <div id="js-drop-zone" style="width:100vw; height:100vh ; position:relative;">
-    <div id="js-canvas" style="width:100%; height:100%;"></div>
+  <style>
+    :root {
+      --header-height: 64px;
+      --panel-min-width: 320px;
+      --panel-header-height: 36px;
+      --primary-color: #4361ee;
+      --primary-dark: #3a56d4;
+      --secondary-color: #3f37c9;
+      --dark-bg: #2b2d42;
+      --light-bg: #f8f9fa;
+      --border-color: #e9ecef;
+      --text-dark: #212529;
+      --text-light: #6c757d;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+      --transition: all 0.3s ease;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      color: var(--text-dark);
+      background-color: var(--light-bg);
+    }
+    
+    /* Header */
+    .app-header {
+      height: var(--header-height);
+      background: white;
+      color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+      z-index: 1001; /* Mayor que los paneles maximizados */
+      position: relative;
+    }
+    
+    .logo {
+      font-weight: 600;
+      font-size: 1.25rem;
+      margin-right: 32px;
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .logo i {
+      font-size: 1.5rem;
+    }
+    
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex: 1;
+    }
+    
+    .tool-group {
+      display: flex;
+      gap: 8px;
+      padding: 0 12px;
+      border-right: 1px solid var(--border-color);
+    }
+    
+    .tool-group:last-child {
+      border-right: none;
+      margin-left: auto;
+    }
+    
+    .tool-btn {
+      background: white;
+      color: var(--text-dark);
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: var(--transition);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .tool-btn i {
+      font-size: 0.9rem;
+    }
+    
+    .tool-btn:hover {
+      background: #f1f3f5;
+      border-color: #ced4da;
+    }
+    
+    .tool-btn.primary {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-dark);
+    }
+    
+    .tool-btn.primary:hover {
+      background: var(--primary-dark);
+    }
+    
+    .tool-btn.danger {
+      background: #ef233c;
+      color: white;
+      border-color: #d90429;
+    }
+    
+    .tool-btn.danger:hover {
+      background: #d90429;
+    }
+    
+    /* Panel minimizado */
+    .panel.minimized {
+      display: none;
+    }
+    
+    .panel.maximized {
+      position: fixed !important;
+      top: 64px !important; /* Respetar el header */
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 24px !important; /* Respetar la status bar */
+      width: 100vw !important;
+      height: calc(100vh - 64px - 24px) !important; /* Respetar header y status bar */
+      z-index: 1000 !important;
+      margin: 0 !important;
+      border-radius: 0 !important;
+    }
+    
+    /* Zonas de snap */
+    .snap-zones {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 5;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    
+    .snap-zones.visible {
+      opacity: 1;
+    }
+    
+    .snap-zone {
+      position: absolute;
+      border: 2px dashed rgba(67, 97, 238, 0.3);
+      background: rgba(67, 97, 238, 0.05);
+      border-radius: 8px;
+    }
+    
+    .snap-zone.active {
+      border-color: rgba(67, 97, 238, 0.8);
+      background: rgba(67, 97, 238, 0.1);
+    }
+    
+    .snap-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: rgba(67, 97, 238, 0.8);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    
+    .snap-zone.visible .snap-label {
+      opacity: 1;
+    }
+    
+    .snap-zone.active .snap-label {
+      opacity: 1;
+      color: rgba(67, 97, 238, 1);
+    }
+    
+    /* Botones de restaurar en header */
+    .restore-buttons {
+      display: flex;
+      gap: 8px;
+      margin-left: 16px;
+    }
+    
+    .restore-btn {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 500;
+      transition: var(--transition);
+    }
+    
+    .restore-btn:hover {
+      background: var(--primary-dark);
+    }
+    
+    .restore-btn.hidden {
+      display: none;
+    }
+    
+    /* Área de trabajo principal */
+    .workspace {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+      background: #f1f3f5;
+    }
+    
+    /* Contenedor de paneles */
+    .panel-container {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+      gap: 8px;
+    }
+    
+    /* Panel individual */
+    .panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: var(--panel-min-width);
+      background: white;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+      border-radius: 8px;
+      margin: 8px;
+      transition: transform 0.2s ease;
+    }
+    
+    /* Bordes redimensionables */
+    .panel-resize-handle {
+      position: absolute;
+      background: transparent;
+      z-index: 10;
+    }
+    
+    .panel-resize-handle.right {
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 6px;
+      cursor: col-resize;
+    }
+    
+    .panel-resize-handle.left {
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 6px;
+      cursor: col-resize;
+    }
+    
+    .panel-resize-handle.bottom {
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      cursor: row-resize;
+    }
+    
+    .panel-resize-handle.top {
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      cursor: row-resize;
+    }
+    
+    .panel-resize-handle:hover {
+      background: rgba(67, 97, 238, 0.1);
+    }
+    
+    .panel-resize-handle.resizing {
+      background: rgba(67, 97, 238, 0.2);
+    }
+    
+    .panel-header {
+      height: var(--panel-header-height);
+      background: white;
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: move;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-dark);
+      user-select: none;
+      position: relative;
+    }
+    
+    .panel-header:hover {
+      background: #f8f9fa;
+    }
+    
+    .panel-header:active {
+      cursor: grabbing;
+    }
+    
+    .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+    }
+    
+    .panel-title i {
+      color: var(--primary-color);
+      font-size: 0.9rem;
+    }
+    
+    .panel-actions {
+      display: flex;
+      gap: 4px;
+    }
+    
+    .panel-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.8rem;
+      color: var(--text-light);
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: var(--transition);
+    }
+    
+    .panel-btn:hover {
+      background: #f1f3f5;
+      color: var(--text-dark);
+    }
+    
+    .panel-content {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      background: white;
+    }
+    
+    /* Estilos para el canvas */
+    .bpmn-container {
+      width: 100%;
+      height: 100%;
+    }
+    
+    /* Gutter para Split.js */
+    .gutter {
+      background-color: #f1f3f5;
+      background-repeat: no-repeat;
+      background-position: 50%;
+      position: relative;
+      z-index: 1;
+      transition: background-color 0.2s ease;
+    }
+    
+    .gutter:hover {
+      background-color: #dee2e6;
+    }
+    
+    .gutter.gutter-horizontal {
+      background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
+      cursor: col-resize;
+      height: 100%;
+      margin: 0 -4px;
+      width: 8px;
+    }
+    
+    .gutter.gutter-vertical {
+      background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFAQMAAABo7865AAAABlBMVEVHcEzMzMzyAv2sAAAAAXRSTlMAQObYZgAAABBJREFUeF5jOAMEEAIEEFwAn3kMwcB6I2AAAAAASUVORK5CYII=');
+      cursor: row-resize;
+      width: 100%;
+      margin: -4px 0;
+      height: 8px;
+    }
+    
+    /* Layout selector */
+    .layout-selector {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      z-index: 100;
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 6px;
+      display: flex;
+      gap: 6px;
+      box-shadow: var(--shadow-md);
+    }
+    
+    .layout-btn {
+      width: 36px;
+      height: 36px;
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-light);
+      transition: var(--transition);
+    }
+    
+    .layout-btn:hover {
+      background: #f8f9fa;
+      color: var(--primary-color);
+    }
+    
+    .layout-btn.active {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-dark);
+    }
+    
+    /* Status bar */
+    .status-bar {
+      height: 24px;
+      background: var(--dark-bg);
+      color: white;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 16px;
+      z-index: 1001; /* Mayor que los paneles maximizados */
+      position: relative;
+    }
+    
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .status-item i {
+      font-size: 0.7rem;
+      color: #adb5bd;
+    }
+    
+    /* Panel de propiedades */
+    .properties-panel {
+      padding: 16px;
+      overflow-y: auto;
+      height: 100%;
+    }
+    
+    .property-group {
+      margin-bottom: 16px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    .property-group-header {
+      padding: 8px 12px;
+      background: #f8f9fa;
+      font-weight: 500;
+      font-size: 0.875rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .property-group-content {
+      padding: 12px;
+    }
+    
+    .form-group {
+      margin-bottom: 12px;
+    }
+    
+    .form-label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-dark);
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 0.875rem;
+    }
+    
+    /* Tabs */
+    .panel-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 12px;
+    }
+    
+    .tab {
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-light);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: var(--transition);
+    }
+    
+    .tab:hover {
+      color: var(--primary-color);
+    }
+    
+    .tab.active {
+      color: var(--primary-color);
+      border-bottom-color: var(--primary-color);
+    }
+    
+    /* Animaciones */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .panel {
+      animation: fadeIn 0.3s ease-out;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header con herramientas -->
+  <header class="app-header">
+    <div class="logo">
+      <i class="fas fa-project-diagram"></i>
+      <span>PPINOT-RALPH Modeler</span>
+    </div>
+    
+    <div class="toolbar">
+      <div class="tool-group">
+        <button class="tool-btn primary">
+          <i class="fas fa-file"></i> Nuevo
+        </button>
+        <button class="tool-btn">
+          <i class="fas fa-folder-open"></i> Abrir
+        </button>
+        <button class="tool-btn">
+          <i class="fas fa-save"></i> Guardar
+        </button>
+      </div>
+      
+      <div class="tool-group">
+        <button class="tool-btn">
+          <i class="fas fa-undo"></i> Deshacer
+        </button>
+        <button class="tool-btn">
+          <i class="fas fa-redo"></i> Rehacer
+        </button>
+      </div>
+      
+      <div class="tool-group">
+        <button class="tool-btn">
+          <i class="fas fa-search"></i> Buscar
+        </button>
+        <button class="tool-btn">
+          <i class="fas fa-cog"></i> Configuración
+        </button>
+      </div>
+      
+      <div class="tool-group">
+        <button class="tool-btn danger">
+          <i class="fas fa-play"></i> Validar
+        </button>
+      </div>
+      
+      <!-- Botones de restaurar paneles -->
+      <div class="restore-buttons">
+        <button class="restore-btn hidden" id="restore-bpmn" data-panel="bpmn">
+          <i class="fas fa-diagram-project"></i> Restaurar BPMN
+        </button>
+        <button class="restore-btn hidden" id="restore-ppinot" data-panel="ppinot">
+          <i class="fas fa-sliders"></i> Restaurar PPINOT
+        </button>
+      </div>
+    </div>
+  </header>
+  
+  <!-- Área de trabajo con paneles -->
+  <div class="workspace">
+    <div class="panel-container" id="panel-container">
+      <!-- Zonas de snap -->
+      <div class="snap-zones" id="snap-zones">
+        <div class="snap-zone" data-zone="left" style="top: 0; left: 0; width: 50%; height: 100%;">
+          <div class="snap-label">Izquierda (1/2)</div>
+        </div>
+        <div class="snap-zone" data-zone="right" style="top: 0; right: 0; width: 50%; height: 100%;">
+          <div class="snap-label">Derecha (1/2)</div>
+        </div>
+        <div class="snap-zone" data-zone="top" style="top: 0; left: 0; width: 100%; height: 50%;">
+          <div class="snap-label">Arriba (1/2)</div>
+        </div>
+        <div class="snap-zone" data-zone="bottom" style="bottom: 0; left: 0; width: 100%; height: 50%;">
+          <div class="snap-label">Abajo (1/2)</div>
+        </div>
+      </div>
+      <!-- Los paneles se cargarán dinámicamente aquí -->
+    </div>
+    
+    <!-- Selector de layout -->
+    <div class="layout-selector">
+      <button class="layout-btn active" data-layout="horizontal" title="Dos paneles horizontal">
+        <i class="fas fa-columns"></i>
+      </button>
+      <button class="layout-btn" data-layout="vertical" title="Dos paneles vertical">
+        <i class="fas fa-grip-lines-vertical"></i>
+      </button>
+      <button class="layout-btn" data-layout="grid" title="Cuatro paneles en cuadrícula">
+        <i class="fas fa-th-large"></i>
+      </button>
+    </div>
   </div>
+  
+  <!-- Barra de estado -->
+  <div class="status-bar">
+    <div class="status-item">
+      <i class="fas fa-circle-info"></i>
+      <span>Listo</span>
+    </div>
+    <div class="status-item">
+      <i class="fas fa-bolt"></i>
+      <span>Modo: Edición</span>
+    </div>
+    <div class="status-item" style="margin-left: auto;">
+      <i class="fas fa-user"></i>
+      <span>Usuario: admin</span>
+    </div>
+  </div>
+  
   <input type="file" id="file-input" accept=".bpmn,.xml,.cbpmn" style="display:none" />
+  
+    <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+  <script src="js/panel-loader.js"></script>
   <script src="bundle.js"></script>
+  
+  <script>
+    // Application initialization is now handled in app.js
+    console.log('HTML loaded, waiting for app.js...');
+  </script>
 </body>
-
 </html>

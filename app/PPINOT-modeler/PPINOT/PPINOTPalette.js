@@ -12,6 +12,12 @@ export default function PPINOTPalette(create, elementFactory, translate) {
   this._translate = translate;
 }
 
+PPINOTPalette.$inject = [
+  'create',
+  'elementFactory',
+  'translate'
+];
+
 PPINOTPalette.prototype.getPaletteEntries = function() {
   var create = this._create,
       elementFactory = this._elementFactory,

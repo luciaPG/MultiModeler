@@ -392,6 +392,12 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
       semantic.$type === 'RALph:delegatesTransitively'
     ) {
       text = semantic.text || '';
+    } else if (
+      semantic.$type === 'RALph:History-AnyInstanceInTime-Green' ||
+      semantic.$type === 'RALph:History-AnyInstanceInTime-Red'
+    ) {
+      // Para history instance elements, usar name
+      text = semantic.name || '';
     } else {
       text = semantic.name || semantic.text || '';
     }
@@ -409,8 +415,7 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
       'text-anchor': 'middle',
       'dominant-baseline': 'middle',
       fill: text ? '#000000' : '#CCCCCC', // Negro si hay texto, gris si está vacío
-      'font-size': '14px',
-      'font-weight': 'bold',
+      'font-size': '10px',
       'pointer-events': 'none' // Evitar que interfiera con los clicks
     });
     textElement.textContent = text || '';
