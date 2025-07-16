@@ -174,6 +174,11 @@ class PanelResizerFlex {
     const panel = e.target.closest('.panel');
     if (!panel) return;
     
+    // Verificar si el panel está siendo arrastrado (position: fixed y z-index alto)
+    if (panel.style.position === 'fixed' && parseInt(panel.style.zIndex) >= 10000) {
+      return; // No permitir redimensionamiento durante el arrastre
+    }
+    
     this.activePanel = panel;
     this.isResizing = true;
     this.resizeDirection = direction;
@@ -210,6 +215,11 @@ class PanelResizerFlex {
 
   handleMouseMove(e) {
     if (!this.isResizing || !this.activePanel) return;
+    
+    // Verificar si el panel está siendo arrastrado
+    if (this.activePanel.style.position === 'fixed' && parseInt(this.activePanel.style.zIndex) >= 10000) {
+      return; // No permitir redimensionamiento durante el arrastre
+    }
     
     e.preventDefault();
     
@@ -294,26 +304,11 @@ class PanelResizerFlex {
     this.isResizing = false;
     this.activePanel.classList.remove('resizing');
     
-    // Restaurar estado apropiado
-    if (this.activePanel.classList.contains('maximized')) {
-      // Si está maximizado, restaurar a maximizado
-      this.activePanel.style.position = 'fixed';
-      this.activePanel.style.left = '0';
-      this.activePanel.style.top = '64px';
-      this.activePanel.style.right = '0';
-      this.activePanel.style.bottom = '24px';
-      this.activePanel.style.width = '100vw';
-      this.activePanel.style.height = 'calc(100vh - 64px - 24px)';
-      this.activePanel.style.margin = '0';
-      this.activePanel.style.flex = 'none';
-      
-      // Restaurar paneles hermanos
-      this.restoreSiblingPanels();
-    } else {
-      // Mantener el nuevo tamaño y ajustar flex
-      this.activePanel.style.flex = 'none';
-      // Los paneles hermanos ya están ajustados
-    }
+    // Mantener el tamaño actual del panel sin forzar maximización
+    // Solo ajustar flex para que mantenga su tamaño
+    this.activePanel.style.flex = 'none';
+    
+    // Los paneles hermanos ya están ajustados por adjustSiblingPanels()
     
     this.activePanel = null;
     this.resizeDirection = null;

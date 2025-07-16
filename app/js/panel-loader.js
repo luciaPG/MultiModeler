@@ -332,6 +332,9 @@ class PanelLoader {
 
     let isDragging = false;
     let startX, startY, startLeft, startTop;
+    let wasMaximized = false;
+    let originalStyles = {};
+    let originalSize = {};
 
     header.addEventListener('mousedown', (e) => {
       // Evitar arrastrar si se hace clic en botones
@@ -340,15 +343,46 @@ class PanelLoader {
       e.preventDefault();
       isDragging = true;
       
+      // Guardar estado original completo
+      wasMaximized = panel.classList.contains('maximized');
+      originalStyles = {
+        position: panel.style.position,
+        left: panel.style.left,
+        top: panel.style.top,
+        width: panel.style.width,
+        height: panel.style.height,
+        flex: panel.style.flex,
+        right: panel.style.right,
+        bottom: panel.style.bottom,
+        margin: panel.style.margin
+      };
+      
+      // Guardar dimensiones originales
       const rect = panel.getBoundingClientRect();
+      originalSize = {
+        width: rect.width,
+        height: rect.height
+      };
+      
       startX = e.clientX;
       startY = e.clientY;
       startLeft = rect.left;
       startTop = rect.top;
       
+      // Si estaba maximizado, quitar temporalmente la clase para permitir el arrastre
+      if (wasMaximized) {
+        panel.classList.remove('maximized');
+      }
+      
+      // Configurar para arrastre manteniendo el tamaño original
       panel.style.position = 'fixed';
       panel.style.zIndex = '10000';
       panel.style.opacity = '0.9';
+      
+      // Mantener el tamaño original durante el arrastre
+      panel.style.width = `${originalSize.width}px`;
+      panel.style.height = `${originalSize.height}px`;
+      panel.style.flex = 'none';
       
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
@@ -360,8 +394,13 @@ class PanelLoader {
       const deltaX = e.clientX - startX;
       const deltaY = e.clientY - startY;
       
+      // Mover manteniendo el tamaño original
       panel.style.left = `${startLeft + deltaX}px`;
       panel.style.top = `${startTop + deltaY}px`;
+      
+      // Asegurar que mantenga el tamaño durante el movimiento
+      panel.style.width = `${originalSize.width}px`;
+      panel.style.height = `${originalSize.height}px`;
     };
 
     const handleMouseUp = () => {
@@ -369,6 +408,33 @@ class PanelLoader {
       
       isDragging = false;
       panel.style.opacity = '1';
+      
+      // Limpiar todos los estilos inline aplicados durante el arrastre
+      panel.style.position = '';
+      panel.style.left = '';
+      panel.style.top = '';
+      panel.style.right = '';
+      panel.style.bottom = '';
+      panel.style.width = '';
+      panel.style.height = '';
+      panel.style.margin = '';
+      panel.style.flex = '';
+      panel.style.zIndex = '';
+      
+      // Restaurar estado apropiado
+      if (wasMaximized) {
+        // Si estaba maximizado, restaurar a maximizado
+        panel.classList.add('maximized');
+      } else {
+        // Restaurar estilos originales solo si no estaban vacíos
+        if (originalStyles.position) panel.style.position = originalStyles.position;
+        if (originalStyles.width) panel.style.width = originalStyles.width;
+        if (originalStyles.height) panel.style.height = originalStyles.height;
+        if (originalStyles.flex) panel.style.flex = originalStyles.flex;
+        if (originalStyles.right) panel.style.right = originalStyles.right;
+        if (originalStyles.bottom) panel.style.bottom = originalStyles.bottom;
+        if (originalStyles.margin) panel.style.margin = originalStyles.margin;
+      }
       
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
