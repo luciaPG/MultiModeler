@@ -242,64 +242,64 @@ class PanelLoader {
       
       // Usar requestAnimationFrame para sincronizar con el movimiento del ratón
       requestAnimationFrame(() => {
-        const deltaX = e.clientX - startX;
-        const deltaY = e.clientY - startY;
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+      
+      if (currentDirection === 'horizontal' || currentDirection === 'both') {
+        const newWidth = startWidth + deltaX;
+        const containerWidth = container.offsetWidth;
+        const gap = 8;
+        const minWidth = 200;
         
-        if (currentDirection === 'horizontal' || currentDirection === 'both') {
-          const newWidth = startWidth + deltaX;
-          const containerWidth = container.offsetWidth;
-          const gap = 8;
-          const minWidth = 200;
+        // Calcular el ancho disponible considerando gaps
+        const otherPanels = Array.from(container.children).filter(p => p !== panel);
+        const totalGaps = (otherPanels.length + 1) * gap;
+        const availableWidth = containerWidth - totalGaps;
+        const maxWidth = availableWidth - (otherPanels.length * minWidth);
+        
+        if (newWidth >= minWidth && newWidth <= maxWidth) {
+          // Establecer ancho fijo para el panel actual
+          panel.style.flex = `0 0 ${newWidth}px`;
           
-          // Calcular el ancho disponible considerando gaps
+          // Distribuir el espacio restante entre los otros paneles
+          const remainingWidth = availableWidth - newWidth;
+          
+          if (otherPanels.length > 0) {
+            // Calcular cuánto espacio le corresponde a cada panel
+            const widthPerPanel = Math.max(minWidth, remainingWidth / otherPanels.length);
+            
+            otherPanels.forEach(otherPanel => {
+              otherPanel.style.flex = `1 1 ${widthPerPanel}px`;
+            });
+          }
+        }
+      }
+      
+      if (currentDirection === 'vertical' || currentDirection === 'both') {
+        const newHeight = startHeight + deltaY;
+        const containerHeight = container.offsetHeight;
+        const minHeight = 200;
+        const maxHeight = containerHeight;
+        
+        if (newHeight >= minHeight && newHeight <= maxHeight) {
+          // Establecer altura fija para el panel actual
+          panel.style.flex = `1 1 auto`;
+          panel.style.height = `${newHeight}px`;
+          
+          // Ajustar otros paneles para que rellenen el espacio vertical restante
           const otherPanels = Array.from(container.children).filter(p => p !== panel);
-          const totalGaps = (otherPanels.length + 1) * gap;
-          const availableWidth = containerWidth - totalGaps;
-          const maxWidth = availableWidth - (otherPanels.length * minWidth);
+          const remainingHeight = containerHeight - newHeight;
           
-          if (newWidth >= minWidth && newWidth <= maxWidth) {
-            // Establecer ancho fijo para el panel actual
-            panel.style.flex = `0 0 ${newWidth}px`;
+          if (remainingHeight > 0 && otherPanels.length > 0) {
+            const heightPerPanel = Math.max(minHeight, remainingHeight / otherPanels.length);
             
-            // Distribuir el espacio restante entre los otros paneles
-            const remainingWidth = availableWidth - newWidth;
-            
-            if (otherPanels.length > 0) {
-              // Calcular cuánto espacio le corresponde a cada panel
-              const widthPerPanel = Math.max(minWidth, remainingWidth / otherPanels.length);
-              
-              otherPanels.forEach(otherPanel => {
-                otherPanel.style.flex = `1 1 ${widthPerPanel}px`;
-              });
-            }
+            otherPanels.forEach(otherPanel => {
+              otherPanel.style.flex = `1 1 auto`;
+              otherPanel.style.height = `${heightPerPanel}px`;
+            });
           }
         }
-        
-        if (currentDirection === 'vertical' || currentDirection === 'both') {
-          const newHeight = startHeight + deltaY;
-          const containerHeight = container.offsetHeight;
-          const minHeight = 200;
-          const maxHeight = containerHeight;
-          
-          if (newHeight >= minHeight && newHeight <= maxHeight) {
-            // Establecer altura fija para el panel actual
-            panel.style.flex = `1 1 auto`;
-            panel.style.height = `${newHeight}px`;
-            
-            // Ajustar otros paneles para que rellenen el espacio vertical restante
-            const otherPanels = Array.from(container.children).filter(p => p !== panel);
-            const remainingHeight = containerHeight - newHeight;
-            
-            if (remainingHeight > 0 && otherPanels.length > 0) {
-              const heightPerPanel = Math.max(minHeight, remainingHeight / otherPanels.length);
-              
-              otherPanels.forEach(otherPanel => {
-                otherPanel.style.flex = `1 1 auto`;
-                otherPanel.style.height = `${heightPerPanel}px`;
-              });
-            }
-          }
-        }
+      }
       });
     }
 
@@ -351,12 +351,21 @@ class PanelLoader {
     let wasMaximized = false;
     let originalStyles = {};
     let originalSize = {};
+    let isReordering = false; // Para distinguir entre arrastrar y reordenar
 
     header.addEventListener('mousedown', (e) => {
       // Evitar arrastrar si se hace clic en botones
       if (e.target.closest('.panel-btn')) return;
       
       e.preventDefault();
+      
+      // Si se mantiene presionado Shift, es para reordenar
+      if (e.shiftKey) {
+        isReordering = true;
+        this.startPanelReorder(panel, e);
+        return;
+      }
+      
       isDragging = true;
       
       // Guardar estado original completo
@@ -574,6 +583,158 @@ class PanelLoader {
     if (window.initRasciPanel) {
       window.initRasciPanel(panel);
     }
+  }
+
+  startPanelReorder(panel, e) {
+    const container = panel.parentElement;
+    if (!container) return;
+
+    // Crear indicador visual de reordenamiento
+    panel.style.opacity = '0.7';
+    panel.style.transform = 'rotate(2deg)';
+    panel.style.zIndex = '1000';
+    panel.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)';
+
+    // Crear indicadores de drop zones
+    this.createDropZones(container, panel);
+
+    // Event listeners para el reordenamiento
+    const handleMouseMove = (e) => {
+      this.updateDropZones(e, container, panel);
+    };
+
+    const handleMouseUp = (e) => {
+      this.finishPanelReorder(panel, container, e);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }
+
+  createDropZones(container, draggedPanel) {
+    const panels = Array.from(container.querySelectorAll('.panel')).filter(p => p !== draggedPanel);
+    
+    panels.forEach((panel, index) => {
+      const dropZone = document.createElement('div');
+      dropZone.className = 'panel-drop-zone';
+      dropZone.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(58, 86, 212, 0.1);
+        border: 2px dashed #3a56d4;
+        border-radius: 8px;
+        z-index: 999;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        pointer-events: none;
+      `;
+      dropZone.setAttribute('data-panel-index', index);
+      panel.appendChild(dropZone);
+    });
+  }
+
+  updateDropZones(e, container, draggedPanel) {
+    const dropZones = container.querySelectorAll('.panel-drop-zone');
+    const mouseY = e.clientY;
+    
+    dropZones.forEach((zone, index) => {
+      const panel = zone.parentElement;
+      const rect = panel.getBoundingClientRect();
+      const centerY = rect.top + rect.height / 2;
+      
+      if (mouseY < centerY) {
+        zone.style.opacity = '1';
+        zone.style.borderColor = '#3a56d4';
+      } else {
+        zone.style.opacity = '0.3';
+        zone.style.borderColor = '#ccc';
+      }
+    });
+  }
+
+  finishPanelReorder(draggedPanel, container, e) {
+    // Restaurar estilo del panel arrastrado
+    draggedPanel.style.opacity = '1';
+    draggedPanel.style.transform = '';
+    draggedPanel.style.zIndex = '';
+    draggedPanel.style.boxShadow = '';
+
+    // Encontrar la posición de destino
+    const panels = Array.from(container.querySelectorAll('.panel'));
+    const mouseY = e.clientY;
+    let targetIndex = panels.length;
+
+    // Encontrar la posición correcta basada en la posición del mouse
+    for (let i = 0; i < panels.length; i++) {
+      const panel = panels[i];
+      if (panel === draggedPanel) continue;
+      
+      const rect = panel.getBoundingClientRect();
+      const centerY = rect.top + rect.height / 2;
+      
+      if (mouseY < centerY) {
+        targetIndex = i;
+        break;
+      }
+    }
+
+    // Si no se encontró posición, poner al final
+    if (targetIndex === panels.length) {
+      targetIndex = panels.length - 1;
+    }
+
+    console.log(`Posición de destino calculada: ${targetIndex}`);
+
+    // Reordenar el panel
+    this.reorderPanel(draggedPanel, targetIndex);
+
+    // Limpiar drop zones
+    container.querySelectorAll('.panel-drop-zone').forEach(zone => zone.remove());
+  }
+
+  reorderPanel(panel, targetIndex) {
+    const container = panel.parentElement;
+    if (!container) return;
+
+    const panels = Array.from(container.querySelectorAll('.panel'));
+    const currentIndex = panels.indexOf(panel);
+
+    if (currentIndex === targetIndex) return;
+
+    // Obtener el tipo de panel que se está reordenando
+    const panelType = panel.getAttribute('data-panel-type');
+    if (!panelType || !window.panelManager) return;
+
+    // Reordenar en el array de paneles activos del panel manager
+    const activePanels = window.panelManager.activePanels;
+    const currentPanelIndex = activePanels.indexOf(panelType);
+    
+    if (currentPanelIndex === -1) return;
+
+    // Remover el panel de su posición actual en el array
+    activePanels.splice(currentPanelIndex, 1);
+    
+    // Insertar en la nueva posición
+    if (targetIndex >= activePanels.length) {
+      activePanels.push(panelType);
+    } else {
+      activePanels.splice(targetIndex, 0, panelType);
+    }
+
+    console.log(`Panel ${panelType} reordenado de posición ${currentIndex} a ${targetIndex}`);
+    console.log('Nuevo orden de paneles:', activePanels);
+
+    // Reaplicar la configuración para reflejar el nuevo orden
+    setTimeout(() => {
+      if (window.panelManager && typeof window.panelManager.applyConfiguration === 'function') {
+        window.panelManager.applyConfiguration();
+      }
+    }, 100);
   }
 
   loadBpmnController() {

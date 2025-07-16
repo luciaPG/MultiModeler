@@ -525,6 +525,61 @@ class PanelSnapSystem {
         panel.style.minHeight = '0';
         panel.style.maxWidth = '100%';
         panel.style.maxHeight = '100%';
+        
+        // Posicionar panel según su atributo data-position
+        const position = panel.getAttribute('data-position');
+        if (position) {
+          panel.style.gridColumn = '';
+          panel.style.gridRow = '';
+          
+          // Solo aplicar grid para layout 4
+          if (layout === '4') {
+            switch(position) {
+              case '1':
+                panel.style.gridColumn = '1';
+                panel.style.gridRow = '1';
+                break;
+              case '2':
+                panel.style.gridColumn = '2';
+                panel.style.gridRow = '1';
+                break;
+              case '3':
+                panel.style.gridColumn = '1';
+                panel.style.gridRow = '2';
+                break;
+              case '4':
+                panel.style.gridColumn = '2';
+                panel.style.gridRow = '2';
+                break;
+            }
+          }
+        } else {
+          // Fallback: posicionar por orden solo para layout 4
+          if (layout === '4') {
+            const positions = ['1', '2', '3', '4'];
+            if (index < positions.length) {
+              panel.setAttribute('data-position', positions[index]);
+              switch(positions[index]) {
+                case '1':
+                  panel.style.gridColumn = '1';
+                  panel.style.gridRow = '1';
+                  break;
+                case '2':
+                  panel.style.gridColumn = '2';
+                  panel.style.gridRow = '1';
+                  break;
+                case '3':
+                  panel.style.gridColumn = '1';
+                  panel.style.gridRow = '2';
+                  break;
+                case '4':
+                  panel.style.gridColumn = '2';
+                  panel.style.gridRow = '2';
+                  break;
+              }
+            }
+          }
+        }
       } else {
         panel.style.flex = '1';
         panel.style.width = '';
@@ -533,6 +588,8 @@ class PanelSnapSystem {
         panel.style.minHeight = '';
         panel.style.maxWidth = '';
         panel.style.maxHeight = '';
+        panel.style.gridColumn = '';
+        panel.style.gridRow = '';
       }
       panel.style.position = 'relative';
       panel.style.top = '';
@@ -542,7 +599,8 @@ class PanelSnapSystem {
       console.log(`Panel ${index + 1} estilos:`, {
         flex: panel.style.flex,
         width: panel.style.width,
-        height: panel.style.height
+        height: panel.style.height,
+        position: panel.getAttribute('data-position')
       });
     });
     

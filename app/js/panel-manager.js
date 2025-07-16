@@ -51,6 +51,50 @@ class PanelManager {
   createStyles() {
     const style = document.createElement('style');
     style.textContent = `
+      /* Estilos globales para scrollbars discretos */
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: #e0e0e0 #f8f9fa;
+      }
+      
+      /* Scrollbars verticales discretos */
+      *::-webkit-scrollbar:vertical {
+        width: 6px;
+      }
+      
+      *::-webkit-scrollbar-track:vertical {
+        background: #f8f9fa;
+        border-radius: 3px;
+      }
+      
+      *::-webkit-scrollbar-thumb:vertical {
+        background: #e0e0e0;
+        border-radius: 3px;
+      }
+      
+      *::-webkit-scrollbar-thumb:vertical:hover {
+        background: #c0c0c0;
+      }
+      
+      /* Scrollbars horizontales discretos */
+      *::-webkit-scrollbar:horizontal {
+        height: 6px;
+      }
+      
+      *::-webkit-scrollbar-track:horizontal {
+        background: #f8f9fa;
+        border-radius: 3px;
+      }
+      
+      *::-webkit-scrollbar-thumb:horizontal {
+        background: #e0e0e0;
+        border-radius: 3px;
+      }
+      
+      *::-webkit-scrollbar-thumb:horizontal:hover {
+        background: #c0c0c0;
+      }
+      
       .panel-selector {
         position: fixed;
         top: 50%;
@@ -59,12 +103,20 @@ class PanelManager {
         background: white;
         border-radius: 12px;
         box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-        padding: 24px;
+        padding: 20px;
         min-width: 400px;
         max-width: 600px;
+        max-height: 97vh;
+        overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
         z-index: 10002;
         display: none;
         border: 1px solid #e0e0e0;
+      }
+      
+      .panel-selector::-webkit-scrollbar {
+        display: none;
       }
       
       .panel-selector.show {
@@ -87,13 +139,13 @@ class PanelManager {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
-        padding-bottom: 16px;
+        margin-bottom: 10px;
+        padding-bottom: 10px;
         border-bottom: 1px solid #e0e0e0;
       }
       
       .panel-selector-title {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 600;
         color: #333;
       }
@@ -115,7 +167,7 @@ class PanelManager {
       }
       
       .panel-selector-section {
-        margin-bottom: 24px;
+        margin-bottom: 20px;
       }
       
       .panel-selector-section h3 {
@@ -168,9 +220,11 @@ class PanelManager {
       }
       
       .layout-option-icon {
-        font-size: 20px;
+        font-size: 12px;
         margin-bottom: 4px;
         color: #3a56d4;
+        line-height: 1.1;
+        text-align: center;
       }
       
       .layout-option-label {
@@ -367,6 +421,158 @@ class PanelManager {
       .header-panel-btn i {
         font-size: 14px;
       }
+
+      /* Estilos para el selector de layout 4 paneles */
+      .layout-4-selector {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #e0e0e0;
+      }
+
+      .layout-4-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+      }
+
+      .layout-4-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+      }
+
+             .layout-4-position {
+         display: flex;
+         flex-direction: column;
+         align-items: center;
+         gap: 8px;
+         padding: 12px;
+         border: 2px solid #e0e0e0;
+         border-radius: 8px;
+         background: #f9f9f9;
+         transition: all 0.2s ease;
+       }
+
+       .layout-4-position:hover {
+         border-color: #3a56d4;
+         background: rgba(58, 86, 212, 0.05);
+       }
+
+       .position-number {
+         font-size: 24px;
+         font-weight: bold;
+         color: #3a56d4;
+         background: white;
+         width: 40px;
+         height: 40px;
+         border-radius: 50%;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         border: 2px solid #3a56d4;
+       }
+
+      .panel-selector-dropdown {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 13px;
+        color: #333;
+        background-color: #f9f9f9;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .panel-selector-dropdown:hover {
+        border-color: #3a56d4;
+        background-color: #f0f7ff;
+      }
+
+      .layout-4-info {
+        font-size: 11px;
+        color: #666;
+        text-align: center;
+        margin-top: 10px;
+      }
+      
+      /* Estilos para el orden de paneles */
+      .panel-order {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        margin-top: 8px;
+      }
+      
+      .panel-order-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 8px;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        background: #f9f9f9;
+        transition: all 0.2s ease;
+      }
+      
+      .panel-order-item:hover {
+        border-color: #3a56d4;
+        background: rgba(58, 86, 212, 0.05);
+      }
+      
+      .order-number {
+        font-size: 14px;
+        font-weight: bold;
+        color: #3a56d4;
+        background: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #3a56d4;
+        transition: all 0.2s ease;
+      }
+      
+
+      
+      .order-panel-name {
+        font-size: 10px;
+        font-weight: 500;
+        color: #333;
+        text-align: center;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      
+      .panel-order-info {
+        font-size: 12px;
+        color: #666;
+        text-align: center;
+        margin-bottom: 10px;
+        font-style: italic;
+      }
+      
+      .panel-order-empty {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 20px;
+        color: #999;
+        font-size: 13px;
+        font-style: italic;
+        background: #f8f9fa;
+        border: 1px dashed #dee2e6;
+        border-radius: 8px;
+        margin: 10px 0;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -403,6 +609,14 @@ class PanelManager {
         </div>
       </div>
       
+      <div class="panel-selector-section" id="panel-order-section" style="display: none;">
+        <h3><i class="fas fa-sort-numeric-up"></i> Orden de Paneles</h3>
+        <div class="panel-order-info">El orden se determina por el orden en que seleccionas los paneles. El primer panel seleccionado será el primero en aparecer.</div>
+        <div id="panel-order" class="panel-order">
+          ${this.generatePanelOrder()}
+        </div>
+      </div>
+      
       <div class="panel-selector-actions">
         <button class="panel-selector-btn" onclick="panelManager.closeSelector()">Cancelar</button>
         <button class="panel-selector-btn primary" onclick="panelManager.applyConfiguration()">Aplicar</button>
@@ -413,20 +627,26 @@ class PanelManager {
   }
 
   generatePanelList() {
-    return Object.entries(this.availablePanels).map(([key, panel]) => `
-      <div class="panel-item ${this.activePanels.includes(key) ? 'active' : ''}" data-panel="${key}">
-        <div class="panel-item-icon">
-          <i class="${panel.icon}"></i>
+    return Object.entries(this.availablePanels).map(([key, panel]) => {
+      const isActive = this.activePanels.includes(key);
+      
+      return `
+        <div class="panel-item ${isActive ? 'active' : ''}" data-panel="${key}">
+          <div class="panel-item-icon">
+            <i class="${panel.icon}"></i>
+          </div>
+          <div class="panel-item-info">
+            <div class="panel-item-name">${panel.name}</div>
+            <div class="panel-item-description">${panel.description}</div>
+          </div>
+          <div class="panel-item-actions">
+            <div class="panel-item-checkbox">
+              ${isActive ? '✓' : ''}
+            </div>
+          </div>
         </div>
-        <div class="panel-item-info">
-          <div class="panel-item-name">${panel.name}</div>
-          <div class="panel-item-description">${panel.description}</div>
-        </div>
-        <div class="panel-item-checkbox">
-          ${this.activePanels.includes(key) ? '✓' : ''}
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   updatePanelSelector() {
@@ -445,8 +665,8 @@ class PanelManager {
     
     if (panelCount === 1) {
       return `
-        <div class="layout-option active" data-layout="1">
-          <div class="layout-option-icon">□</div>
+        <div class="layout-option ${this.currentLayout === '1' ? 'active' : ''}" data-layout="1">
+          <div class="layout-option-icon">●</div>
           <div class="layout-option-label">1 Panel</div>
         </div>
       `;
@@ -454,12 +674,12 @@ class PanelManager {
     
     if (panelCount === 2) {
       return `
-        <div class="layout-option" data-layout="2h">
-          <div class="layout-option-icon">⊟</div>
+        <div class="layout-option ${this.currentLayout === '2h' ? 'active' : ''}" data-layout="2h">
+          <div class="layout-option-icon">● ●</div>
           <div class="layout-option-label">2 Horizontal</div>
         </div>
-        <div class="layout-option active" data-layout="2v">
-          <div class="layout-option-icon">⊞</div>
+        <div class="layout-option ${this.currentLayout === '2v' ? 'active' : ''}" data-layout="2v">
+          <div class="layout-option-icon">●<br>●</div>
           <div class="layout-option-label">2 Vertical</div>
         </div>
       `;
@@ -467,54 +687,77 @@ class PanelManager {
     
     if (panelCount === 3) {
       return `
-        <div class="layout-option active" data-layout="3h">
-          <div class="layout-option-icon">⊟</div>
+        <div class="layout-option ${this.currentLayout === '3h' ? 'active' : ''}" data-layout="3h">
+          <div class="layout-option-icon">● ● ●</div>
           <div class="layout-option-label">3 Horizontal</div>
         </div>
-        <div class="layout-option" data-layout="3v">
-          <div class="layout-option-icon">⊞</div>
+        <div class="layout-option ${this.currentLayout === '3v' ? 'active' : ''}" data-layout="3v">
+          <div class="layout-option-icon">●<br>●<br>●</div>
           <div class="layout-option-label">3 Vertical</div>
-        </div>
-        <div class="layout-option" data-layout="3">
-          <div class="layout-option-icon">⊞</div>
-          <div class="layout-option-label">3 (2x1)</div>
         </div>
       `;
     }
     
     if (panelCount >= 4) {
       return `
-        <div class="layout-option" data-layout="4h">
-          <div class="layout-option-icon">⊟</div>
+        <div class="layout-option ${this.currentLayout === '4h' ? 'active' : ''}" data-layout="4h">
+          <div class="layout-option-icon">● ● ● ●</div>
           <div class="layout-option-label">4 Horizontal</div>
         </div>
-        <div class="layout-option" data-layout="4v">
-          <div class="layout-option-icon">⊞</div>
+        <div class="layout-option ${this.currentLayout === '4v' ? 'active' : ''}" data-layout="4v">
+          <div class="layout-option-icon">●<br>●<br>●<br>●</div>
           <div class="layout-option-label">4 Vertical</div>
         </div>
-        <div class="layout-option active" data-layout="4">
-          <div class="layout-option-icon">⊞</div>
+        <div class="layout-option ${this.currentLayout === '4' ? 'active' : ''}" data-layout="4">
+          <div class="layout-option-icon">● ●<br>● ●</div>
           <div class="layout-option-label">4 (2x2)</div>
         </div>
       `;
     }
   }
 
+  generatePanelOrder() {
+    if (this.activePanels.length === 0) {
+      return '<div class="panel-order-empty">Selecciona paneles para ver el orden</div>';
+    }
+    
+    return this.activePanels.map((panelKey, index) => {
+      const panel = this.availablePanels[panelKey];
+      return `
+        <div class="panel-order-item" data-panel="${panelKey}" data-order="${index + 1}">
+          <div class="order-number" data-panel="${panelKey}">${index + 1}</div>
+          <div class="order-panel-name">${panel.name}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
   updateLayoutOptions() {
     const layoutOptionsContainer = document.getElementById('layout-options');
+    const orderSection = document.getElementById('panel-order-section');
+    const orderContainer = document.getElementById('panel-order');
+    
     if (layoutOptionsContainer) {
       layoutOptionsContainer.innerHTML = this.generateLayoutOptions();
       
-      // Actualizar el layout actual basado en el número de paneles
+      // Solo establecer layout por defecto si no hay ninguno seleccionado
       const panelCount = this.activePanels.length;
-      if (panelCount === 1) {
-        this.currentLayout = '1';
-      } else if (panelCount === 2) {
-        this.currentLayout = '2v'; // Cambiar a vertical por defecto
-      } else if (panelCount === 3) {
-        this.currentLayout = '3h';
-      } else if (panelCount >= 4) {
-        this.currentLayout = '4'; // Cambiar a 2x2 por defecto
+      if (!this.currentLayout) {
+        if (panelCount === 1) {
+          this.currentLayout = '1';
+        } else if (panelCount === 2) {
+          this.currentLayout = '2v';
+        } else if (panelCount === 3) {
+          this.currentLayout = '3h';
+        } else if (panelCount >= 4) {
+          this.currentLayout = '4';
+        }
+      }
+      
+      // Mostrar sección de orden siempre
+      if (orderSection && orderContainer) {
+        orderSection.style.display = 'block';
+        orderContainer.innerHTML = this.generatePanelOrder();
       }
     }
   }
@@ -526,7 +769,7 @@ class PanelManager {
       // Remover listener anterior si existe
       layoutOptionsContainer.removeEventListener('click', this.handleLayoutClick);
       
-      // Agregar nuevo listener
+      // Agregar nuevo listener para botones de layout
       this.handleLayoutClick = (e) => {
         const option = e.target.closest('.layout-option');
         if (!option || option.classList.contains('disabled')) return;
@@ -538,8 +781,9 @@ class PanelManager {
         // Actualizar el layout actual
         this.currentLayout = option.getAttribute('data-layout');
         console.log('Layout seleccionado:', this.currentLayout);
-        console.log('Tipo de layout:', typeof this.currentLayout);
-        console.log('Valor del atributo data-layout:', option.getAttribute('data-layout'));
+        
+        // Actualizar sección de orden si es necesario
+        this.updateLayoutOptions();
       };
       
       layoutOptionsContainer.addEventListener('click', this.handleLayoutClick);
@@ -568,6 +812,8 @@ class PanelManager {
         
         // NO aplicar automáticamente - solo actualizar la vista del selector
       }
+      
+
     });
 
     // Overlay click to close
@@ -616,29 +862,23 @@ class PanelManager {
     // Limpiar contenedor
     container.innerHTML = '';
 
-    // Crear paneles activos
+    // Crear paneles activos en el orden especificado
     for (const panelKey of this.activePanels) {
       try {
         const panel = await this.panelLoader.createPanel(panelKey, container);
         if (panel) {
           panel.style.flex = '1';
+          // Asignar posición basada en el índice en activePanels para todos los layouts
+          const index = this.activePanels.indexOf(panelKey);
+          panel.setAttribute('data-position', (index + 1).toString());
         }
       } catch (error) {
         console.error(`Error creating panel ${panelKey}:`, error);
       }
     }
 
-    // Ajustar layout automáticamente según el número de paneles activos
-    const panelCount = this.activePanels.length;
-    if (panelCount === 1) {
-      this.currentLayout = '1';
-    } else if (panelCount === 2) {
-      this.currentLayout = '2v';
-    } else if (panelCount === 3) {
-      this.currentLayout = '3v'; // Vertical (uno encima del otro)
-    } else if (panelCount >= 4) {
-      this.currentLayout = '4';
-    }
+    // NO ajustar layout automáticamente - usar el layout seleccionado por el usuario
+    // El layout ya está establecido en this.currentLayout
 
     // Aplicar layout
     console.log('Aplicando layout:', this.currentLayout);
