@@ -1,4 +1,4 @@
-// === app.js actualizado ===
+// === app.js limpio ===
 
 import $ from 'jquery';
 import MultiNotationModeler from './MultiNotationModeler/index.js';
@@ -6,7 +6,6 @@ import BpmnModdle from 'bpmn-moddle';
 import PPINOTModdle from './PPINOT-modeler/PPINOT/PPINOTModdle.json';
 import RALphModdle from './RALPH-modeler/RALph/RALphModdle.json';
 import { PanelLoader } from './js/panel-loader.js';
-import { PanelResizerFlex } from './js/panel-resizer-flex.js';
 import { initRasciPanel } from './js/panels/rasci.js';
 
 import 'bpmn-js/dist/assets/diagram-js.css';
@@ -89,19 +88,19 @@ $(function () {
   const panelContainer = document.getElementById('panel-container');
   if (!panelContainer) return;
 
-  // Inicializar el sistema de redimensionamiento
-  const panelResizer = new PanelResizerFlex();
-  window.panelResizer = panelResizer;
-
   const panelLoader = new PanelLoader();
   window.panelLoader = panelLoader;
 
   panelLoader.createPanel('bpmn', panelContainer).then(bpmnPanel => {
-    if (bpmnPanel) bpmnPanel.style.flex = '2';
+    if (bpmnPanel) {
+      bpmnPanel.style.flex = '2';
+    }
   });
 
   panelLoader.createPanel('rasci', panelContainer).then(rasciPanel => {
-    if (rasciPanel) rasciPanel.style.flex = '1';
+    if (rasciPanel) {
+      rasciPanel.style.flex = '1';
+    }
   });
 
   setTimeout(() => {

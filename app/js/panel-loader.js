@@ -1,4 +1,4 @@
-// === panel-loader.js actualizado ===
+// === panel-loader.js limpio ===
 
 class PanelLoader {
   constructor() {
@@ -7,20 +7,6 @@ class PanelLoader {
       bpmn: { file: 'panels/bpmn-panel.html', id: 'bpmn-panel', type: 'bpmn' },
       rasci: { file: 'panels/rasci-panel.html', id: 'rasci-panel', type: 'rasci' },
     };  
-    
-    // Inicializar el sistema de redimensionamiento
-    this.initResizer();
-  }
-  
-  initResizer() {
-    // Importar y crear instancia del PanelResizer
-    if (window.PanelResizerFlex) {
-      this.panelResizer = new window.PanelResizerFlex();
-      // Observar nuevos paneles automáticamente
-      this.panelResizer.observeNewPanels();
-    } else {
-      console.warn('PanelResizerFlex no disponible');
-    }
   }
 
   async loadPanel(panelType) {
@@ -82,14 +68,311 @@ class PanelLoader {
 
     container.appendChild(panel);
 
-    // Hacer el panel redimensionable
-    if (this.panelResizer) {
-      this.panelResizer.makePanelResizable(panel);
-    }
+    // Hacer el panel redimensionable y arrastrable
+    this.makePanelResizable(panel, container);
+    this.makePanelDraggable(panel);
 
     this.initializePanelEvents(panel);
     this.loadPanelController(panelType, panel);
     return panel;
+  }
+
+  makePanelResizable(panel, container) {
+    // Crear estilos de resize si no existen
+    if (!document.querySelector('#panel-resize-styles')) {
+      const style = document.createElement('style');
+      style.id = 'panel-resize-styles';
+      style.textContent = `
+        .panel-container {
+          display: flex;
+          flex-direction: row;
+          gap: 8px;
+          height: 100%;
+          overflow: hidden;
+        }
+        
+        .panel {
+          position: relative;
+          overflow: hidden;
+          flex: 1;
+          min-width: 200px;
+          min-height: 200px;
+        }
+        
+        .panel-resize-handle {
+          position: absolute;
+          background: transparent;
+          border: none;
+          border-radius: 2px;
+          z-index: 1000;
+          transition: all 0.2s ease;
+          opacity: 0;
+        }
+        
+        .panel-resize-handle:hover {
+          background: rgba(58, 86, 212, 0.1);
+          border: none;
+          opacity: 1;
+        }
+        
+        .panel-resize-handle.left {
+          left: 0;
+          top: 0;
+          width: 6px;
+          height: 100%;
+          cursor: ew-resize;
+        }
+        
+        .panel-resize-handle.right {
+          right: 0;
+          top: 0;
+          width: 6px;
+          height: 100%;
+          cursor: ew-resize;
+        }
+        
+        .panel-resize-handle.bottom {
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          height: 6px;
+          cursor: ns-resize;
+        }
+        
+        .panel-resize-handle.corner {
+          right: 0;
+          bottom: 0;
+          width: 12px;
+          height: 12px;
+          cursor: nw-resize;
+          background: transparent;
+        }
+        
+        .panel-resize-handle.corner:hover {
+          background: rgba(58, 86, 212, 0.1);
+        }
+        
+        .panel.maximized .panel-resize-handle {
+          display: none;
+        }
+        
+        .panel.minimized .panel-resize-handle {
+          display: none;
+        }
+        
+        .panel.maximized {
+          flex: 1 !important;
+          min-width: 100% !important;
+          min-height: 100% !important;
+        }
+        
+        .panel.minimized {
+          flex: 0 !important;
+          min-width: 0 !important;
+          min-height: 0 !important;
+          overflow: hidden;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // Añadir handles de resize
+    const handles = ['left', 'right', 'bottom', 'corner'];
+    handles.forEach(type => {
+      const handle = document.createElement('div');
+      handle.className = `panel-resize-handle ${type}`;
+      panel.appendChild(handle);
+    });
+
+    // Implementar resize manual
+    this.setupResizeHandlers(panel, container);
+  }
+
+  setupResizeHandlers(panel, container) {
+    const leftHandle = panel.querySelector('.panel-resize-handle.left');
+    const rightHandle = panel.querySelector('.panel-resize-handle.right');
+    const bottomHandle = panel.querySelector('.panel-resize-handle.bottom');
+    const cornerHandle = panel.querySelector('.panel-resize-handle.corner');
+
+    let isResizing = false;
+    let startX, startY, startWidth, startHeight;
+    let currentDirection = null;
+    let originalFlexValues = {};
+
+    function startResize(e, direction) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      isResizing = true;
+      currentDirection = direction;
+      startX = e.clientX;
+      startY = e.clientY;
+      
+      // Guardar el estado inicial de todos los paneles
+      const allPanels = Array.from(container.children);
+      allPanels.forEach(p => {
+        originalFlexValues[p.id] = {
+          flex: p.style.flex || '1',
+          width: p.style.width || '',
+          height: p.style.height || ''
+        };
+      });
+      
+      // Obtener dimensiones actuales del panel
+      const rect = panel.getBoundingClientRect();
+      startWidth = rect.width;
+      startHeight = rect.height;
+      
+      document.addEventListener('mousemove', handleResize);
+      document.addEventListener('mouseup', stopResize);
+    }
+
+    function handleResize(e) {
+      if (!isResizing) return;
+      
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+      
+      if (currentDirection === 'horizontal' || currentDirection === 'both') {
+        const newWidth = startWidth + deltaX;
+        const containerWidth = container.offsetWidth;
+        const gap = 8;
+        const minWidth = 200;
+        
+        // Calcular el ancho disponible considerando gaps
+        const otherPanels = Array.from(container.children).filter(p => p !== panel);
+        const totalGaps = (otherPanels.length + 1) * gap;
+        const availableWidth = containerWidth - totalGaps;
+        const maxWidth = availableWidth - (otherPanels.length * minWidth);
+        
+        if (newWidth >= minWidth && newWidth <= maxWidth) {
+          // Establecer ancho fijo para el panel actual
+          panel.style.flex = `0 0 ${newWidth}px`;
+          
+          // Distribuir el espacio restante entre los otros paneles
+          const remainingWidth = availableWidth - newWidth;
+          
+          if (otherPanels.length > 0) {
+            // Calcular cuánto espacio le corresponde a cada panel
+            const widthPerPanel = Math.max(minWidth, remainingWidth / otherPanels.length);
+            
+            otherPanels.forEach(otherPanel => {
+              otherPanel.style.flex = `1 1 ${widthPerPanel}px`;
+            });
+          }
+        }
+      }
+      
+      if (currentDirection === 'vertical' || currentDirection === 'both') {
+        const newHeight = startHeight + deltaY;
+        const containerHeight = container.offsetHeight;
+        const minHeight = 200;
+        const maxHeight = containerHeight;
+        
+        if (newHeight >= minHeight && newHeight <= maxHeight) {
+          // Establecer altura fija para el panel actual
+          panel.style.flex = `1 1 auto`;
+          panel.style.height = `${newHeight}px`;
+          
+          // Ajustar otros paneles para que rellenen el espacio vertical restante
+          const otherPanels = Array.from(container.children).filter(p => p !== panel);
+          const remainingHeight = containerHeight - newHeight;
+          
+          if (remainingHeight > 0 && otherPanels.length > 0) {
+            const heightPerPanel = Math.max(minHeight, remainingHeight / otherPanels.length);
+            
+            otherPanels.forEach(otherPanel => {
+              otherPanel.style.flex = `1 1 auto`;
+              otherPanel.style.height = `${heightPerPanel}px`;
+            });
+          }
+        }
+      }
+    }
+
+    function stopResize() {
+      if (isResizing) {
+        // Asegurar que todos los paneles tengan flex apropiado después del resize
+        const allPanels = Array.from(container.children);
+        allPanels.forEach(p => {
+          if (!p.style.flex || p.style.flex === '0 0 auto') {
+            p.style.flex = '1';
+          }
+        });
+      }
+      
+      isResizing = false;
+      currentDirection = null;
+      originalFlexValues = {};
+      document.removeEventListener('mousemove', handleResize);
+      document.removeEventListener('mouseup', stopResize);
+    }
+
+    // Configurar eventos para cada handle
+    if (leftHandle) {
+      leftHandle.addEventListener('mousedown', (e) => startResize(e, 'horizontal'));
+    }
+    
+    if (rightHandle) {
+      rightHandle.addEventListener('mousedown', (e) => startResize(e, 'horizontal'));
+    }
+    
+    if (bottomHandle) {
+      bottomHandle.addEventListener('mousedown', (e) => startResize(e, 'vertical'));
+    }
+    
+    if (cornerHandle) {
+      cornerHandle.addEventListener('mousedown', (e) => startResize(e, 'both'));
+    }
+  }
+
+  makePanelDraggable(panel) {
+    const header = panel.querySelector('.panel-header');
+    if (!header) return;
+
+    let isDragging = false;
+    let startX, startY, startLeft, startTop;
+
+    header.addEventListener('mousedown', (e) => {
+      // Evitar arrastrar si se hace clic en botones
+      if (e.target.closest('.panel-btn')) return;
+      
+      e.preventDefault();
+      isDragging = true;
+      
+      const rect = panel.getBoundingClientRect();
+      startX = e.clientX;
+      startY = e.clientY;
+      startLeft = rect.left;
+      startTop = rect.top;
+      
+      panel.style.position = 'fixed';
+      panel.style.zIndex = '10000';
+      panel.style.opacity = '0.9';
+      
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    });
+
+    const handleMouseMove = (e) => {
+      if (!isDragging) return;
+      
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+      
+      panel.style.left = `${startLeft + deltaX}px`;
+      panel.style.top = `${startTop + deltaY}px`;
+    };
+
+    const handleMouseUp = () => {
+      if (!isDragging) return;
+      
+      isDragging = false;
+      panel.style.opacity = '1';
+      
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
   }
 
   initializePanelEvents(panel) {
@@ -100,6 +383,9 @@ class PanelLoader {
     const minimizeBtn = header.querySelector('.panel-btn[title="Minimizar"]');
     const maximizeBtn = header.querySelector('.panel-btn[title="Maximizar"]');
     const closeBtn = header.querySelector('.panel-btn[title="Cerrar"]');
+
+    // Guardar tamaño original para restaurar
+    let originalSize = null;
 
     if (minimizeBtn) {
       minimizeBtn.addEventListener('click', () => {
@@ -112,21 +398,44 @@ class PanelLoader {
 
     if (maximizeBtn) {
       maximizeBtn.addEventListener('click', () => {
-        panel.classList.toggle('maximized');
-        maximizeBtn.innerHTML = panel.classList.contains('maximized') 
-          ? '<i class="fas fa-compress"></i>' 
-          : '<i class="fas fa-expand"></i>';
+        const isMaximized = panel.classList.contains('maximized');
+        
+        if (isMaximized) {
+          // Restaurar tamaño original
+          panel.classList.remove('maximized');
+          if (originalSize) {
+            panel.style.flex = originalSize.flex;
+            panel.style.height = originalSize.height;
+            panel.style.position = originalSize.position;
+            panel.style.left = originalSize.left;
+            panel.style.top = originalSize.top;
+            originalSize = null;
+          }
+          maximizeBtn.innerHTML = '<i class="fas fa-expand"></i>';
+        } else {
+          // Guardar tamaño actual y maximizar
+          originalSize = {
+            flex: panel.style.flex || '1',
+            height: panel.style.height || panel.offsetHeight + 'px',
+            position: panel.style.position,
+            left: panel.style.left,
+            top: panel.style.top
+          };
+          
+          panel.classList.add('maximized');
+          panel.style.flex = '1';
+          panel.style.height = '100%';
+          panel.style.position = 'relative';
+          panel.style.left = '';
+          panel.style.top = '';
+          maximizeBtn.innerHTML = '<i class="fas fa-compress"></i>';
+        }
       });
     }
 
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
         panel.style.display = 'none';
-        // Opcional: agregar a una lista de paneles cerrados para poder restaurarlos
-        // Eliminar referencias a window.windowManager y comentarios relacionados
-        // if (window.windowManager) {
-        //   window.windowManager.hidePanel(panel);
-        // }
       });
     }
   }
@@ -141,13 +450,12 @@ class PanelLoader {
         this.loadBpmnController();
         break;
       default:
-    
+        break;
     }
   }
 
   loadRasciController(panel) {
     // Inicializar el controlador RASCI
-    // El módulo se importa en app.js, así que verificamos si está disponible
     if (window.initRasciPanel) {
       window.initRasciPanel(panel);
     }
@@ -155,8 +463,6 @@ class PanelLoader {
 
   loadBpmnController() {
     // El controlador BPMN se maneja principalmente en app.js
-    // Aquí solo podemos hacer configuraciones específicas del panel
-
   }
 }
 
