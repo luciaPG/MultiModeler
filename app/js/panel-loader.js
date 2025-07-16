@@ -466,7 +466,7 @@ class PanelLoader {
     const soloBtn = header.querySelector('.panel-btn[title="Solo este panel"]');
 
     if (hideBtn) {
-      hideBtn.addEventListener('click', () => {
+      hideBtn.addEventListener('click', async () => {
         // Ocultar el panel completamente
         panel.style.display = 'none';
         panel.style.flex = '0';
@@ -474,9 +474,34 @@ class PanelLoader {
         panel.style.height = '0';
         panel.style.overflow = 'hidden';
         
+        // Preservar estado BPMN si se está ocultando el panel BPMN
+        const panelType = panel.getAttribute('data-panel-type');
+        if (panelType === 'bpmn' && window.bpmnModeler && window.bpmnModeler.get) {
+          try {
+            const xml = await window.bpmnModeler.saveXML({ format: true });
+            const svg = await window.bpmnModeler.saveSVG();
+            
+            // Verificar que el XML no esté vacío
+            if (xml && xml.xml && xml.xml.trim().length > 0) {
+              const bpmnState = {
+                xml: xml.xml,
+                svg: svg
+              };
+              // Guardar el estado en el panel manager
+              if (window.panelManager) {
+                window.panelManager.preservedBpmnState = bpmnState;
+                console.log('Estado BPMN preservado al ocultar panel:', bpmnState.xml.substring(0, 100) + '...');
+              }
+            } else {
+              console.warn('XML BPMN vacío, no se preserva estado');
+            }
+          } catch (error) {
+            console.error('Error preservando estado BPMN:', error);
+          }
+        }
+        
         // Actualizar la lista de paneles activos en el panel manager
         if (window.panelManager) {
-          const panelType = panel.getAttribute('data-panel-type');
           if (panelType && window.panelManager.activePanels.includes(panelType)) {
             window.panelManager.activePanels = window.panelManager.activePanels.filter(p => p !== panelType);
             console.log(`Panel ${panelType} ocultado y removido de la lista activa`);

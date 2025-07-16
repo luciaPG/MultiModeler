@@ -30,9 +30,10 @@ class PanelManager {
       }
     };
     
-    this.currentLayout = '4'; // Layout 2x2 por defecto para 4 paneles
-    this.activePanels = ['bpmn', 'rasci', 'test', 'logs'];
+    this.currentLayout = '2v'; // Layout vertical por defecto para 2 paneles
+    this.activePanels = ['bpmn', 'rasci']; // Solo BPMN y RASCI por defecto
     this.panelLoader = null;
+    this.preservedBpmnState = null; // Para preservar el estado BPMN cuando se oculta
     this.init();
   }
 
@@ -659,11 +660,23 @@ class PanelManager {
         if (typeof window.initializeModeler === 'function') {
           window.initializeModeler();
           
-          // Restaurar estado si existe
-          if (bpmnState && window.bpmnModeler) {
+          // Restaurar estado preservado o el estado actual
+          const stateToRestore = this.preservedBpmnState || bpmnState;
+          if (stateToRestore && stateToRestore.xml && window.bpmnModeler) {
             try {
-              await window.bpmnModeler.importXML(bpmnState.xml);
-              console.log('Estado BPMN restaurado');
+              // Verificar que el XML no esté vacío
+              if (stateToRestore.xml.trim().length > 0) {
+                console.log('Restaurando estado BPMN:', stateToRestore.xml.substring(0, 100) + '...');
+                await window.bpmnModeler.importXML(stateToRestore.xml);
+                console.log('Estado BPMN restaurado exitosamente');
+                // Limpiar el estado preservado después de restaurarlo
+                this.preservedBpmnState = null;
+              } else {
+                console.warn('XML BPMN vacío, creando nuevo diagrama');
+                if (typeof window.createNewDiagram === 'function') {
+                  window.createNewDiagram();
+                }
+              }
             } catch (error) {
               console.error('Error restaurando estado BPMN:', error);
               // Si falla la restauración, crear nuevo diagrama
@@ -672,6 +685,7 @@ class PanelManager {
               }
             }
           } else {
+            console.log('No hay estado BPMN para restaurar, creando nuevo diagrama');
             // Si no hay estado preservado, crear nuevo diagrama
             if (typeof window.createNewDiagram === 'function') {
               window.createNewDiagram();
