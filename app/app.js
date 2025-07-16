@@ -1,22 +1,24 @@
-// === app.js limpio (BPMN intacto, RASCI delegado) ===
+// === app.js actualizado ===
 
 import $ from 'jquery';
 import MultiNotationModeler from './MultiNotationModeler/index.js';
 import BpmnModdle from 'bpmn-moddle';
 import PPINOTModdle from './PPINOT-modeler/PPINOT/PPINOTModdle.json';
 import RALphModdle from './RALPH-modeler/RALph/RALphModdle.json';
+import { PanelLoader } from './js/panel-loader.js';
+import { PanelResizerFlex } from './js/panel-resizer-flex.js';
+import { initRasciPanel } from './js/panels/rasci.js';
 
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import 'diagram-js/assets/diagram-js.css';
 import './css/app.css';
 
-console.log('App.js loaded successfully');
-
-// Variables globales necesarias para RASCI (rellenadas por rasci.js)
+// Variables globales
 window.rasciRoles = [];
 window.rasciTasks = [];
 window.rasciMatrixData = {};
+window.initRasciPanel = initRasciPanel;
 
 function validateAndSanitizeWaypoints(waypoints) {
   if (!waypoints || !Array.isArray(waypoints)) return [];
@@ -86,6 +88,10 @@ function updateUI(message = '') {
 $(function () {
   const panelContainer = document.getElementById('panel-container');
   if (!panelContainer) return;
+
+  // Inicializar el sistema de redimensionamiento
+  const panelResizer = new PanelResizerFlex();
+  window.panelResizer = panelResizer;
 
   const panelLoader = new PanelLoader();
   window.panelLoader = panelLoader;

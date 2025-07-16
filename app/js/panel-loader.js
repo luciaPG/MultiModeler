@@ -1,12 +1,26 @@
-// === panel-loader.js ===
-// Panel Loader - Maneja la carga dinámica de paneles
+// === panel-loader.js actualizado ===
+
 class PanelLoader {
   constructor() {
     this.panelCache = new Map();
     this.panelConfigs = {
       bpmn: { file: 'panels/bpmn-panel.html', id: 'bpmn-panel', type: 'bpmn' },
       rasci: { file: 'panels/rasci-panel.html', id: 'rasci-panel', type: 'rasci' },
-    };
+    };  
+    
+    // Inicializar el sistema de redimensionamiento
+    this.initResizer();
+  }
+  
+  initResizer() {
+    // Importar y crear instancia del PanelResizer
+    if (window.PanelResizerFlex) {
+      this.panelResizer = new window.PanelResizerFlex();
+      // Observar nuevos paneles automáticamente
+      this.panelResizer.observeNewPanels();
+    } else {
+      console.warn('PanelResizerFlex no disponible');
+    }
   }
 
   async loadPanel(panelType) {
@@ -33,7 +47,7 @@ class PanelLoader {
   createFallbackPanel(panelType) {
     const panel = document.createElement('div');
     panel.className = 'panel';
-    panel.id = this.panelConfigs[panelType]?.id || `${panelType}-panel`;
+    panel.id = (this.panelConfigs[panelType] && this.panelConfigs[panelType].id) || `${panelType}-panel`;
     panel.setAttribute('data-panel-type', panelType);
     panel.innerHTML = `
       <div class="panel-header">
@@ -59,69 +73,95 @@ class PanelLoader {
   async createPanel(panelType, container) {
     const panel = await this.loadPanel(panelType);
     if (!panel || !container) return null;
+
+    // Asegurar que el panel tiene la clase y un id único
+    panel.classList.add('panel');
+    if (!panel.id) {
+      panel.id = (this.panelConfigs[panelType] && this.panelConfigs[panelType].id) || `${panelType}-panel-${Date.now()}`;
+    }
+
     container.appendChild(panel);
-    this.injectResizeHandles(panel);
+
+    // Hacer el panel redimensionable
+    if (this.panelResizer) {
+      this.panelResizer.makePanelResizable(panel);
+    }
+
     this.initializePanelEvents(panel);
     this.loadPanelController(panelType, panel);
     return panel;
   }
 
-  injectResizeHandles(panel) {
-    const edges = ['top', 'right', 'bottom', 'left'];
-    edges.forEach(edge => {
-      const handle = document.createElement('div');
-      handle.className = `panel-resize-handle ${edge}`;
-      panel.appendChild(handle);
-    });
-  }
-
   initializePanelEvents(panel) {
-    panel.querySelectorAll('.panel-btn').forEach(btn => {
-      btn.addEventListener('click', e => {
-        e.stopPropagation();
-        const icon = btn.querySelector('i');
-        if (icon?.classList.contains('fa-times')) this.closePanel(panel);
-        if (icon?.classList.contains('fa-expand')) this.maximizePanel(panel);
-        if (icon?.classList.contains('fa-minus')) this.minimizePanel(panel);
-      });
-    });
+    // Eventos para los botones del panel
+    const header = panel.querySelector('.panel-header');
+    if (!header) return;
 
-    panel.querySelectorAll('.tab').forEach(tab => {
-      tab.addEventListener('click', e => {
-        e.stopPropagation();
-        const allTabs = tab.parentNode.querySelectorAll('.tab');
-        allTabs.forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-      });
-    });
-  }
+    const minimizeBtn = header.querySelector('.panel-btn[title="Minimizar"]');
+    const maximizeBtn = header.querySelector('.panel-btn[title="Maximizar"]');
+    const closeBtn = header.querySelector('.panel-btn[title="Cerrar"]');
 
-  async loadPanelController(panelType, panel) {
-    try {
-      const module = await import(`./panels/${panelType}.js`);
-      const initFn = module[`init${panelType.charAt(0).toUpperCase() + panelType.slice(1)}Panel`];
-      if (typeof initFn === 'function') {
-        initFn(panel);
-      }
-    } catch (err) {
-      console.warn(`⚠️ No se pudo cargar módulo para ${panelType}:`, err);
+    if (minimizeBtn) {
+      minimizeBtn.addEventListener('click', () => {
+        panel.classList.toggle('minimized');
+        minimizeBtn.innerHTML = panel.classList.contains('minimized') 
+          ? '<i class="fas fa-expand"></i>' 
+          : '<i class="fas fa-minus"></i>';
+      });
+    }
+
+    if (maximizeBtn) {
+      maximizeBtn.addEventListener('click', () => {
+        panel.classList.toggle('maximized');
+        maximizeBtn.innerHTML = panel.classList.contains('maximized') 
+          ? '<i class="fas fa-compress"></i>' 
+          : '<i class="fas fa-expand"></i>';
+      });
+    }
+
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        panel.style.display = 'none';
+        // Opcional: agregar a una lista de paneles cerrados para poder restaurarlos
+        // Eliminar referencias a window.windowManager y comentarios relacionados
+        // if (window.windowManager) {
+        //   window.windowManager.hidePanel(panel);
+        // }
+      });
     }
   }
 
-  closePanel(panel) {
-    panel.style.display = 'none';
-    panel.classList.add('closed');
+  loadPanelController(panelType, panel) {
+    // Cargar controladores específicos según el tipo de panel
+    switch (panelType) {
+      case 'rasci':
+        this.loadRasciController(panel);
+        break;
+      case 'bpmn':
+        this.loadBpmnController();
+        break;
+      default:
+    
+    }
   }
 
-  maximizePanel(panel) {
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('maximized', 'minimized'));
-    panel.classList.add('maximized');
+  loadRasciController(panel) {
+    // Inicializar el controlador RASCI
+    // El módulo se importa en app.js, así que verificamos si está disponible
+    if (window.initRasciPanel) {
+      window.initRasciPanel(panel);
+    }
   }
 
-  minimizePanel(panel) {
-    const other = [...document.querySelectorAll('.panel')].find(p => p !== panel && !p.classList.contains('closed'));
-    if (other) this.maximizePanel(other);
+  loadBpmnController() {
+    // El controlador BPMN se maneja principalmente en app.js
+    // Aquí solo podemos hacer configuraciones específicas del panel
+
   }
 }
 
+// Exportar la clase para ES6 modules
+export { PanelLoader };
+
+// También mantener la referencia global para compatibilidad
 window.PanelLoader = PanelLoader;

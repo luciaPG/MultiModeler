@@ -152,57 +152,7 @@
       border-radius: 0 !important;
     }
     
-    /* Zonas de snap */
-    .snap-zones {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      pointer-events: none;
-      z-index: 5;
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
-    
-    .snap-zones.visible {
-      opacity: 1;
-    }
-    
-    .snap-zone {
-      position: absolute;
-      border: 2px dashed rgba(67, 97, 238, 0.3);
-      background: rgba(67, 97, 238, 0.05);
-      border-radius: 8px;
-    }
-    
-    .snap-zone.active {
-      border-color: rgba(67, 97, 238, 0.8);
-      background: rgba(67, 97, 238, 0.1);
-    }
-    
-    .snap-label {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: rgba(67, 97, 238, 0.8);
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-align: center;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
-    
-    .snap-zone.visible .snap-label {
-      opacity: 1;
-    }
-    
-    .snap-zone.active .snap-label {
-      opacity: 1;
-      color: rgba(67, 97, 238, 1);
-    }
+
     
     /* Botones de restaurar en header */
     .restore-buttons {
@@ -264,52 +214,7 @@
       transition: transform 0.2s ease;
     }
     
-    /* Bordes redimensionables */
-    .panel-resize-handle {
-      position: absolute;
-      background: transparent;
-      z-index: 10;
-    }
-    
-    .panel-resize-handle.right {
-      right: 0;
-      top: 0;
-      bottom: 0;
-      width: 6px;
-      cursor: col-resize;
-    }
-    
-    .panel-resize-handle.left {
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 6px;
-      cursor: col-resize;
-    }
-    
-    .panel-resize-handle.bottom {
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 6px;
-      cursor: row-resize;
-    }
-    
-    .panel-resize-handle.top {
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 6px;
-      cursor: row-resize;
-    }
-    
-    .panel-resize-handle:hover {
-      background: rgba(67, 97, 238, 0.1);
-    }
-    
-    .panel-resize-handle.resizing {
-      background: rgba(67, 97, 238, 0.2);
-    }
+
     
     .panel-header {
       height: var(--panel-header-height);
@@ -628,21 +533,7 @@
   <!-- Área de trabajo con paneles -->
   <div class="workspace">
     <div class="panel-container" id="panel-container">
-      <!-- Zonas de snap -->
-      <div class="snap-zones" id="snap-zones">
-        <div class="snap-zone" data-zone="left" style="top: 0; left: 0; width: 50%; height: 100%;">
-          <div class="snap-label">Izquierda (1/2)</div>
-        </div>
-        <div class="snap-zone" data-zone="right" style="top: 0; right: 0; width: 50%; height: 100%;">
-          <div class="snap-label">Derecha (1/2)</div>
-        </div>
-        <div class="snap-zone" data-zone="top" style="top: 0; left: 0; width: 100%; height: 50%;">
-          <div class="snap-label">Arriba (1/2)</div>
-        </div>
-        <div class="snap-zone" data-zone="bottom" style="bottom: 0; left: 0; width: 100%; height: 50%;">
-          <div class="snap-label">Abajo (1/2)</div>
-        </div>
-      </div>
+
       <!-- Los paneles se cargarán dinámicamente aquí -->
     </div>
     
@@ -657,6 +548,9 @@
     <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
   <script src="js/panel-loader.js"></script>
+  <script src="js/panel-resizer-flex.js"></script>
+  <script src="js/resize-config.js"></script>
+  <script src="js/resize-demo.js"></script>
   <script src="bundle.js"></script>
   
   <script>

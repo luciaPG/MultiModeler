@@ -953,56 +953,26 @@ body {
   flex-wrap: wrap;
 }
 
-/* Panel resize handles */
-.panel-resize-handle {
-  position: absolute;
-  background: transparent;
-  z-index: 10;
-  transition: background 0.2s ease;
+
+
+/* ======================================
+   === DRAG & DROP STYLES ===
+   ====================================== */
+
+/* Estilos para el estado de arrastre */
+.panel.dragging {
+  opacity: 0.9;
+  z-index: 1000 !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+  transition: none !important; /* Desactivar transiciones durante el drag */
+  cursor: grabbing !important;
 }
 
-.panel-resize-handle.right {
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 6px;
-  cursor: col-resize;
+/* Mejorar la fluidez del drag */
+.panel {
+  transition: box-shadow 0.2s ease, opacity 0.2s ease;
+  will-change: transform;
 }
-
-.panel-resize-handle.left {
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 6px;
-  cursor: col-resize;
-}
-
-.panel-resize-handle.bottom {
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 6px;
-  cursor: row-resize;
-}
-
-.panel-resize-handle.top {
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 6px;
-  cursor: row-resize;
-}
-
-.panel-resize-handle:hover {
-  background: rgba(67, 97, 238, 0.1);
-}
-
-.panel-resize-handle.resizing {
-  background: rgba(67, 97, 238, 0.2);
-}
-
-
-
 
 /* ======================================
    === RASCI PANEL - ESTILO COHERENTE ===
