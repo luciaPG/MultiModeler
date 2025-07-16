@@ -142,8 +142,17 @@ class PanelResizerFlex {
     
     panel.classList.add('resizable');
     
-    // Crear handles de redimensionamiento
-    const handles = [
+    // Verificar si el panel está en un layout grid (2x2)
+    const container = panel.parentElement;
+    const isGridLayout = container && container.classList.contains('layout-4');
+    
+    // En layout grid, solo mostrar handles de esquinas para redimensionar
+    const handles = isGridLayout ? [
+      { class: 'nw', direction: 'nw' },
+      { class: 'ne', direction: 'ne' },
+      { class: 'sw', direction: 'sw' },
+      { class: 'se', direction: 'se' }
+    ] : [
       { class: 'n', direction: 'n' },
       { class: 's', direction: 's' },
       { class: 'e', direction: 'e' },
@@ -161,8 +170,6 @@ class PanelResizerFlex {
       handleElement.addEventListener('mousedown', (e) => this.startResize(e, handle.direction));
       panel.appendChild(handleElement);
     });
-    
-
   }
 
 

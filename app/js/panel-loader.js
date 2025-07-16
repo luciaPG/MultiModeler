@@ -6,6 +6,8 @@ class PanelLoader {
     this.panelConfigs = {
       bpmn: { file: 'panels/bpmn-panel.html', id: 'bpmn-panel', type: 'bpmn' },
       rasci: { file: 'panels/rasci-panel.html', id: 'rasci-panel', type: 'rasci' },
+      test: { file: 'panels/test-panel.html', id: 'test-panel', type: 'test' },
+      logs: { file: 'panels/logs-panel.html', id: 'logs-panel', type: 'logs' },
     };  
   }
 
@@ -42,9 +44,8 @@ class PanelLoader {
           <span>Panel ${panelType.toUpperCase()} (Fallback)</span>
         </div>
         <div class="panel-actions">
-          <button class="panel-btn" title="Minimizar"><i class="fas fa-minus"></i></button>
-          <button class="panel-btn" title="Maximizar"><i class="fas fa-expand"></i></button>
-          <button class="panel-btn" title="Cerrar"><i class="fas fa-times"></i></button>
+          <button class="panel-btn" title="Ocultar"><i class="fas fa-eye-slash"></i></button>
+          <button class="panel-btn" title="Solo este panel"><i class="fas fa-expand"></i></button>
         </div>
       </div>
       <div class="panel-content">
@@ -97,6 +98,11 @@ class PanelLoader {
           flex: 1;
           min-width: 200px;
           min-height: 200px;
+          transition: flex 0.1s ease-out;
+        }
+        
+        .panel.resizing {
+          transition: none;
         }
         
         .panel-resize-handle {
@@ -205,6 +211,10 @@ class PanelLoader {
       
       isResizing = true;
       currentDirection = direction;
+      
+      // Agregar clase resizing para desactivar transiciones
+      panel.classList.add('resizing');
+      
       startX = e.clientX;
       startY = e.clientY;
       
@@ -230,64 +240,67 @@ class PanelLoader {
     function handleResize(e) {
       if (!isResizing) return;
       
-      const deltaX = e.clientX - startX;
-      const deltaY = e.clientY - startY;
-      
-      if (currentDirection === 'horizontal' || currentDirection === 'both') {
-        const newWidth = startWidth + deltaX;
-        const containerWidth = container.offsetWidth;
-        const gap = 8;
-        const minWidth = 200;
+      // Usar requestAnimationFrame para sincronizar con el movimiento del ratón
+      requestAnimationFrame(() => {
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
         
-        // Calcular el ancho disponible considerando gaps
-        const otherPanels = Array.from(container.children).filter(p => p !== panel);
-        const totalGaps = (otherPanels.length + 1) * gap;
-        const availableWidth = containerWidth - totalGaps;
-        const maxWidth = availableWidth - (otherPanels.length * minWidth);
-        
-        if (newWidth >= minWidth && newWidth <= maxWidth) {
-          // Establecer ancho fijo para el panel actual
-          panel.style.flex = `0 0 ${newWidth}px`;
+        if (currentDirection === 'horizontal' || currentDirection === 'both') {
+          const newWidth = startWidth + deltaX;
+          const containerWidth = container.offsetWidth;
+          const gap = 8;
+          const minWidth = 200;
           
-          // Distribuir el espacio restante entre los otros paneles
-          const remainingWidth = availableWidth - newWidth;
-          
-          if (otherPanels.length > 0) {
-            // Calcular cuánto espacio le corresponde a cada panel
-            const widthPerPanel = Math.max(minWidth, remainingWidth / otherPanels.length);
-            
-            otherPanels.forEach(otherPanel => {
-              otherPanel.style.flex = `1 1 ${widthPerPanel}px`;
-            });
-          }
-        }
-      }
-      
-      if (currentDirection === 'vertical' || currentDirection === 'both') {
-        const newHeight = startHeight + deltaY;
-        const containerHeight = container.offsetHeight;
-        const minHeight = 200;
-        const maxHeight = containerHeight;
-        
-        if (newHeight >= minHeight && newHeight <= maxHeight) {
-          // Establecer altura fija para el panel actual
-          panel.style.flex = `1 1 auto`;
-          panel.style.height = `${newHeight}px`;
-          
-          // Ajustar otros paneles para que rellenen el espacio vertical restante
+          // Calcular el ancho disponible considerando gaps
           const otherPanels = Array.from(container.children).filter(p => p !== panel);
-          const remainingHeight = containerHeight - newHeight;
+          const totalGaps = (otherPanels.length + 1) * gap;
+          const availableWidth = containerWidth - totalGaps;
+          const maxWidth = availableWidth - (otherPanels.length * minWidth);
           
-          if (remainingHeight > 0 && otherPanels.length > 0) {
-            const heightPerPanel = Math.max(minHeight, remainingHeight / otherPanels.length);
+          if (newWidth >= minWidth && newWidth <= maxWidth) {
+            // Establecer ancho fijo para el panel actual
+            panel.style.flex = `0 0 ${newWidth}px`;
             
-            otherPanels.forEach(otherPanel => {
-              otherPanel.style.flex = `1 1 auto`;
-              otherPanel.style.height = `${heightPerPanel}px`;
-            });
+            // Distribuir el espacio restante entre los otros paneles
+            const remainingWidth = availableWidth - newWidth;
+            
+            if (otherPanels.length > 0) {
+              // Calcular cuánto espacio le corresponde a cada panel
+              const widthPerPanel = Math.max(minWidth, remainingWidth / otherPanels.length);
+              
+              otherPanels.forEach(otherPanel => {
+                otherPanel.style.flex = `1 1 ${widthPerPanel}px`;
+              });
+            }
           }
         }
-      }
+        
+        if (currentDirection === 'vertical' || currentDirection === 'both') {
+          const newHeight = startHeight + deltaY;
+          const containerHeight = container.offsetHeight;
+          const minHeight = 200;
+          const maxHeight = containerHeight;
+          
+          if (newHeight >= minHeight && newHeight <= maxHeight) {
+            // Establecer altura fija para el panel actual
+            panel.style.flex = `1 1 auto`;
+            panel.style.height = `${newHeight}px`;
+            
+            // Ajustar otros paneles para que rellenen el espacio vertical restante
+            const otherPanels = Array.from(container.children).filter(p => p !== panel);
+            const remainingHeight = containerHeight - newHeight;
+            
+            if (remainingHeight > 0 && otherPanels.length > 0) {
+              const heightPerPanel = Math.max(minHeight, remainingHeight / otherPanels.length);
+              
+              otherPanels.forEach(otherPanel => {
+                otherPanel.style.flex = `1 1 auto`;
+                otherPanel.style.height = `${heightPerPanel}px`;
+              });
+            }
+          }
+        }
+      });
     }
 
     function stopResize() {
@@ -299,6 +312,9 @@ class PanelLoader {
             p.style.flex = '1';
           }
         });
+        
+        // Remover clase resizing para reactivar transiciones
+        panel.classList.remove('resizing');
       }
       
       isResizing = false;
@@ -446,65 +462,73 @@ class PanelLoader {
     const header = panel.querySelector('.panel-header');
     if (!header) return;
 
-    const minimizeBtn = header.querySelector('.panel-btn[title="Minimizar"]');
-    const maximizeBtn = header.querySelector('.panel-btn[title="Maximizar"]');
-    const closeBtn = header.querySelector('.panel-btn[title="Cerrar"]');
+    const hideBtn = header.querySelector('.panel-btn[title="Ocultar"]');
+    const soloBtn = header.querySelector('.panel-btn[title="Solo este panel"]');
 
-    // Guardar tamaño original para restaurar
-    let originalSize = null;
-
-    if (minimizeBtn) {
-      minimizeBtn.addEventListener('click', () => {
-        panel.classList.toggle('minimized');
-        minimizeBtn.innerHTML = panel.classList.contains('minimized') 
-          ? '<i class="fas fa-expand"></i>' 
-          : '<i class="fas fa-minus"></i>';
-      });
-    }
-
-    if (maximizeBtn) {
-      maximizeBtn.addEventListener('click', () => {
-        const isMaximized = panel.classList.contains('maximized');
+    if (hideBtn) {
+      hideBtn.addEventListener('click', () => {
+        // Ocultar el panel completamente
+        panel.style.display = 'none';
+        panel.style.flex = '0';
+        panel.style.width = '0';
+        panel.style.height = '0';
+        panel.style.overflow = 'hidden';
         
-        if (isMaximized) {
-          // Restaurar tamaño original
-          panel.classList.remove('maximized');
-          if (originalSize) {
-            panel.style.flex = originalSize.flex;
-            panel.style.height = originalSize.height;
-            panel.style.position = originalSize.position;
-            panel.style.left = originalSize.left;
-            panel.style.top = originalSize.top;
-            originalSize = null;
+        // Actualizar la lista de paneles activos en el panel manager
+        if (window.panelManager) {
+          const panelType = panel.getAttribute('data-panel-type');
+          if (panelType && window.panelManager.activePanels.includes(panelType)) {
+            window.panelManager.activePanels = window.panelManager.activePanels.filter(p => p !== panelType);
+            console.log(`Panel ${panelType} ocultado y removido de la lista activa`);
+            
+            // Actualizar el selector de paneles para mostrar el cambio
+            if (window.panelManager.updatePanelSelector) {
+              window.panelManager.updatePanelSelector();
+            }
+            
+            // Notificar al panel manager para que reajuste el layout
+            setTimeout(() => {
+              if (window.panelManager && typeof window.panelManager.adjustLayoutForVisiblePanels === 'function') {
+                window.panelManager.adjustLayoutForVisiblePanels();
+              }
+            }, 50);
           }
-          maximizeBtn.innerHTML = '<i class="fas fa-expand"></i>';
-        } else {
-          // Guardar tamaño actual y maximizar
-          originalSize = {
-            flex: panel.style.flex || '1',
-            height: panel.style.height || panel.offsetHeight + 'px',
-            position: panel.style.position,
-            left: panel.style.left,
-            top: panel.style.top
-          };
-          
-          panel.classList.add('maximized');
-          panel.style.flex = '1';
-          panel.style.height = '100%';
-          panel.style.position = 'relative';
-          panel.style.left = '';
-          panel.style.top = '';
-          maximizeBtn.innerHTML = '<i class="fas fa-compress"></i>';
         }
       });
     }
 
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => {
-        panel.style.display = 'none';
+    if (soloBtn) {
+      soloBtn.addEventListener('click', () => {
+        // Ocultar todos los otros paneles
+        const container = panel.parentElement;
+        const allPanels = container.querySelectorAll('.panel');
+        
+        allPanels.forEach(otherPanel => {
+          if (otherPanel !== panel) {
+            otherPanel.style.display = 'none';
+            // Remover de la lista activa
+            const otherPanelType = otherPanel.getAttribute('data-panel-type');
+            if (otherPanelType && window.panelManager && window.panelManager.activePanels.includes(otherPanelType)) {
+              window.panelManager.activePanels = window.panelManager.activePanels.filter(p => p !== otherPanelType);
+            }
+          }
+        });
+        
+        // Mostrar solo este panel
+        panel.style.display = 'flex';
+        panel.style.flex = '1';
+        
+        // Ajustar layout para un solo panel
+        setTimeout(() => {
+          if (window.panelManager && typeof window.panelManager.adjustLayoutForVisiblePanels === 'function') {
+            window.panelManager.adjustLayoutForVisiblePanels();
+          }
+        }, 50);
       });
     }
   }
+
+
 
   loadPanelController(panelType, panel) {
     // Cargar controladores específicos según el tipo de panel

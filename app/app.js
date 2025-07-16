@@ -7,6 +7,8 @@ import PPINOTModdle from './PPINOT-modeler/PPINOT/PPINOTModdle.json';
 import RALphModdle from './RALPH-modeler/RALph/RALphModdle.json';
 import { PanelLoader } from './js/panel-loader.js';
 import { initRasciPanel } from './js/panels/rasci.js';
+import './js/panel-snap-system.js';
+import './js/panel-manager.js';
 
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
@@ -78,6 +80,10 @@ async function createNewDiagram() {
   }
 }
 
+// Hacer las funciones globales para que el gestor de paneles pueda acceder a ellas
+window.initializeModeler = initializeModeler;
+window.createNewDiagram = createNewDiagram;
+
 function updateUI(message = '') {
   if (message) $('.status-item:first-child span').text(message);
   $('.status-item:nth-child(2) span').text('Modo: Edición');
@@ -91,20 +97,23 @@ $(function () {
   const panelLoader = new PanelLoader();
   window.panelLoader = panelLoader;
 
-  panelLoader.createPanel('bpmn', panelContainer).then(bpmnPanel => {
-    if (bpmnPanel) {
-      bpmnPanel.style.flex = '2';
-    }
-  });
+  // Inicializar sistema de layout
+  const snapSystem = new PanelSnapSystem();
+  window.snapSystem = snapSystem;
 
-  panelLoader.createPanel('rasci', panelContainer).then(rasciPanel => {
-    if (rasciPanel) {
-      rasciPanel.style.flex = '1';
-    }
-  });
+  // Inicializar gestor de paneles
+  const panelManager = new PanelManager();
+  window.panelManager = panelManager;
+  panelManager.setPanelLoader(panelLoader);
+
+  // Crear paneles iniciales usando el gestor
+  panelManager.applyConfiguration();
+
+  // Configurar layout inicial
+  panelContainer.classList.add('layout-4');
 
   setTimeout(() => {
-    initializeModeler();
-    createNewDiagram();
+    // El modeler se inicializará automáticamente cuando se aplique la configuración
+    console.log('Aplicación inicializada con gestor de paneles');
   }, 300);
 });
