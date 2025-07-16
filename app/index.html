@@ -618,6 +618,9 @@
         <button class="restore-btn hidden" id="restore-ppinot" data-panel="ppinot">
           <i class="fas fa-sliders"></i> Restaurar PPINOT
         </button>
+        <button class="restore-btn hidden" id="restore-rasci" data-panel="rasci">
+          <i class="fas fa-table"></i> Restaurar RASCI
+        </button>
       </div>
     </div>
   </header>
@@ -643,35 +646,11 @@
       <!-- Los paneles se cargarán dinámicamente aquí -->
     </div>
     
-    <!-- Selector de layout -->
-    <div class="layout-selector">
-      <button class="layout-btn active" data-layout="horizontal" title="Dos paneles horizontal">
-        <i class="fas fa-columns"></i>
-      </button>
-      <button class="layout-btn" data-layout="vertical" title="Dos paneles vertical">
-        <i class="fas fa-grip-lines-vertical"></i>
-      </button>
-      <button class="layout-btn" data-layout="grid" title="Cuatro paneles en cuadrícula">
-        <i class="fas fa-th-large"></i>
-      </button>
-    </div>
+   
+    
   </div>
   
-  <!-- Barra de estado -->
-  <div class="status-bar">
-    <div class="status-item">
-      <i class="fas fa-circle-info"></i>
-      <span>Listo</span>
-    </div>
-    <div class="status-item">
-      <i class="fas fa-bolt"></i>
-      <span>Modo: Edición</span>
-    </div>
-    <div class="status-item" style="margin-left: auto;">
-      <i class="fas fa-user"></i>
-      <span>Usuario: admin</span>
-    </div>
-  </div>
+  
   
   <input type="file" id="file-input" accept=".bpmn,.xml,.cbpmn" style="display:none" />
   

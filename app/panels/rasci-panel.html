@@ -1,0 +1,43 @@
+<div class="panel" id="rasci-panel" data-panel-type="rasci">
+  <div class="panel-header">
+    <div class="panel-title">
+      <i class="fas fa-table"></i>
+      <span>Matriz RASCI</span>
+    </div>
+    <div class="panel-actions">
+      <button class="panel-btn" title="Minimizar"><i class="fas fa-minus"></i></button>
+      <button class="panel-btn" title="Maximizar"><i class="fas fa-expand"></i></button>
+      <button class="panel-btn" title="Cerrar"><i class="fas fa-times"></i></button>
+    </div>
+  </div>
+
+  <div class="panel-tabs">
+    <div class="tab active" data-tab="main" onclick="cambiarPestana('main')">Matriz</div>
+    <div class="tab" data-tab="config" onclick="cambiarPestana('config')">Leyenda</div>
+  </div>
+
+  <div class="panel-content">
+    <div id="main-tab" class="tab-content active">
+      <button class="btn btn-primary" onclick="emergencyLoadSampleData()">
+        <i class="fas fa-magic"></i> Cargar Ejemplo
+      </button>
+      <div id="matrix-container"></div>
+    </div>
+
+    <div id="config-tab" class="tab-content" style="display: none;">
+      <div class="rasci-legend">
+        <div class="legend-item"><span class="legend-color r">R</span> Responsable</div>
+        <div class="legend-item"><span class="legend-color a">A</span> Aprobador</div>
+        <div class="legend-item"><span class="legend-color s">S</span> Soporte</div>
+        <div class="legend-item"><span class="legend-color c">C</span> Consultado</div>
+        <div class="legend-item"><span class="legend-color i">I</span> Informado</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resize handles -->
+  <div class="panel-resize-handle left"></div>
+  <div class="panel-resize-handle right"></div>
+  <div class="panel-resize-handle top"></div>
+  <div class="panel-resize-handle bottom"></div>
+</div>
