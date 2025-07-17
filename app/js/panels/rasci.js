@@ -1,5 +1,33 @@
 // panels/rasci.js actualizado
 
+// Función global para cambiar entre pestañas
+window.cambiarPestana = function(tabName) {
+    // Obtener todas las pestañas y contenidos
+    const tabs = document.querySelectorAll('#rasci-panel .tab');
+    const tabContents = document.querySelectorAll('#rasci-panel .tab-content');
+    
+    // Remover clase activa de todas las pestañas
+    tabs.forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Ocultar todos los contenidos de pestañas
+    tabContents.forEach(content => {
+        content.classList.remove('active');
+        content.style.display = 'none';
+    });
+    
+    // Activar la pestaña seleccionada
+    const selectedTab = document.querySelector(`#rasci-panel .tab[data-tab="${tabName}"]`);
+    const selectedContent = document.querySelector(`#rasci-panel #${tabName}-tab`);
+    
+    if (selectedTab && selectedContent) {
+        selectedTab.classList.add('active');
+        selectedContent.classList.add('active');
+        selectedContent.style.display = 'block';
+    }
+};
+
 export function initRasciPanel(panel) {
     const container = panel.querySelector('#matrix-container');
     const sampleBtn = panel.querySelector('.btn-primary');
@@ -8,6 +36,30 @@ export function initRasciPanel(panel) {
     container.style.overflowY = 'visible';
     container.style.maxWidth = '100%';
     container.style.paddingBottom = '12px';
+  
+    // Aplicar estilos inmediatamente para el botón
+    if (sampleBtn) {
+        sampleBtn.style.cssText = `
+            width: 100% !important;
+            padding: 10px 16px !important;
+            font-size: 14px !important;
+            font-weight: 500 !important;
+            border-radius: 6px !important;
+            border: none !important;
+            cursor: pointer !important;
+            transition: all 0.2s ease !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            min-height: 40px !important;
+            box-sizing: border-box !important;
+            text-decoration: none !important;
+            margin-bottom: 16px !important;
+            background: #3a56d4 !important;
+            color: white !important;
+        `;
+    }
   
     const roles = []; // Agregar algunos roles por defecto para testing
     const rasciValues = ['R', 'A', 'S', 'C', 'I'];
@@ -52,15 +104,44 @@ export function initRasciPanel(panel) {
         return tasks;
     }
 
+    // Función para aplicar estilos del botón
+    function applyButtonStyles() {
+        const btn = panel.querySelector('.btn-primary');
+        if (btn) {
+            btn.style.cssText = `
+                width: 100% !important;
+                padding: 10px 16px !important;
+                font-size: 14px !important;
+                font-weight: 500 !important;
+                border-radius: 6px !important;
+                border: none !important;
+                cursor: pointer !important;
+                transition: all 0.2s ease !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 8px !important;
+                min-height: 40px !important;
+                box-sizing: border-box !important;
+                text-decoration: none !important;
+                margin-bottom: 16px !important;
+                background: #3a56d4 !important;
+                color: white !important;
+            `;
+        }
+    }
+
     // Función para actualizar la matriz cuando cambie el diagrama
     function updateMatrixFromDiagram() {
         const tasks = getBpmnTasks();
         if (tasks.length === 0) {
             // Si no hay tareas, mostrar un mensaje
             container.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">No hay tareas en el diagrama BPMN actual. Agrega algunas tareas para ver la matriz RACI.</div>';
+            applyButtonStyles(); // Aplicar estilos después de cualquier cambio
             return;
         }
         renderMatrix(tasks);
+        applyButtonStyles(); // Aplicar estilos después de renderizar
     }
 
     // Escuchar cambios en el diagrama
@@ -1611,23 +1692,254 @@ export function initRasciPanel(panel) {
         .role-editor-container button:hover {
           transform: scale(1.05) !important;
         }
+        
+        /* Estilos para las pestañas y contenidos */
+        .tab-content {
+          padding: 12px;
+        }
+        
+        .tab-content.active {
+          display: block !important;
+        }
+        
+        /* Estilos para botones - Consistentes */
+        .btn {
+          padding: 10px 16px !important;
+          font-size: 14px !important;
+          font-weight: 500 !important;
+          border-radius: 6px !important;
+          border: none !important;
+          cursor: pointer !important;
+          transition: all 0.2s ease !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          gap: 8px !important;
+          min-height: 40px !important;
+          box-sizing: border-box !important;
+          text-decoration: none !important;
+          margin-bottom: 16px !important;
+        }
+        
+        .btn-primary {
+          background: #3b82f6 !important;
+          color: white !important;
+          border: 1px solid #3b82f6 !important;
+        }
+        
+        .btn-primary:hover {
+          background: #2563eb !important;
+          border-color: #2563eb !important;
+          transform: translateY(-1px) !important;
+        }
+        
+        .btn-primary:active {
+          transform: translateY(0) !important;
+        }
+        
+        .btn-full-width {
+          width: 100% !important;
+          display: flex !important;
+        }
+        
+        /* Estilos para la leyenda RASCI mejorada */
+        .rasci-legend {
+          padding: 24px;
+          max-width: 600px;
+        }
+        
+        .legend-header {
+          margin-bottom: 20px;
+          text-align: center;
+        }
+        
+        .legend-title {
+          font-size: 18px;
+          font-weight: 600;
+          color: #1f2937;
+          margin-bottom: 8px;
+        }
+        
+        .legend-subtitle {
+          font-size: 14px;
+          color: #6b7280;
+          line-height: 1.5;
+        }
+        
+        .legend-item {
+          display: flex;
+          align-items: flex-start;
+          margin-bottom: 16px;
+          padding: 12px;
+          border-radius: 8px;
+          background: #f8fafc;
+          border-left: 4px solid transparent;
+          transition: all 0.2s ease;
+        }
+        
+        .legend-item:hover {
+          background: #f1f5f9;
+          transform: translateX(4px);
+        }
+        
+        .legend-item.r { border-left-color: #e63946; }
+        .legend-item.a { border-left-color: #f77f00; }
+        .legend-item.s { border-left-color: #43aa8b; }
+        .legend-item.c { border-left-color: #3a86ff; }
+        .legend-item.i { border-left-color: #6c757d; }
+        
+        .legend-color {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          color: white;
+          font-weight: bold;
+          font-size: 18px;
+          margin-right: 16px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+          flex-shrink: 0;
+        }
+        
+        .legend-content {
+          flex: 1;
+        }
+        
+        .legend-name {
+          font-weight: 600;
+          font-size: 16px;
+          color: #1f2937;
+          margin-bottom: 4px;
+        }
+        
+        .legend-description {
+          font-size: 14px;
+          color: #4b5563;
+          line-height: 1.4;
+        }
+        
+        .legend-color.r {
+          background: linear-gradient(135deg, #e63946, #dc2626);
+        }
+        
+        .legend-color.a {
+          background: linear-gradient(135deg, #f77f00, #ea580c);
+        }
+        
+        .legend-color.s {
+          background: linear-gradient(135deg, #43aa8b, #059669);
+        }
+        
+        .legend-color.c {
+          background: linear-gradient(135deg, #3a86ff, #2563eb);
+        }
+        
+        .legend-color.i {
+          background: linear-gradient(135deg, #6c757d, #4b5563);
+        }
+        
+        /* Estilos para el contenedor principal de pestañas */
+        #main-tab {
+          min-height: 400px;
+        }
+        
+        #config-tab {
+          min-height: 400px;
+          display: flex;
+          align-items: flex-start;
+          justify-content: center;
+        }
+        
+        /* Mejoras para la responsividad */
+        @media (max-width: 768px) {
+          .rasci-legend {
+            padding: 16px;
+          }
+          
+          .legend-item {
+            flex-direction: column;
+            text-align: center;
+            padding: 16px;
+          }
+          
+          .legend-color {
+            margin-right: 0;
+            margin-bottom: 12px;
+          }
+        }
       `;
       document.head.appendChild(style);
     }
   
     if (sampleBtn) {
-      sampleBtn.addEventListener('click', () => updateMatrixFromDiagram());
+      sampleBtn.addEventListener('click', () => {
+        updateMatrixFromDiagram();
+        setTimeout(applyButtonStyles, 100);
+      });
     }
 
     // Hacer las funciones disponibles globalmente
     window.reloadRasciMatrix = () => {
       updateMatrixFromDiagram();
+      setTimeout(applyButtonStyles, 100); // Aplicar estilos con un pequeño delay
     };
+    
+    // Asegurar que la función cambiarPestana esté disponible
+    if (!window.cambiarPestana) {
+        window.cambiarPestana = function(tabName) {
+            // Obtener todas las pestañas y contenidos
+            const tabs = document.querySelectorAll('#rasci-panel .tab');
+            const tabContents = document.querySelectorAll('#rasci-panel .tab-content');
+            
+            // Remover clase activa de todas las pestañas
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Ocultar todos los contenidos de pestañas
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+                content.style.display = 'none';
+            });
+            
+            // Activar la pestaña seleccionada
+            const selectedTab = document.querySelector(`#rasci-panel .tab[data-tab="${tabName}"]`);
+            const selectedContent = document.querySelector(`#rasci-panel #${tabName}-tab`);
+            
+            if (selectedTab && selectedContent) {
+                selectedTab.classList.add('active');
+                selectedContent.classList.add('active');
+                selectedContent.style.display = 'block';
+            }
+        };
+    }
 
     // Inicializar la matriz con las tareas del diagrama actual
     updateMatrixFromDiagram();
     
     // Configurar el listener para cambios en el diagrama
     setupDiagramChangeListener();
+    
+    // Configurar event listeners para las pestañas como respaldo
+    setTimeout(() => {
+        const tabs = panel.querySelectorAll('.tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const tabName = this.getAttribute('data-tab');
+                if (tabName && window.cambiarPestana) {
+                    window.cambiarPestana(tabName);
+                    // Aplicar estilos del botón después del cambio de pestaña
+                    setTimeout(applyButtonStyles, 200);
+                }
+            });
+        });
+        
+        // Aplicar estilos iniciales
+        applyButtonStyles();
+    }, 100);
     
 }
