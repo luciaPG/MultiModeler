@@ -36,22 +36,84 @@ export function initRasciPanel(panel) {
   
         roles.forEach(role => {
           const cell = document.createElement('td');
-          const select = document.createElement('select');
-          
-          select.innerHTML =
-            `<option value=""></option>` +
-            rasciValues.map(v => `<option value="${v}" class="option-${v.toLowerCase()}">${v}</option>`).join('');
-  
-          select.addEventListener('change', () => {
-            matrix[task][role] = select.value;
-            if (select.value) {
-              cell.setAttribute('data-value', select.value);
-            } else {
-              cell.removeAttribute('data-value');
-            }
+
+          // Dropdown personalizado
+          const dropdown = document.createElement('div');
+          dropdown.className = 'rasci-dropdown';
+          dropdown.tabIndex = 0;
+
+          const selected = document.createElement('div');
+          selected.className = 'rasci-selected';
+          selected.textContent = '';
+          dropdown.appendChild(selected);
+
+          const menu = document.createElement('div');
+          menu.className = 'rasci-menu';
+          menu.style.display = 'none';
+
+          const rasciColors = {
+            R: '#e63946',
+            A: '#f77f00',
+            S: '#43aa8b',
+            C: '#3a86ff',
+            I: '#6c757d'
+          };
+
+          rasciValues.forEach(v => {
+            const option = document.createElement('div');
+            option.className = 'rasci-option';
+            // Círculo con letra blanca
+            const circle = document.createElement('span');
+            circle.className = 'rasci-circle';
+            circle.textContent = v;
+            circle.style.background = rasciColors[v];
+            option.appendChild(circle);
+            option.addEventListener('click', e => {
+              selected.innerHTML = '';
+              const selectedCircle = document.createElement('span');
+              selectedCircle.className = 'rasci-circle';
+              selectedCircle.textContent = v;
+              selectedCircle.style.background = rasciColors[v];
+              selected.appendChild(selectedCircle);
+              menu.style.display = 'none';
+              matrix[task][role] = v;
+              cell.setAttribute('data-value', v);
+              e.stopPropagation();
+            });
+            menu.appendChild(option);
           });
-  
-          cell.appendChild(select);
+
+          // Opción para limpiar
+          const clearOption = document.createElement('div');
+          clearOption.className = 'rasci-option rasci-clear';
+          clearOption.textContent = '-';
+          clearOption.style.color = '#bbb';
+          clearOption.addEventListener('click', e => {
+            selected.innerHTML = '';
+            menu.style.display = 'none';
+            matrix[task][role] = '';
+            cell.removeAttribute('data-value');
+            e.stopPropagation();
+          });
+          menu.appendChild(clearOption);
+
+          dropdown.appendChild(menu);
+
+          // Mostrar menú al hacer clic
+          selected.addEventListener('click', e => {
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+            e.stopPropagation();
+          });
+          dropdown.addEventListener('blur', () => {
+            menu.style.display = 'none';
+          });
+
+          // Cerrar menú al hacer clic fuera
+          document.addEventListener('click', () => {
+            menu.style.display = 'none';
+          });
+
+          cell.appendChild(dropdown);
           row.appendChild(cell);
         });
   
@@ -86,6 +148,7 @@ export function initRasciPanel(panel) {
           border-right: 1px solid #eaeaea;
           border-bottom: 1px solid #eaeaea;
           transition: all 0.2s ease;
+          position: relative;
         }
         
         .rasci-matrix th {
@@ -120,54 +183,57 @@ export function initRasciPanel(panel) {
         
         .rasci-matrix td select {
           font-size: 13px;
-          padding: 6px 8px;
-          width: 50px;
-          height: 30px;
-          border: 1px solid #e2e8f0;
-          border-radius: 4px;
-          background: #fff;
-          color: #4a5568;
+          padding: 0;
+          width: 15px;
+          height: 100%;
+          border: none;
+          border-radius: 0;
+          background: rgba(255,255,255,0.7);
+          color: transparent;
           cursor: pointer;
           transition: all 0.2s ease;
           appearance: none;
-          background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+          background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
           background-repeat: no-repeat;
           background-position: right 8px center;
           background-size: 14px;
           text-align: center;
           font-weight: bold;
+          position: absolute;
+          top: 0;
+          left: 0;
+          box-shadow: none;
         }
+       
         
-        .rasci-matrix td select:focus {
-          outline: none;
-          border-color: #4299e1;
-          box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.2);
-        }
-        
-        .rasci-matrix td select:hover {
-          border-color: #cbd5e0;
-        }
-        
-        /* Colores específicos para los valores RASCI según la leyenda */
+        /* Opciones con círculos de color y letras */
         .rasci-matrix td select option.option-r { 
-          background-color: #e63946; 
-          color: white;
+        
+          color: #e63946;
+          font-weight: bold;
         }
-        .rasci-matrix td select option.option-a { 
-          background-color: #f77f00; 
-          color: white;
+        
+        .rasci-matrix td select option.option-a {          
+          color: #f77f00;
+          font-weight: bold;
         }
+        
         .rasci-matrix td select option.option-s { 
-          background-color: #43aa8b; 
-          color: white;
+        
+          color: #43aa8b;
+          font-weight: bold;
         }
+        
         .rasci-matrix td select option.option-c { 
-          background-color: #3a86ff; 
-          color: white;
+
+          color: #3a86ff;
+          font-weight: bold;
         }
+        
         .rasci-matrix td select option.option-i { 
-          background-color: #6c757d; 
-          color: white;
+      
+          color: #6c757d;
+          font-weight: bold;
         }
         
         /* Estilo para celdas con valores seleccionados */
@@ -184,6 +250,74 @@ export function initRasciPanel(panel) {
           box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
           position: relative;
           z-index: 1;
+        }
+
+        .rasci-dropdown {
+          position: relative;
+          width: 100%;
+          min-width: 40px;
+          user-select: none;
+          outline: none;
+        }
+        .rasci-selected {
+          width: 100%;
+          padding: 4px 0;
+          background: rgba(255,255,255,0.7);
+          border-radius: 6px;
+          text-align: center;
+          cursor: pointer;
+          font-weight: bold;
+          font-size: 15px;
+          border: none;
+          min-height: 28px;
+        }
+        .rasci-menu {
+          position: absolute;
+          left: 50%;
+          top: 100%;
+          width: 125%;
+          min-width: 125%;
+          background: rgba(255, 255, 255, 0.9);
+          border-radius: 8px;
+          box-shadow: none;
+          z-index: 50;
+          margin-left: -62.5%;
+          margin-top: 2px;
+          border: none;
+        }
+        .rasci-option {
+          padding: 10px 0;
+          text-align: center;
+          font-size: 15px;
+          font-weight: bold;
+          cursor: pointer;
+          background: transparent;
+          border: none;
+          transition: background 0.15s;
+          width: 100%;
+          min-width: 100%;
+        }
+        .rasci-option:hover {
+          background: rgba(255, 255, 255, 0.95);
+        }
+        .rasci-clear {
+          font-weight: normal;
+          font-size: 13px;
+        }
+        .rasci-circle {
+          display: inline-block;
+          width: 24px;
+          height: 24px;
+          line-height: 24px;
+          border-radius: 50%;
+          background: #eee;
+          color: #fff;
+          font-weight: bold;
+          font-size: 15px;
+          text-align: center;
+          vertical-align: middle;
+          margin: 0 2px;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.04);
         }
       `;
       document.head.appendChild(style);
