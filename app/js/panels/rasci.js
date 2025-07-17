@@ -362,7 +362,7 @@ export function initRasciPanel(panel) {
         max-height: fit-content !important;
         justify-content: space-between !important;
         align-items: center !important;
-        cursor: move !important;
+        cursor: default !important;
         user-select: none !important;
       }
 
@@ -423,13 +423,7 @@ export function initRasciPanel(panel) {
         height: calc(100vh - 64px - 24px) !important;
       }
 
-      #rasci-panel.dragging {
-        opacity: 0.9 !important;
-        z-index: 1000 !important;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
-        transition: none !important;
-        cursor: grabbing !important;
-      }
+      /* Estilos de dragging removidos - funcionalidad deshabilitada */
       
       /* Asegurar que el contenedor de matriz tenga exactamente el mismo tamaño que el panel */
       #main-tab {
@@ -1829,16 +1823,94 @@ export function initRasciPanel(panel) {
   // Cargar estado guardado
   loadRasciState();
   
-  // Inicializar matriz y listeners solo si estamos en la pestaña de matriz
-  const initialMainTab = panel.querySelector('#main-tab');
-  if (initialMainTab && initialMainTab.classList.contains('active')) {
-    updateMatrixFromDiagram();
-  }
-  
   // Asegurar visibilidad correcta de pestañas
   ensureActiveTabVisibility();
   setupDiagramChangeListener();
 
+  // Configurar observador para detectar cuando el panel se hace visible
+  setupVisibilityObserver();
 
+  // Recargar automáticamente al inicializar (recarga de página)
+  setTimeout(() => {
+    console.log('Inicialización RASCI - recargando matriz automáticamente');
+    updateMatrixFromDiagram();
+  }, 500); // Delay para asegurar que el BPMN modeler esté listo
+
+  // También recargar cuando el DOM esté completamente cargado
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        console.log('DOM cargado - recargando matriz RASCI automáticamente');
+        updateMatrixFromDiagram();
+      }, 300);
+    });
+  } else {
+    // Si el DOM ya está cargado, recargar inmediatamente
+    setTimeout(() => {
+      console.log('DOM ya cargado - recargando matriz RASCI automáticamente');
+      updateMatrixFromDiagram();
+    }, 300);
+  }
+
+  // Recargar también cuando la ventana termine de cargar completamente
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      console.log('Ventana cargada completamente - recargando matriz RASCI automáticamente');
+      updateMatrixFromDiagram();
+    }, 200);
+  });
+}
+
+// Función para detectar cuando el panel RASCI se hace visible
+function setupVisibilityObserver() {
+  const rasciPanel = document.querySelector('#rasci-panel');
+  if (!rasciPanel) return;
+
+  // Usar Intersection Observer para detectar cuando el panel se hace visible
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting && entry.target.id === 'rasci-panel') {
+        // El panel RASCI se ha hecho visible
+        setTimeout(() => {
+          if (typeof window.reloadRasciMatrix === 'function') {
+            console.log('Panel RASCI se hizo visible - recargando matriz automáticamente');
+            window.reloadRasciMatrix();
+          }
+        }, 200);
+      }
+    });
+  }, {
+    threshold: 0.1 // Se activa cuando al menos el 10% del panel es visible
+  });
+
+  observer.observe(rasciPanel);
+}
+
+// Función global para recargar la matriz RASCI desde cualquier lugar
+window.forceReloadRasciMatrix = function() {
+  const rasciPanel = document.querySelector('#rasci-panel');
+  if (rasciPanel && typeof window.reloadRasciMatrix === 'function') {
+    console.log('Forzando recarga de matriz RASCI');
+    window.reloadRasciMatrix();
+  }
+};
+
+// Recargar automáticamente cuando se recarga la página
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    // Guardar un flag para indicar que se está recargando
+    sessionStorage.setItem('rasciNeedsReload', 'true');
+  });
+
+  // Verificar si se necesita recargar al cargar la página
+  if (sessionStorage.getItem('rasciNeedsReload') === 'true') {
+    sessionStorage.removeItem('rasciNeedsReload');
+    setTimeout(() => {
+      if (typeof window.forceReloadRasciMatrix === 'function') {
+        console.log('Página recargada - forzando recarga de matriz RASCI');
+        window.forceReloadRasciMatrix();
+      }
+    }, 1000);
+  }
 }
 

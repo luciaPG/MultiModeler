@@ -69,9 +69,9 @@ class PanelLoader {
 
     container.appendChild(panel);
 
-    // Hacer el panel redimensionable y arrastrable
-    this.makePanelResizable(panel, container);
-    this.makePanelDraggable(panel);
+    // Funcionalidad de redimensionamiento y arrastre deshabilitada
+    // this.makePanelResizable(panel, container);
+    // this.makePanelDraggable(panel);
 
     this.initializePanelEvents(panel);
     this.loadPanelController(panelType, panel);
@@ -478,10 +478,15 @@ class PanelLoader {
       hideBtn.addEventListener('click', async () => {
         // Ocultar el panel completamente
         panel.style.display = 'none';
-        panel.style.flex = '0';
+        panel.style.visibility = 'hidden';
+        panel.style.position = 'absolute';
+        panel.style.left = '-9999px';
+        panel.style.top = '-9999px';
         panel.style.width = '0';
         panel.style.height = '0';
+        panel.style.flex = '0';
         panel.style.overflow = 'hidden';
+        panel.style.zIndex = '-1';
         
         // Preservar estado BPMN si se está ocultando el panel BPMN
         const panelType = panel.getAttribute('data-panel-type');
@@ -540,6 +545,16 @@ class PanelLoader {
         allPanels.forEach(otherPanel => {
           if (otherPanel !== panel) {
             otherPanel.style.display = 'none';
+            otherPanel.style.visibility = 'hidden';
+            otherPanel.style.position = 'absolute';
+            otherPanel.style.left = '-9999px';
+            otherPanel.style.top = '-9999px';
+            otherPanel.style.width = '0';
+            otherPanel.style.height = '0';
+            otherPanel.style.flex = '0';
+            otherPanel.style.overflow = 'hidden';
+            otherPanel.style.zIndex = '-1';
+            
             // Remover de la lista activa
             const otherPanelType = otherPanel.getAttribute('data-panel-type');
             if (otherPanelType && window.panelManager && window.panelManager.activePanels.includes(otherPanelType)) {

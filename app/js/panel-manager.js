@@ -44,9 +44,17 @@ class PanelManager {
     this.createStyles();
     this.bindEvents();
     
-    // Vincular eventos de layout después de que todo esté listo
+    // Verificar si hay paneles activos al inicio y ocultar contenedor si no los hay
     setTimeout(() => {
-      this.bindLayoutEvents();
+      // Ocultar contenedor si no hay paneles activos
+      const container = document.getElementById('panel-container');
+      if (container && this.activePanels.length === 0) {
+        container.style.display = 'none';
+        console.log('Inicialización: No hay paneles activos - contenedor oculto');
+      }
+      
+      // Configurar observador para detectar cuando el panel RASCI se hace visible
+      this.setupRasciVisibilityObserver();
     }, 100);
   }
 
@@ -62,7 +70,7 @@ class PanelManager {
     } catch (e) {
       console.warn('Error al cargar paneles activos:', e);
     }
-    return ['bpmn', 'rasci']; // Valores por defecto
+    return []; // Sin paneles por defecto
   }
 
   // Función para guardar configuración de paneles
@@ -82,6 +90,117 @@ class PanelManager {
       * {
         scrollbar-width: thin;
         scrollbar-color: #e0e0e0 #f8f9fa;
+      }
+      
+      /* === ESTILOS DE LAYOUTS === */
+      .panel-container {
+        display: flex;
+        height: 100vh;
+        width: 100vw;
+        overflow: hidden;
+        gap: 2px;
+      }
+      
+      /* Contenedor oculto cuando no hay paneles */
+      .panel-container[style*="display: none"] {
+        display: none !important;
+        height: 0 !important;
+        width: 0 !important;
+        overflow: hidden !important;
+      }
+      
+      /* Paneles completamente ocultos */
+      .panel[style*="display: none"] {
+        display: none !important;
+        visibility: hidden !important;
+        position: absolute !important;
+        left: -9999px !important;
+        top: -9999px !important;
+        width: 0 !important;
+        height: 0 !important;
+        flex: 0 !important;
+        overflow: hidden !important;
+        z-index: -1 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+      }
+      
+      /* Layout 2 vertical */
+      .panel-container.layout-2v {
+        display: flex;
+        flex-direction: row;
+        gap: 4px;
+        padding: 4px;
+        background: #f8f9fa;
+      }
+      
+      /* Layout 3 */
+      .panel-container.layout-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr;
+        gap: 4px;
+        padding: 4px;
+        background: #f8f9fa;
+      }
+      
+      .panel-container.layout-3 .panel:nth-child(1) {
+        grid-column: 1;
+        grid-row: 1;
+      }
+      
+      .panel-container.layout-3 .panel:nth-child(2) {
+        grid-column: 2;
+        grid-row: 1;
+      }
+      
+      .panel-container.layout-3 .panel:nth-child(3) {
+        grid-column: 1 / -1;
+        grid-row: 2;
+      }
+      
+      /* Layout 3 vertical */
+      .panel-container.layout-3v {
+        display: flex;
+        flex-direction: row;
+        gap: 4px;
+        padding: 4px;
+        background: #f8f9fa;
+      }
+      
+      /* Layout 4 vertical */
+      .panel-container.layout-4v {
+        display: flex;
+        flex-direction: row;
+        gap: 4px;
+        padding: 4px;
+        background: #f8f9fa;
+      }
+      
+      /* Layout 4 grid removido - funcionalidad deshabilitada */
+      
+      /* Layout 1 */
+      .panel-container.layout-1 {
+        display: flex;
+        gap: 4px;
+        padding: 4px;
+        background: #f8f9fa;
+      }
+      
+      /* Estilos generales para paneles */
+      .panel-container.layout-2v .panel,
+      .panel-container.layout-4v .panel,
+      .panel-container.layout-3 .panel,
+      .panel-container.layout-3v .panel,
+      .panel-container.layout-1 .panel {
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
       }
       
       /* Scrollbars verticales discretos */
@@ -124,16 +243,16 @@ class PanelManager {
       
       .panel-selector {
         position: fixed;
-        top: 50%;
+        top: 55%;
         left: 50%;
         transform: translate(-50%, -50%);
         background: white;
         border-radius: 12px;
         box-shadow: 0 8px 32px rgba(0,0,0,0.2);
         padding: 20px;
-        min-width: 400px;
-        max-width: 600px;
-        max-height: 97vh;
+        width: 600px;
+        max-width: 85vw;
+        max-height: 85vh;
         overflow-y: auto;
         scrollbar-width: none;
         -ms-overflow-style: none;
@@ -198,13 +317,13 @@ class PanelManager {
       }
       
       .panel-selector-section h3 {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 600;
         color: #333;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
       }
       
       .panel-selector-section h3 i {
@@ -241,9 +360,17 @@ class PanelManager {
       }
       
       .layout-option.disabled {
-        opacity: 0.5;
+        opacity: 0.7;
         cursor: not-allowed;
-        background: #f5f5f5;
+        background: #f8f9fa;
+        border-color: #e0e0e0;
+        color: #999;
+      }
+      
+      .layout-option.disabled:hover {
+        background: #f8f9fa;
+        border-color: #e0e0e0;
+        transform: none;
       }
       
       .layout-option-icon {
@@ -263,10 +390,11 @@ class PanelManager {
       
       .panel-list {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         gap: 12px;
         max-height: 200px;
         overflow-y: auto;
+        padding: 4px;
       }
       
       .panel-item {
@@ -520,36 +648,50 @@ class PanelManager {
         background-color: #f0f7ff;
       }
 
-      .layout-4-info {
-        font-size: 11px;
-        color: #666;
-        text-align: center;
-        margin-top: 10px;
-      }
+
       
       /* Estilos para el orden de paneles */
       .panel-order {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 6px;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 8px;
         margin-top: 8px;
+        padding: 4px;
       }
       
       .panel-order-item {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 4px;
-        padding: 8px;
-        border: 1px solid #e0e0e0;
+        gap: 6px;
+        padding: 12px 8px;
+        border: 2px solid #e0e0e0;
         border-radius: 6px;
         background: #f9f9f9;
         transition: all 0.2s ease;
+        min-height: 60px;
+        justify-content: center;
       }
       
       .panel-order-item:hover {
         border-color: #3a56d4;
         background: rgba(58, 86, 212, 0.05);
+        cursor: grab;
+      }
+      
+      .panel-order-item:active {
+        cursor: grabbing;
+      }
+      
+      .panel-order-item.dragging {
+        opacity: 0.5;
+        transform: rotate(5deg);
+      }
+      
+      .panel-order-item.drag-over {
+        border-color: #3a56d4;
+        background: rgba(58, 86, 212, 0.1);
+        transform: scale(1.05);
       }
       
       .order-number {
@@ -557,27 +699,29 @@ class PanelManager {
         font-weight: bold;
         color: #3a56d4;
         background: white;
-        width: 24px;
-        height: 24px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 1px solid #3a56d4;
+        border: 2px solid #3a56d4;
         transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       }
       
 
       
       .order-panel-name {
-        font-size: 10px;
-        font-weight: 500;
+        font-size: 11px;
+        font-weight: 600;
         color: #333;
         text-align: center;
         max-width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        line-height: 1.2;
       }
       
       .panel-order-info {
@@ -599,6 +743,100 @@ class PanelManager {
         border: 1px dashed #dee2e6;
         border-radius: 8px;
         margin: 10px 0;
+      }
+      
+      /* Estilos para la lista de paneles */
+      .panel-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+      }
+      
+      .panel-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        background: #fff;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+        min-height: 60px;
+      }
+      
+      .panel-item:hover {
+        border-color: #3a56d4;
+        background: rgba(58, 86, 212, 0.02);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+      
+      .panel-item.active {
+        border-color: #3a56d4;
+        background: rgba(58, 86, 212, 0.05);
+        box-shadow: 0 2px 8px rgba(58, 86, 212, 0.2);
+      }
+      
+      .panel-item-checkbox {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #d1d5db;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        color: #3a56d4;
+        font-weight: bold;
+        font-size: 12px;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+      }
+      
+      .panel-item.active .panel-item-checkbox {
+        background: #3a56d4;
+        border-color: #3a56d4;
+        color: white;
+      }
+      
+      .panel-item-icon {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f3f4f6;
+        border-radius: 6px;
+        color: #6b7280;
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+      
+      .panel-item.active .panel-item-icon {
+        background: #3a56d4;
+        color: white;
+      }
+      
+      .panel-item-content {
+        flex: 1;
+        min-width: 0;
+      }
+      
+      .panel-item-name {
+        font-weight: 600;
+        font-size: 13px;
+        color: #1f2937;
+        margin-bottom: 3px;
+        line-height: 1.2;
+      }
+      
+      .panel-item-description {
+        font-size: 11px;
+        color: #6b7280;
+        line-height: 1.3;
       }
     `;
     document.head.appendChild(style);
@@ -623,23 +861,16 @@ class PanelManager {
       </div>
       
       <div class="panel-selector-section">
-        <h3><i class="fas fa-th-large"></i> Distribución</h3>
-        <div class="layout-options" id="layout-options">
-          ${this.generateLayoutOptions()}
-        </div>
-      </div>
-      
-      <div class="panel-selector-section">
-        <h3><i class="fas fa-window-maximize"></i> Paneles Disponibles</h3>
+        <h3><i class="fas fa-check-square"></i> Seleccionar Paneles</h3>
         <div class="panel-list" id="panel-list">
           ${this.generatePanelList()}
         </div>
       </div>
       
       <div class="panel-selector-section" id="panel-order-section" style="display: none;">
-        <h3><i class="fas fa-sort-numeric-up"></i> Orden de Paneles</h3>
-        <div class="panel-order-info">El orden se determina por el orden en que seleccionas los paneles. El primer panel seleccionado será el primero en aparecer.</div>
-        <div id="panel-order" class="panel-order">
+        <h3><i class="fas fa-sort"></i> Orden de Paneles</h3>
+        <div class="panel-order-info">Arrastra los paneles para cambiar su orden</div>
+        <div class="panel-order" id="panel-order">
           ${this.generatePanelOrder()}
         </div>
       </div>
@@ -653,172 +884,75 @@ class PanelManager {
     document.body.appendChild(selector);
   }
 
+
+
+
+
   generatePanelList() {
     return Object.entries(this.availablePanels).map(([key, panel]) => {
       const isActive = this.activePanels.includes(key);
-      
       return `
         <div class="panel-item ${isActive ? 'active' : ''}" data-panel="${key}">
+          <div class="panel-item-checkbox">${isActive ? '✓' : ''}</div>
           <div class="panel-item-icon">
             <i class="${panel.icon}"></i>
           </div>
-          <div class="panel-item-info">
+          <div class="panel-item-content">
             <div class="panel-item-name">${panel.name}</div>
             <div class="panel-item-description">${panel.description}</div>
-          </div>
-          <div class="panel-item-actions">
-            <div class="panel-item-checkbox">
-              ${isActive ? '✓' : ''}
-            </div>
           </div>
         </div>
       `;
     }).join('');
   }
 
-  updatePanelSelector() {
-    const panelListContainer = document.getElementById('panel-list');
-    if (panelListContainer) {
-      panelListContainer.innerHTML = this.generatePanelList();
-    }
-  }
-
-  generateLayoutOptions() {
-    const panelCount = this.activePanels.length;
-    
-    if (panelCount === 0) {
-      return '<div class="layout-option disabled"><div class="layout-option-label">Selecciona paneles</div></div>';
-    }
-    
-    if (panelCount === 1) {
-      return `
-        <div class="layout-option ${this.currentLayout === '1' ? 'active' : ''}" data-layout="1">
-          <div class="layout-option-icon">●</div>
-          <div class="layout-option-label">1 Panel</div>
-        </div>
-      `;
-    }
-    
-    if (panelCount === 2) {
-      return `
-        <div class="layout-option ${this.currentLayout === '2h' ? 'active' : ''}" data-layout="2h">
-          <div class="layout-option-icon">● ●</div>
-          <div class="layout-option-label">2 Horizontal</div>
-        </div>
-        <div class="layout-option ${this.currentLayout === '2v' ? 'active' : ''}" data-layout="2v">
-          <div class="layout-option-icon">●<br>●</div>
-          <div class="layout-option-label">2 Vertical</div>
-        </div>
-      `;
-    }
-    
-    if (panelCount === 3) {
-      return `
-        <div class="layout-option ${this.currentLayout === '3h' ? 'active' : ''}" data-layout="3h">
-          <div class="layout-option-icon">● ● ●</div>
-          <div class="layout-option-label">3 Horizontal</div>
-        </div>
-        <div class="layout-option ${this.currentLayout === '3v' ? 'active' : ''}" data-layout="3v">
-          <div class="layout-option-icon">●<br>●<br>●</div>
-          <div class="layout-option-label">3 Vertical</div>
-        </div>
-      `;
-    }
-    
-    if (panelCount >= 4) {
-      return `
-        <div class="layout-option ${this.currentLayout === '4h' ? 'active' : ''}" data-layout="4h">
-          <div class="layout-option-icon">● ● ● ●</div>
-          <div class="layout-option-label">4 Horizontal</div>
-        </div>
-        <div class="layout-option ${this.currentLayout === '4v' ? 'active' : ''}" data-layout="4v">
-          <div class="layout-option-icon">●<br>●<br>●<br>●</div>
-          <div class="layout-option-label">4 Vertical</div>
-        </div>
-        <div class="layout-option ${this.currentLayout === '4' ? 'active' : ''}" data-layout="4">
-          <div class="layout-option-icon">● ●<br>● ●</div>
-          <div class="layout-option-label">4 (2x2)</div>
-        </div>
-      `;
-    }
-  }
-
   generatePanelOrder() {
-    if (this.activePanels.length === 0) {
-      return '<div class="panel-order-empty">Selecciona paneles para ver el orden</div>';
+    if (this.activePanels.length <= 1) {
+      return '<div class="panel-order-empty">Se necesitan al menos 2 paneles para cambiar el orden</div>';
     }
-    
+
     return this.activePanels.map((panelKey, index) => {
-      const panel = this.availablePanels[panelKey];
+      const panelInfo = this.availablePanels[panelKey];
+      if (!panelInfo) return '';
+
       return `
-        <div class="panel-order-item" data-panel="${panelKey}" data-order="${index + 1}">
-          <div class="order-number" data-panel="${panelKey}">${index + 1}</div>
-          <div class="order-panel-name">${panel.name}</div>
+        <div class="panel-order-item" data-panel="${panelKey}" data-index="${index}" draggable="true">
+          <div class="order-number">${index + 1}</div>
+          <div class="order-panel-name">${panelInfo.name}</div>
         </div>
       `;
     }).join('');
   }
 
   updateLayoutOptions() {
-    const layoutOptionsContainer = document.getElementById('layout-options');
     const orderSection = document.getElementById('panel-order-section');
     const orderContainer = document.getElementById('panel-order');
     
-    if (layoutOptionsContainer) {
-      layoutOptionsContainer.innerHTML = this.generateLayoutOptions();
-      
-      // Solo establecer layout por defecto si no hay ninguno seleccionado
-      const panelCount = this.activePanels.length;
-      if (!this.currentLayout) {
-        if (panelCount === 1) {
-          this.currentLayout = '1';
-        } else if (panelCount === 2) {
-          this.currentLayout = '2v';
-        } else if (panelCount === 3) {
-          this.currentLayout = '3h';
-        } else if (panelCount >= 4) {
-          this.currentLayout = '4';
-        }
-      }
-      
-      // Mostrar sección de orden siempre
-      if (orderSection && orderContainer) {
+    // Establecer layout automáticamente basado en el número de paneles
+    const panelCount = this.activePanels.length;
+    if (panelCount === 1) {
+      this.currentLayout = '1';
+    } else if (panelCount === 2) {
+      this.currentLayout = '2v';
+    } else if (panelCount === 3) {
+      this.currentLayout = '3v';
+    } else if (panelCount >= 4) {
+      this.currentLayout = '4v';
+    }
+    
+    // Mostrar sección de orden solo si hay más de 1 panel
+    if (orderSection && orderContainer) {
+      if (this.activePanels.length > 1) {
         orderSection.style.display = 'block';
         orderContainer.innerHTML = this.generatePanelOrder();
+        this.setupPanelOrderDragAndDrop();
+      } else {
+        orderSection.style.display = 'none';
       }
     }
   }
 
-  bindLayoutEvents() {
-    // Usar event delegation para evitar múltiples listeners
-    const layoutOptionsContainer = document.getElementById('layout-options');
-    if (layoutOptionsContainer) {
-      // Remover listener anterior si existe
-      layoutOptionsContainer.removeEventListener('click', this.handleLayoutClick);
-      
-      // Agregar nuevo listener para botones de layout
-      this.handleLayoutClick = (e) => {
-        const option = e.target.closest('.layout-option');
-        if (!option || option.classList.contains('disabled')) return;
-        
-        // Remover clase active de todos los botones
-        layoutOptionsContainer.querySelectorAll('.layout-option').forEach(opt => opt.classList.remove('active'));
-        // Agregar clase active al botón clickeado
-        option.classList.add('active');
-        // Actualizar el layout actual
-        this.currentLayout = option.getAttribute('data-layout');
-        console.log('Layout seleccionado:', this.currentLayout);
-        
-        // Guardar configuración automáticamente
-        this.savePanelConfiguration();
-        
-        // Actualizar sección de orden si es necesario
-        this.updateLayoutOptions();
-      };
-      
-      layoutOptionsContainer.addEventListener('click', this.handleLayoutClick);
-    }
-  }
+
 
   bindEvents() {
     // Panel items
@@ -843,6 +977,9 @@ class PanelManager {
         // Actualizar opciones de layout basadas en el número de paneles
         this.updateLayoutOptions();
         
+        // Actualizar la lista de paneles para reflejar los cambios
+        this.updatePanelSelector();
+        
         // NO aplicar automáticamente - solo actualizar la vista del selector
       }
       
@@ -855,6 +992,13 @@ class PanelManager {
     });
   }
 
+  updatePanelSelector() {
+    const panelList = document.getElementById('panel-list');
+    if (panelList) {
+      panelList.innerHTML = this.generatePanelList();
+    }
+  }
+
   showSelector() {
     // Actualizar lista de paneles y opciones de layout antes de mostrar
     this.updatePanelSelector();
@@ -862,9 +1006,6 @@ class PanelManager {
     
     document.getElementById('panel-selector-overlay').classList.add('show');
     document.getElementById('panel-selector').classList.add('show');
-    
-    // Vincular eventos de layout
-    this.bindLayoutEvents();
   }
 
   closeSelector() {
@@ -892,8 +1033,41 @@ class PanelManager {
       }
     }
 
+    // Restaurar completamente todos los paneles existentes antes de limpiar
+    const existingPanels = container.querySelectorAll('.panel');
+    existingPanels.forEach(panel => {
+      this.restorePanel(panel);
+    });
+
     // Limpiar contenedor
     container.innerHTML = '';
+
+    // Si no hay paneles activos, ocultar completamente el contenedor
+    if (this.activePanels.length === 0) {
+      container.style.display = 'none';
+      container.style.visibility = 'hidden';
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      container.style.top = '-9999px';
+      container.style.width = '0';
+      container.style.height = '0';
+      container.style.overflow = 'hidden';
+      container.style.zIndex = '-1';
+      console.log('No hay paneles activos - contenedor completamente oculto');
+      this.closeSelector();
+      return;
+    }
+
+    // Mostrar el contenedor si hay paneles
+    container.style.display = 'flex';
+    container.style.visibility = 'visible';
+    container.style.position = 'relative';
+    container.style.left = '';
+    container.style.top = '';
+    container.style.width = '';
+    container.style.height = '';
+    container.style.overflow = '';
+    container.style.zIndex = '';
 
     // Crear paneles activos en el orden especificado
     for (const panelKey of this.activePanels) {
@@ -913,19 +1087,24 @@ class PanelManager {
     // NO ajustar layout automáticamente - usar el layout seleccionado por el usuario
     // El layout ya está establecido en this.currentLayout
 
-    // Aplicar layout
+    // Aplicar layout directamente sin snap system
     console.log('Aplicando layout:', this.currentLayout);
     console.log('Número de paneles activos:', this.activePanels.length);
-    if (window.snapSystem) {
-      window.snapSystem.changeLayout(this.currentLayout);
+    
+    // Aplicar layout directamente al contenedor
+    if (container) {
+      // Remover todas las clases de layout anteriores
+      container.className = 'panel-container';
+      // Agregar la clase del layout actual
+      container.classList.add(`layout-${this.currentLayout}`);
     }
     
-    // Reinicializar resizers después de aplicar la configuración
-    setTimeout(() => {
-      if (window.panelResizer) {
-        window.panelResizer.makeAllPanelsResizable();
-      }
-    }, 200);
+    // Resizers removidos - No se necesita redimensionamiento de paneles
+    // setTimeout(() => {
+    //   if (window.panelResizer) {
+    //     window.panelResizer.makeAllPanelsResizable();
+    //   }
+    // }, 200);
 
     // Reinicializar el modeler si es necesario y restaurar estado
     if (this.activePanels.includes('bpmn')) {
@@ -947,6 +1126,17 @@ class PanelManager {
           }, 200); // Pequeño delay para asegurar que el modeler esté listo
         }
       }, 500); // Aumentar el tiempo para asegurar que el DOM esté listo
+    }
+
+    // Recargar automáticamente el panel RASCI si está activo
+    if (this.activePanels.includes('rasci')) {
+      setTimeout(() => {
+        const rasciPanel = container.querySelector('#rasci-panel');
+        if (rasciPanel && typeof window.reloadRasciMatrix === 'function') {
+          console.log('Recargando automáticamente matriz RASCI');
+          window.reloadRasciMatrix();
+        }
+      }, 300); // Delay para asegurar que el panel RASCI esté completamente cargado
     }
 
     this.closeSelector();
@@ -996,6 +1186,134 @@ class PanelManager {
 
   setPanelLoader(loader) {
     this.panelLoader = loader;
+  }
+
+  // Función para restaurar completamente un panel oculto
+  restorePanel(panel) {
+    if (panel) {
+      const wasHidden = panel.style.display === 'none';
+      const panelType = panel.getAttribute('data-panel-type');
+      
+      panel.style.display = '';
+      panel.style.visibility = '';
+      panel.style.position = '';
+      panel.style.left = '';
+      panel.style.top = '';
+      panel.style.width = '';
+      panel.style.height = '';
+      panel.style.flex = '';
+      panel.style.overflow = '';
+      panel.style.zIndex = '';
+      panel.style.margin = '';
+      panel.style.padding = '';
+      panel.style.opacity = '';
+      panel.style.pointerEvents = '';
+      
+      // Si el panel RASCI se está restaurando desde un estado oculto, recargarlo
+      if (wasHidden && panelType === 'rasci' && typeof window.reloadRasciMatrix === 'function') {
+        setTimeout(() => {
+          console.log('Panel RASCI restaurado - recargando matriz automáticamente');
+          window.reloadRasciMatrix();
+        }, 100);
+      }
+    }
+  }
+
+  // Configurar observador para detectar cuando el panel RASCI se hace visible
+  setupRasciVisibilityObserver() {
+    // Usar MutationObserver para detectar cambios en el DOM
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              // Verificar si se agregó un panel RASCI
+              if (node.id === 'rasci-panel' || node.querySelector('#rasci-panel')) {
+                setTimeout(() => {
+                  if (typeof window.reloadRasciMatrix === 'function') {
+                    console.log('Panel RASCI detectado en DOM - recargando matriz automáticamente');
+                    window.reloadRasciMatrix();
+                  }
+                }, 200);
+              }
+            }
+          });
+        }
+      });
+    });
+
+    // Observar cambios en el contenedor de paneles
+    const container = document.getElementById('panel-container');
+    if (container) {
+      observer.observe(container, {
+        childList: true,
+        subtree: true
+      });
+    }
+  }
+
+  setupPanelOrderDragAndDrop() {
+    const orderContainer = document.getElementById('panel-order');
+    if (!orderContainer) return;
+
+    const items = orderContainer.querySelectorAll('.panel-order-item');
+    
+    items.forEach(item => {
+      item.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', item.getAttribute('data-panel'));
+        item.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+
+      item.addEventListener('dragend', (e) => {
+        item.classList.remove('dragging');
+        // Remover todas las clases de drag-over
+        items.forEach(i => i.classList.remove('drag-over'));
+      });
+
+      item.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        item.classList.add('drag-over');
+      });
+
+      item.addEventListener('dragleave', (e) => {
+        // Solo remover la clase si no estamos sobre el elemento
+        if (!item.contains(e.relatedTarget)) {
+          item.classList.remove('drag-over');
+        }
+      });
+
+      item.addEventListener('drop', (e) => {
+        e.preventDefault();
+        item.classList.remove('drag-over');
+        const draggedPanel = e.dataTransfer.getData('text/plain');
+        const targetPanel = item.getAttribute('data-panel');
+        
+        if (draggedPanel !== targetPanel) {
+          this.reorderPanels(draggedPanel, targetPanel);
+        }
+      });
+    });
+  }
+
+  reorderPanels(draggedPanel, targetPanel) {
+    const draggedIndex = this.activePanels.indexOf(draggedPanel);
+    const targetIndex = this.activePanels.indexOf(targetPanel);
+    
+    if (draggedIndex === -1 || targetIndex === -1) return;
+    
+    // Remover el panel arrastrado de su posición actual
+    this.activePanels.splice(draggedIndex, 1);
+    
+    // Insertar el panel arrastrado en la nueva posición
+    this.activePanels.splice(targetIndex, 0, draggedPanel);
+    
+    // Guardar la nueva configuración
+    this.savePanelConfiguration();
+    
+    // Actualizar la vista del orden
+    this.updateLayoutOptions();
   }
 }
 

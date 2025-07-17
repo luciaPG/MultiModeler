@@ -121,6 +121,10 @@ body {
   flex: 1;
   background: rgb(255, 255, 255);
 }
+#canvas:focus{
+  outline: none;
+  box-shadow: none;
+}
 
 #file-input {
   display: none;
@@ -138,12 +142,11 @@ body {
   border-radius: 8px;
   display: block;
   width: 155px;
-  height: 470px;
+  height: 445px;
   min-width: 155px;
   box-shadow: 0 2px 8px rgba(116, 116, 116, 0.1);
-  padding: 4px;
+  padding:4px 4px 4px 4px;
   box-sizing: border-box;
-  margin-top: 2rem;
 }
 
 .djs-palette .group {
@@ -183,8 +186,8 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 35px;
-  height: 35px;
+  width: 30px;
+  height: 30px;
 }
 
 
@@ -197,8 +200,8 @@ body {
 .djs-palette .entry.icon-PPINOT-target-mini,
 .djs-palette .entry.icon-PPINOT-scope,
 .djs-palette .entry.icon-PPINOT-scope-mini {
-  width: 35px !important;
-  height: 35px !important;
+  width: 30px !important;
+  height: 30px !important;
   display: block !important;
   background-repeat: no-repeat !important;
   background-position: center !important;
@@ -219,8 +222,8 @@ body {
 .djs-palette .entry.icon-RALph2-role,
 .djs-palette .entry.icon-RALph2-capability,
 .djs-palette .entry.icon-RALph2-position {
-  width: 35px !important;
-  height: 35px !important;
+  width: 30px !important;
+  height: 30px !important;
   background-size: 32px 32px !important;
   background-position: center center !important;
   background-repeat: no-repeat !important;
@@ -230,8 +233,8 @@ body {
 }
 
 .djs-palette .entry.icon-RALph2-orgunit {
-  width: 35px !important;
-  height: 35px !important;
+  width: 30px !important;
+  height: 30px !important;
   background-size: 32px 32px !important;
   background-position: center 60% !important;
   background-repeat: no-repeat !important;
@@ -851,7 +854,7 @@ body {
   max-height: fit-content !important;
   justify-content: space-between !important;
   align-items: center !important;
-  cursor: move !important;
+  cursor: default !important;
   user-select: none !important;
 }
 
@@ -917,13 +920,7 @@ body {
   height: calc(100vh - 64px - 24px) !important;
 }
 
-.panel.dragging {
-  opacity: 0.9 !important;
-  z-index: 1000 !important;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
-  transition: none !important;
-  cursor: grabbing !important;
-}
+/* Estilos de dragging removidos - funcionalidad deshabilitada */
 
 /* Workspace styles */
 .workspace {
@@ -964,9 +961,9 @@ body {
 
 
 /* ======================================
-   === DRAG & DROP STYLES - CONSOLIDADOS ===
+   === DRAG & DROP STYLES - DESHABILITADOS ===
    ====================================== */
-/* Los estilos de drag están ahora consolidados en la sección de panel styles */
+/* La funcionalidad de arrastre y redimensionamiento ha sido deshabilitada */
 
 /* ======================================
    === RASCI PANEL - ESTILOS REMOVIDOS ===
@@ -996,4 +993,65 @@ body {
 
 .hidden {
   display: none !important;
+}
+
+/* ======================================
+   === ELIMINAR OUTLINE/BORDER DE SELECCIÓN BPMN ===
+   ====================================== */
+
+/* Oculta el reborde de selección de los elementos BPMN */
+.djs-outline {
+  display: none !important;
+}
+
+/* Quitar outline del SVG principal del canvas */
+.bjs-container svg:focus,
+.bjs-container svg:active,
+#bpmn-panel svg:focus,
+#bpmn-panel svg:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Quitar outline de todos los elementos dentro del canvas BPMN */
+#bpmn-panel *:focus,
+#bpmn-panel *:active,
+.bjs-container *:focus,
+.bjs-container *:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Quitar outline específicamente de elementos SVG */
+svg:focus,
+svg:active,
+svg *:focus,
+svg *:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Quitar outline de elementos con tabindex */
+[tabindex]:focus,
+[tabindex]:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Quitar outline de elementos draggable */
+[draggable]:focus,
+[draggable]:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Quitar outline de elementos djs (diagram-js) */
+.djs-element:focus,
+.djs-element:active,
+.djs-shape:focus,
+.djs-shape:active,
+.djs-connection:focus,
+.djs-connection:active {
+  outline: none !important;
+  box-shadow: none !important;
 }
