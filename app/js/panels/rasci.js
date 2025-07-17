@@ -1,29 +1,8 @@
 // panels/rasci.js - Versión limpia y optimizada
-
-// Función global para cambiar entre pestañas
-window.cambiarPestana = function (tabName) {
-  const tabs = document.querySelectorAll('#rasci-panel .tab');
-  const tabContents = document.querySelectorAll('#rasci-panel .tab-content');
-
-  tabs.forEach(tab => tab.classList.remove('active'));
-  tabContents.forEach(content => {
-    content.classList.remove('active');
-    content.style.display = 'none';
-  });
-
-  const selectedTab = document.querySelector(`#rasci-panel .tab[data-tab="${tabName}"]`);
-  const selectedContent = document.querySelector(`#rasci-panel #${tabName}-tab`);
-
-  if (selectedTab && selectedContent) {
-    selectedTab.classList.add('active');
-    selectedContent.classList.add('active');
-    selectedContent.style.display = 'block';
-  }
-};
+// TODO: A TERMINAR EL DESARROLLO - Sistema de guardado automático implementado
 
 export function initRasciPanel(panel) {
   const container = panel.querySelector('#matrix-container');
-  const sampleBtn = panel.querySelector('.btn-primary');
 
       // Configurar contenedor - USAR FLEX para ajuste automático
     container.style.overflowX = 'visible';
@@ -39,18 +18,134 @@ export function initRasciPanel(panel) {
     container.style.borderRadius = '8px';
     container.style.background = '#fff';
 
-  const roles = [
-    'Responsable',
-    'Aprobador',
-    'Soporte',
-    'Consultor',
-    'Supervisor',
-    'Analista'
-  ]; // Roles básicos
+  // Inicializar roles desde localStorage o usar array vacío
+  let roles = [];
+  if (localStorage.getItem('rasciRoles')) {
+    try {
+      roles = JSON.parse(localStorage.getItem('rasciRoles'));
+    } catch (e) {
+      roles = [];
+    }
+  }
 
   // Inicializar la matriz global si no existe
   if (!window.rasciMatrixData) {
-    window.rasciMatrixData = {};
+    // Intentar cargar desde localStorage
+    const savedMatrixData = localStorage.getItem('rasciMatrixData');
+    if (savedMatrixData) {
+      try {
+        window.rasciMatrixData = JSON.parse(savedMatrixData);
+      } catch (e) {
+        window.rasciMatrixData = {};
+      }
+    } else {
+      window.rasciMatrixData = {};
+    }
+  }
+
+  // Función para guardar el estado en localStorage con indicador visual
+  function saveRasciState() {
+    try {
+      localStorage.setItem('rasciRoles', JSON.stringify(roles));
+      localStorage.setItem('rasciMatrixData', JSON.stringify(window.rasciMatrixData));
+      
+      // Mostrar indicador de guardado
+      showSaveIndicator();
+      
+      console.log('✅ Estado RASCI guardado automáticamente');
+    } catch (e) {
+      console.warn('❌ No se pudo guardar el estado RASCI:', e);
+    }
+  }
+
+  // Función para mostrar indicador de guardado
+  function showSaveIndicator() {
+    // Crear o actualizar indicador de guardado
+    let saveIndicator = document.getElementById('rasci-save-indicator');
+    if (!saveIndicator) {
+      saveIndicator = document.createElement('div');
+      saveIndicator.id = 'rasci-save-indicator';
+      saveIndicator.innerHTML = `
+        <div style="
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: #10b981;
+          color: white;
+          padding: 8px 16px;
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 500;
+          z-index: 10000;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          opacity: 0;
+          transform: translateY(-10px);
+          transition: all 0.3s ease;
+        ">
+          <i class="fas fa-save" style="font-size: 10px;"></i>
+          <span>Guardado automático</span>
+        </div>
+      `;
+      document.body.appendChild(saveIndicator);
+    }
+
+    // Mostrar indicador
+    saveIndicator.style.opacity = '1';
+    saveIndicator.style.transform = 'translateY(0)';
+
+    // Ocultar después de 2 segundos
+    setTimeout(() => {
+      saveIndicator.style.opacity = '0';
+      saveIndicator.style.transform = 'translateY(-10px)';
+    }, 2000);
+  }
+
+  // Variables para el sistema de guardado automático
+  let saveTimeout = null;
+  let lastSaveTime = 0;
+
+  // Función para cargar el estado desde localStorage
+  function loadRasciState() {
+    try {
+      const savedRoles = localStorage.getItem('rasciRoles');
+      if (savedRoles) {
+        roles = JSON.parse(savedRoles);
+        console.log('📂 Roles RASCI cargados:', roles.length, 'roles');
+      }
+      
+      const savedMatrixData = localStorage.getItem('rasciMatrixData');
+      if (savedMatrixData) {
+        window.rasciMatrixData = JSON.parse(savedMatrixData);
+        console.log('📂 Matriz RASCI cargada:', Object.keys(window.rasciMatrixData).length, 'tareas');
+      }
+    } catch (e) {
+      console.warn('❌ No se pudo cargar el estado RASCI:', e);
+    }
+  }
+
+  // Función para guardado automático con debounce
+  function autoSaveRasciState() {
+    const now = Date.now();
+    
+    // Evitar guardados muy frecuentes (mínimo 1 segundo entre guardados)
+    if (now - lastSaveTime < 1000) {
+      // Cancelar timeout anterior y programar uno nuevo
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
+      }
+      saveTimeout = setTimeout(() => {
+        saveRasciState();
+        lastSaveTime = Date.now();
+      }, 1000);
+      return;
+    }
+    
+    // Guardar inmediatamente si ha pasado suficiente tiempo
+    saveRasciState();
+    lastSaveTime = now;
   }
 
   // Aplicar estilos únicos (evitar duplicados)
@@ -62,48 +157,101 @@ export function initRasciPanel(panel) {
     style.textContent = `
       /* === ESTILOS PARA LA LEYENDA RASCI === */
       .rasci-legend {
-        padding: 24px;
+        padding: 0;
         max-width: 600px;
         margin: 0 auto;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+      
+      /* Asegurar que la pestaña de leyenda sea completamente independiente */
+      #config-tab {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100% !important;
+        overflow-y: auto !important;
+        padding: 20px !important;
+        background: #fff !important;
+        border: none !important;
+        outline: none !important;
+      }
+      
+      #config-tab .rasci-legend {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        padding: 0;
+      }
+      
+      /* Ocultar completamente las pestañas inactivas */
+      .tab-content:not(.active) {
+        display: none !important;
+        visibility: hidden !important;
+        position: absolute !important;
+        top: -9999px !important;
+        left: -9999px !important;
+        z-index: -1 !important;
+      }
+      
+      /* Asegurar que solo la pestaña activa sea visible */
+      .tab-content.active {
+        display: flex !important;
+        visibility: visible !important;
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        z-index: auto !important;
       }
       
       .legend-header {
-        margin-bottom: 24px;
+        margin-bottom: 32px;
         text-align: center;
+        padding: 0 20px;
       }
       
       .legend-title {
-        font-size: 20px;
+        font-size: 18px;
         font-weight: 600;
         color: #1f2937;
         margin-bottom: 8px;
         font-family: 'Segoe UI', Roboto, sans-serif;
+        line-height: 1.3;
       }
       
       .legend-subtitle {
-        font-size: 14px;
+        font-size: 13px;
         color: #6b7280;
-        line-height: 1.5;
-        font-style: italic;
+        line-height: 1.4;
+        font-style: normal;
+        font-weight: 400;
       }
       
       .legend-item {
         display: flex;
         align-items: center;
         gap: 16px;
-        padding: 16px;
-        margin-bottom: 12px;
-        border-radius: 12px;
-        background: #f8fafc;
+        padding: 20px;
+        margin-bottom: 16px;
+        border-radius: 8px;
+        background: #fff;
+        border: 1px solid #e5e7eb;
         border-left: 4px solid;
         transition: all 0.2s ease;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        width: 100%;
+        box-sizing: border-box;
       }
       
       .legend-item:hover {
-        background: #f1f5f9;
-        transform: translateX(8px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        background: #f9fafb;
+        border-color: #d1d5db;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transform: translateY(-1px);
       }
       
       .legend-item.r { border-left-color: #e63946; }
@@ -116,39 +264,44 @@ export function initRasciPanel(panel) {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 48px;
-        height: 48px;
+        width: 44px;
+        height: 44px;
         border-radius: 50%;
         color: white;
-        font-weight: 700;
-        font-size: 20px;
+        font-weight: 600;
+        font-size: 18px;
         flex-shrink: 0;
         font-family: 'Segoe UI', Roboto, sans-serif;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       }
       
-      .legend-color.r { background: linear-gradient(135deg, #e63946, #dc2626); }
-      .legend-color.a { background: linear-gradient(135deg, #f77f00, #ea580c); }
-      .legend-color.s { background: linear-gradient(135deg, #43aa8b, #059669); }
-      .legend-color.c { background: linear-gradient(135deg, #3a86ff, #2563eb); }
-      .legend-color.i { background: linear-gradient(135deg, #6c757d, #4b5563); }
+      .legend-color.r { background: #dc2626; }
+      .legend-color.a { background: #ea580c; }
+      .legend-color.s { background: #059669; }
+      .legend-color.c { background: #2563eb; }
+      .legend-color.i { background: #4b5563; }
       
       .legend-content {
         display: flex;
         flex-direction: column;
         justify-content: center;
+        flex: 1;
       }
       
       .legend-name {
         font-weight: 600;
-        font-size: 16px;
-        margin-bottom: 6px;
+        font-size: 15px;
+        margin-bottom: 8px;
         color: #1f2937;
+        font-family: 'Segoe UI', Roboto, sans-serif;
       }
       
       .legend-description {
-        font-size: 14px;
-        color: #4b5563;
+        font-size: 13px;
+        color: #6b7280;
         line-height: 1.5;
+        font-weight: 400;
+        font-family: 'Segoe UI', Roboto, sans-serif;
       }
 
       /* === ESTILOS PARA LA MATRIZ RASCI === */
@@ -166,6 +319,20 @@ export function initRasciPanel(panel) {
         max-height: calc(100vh - 180px) !important;
         display: block !important;
         box-sizing: border-box !important;
+      }
+      
+      /* Contenedor de leyenda */
+      #legend-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        padding: 0;
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        max-height: calc(100vh - 180px);
+        box-sizing: border-box;
       }
       
       /* Asegurar que el panel RASCI tenga exactamente el mismo estilo que el panel BPMN */
@@ -275,6 +442,23 @@ export function initRasciPanel(panel) {
         width: 100% !important;
         height: 100% !important;
         max-height: calc(100vh - 180px) !important;
+      }
+      
+      /* Contenedor de pestañas */
+      .tabs-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+        background: #fff;
+      }
+      
+      .tabs-header {
+        display: flex;
+        border-bottom: 1px solid #e5e7eb;
+        background: #f8f9fa;
+        padding: 0;
+        margin: 0;
       }
       
       .rasci-matrix {
@@ -644,12 +828,44 @@ export function initRasciPanel(panel) {
         flex-shrink: 0;
       }
 
-      /* === PESTAÑAS === */
+      /* === PESTAÑAS - ESTILOS FORMALES Y DISCRETOS === */
+      .tab {
+        padding: 10px 20px;
+        background: #f8f9fa;
+        border: none;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        color: #6c757d;
+        transition: all 0.2s ease;
+        margin-right: 0;
+        position: relative;
+        font-family: 'Segoe UI', Roboto, sans-serif;
+      }
+      
+      .tab:hover {
+        background: #e9ecef;
+        color: #495057;
+        border-bottom-color: #dee2e6;
+      }
+      
+      .tab.active {
+        background: #fff;
+        color: #333;
+        border-bottom: 2px solid #3a56d4;
+        font-weight: 600;
+      }
+      
       .tab-content {
-        padding: 12px;
+        padding: 0;
         height: 100%;
-        display: flex;
+        display: none;
         flex-direction: column;
+        background: #fff;
+        border: none;
+        border-radius: 0;
+        overflow: hidden;
       }
       
       .tab-content.active {
@@ -661,6 +877,18 @@ export function initRasciPanel(panel) {
         display: flex;
         align-items: flex-start;
         justify-content: center;
+        padding: 20px;
+      }
+      
+      #legend-tab {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        overflow-y: auto;
+        padding: 20px;
+        background: #fff;
       }
 
       /* === RESPONSIVE === */
@@ -741,9 +969,21 @@ export function initRasciPanel(panel) {
 
   // Actualizar matriz desde diagrama
   function updateMatrixFromDiagram() {
+    // Solo actualizar si estamos en la pestaña de matriz
+    const mainTab = document.querySelector('#main-tab');
+    if (!mainTab || !mainTab.classList.contains('active')) {
+      return;
+    }
+    
+    // Solo actualizar el contenedor de matriz, no todo el panel
+    const matrixContainer = mainTab.querySelector('#matrix-container');
+    if (!matrixContainer) {
+      return;
+    }
+    
     const tasks = getBpmnTasks();
     if (tasks.length === 0) {
-      container.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">No hay tareas en el diagrama BPMN actual. Agrega algunas tareas para ver la matriz RASCI.</div>';
+      matrixContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">No hay tareas en el diagrama BPMN actual. Agrega algunas tareas para ver la matriz RASCI.</div>';
       return;
     }
     renderMatrix(tasks);
@@ -771,6 +1011,9 @@ export function initRasciPanel(panel) {
   function addNewRole() {
     const defaultName = `Rol ${roles.length + 1}`;
     roles.push(defaultName);
+    
+    // Guardar el estado automáticamente
+    autoSaveRasciState();
     
     // Actualizar la matriz preservando los datos existentes
     updateMatrixFromDiagram();
@@ -931,6 +1174,9 @@ export function initRasciPanel(panel) {
             }
           });
         }
+
+        // Guardar el estado automáticamente
+        autoSaveRasciState();
 
         // Actualizar solo el texto del span sin re-renderizar toda la tabla
         if (roleNameSpan) {
@@ -1157,6 +1403,10 @@ export function initRasciPanel(panel) {
         });
       }
       roles.splice(roleIndex, 1);
+      
+      // Guardar el estado automáticamente
+      autoSaveRasciState();
+      
       closeModal();
       updateMatrixFromDiagram();
     }
@@ -1185,10 +1435,18 @@ export function initRasciPanel(panel) {
 
   // Renderizar matriz principal
   function renderMatrix(tasks = []) {
-    container.innerHTML = '';
+    // Obtener el contenedor de matriz específico de la pestaña activa
+    const mainTab = document.querySelector('#main-tab');
+    const matrixContainer = mainTab ? mainTab.querySelector('#matrix-container') : null;
+    
+    if (!matrixContainer) {
+      return;
+    }
+    
+    matrixContainer.innerHTML = '';
 
     // Configurar el contenedor principal - CON ALTURA MÁXIMA
-    container.style.cssText = `
+    matrixContainer.style.cssText = `
       width: 100%;
       height: 100%;
       max-height: calc(100vh - 180px);
@@ -1360,6 +1618,9 @@ export function initRasciPanel(panel) {
             window.rasciMatrixData[task][role] = key;
             cell.setAttribute('data-value', key);
             cell.classList.add('cell-with-content');
+            
+            // Guardar el estado automáticamente
+            autoSaveRasciState();
 
           } else if (['-', 'Delete', 'Backspace', 'Escape'].includes(e.key)) {
             e.preventDefault();
@@ -1372,6 +1633,9 @@ export function initRasciPanel(panel) {
               delete window.rasciMatrixData[task][role];
             }
             cell.removeAttribute('data-value');
+            
+            // Guardar el estado automáticamente
+            autoSaveRasciState();
           }
         });
 
@@ -1409,7 +1673,7 @@ export function initRasciPanel(panel) {
     });
 
     table.appendChild(tbody);
-    container.appendChild(table);
+    matrixContainer.appendChild(table);
 
 
 
@@ -1421,8 +1685,13 @@ export function initRasciPanel(panel) {
   // Inicialización
   applyStyles();
 
-  if (sampleBtn) {
-    sampleBtn.addEventListener('click', updateMatrixFromDiagram);
+  // Configurar el botón de recargar matriz (solo en la pestaña de matriz)
+  const mainTab = panel.querySelector('#main-tab');
+  if (mainTab) {
+    const reloadBtn = mainTab.querySelector('.btn-primary');
+    if (reloadBtn) {
+      reloadBtn.addEventListener('click', updateMatrixFromDiagram);
+    }
   }
 
   // Funciones globales
@@ -1434,16 +1703,140 @@ export function initRasciPanel(panel) {
     tabs.forEach(tab => {
       tab.addEventListener('click', function (e) {
         e.preventDefault();
+        e.stopPropagation();
         const tabName = this.getAttribute('data-tab');
         if (tabName) {
+          // Remover clase activa de todas las pestañas
+          tabs.forEach(t => t.classList.remove('active'));
+          // Agregar clase activa a la pestaña clickeada
+          this.classList.add('active');
+          // Cambiar contenido
           window.cambiarPestana(tabName);
         }
       });
     });
   }, 100);
 
-  // Inicializar matriz y listeners
-  updateMatrixFromDiagram();
+  // Función global para cambiar entre pestañas
+  window.cambiarPestana = function (tabName) {
+    const tabs = document.querySelectorAll('#rasci-panel .tab');
+    const tabContents = document.querySelectorAll('#rasci-panel .tab-content');
+
+    // Remover clases activas de todas las pestañas y contenidos
+    tabs.forEach(tab => tab.classList.remove('active'));
+    tabContents.forEach(content => {
+      content.classList.remove('active');
+      content.style.display = 'none';
+      content.style.visibility = 'hidden';
+      content.style.position = 'absolute';
+      content.style.top = '-9999px';
+    });
+
+    // Activar la pestaña seleccionada
+    const selectedTab = document.querySelector(`#rasci-panel .tab[data-tab="${tabName}"]`);
+    const selectedContent = document.querySelector(`#rasci-panel #${tabName}-tab`);
+
+    if (selectedTab && selectedContent) {
+      selectedTab.classList.add('active');
+      selectedContent.classList.add('active');
+      
+      if (tabName === 'config') {
+        // Pestaña de leyenda - pantalla simple y limpia
+        selectedContent.style.display = 'flex';
+        selectedContent.style.flexDirection = 'column';
+        selectedContent.style.height = '100%';
+        selectedContent.style.overflowY = 'auto';
+        selectedContent.style.padding = '20px';
+        selectedContent.style.background = '#fff';
+        selectedContent.style.border = 'none';
+        selectedContent.style.outline = 'none';
+        selectedContent.style.visibility = 'visible';
+        selectedContent.style.position = 'relative';
+        selectedContent.style.top = 'auto';
+        
+        // Ocultar explícitamente elementos de la matriz
+        const mainTab = document.querySelector('#main-tab');
+        if (mainTab) {
+          mainTab.style.display = 'none';
+          mainTab.style.visibility = 'hidden';
+          mainTab.style.position = 'absolute';
+          mainTab.style.top = '-9999px';
+        }
+        
+        // Asegurar que solo se muestre la leyenda
+        const legendContainer = selectedContent.querySelector('.rasci-legend');
+        if (legendContainer) {
+          legendContainer.style.display = 'flex';
+          legendContainer.style.flexDirection = 'column';
+          legendContainer.style.width = '100%';
+          legendContainer.style.height = '100%';
+        }
+      } else if (tabName === 'main') {
+        // Pestaña de matriz
+        selectedContent.style.display = 'flex';
+        selectedContent.style.flexDirection = 'column';
+        selectedContent.style.height = '100%';
+        selectedContent.style.overflow = 'hidden';
+        selectedContent.style.padding = '12px';
+        selectedContent.style.visibility = 'visible';
+        selectedContent.style.position = 'relative';
+        selectedContent.style.top = 'auto';
+        
+        // Ocultar explícitamente elementos de la leyenda
+        const configTab = document.querySelector('#config-tab');
+        if (configTab) {
+          configTab.style.display = 'none';
+          configTab.style.visibility = 'hidden';
+          configTab.style.position = 'absolute';
+          configTab.style.top = '-9999px';
+        }
+        
+        // Actualizar la matriz cuando se cambie a esta pestaña
+        setTimeout(() => {
+          updateMatrixFromDiagram();
+        }, 100);
+      }
+    }
+  };
+
+  // Función para asegurar que solo la pestaña activa sea visible
+  function ensureActiveTabVisibility() {
+    const activeTab = panel.querySelector('.tab.active');
+    if (activeTab) {
+      const tabName = activeTab.getAttribute('data-tab');
+      if (tabName) {
+        // Ocultar todas las pestañas
+        const allTabContents = panel.querySelectorAll('.tab-content');
+        allTabContents.forEach(content => {
+          content.style.display = 'none';
+          content.style.visibility = 'hidden';
+          content.style.position = 'absolute';
+          content.style.top = '-9999px';
+        });
+        
+        // Mostrar solo la pestaña activa
+        const activeContent = panel.querySelector(`#${tabName}-tab`);
+        if (activeContent) {
+          activeContent.style.display = 'flex';
+          activeContent.style.visibility = 'visible';
+          activeContent.style.position = 'relative';
+          activeContent.style.top = 'auto';
+        }
+      }
+    }
+  }
+
+  // Cargar estado guardado
+  loadRasciState();
+  
+  // Inicializar matriz y listeners solo si estamos en la pestaña de matriz
+  const initialMainTab = panel.querySelector('#main-tab');
+  if (initialMainTab && initialMainTab.classList.contains('active')) {
+    updateMatrixFromDiagram();
+  }
+  
+  // Asegurar visibilidad correcta de pestañas
+  ensureActiveTabVisibility();
   setupDiagramChangeListener();
 
 

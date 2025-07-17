@@ -1,4 +1,5 @@
 // === app.js limpio ===
+// TODO: A TERMINAR EL DESARROLLO - Sistema de guardado automático implementado
 
 import $ from 'jquery';
 import MultiNotationModeler from './MultiNotationModeler/index.js';
@@ -20,6 +21,132 @@ window.rasciRoles = [];
 window.rasciTasks = [];
 window.rasciMatrixData = {};
 window.initRasciPanel = initRasciPanel;
+
+// Variables para el sistema de guardado automático BPMN
+let bpmnSaveTimeout = null;
+let lastBpmnSaveTime = 0;
+
+// Funciones de persistencia para el estado del BPMN
+function saveBpmnState() {
+  try {
+    if (modeler) {
+      const xml = modeler.saveXML({ format: true });
+      xml.then(result => {
+        if (result && result.xml && result.xml.trim().length > 0) {
+          localStorage.setItem('bpmnDiagram', result.xml);
+          showBpmnSaveIndicator();
+          console.log('✅ Estado BPMN guardado automáticamente');
+          console.log('📊 Tamaño del XML:', result.xml.length, 'caracteres');
+        } else {
+          console.warn('⚠️ XML BPMN vacío, no se guardó');
+        }
+      }).catch(err => {
+        console.warn('❌ Error al guardar estado BPMN:', err);
+      });
+    } else {
+      console.warn('⚠️ Modeler BPMN no está disponible para guardar');
+    }
+  } catch (e) {
+    console.warn('❌ No se pudo guardar el estado BPMN:', e);
+  }
+}
+
+// Función para mostrar indicador de guardado BPMN
+function showBpmnSaveIndicator() {
+  let saveIndicator = document.getElementById('bpmn-save-indicator');
+  if (!saveIndicator) {
+    saveIndicator = document.createElement('div');
+    saveIndicator.id = 'bpmn-save-indicator';
+    saveIndicator.innerHTML = `
+      <div style="
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        background: #3b82f6;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
+      ">
+        <i class="fas fa-save" style="font-size: 10px;"></i>
+        <span>BPMN guardado</span>
+      </div>
+    `;
+    document.body.appendChild(saveIndicator);
+  }
+
+  // Mostrar indicador
+  saveIndicator.style.opacity = '1';
+  saveIndicator.style.transform = 'translateY(0)';
+
+  // Ocultar después de 2 segundos
+  setTimeout(() => {
+    saveIndicator.style.opacity = '0';
+    saveIndicator.style.transform = 'translateY(-10px)';
+  }, 2000);
+}
+
+// Función para guardado automático BPMN con debounce
+function autoSaveBpmnState() {
+  const now = Date.now();
+  
+  // Evitar guardados muy frecuentes (mínimo 2 segundos entre guardados)
+  if (now - lastBpmnSaveTime < 2000) {
+    // Cancelar timeout anterior y programar uno nuevo
+    if (bpmnSaveTimeout) {
+      clearTimeout(bpmnSaveTimeout);
+    }
+    bpmnSaveTimeout = setTimeout(() => {
+      saveBpmnState();
+      lastBpmnSaveTime = Date.now();
+    }, 2000);
+    return;
+  }
+  
+  // Guardar inmediatamente si ha pasado suficiente tiempo
+  saveBpmnState();
+  lastBpmnSaveTime = now;
+}
+
+function loadBpmnState() {
+  try {
+    const savedDiagram = localStorage.getItem('bpmnDiagram');
+    
+    if (!modeler) {
+      console.log('📂 Modeler no está listo, esperando...');
+      setTimeout(loadBpmnState, 500);
+      return;
+    }
+    
+    if (savedDiagram && savedDiagram.trim().length > 0) {
+      console.log('📂 Intentando cargar diagrama BPMN guardado...');
+      modeler.importXML(savedDiagram).then(() => {
+        console.log('✅ Estado BPMN cargado automáticamente');
+        updateUI('Diagrama BPMN restaurado.');
+      }).catch(err => {
+        console.warn('❌ Error al cargar estado BPMN:', err);
+        console.log('📂 Creando nuevo diagrama BPMN...');
+        createNewDiagram();
+      });
+    } else {
+      console.log('📂 No hay diagrama BPMN guardado, creando nuevo');
+      createNewDiagram();
+    }
+  } catch (e) {
+    console.warn('❌ No se pudo cargar el estado BPMN:', e);
+    console.log('📂 Creando nuevo diagrama BPMN...');
+    createNewDiagram();
+  }
+}
 
 function validateAndSanitizeWaypoints(waypoints) {
   if (!waypoints || !Array.isArray(waypoints)) return [];
@@ -50,9 +177,26 @@ function initializeModeler() {
         const wp = event?.context?.connection?.waypoints;
         if (wp) event.context.connection.waypoints = validateAndSanitizeWaypoints(wp);
       });
+      
+      // Guardar estado automáticamente cuando hay cambios
+      eventBus.on([
+        'element.added',
+        'element.removed', 
+        'element.changed',
+        'elements.changed',
+        'shape.move.end',
+        'shape.resize.end',
+        'connection.create',
+        'connection.delete'
+      ], () => {
+        autoSaveBpmnState(); // Usar sistema de guardado automático con debounce
+      });
     }
+    
+    // El estado se cargará desde el gestor de paneles
+    console.log('✅ Modeler BPMN inicializado correctamente');
   } catch (error) {
-    console.error('Error initializing modeler:', error);
+    console.error('❌ Error initializing modeler:', error);
   }
 }
 
@@ -80,9 +224,33 @@ async function createNewDiagram() {
   }
 }
 
+// Función de debug para verificar el estado del localStorage
+function debugBpmnState() {
+  console.log('🔍 === DEBUG ESTADO BPMN ===');
+  const savedDiagram = localStorage.getItem('bpmnDiagram');
+  if (savedDiagram) {
+    console.log('✅ Diagrama BPMN encontrado en localStorage');
+    console.log('📊 Tamaño:', savedDiagram.length, 'caracteres');
+    console.log('📄 Primeros 200 caracteres:', savedDiagram.substring(0, 200));
+  } else {
+    console.log('❌ No hay diagrama BPMN en localStorage');
+  }
+  
+  if (modeler) {
+    console.log('✅ Modeler BPMN disponible');
+  } else {
+    console.log('❌ Modeler BPMN no disponible');
+  }
+  console.log('🔍 === FIN DEBUG ===');
+}
+
 // Hacer las funciones globales para que el gestor de paneles pueda acceder a ellas
 window.initializeModeler = initializeModeler;
 window.createNewDiagram = createNewDiagram;
+window.saveBpmnState = saveBpmnState;
+window.loadBpmnState = loadBpmnState;
+window.autoSaveBpmnState = autoSaveBpmnState;
+window.debugBpmnState = debugBpmnState;
 
 function updateUI(message = '') {
   if (message) $('.status-item:first-child span').text(message);

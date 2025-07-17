@@ -1,5 +1,6 @@
 // === panel-manager.js ===
 // Gestor de paneles con selector de paneles y distribución
+// TODO: A TERMINAR EL DESARROLLO - Sistema de guardado automático implementado
 
 class PanelManager {
   constructor() {
@@ -30,8 +31,9 @@ class PanelManager {
       }
     };
     
-    this.currentLayout = '2v'; // Layout vertical por defecto para 2 paneles
-    this.activePanels = ['bpmn', 'rasci']; // Solo BPMN y RASCI por defecto
+    // Cargar configuración guardada o usar valores por defecto
+    this.currentLayout = localStorage.getItem('panelLayout') || '2v';
+    this.activePanels = this.loadActivePanels();
     this.panelLoader = null;
     this.preservedBpmnState = null; // Para preservar el estado BPMN cuando se oculta
     this.init();
@@ -46,6 +48,31 @@ class PanelManager {
     setTimeout(() => {
       this.bindLayoutEvents();
     }, 100);
+  }
+
+  // Función para cargar paneles activos desde localStorage
+  loadActivePanels() {
+    try {
+      const saved = localStorage.getItem('activePanels');
+      if (saved) {
+        const panels = JSON.parse(saved);
+        // Verificar que los paneles existan en availablePanels
+        return panels.filter(panel => this.availablePanels[panel]);
+      }
+    } catch (e) {
+      console.warn('Error al cargar paneles activos:', e);
+    }
+    return ['bpmn', 'rasci']; // Valores por defecto
+  }
+
+  // Función para guardar configuración de paneles
+  savePanelConfiguration() {
+    try {
+      localStorage.setItem('activePanels', JSON.stringify(this.activePanels));
+      localStorage.setItem('panelLayout', this.currentLayout);
+    } catch (e) {
+      console.warn('Error al guardar configuración de paneles:', e);
+    }
   }
 
   createStyles() {
@@ -782,6 +809,9 @@ class PanelManager {
         this.currentLayout = option.getAttribute('data-layout');
         console.log('Layout seleccionado:', this.currentLayout);
         
+        // Guardar configuración automáticamente
+        this.savePanelConfiguration();
+        
         // Actualizar sección de orden si es necesario
         this.updateLayoutOptions();
       };
@@ -806,6 +836,9 @@ class PanelManager {
           item.classList.add('active');
           item.querySelector('.panel-item-checkbox').textContent = '✓';
         }
+        
+        // Guardar configuración automáticamente
+        this.savePanelConfiguration();
         
         // Actualizar opciones de layout basadas en el número de paneles
         this.updateLayoutOptions();
@@ -900,37 +933,18 @@ class PanelManager {
         if (typeof window.initializeModeler === 'function') {
           window.initializeModeler();
           
-          // Restaurar estado preservado o el estado actual
-          const stateToRestore = this.preservedBpmnState || bpmnState;
-          if (stateToRestore && stateToRestore.xml && window.bpmnModeler) {
-            try {
-              // Verificar que el XML no esté vacío
-              if (stateToRestore.xml.trim().length > 0) {
-                console.log('Restaurando estado BPMN:', stateToRestore.xml.substring(0, 100) + '...');
-                await window.bpmnModeler.importXML(stateToRestore.xml);
-                console.log('Estado BPMN restaurado exitosamente');
-                // Limpiar el estado preservado después de restaurarlo
-                this.preservedBpmnState = null;
-              } else {
-                console.warn('XML BPMN vacío, creando nuevo diagrama');
-                if (typeof window.createNewDiagram === 'function') {
-                  window.createNewDiagram();
-                }
-              }
-            } catch (error) {
-              console.error('Error restaurando estado BPMN:', error);
-              // Si falla la restauración, crear nuevo diagrama
-              if (typeof window.createNewDiagram === 'function') {
-                window.createNewDiagram();
-              }
-            }
-          } else {
-            console.log('No hay estado BPMN para restaurar, creando nuevo diagrama');
-            // Si no hay estado preservado, crear nuevo diagrama
-            if (typeof window.createNewDiagram === 'function') {
-              window.createNewDiagram();
-            }
+          // Debug del estado antes de cargar
+          if (typeof window.debugBpmnState === 'function') {
+            window.debugBpmnState();
           }
+          
+          // Usar la función loadBpmnState que carga desde localStorage
+          // en lugar de intentar restaurar desde el estado preservado
+          setTimeout(() => {
+            if (typeof window.loadBpmnState === 'function') {
+              window.loadBpmnState();
+            }
+          }, 200); // Pequeño delay para asegurar que el modeler esté listo
         }
       }, 500); // Aumentar el tiempo para asegurar que el DOM esté listo
     }
