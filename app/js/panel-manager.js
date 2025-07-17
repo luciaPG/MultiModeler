@@ -384,7 +384,7 @@ class PanelManager {
         right: 0;
         bottom: 0;
         background: rgba(0,0,0,0.5);
-        z-index: 10001;
+        z-index: 51;
         display: none;
       }
       
