@@ -84,94 +84,6 @@
           <button class="btn btn-primary btn-full-width" onclick="executeRasciToRalphMapping()">
             <i class="fas fa-magic"></i> Ejecutar Mapeo Automático
           </button>
-          
-          <button class="btn btn-secondary btn-full-width" onclick="autoMapTasksToDiagram()" style="margin-top: 10px;">
-            <i class="fas fa-link"></i> Mapear Tareas a Diagrama
-          </button>
-          
-          <button class="btn btn-danger btn-full-width" onclick="clearRalphElements()" style="margin-top: 10px;">
-            <i class="fas fa-trash"></i> Limpiar Elementos RALph
-          </button>
-          
-          <button class="btn btn-warning btn-full-width" onclick="cleanupRalphConnections()" style="margin-top: 10px;">
-            <i class="fas fa-broom"></i> Limpiar Conexiones Problemáticas
-          </button>
-          
-          <button class="btn btn-success btn-full-width" onclick="optimizeRalphDiagram()" style="margin-top: 10px;">
-            <i class="fas fa-magic"></i> Optimizar Todo el Diagrama RALph
-          </button>
-          
-          <button class="btn btn-info btn-full-width" onclick="enableAutoReposition()" style="margin-top: 10px;">
-            <i class="fas fa-sync-alt"></i> Activar Reposicionamiento Automático
-          </button>
-          
-          <button class="btn btn-outline-info btn-full-width" onclick="disableAutoReposition()" style="margin-top: 10px;">
-            <i class="fas fa-stop"></i> Desactivar Reposicionamiento Automático
-          </button>
-          
-          <div class="mapping-options">
-            <label class="mapping-option">
-              <input type="checkbox" id="create-approval-tasks" checked>
-              <span>Crear tareas de aprobación (A)</span>
-            </label>
-            <label class="mapping-option">
-              <input type="checkbox" id="create-message-flows" checked>
-              <span>Crear flujos de mensaje (C/I)</span>
-            </label>
-            <label class="mapping-option">
-              <input type="checkbox" id="create-capabilities" checked>
-              <span>Crear capacidades para roles inexistentes (S)</span>
-            </label>
-          </div>
-
-          <div class="positioning-options">
-            <h4>🎯 Sistema de Posicionamiento Simple y Claro</h4>
-            <div class="positioning-info">
-              <p><strong>Sistema simple estilo BPMN nativo:</strong></p>
-              <ul>
-                <li>✅ Posicionamiento natural: derecha, arriba, abajo, izquierda</li>
-                <li>✅ Evita elementos duplicados cerca de la misma tarea</li>
-                <li>✅ Conexiones rectas y simples</li>
-                <li>✅ Tareas de aprobación insertadas en el flujo</li>
-                <li>✅ Espaciado compacto y ordenado</li>
-                <li>✅ Posiciones alternativas cuando el espacio está ocupado</li>
-                <li>✅ Reposicionamiento automático al mover tareas</li>
-                <li>✅ Sin complejidad innecesaria</li>
-                <li>✅ Claridad visual máxima</li>
-              </ul>
-            </div>
-            
-            <div class="positioning-grid">
-              <div class="positioning-item">
-                <label>Espaciado mínimo:</label>
-                <input type="number" id="spacing" value="80" min="50" max="200">
-              </div>
-              <div class="positioning-item">
-                <label>Radio de búsqueda:</label>
-                <input type="number" id="search-radius" value="200" min="100" max="500">
-              </div>
-            </div>
-            
-            <button class="btn btn-secondary btn-full-width" onclick="applyPositioningConfig()" style="margin-top: 10px;">
-              <i class="fas fa-cog"></i> Aplicar Configuración
-            </button>
-            
-                      <button class="btn btn-info btn-full-width" onclick="showExistingElementsStats()" style="margin-top: 10px;">
-            <i class="fas fa-chart-bar"></i> Ver Estadísticas Existentes
-          </button>
-          
-          <button class="btn btn-danger btn-full-width" onclick="resetPositioning()" style="margin-top: 10px;">
-            <i class="fas fa-undo"></i> Resetear Posicionamiento
-          </button>
-          
-          <button class="btn btn-warning btn-full-width" onclick="cleanDuplicateRoles()" style="margin-top: 10px;">
-            <i class="fas fa-filter"></i> Limpiar Roles Duplicados
-          </button>
-          
-          <button class="btn btn-info btn-full-width" onclick="showPositioningStatus()" style="margin-top: 10px;">
-            <i class="fas fa-info-circle"></i> Estado del Posicionamiento
-          </button>
-          </div>
         </div>
 
         <div class="mapping-results" id="mapping-results" style="display: none;">
@@ -180,23 +92,23 @@
         </div>
 
         <div class="mapping-legend">
-          <h4>Lógica de Mapeo Mejorada</h4>
+          <h4>Lógica de Mapeo</h4>
           <div class="mapping-rule">
             <span class="rule-letter r">R</span>
             <div class="rule-content">
-              <strong>Responsable:</strong> Asignación directa del rol a la tarea (línea sólida)
+              <strong>Responsable:</strong> Una flecha directa del rol a la tarea (ROL → TAREA)
             </div>
           </div>
           <div class="mapping-rule">
             <span class="rule-letter a">A</span>
             <div class="rule-content">
-              <strong>Aprobador:</strong> Nueva tarea "Aprobar [X]" insertada en el flujo del proceso
+              <strong>Aprobador:</strong> Tarea intermedia "Aprobar [X]" entre la tarea actual y la siguiente
             </div>
           </div>
           <div class="mapping-rule">
             <span class="rule-letter s">S</span>
             <div class="rule-content">
-              <strong>Soporte:</strong> Nodo AND que conecta responsable + soporte (colaboración)
+              <strong>Soporte:</strong> Ambos roles (R + S) van al nodo AND, y el AND va a la tarea
             </div>
           </div>
           <div class="mapping-rule">
@@ -210,16 +122,6 @@
             <div class="rule-content">
               <strong>Informado:</strong> Evento intermedio que envía notificación al rol
             </div>
-          </div>
-          
-          <div class="mapping-note">
-            <h5>💡 Notas sobre las Relaciones:</h5>
-            <ul>
-              <li><strong>R + S:</strong> Se crea automáticamente un nodo AND que conecta ambos roles</li>
-              <li><strong>C:</strong> Se representa como un flujo bidireccional con nodo intermedio</li>
-              <li><strong>A:</strong> Se inserta en el flujo del proceso, no como elemento separado</li>
-              <li><strong>I:</strong> Se representa como evento de notificación unidireccional</li>
-            </ul>
           </div>
         </div>
       </div>
