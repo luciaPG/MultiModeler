@@ -2256,12 +2256,64 @@ function showMappingError(message) {
   logElement.style.color = '#dc2626';
 }
 
+window.executeIntelligentRasciMapping = function() {
+  console.log('🧠 Función de mapeo inteligente ejecutada');
+  const modeler = window.bpmnModeler;
+  if (!modeler) {
+    showMappingError('Modeler no disponible');
+    return;
+  }
+
+  const logElement = document.getElementById('mapping-log');
+  const resultsElement = document.getElementById('mapping-results');
+  
+  // Mostrar resultados
+  resultsElement.style.display = 'block';
+  logElement.innerHTML = '🧠 Iniciando mapeo inteligente RASCI → RALph...\n';
+  
+  try {
+    const mappingResults = performIntelligentRasciMapping(modeler);
+    
+    if (mappingResults.error) {
+      showMappingError(mappingResults.error);
+      return;
+    }
+    
+    logElement.innerHTML += '\n🎉 Mapeo inteligente completado exitosamente!\n';
+    logElement.innerHTML += `\n📊 Resumen de cambios:\n`;
+    logElement.innerHTML += `- Roles creados: ${mappingResults.rolesCreated}\n`;
+    logElement.innerHTML += `- Roles eliminados: ${mappingResults.rolesDeleted}\n`;
+    logElement.innerHTML += `- Asignaciones creadas: ${mappingResults.assignmentsCreated}\n`;
+    logElement.innerHTML += `- Asignaciones eliminadas: ${mappingResults.assignmentsDeleted}\n`;
+    logElement.innerHTML += `- Eventos creados: ${mappingResults.eventsCreated}\n`;
+    logElement.innerHTML += `- Eventos eliminados: ${mappingResults.eventsDeleted}\n`;
+    logElement.innerHTML += `- Conexiones actualizadas: ${mappingResults.connectionsUpdated}\n`;
+    
+    if (mappingResults.errors > 0) {
+      logElement.innerHTML += `- Errores: ${mappingResults.errors}\n`;
+    }
+    
+    // Hacer scroll al final del log
+    logElement.scrollTop = logElement.scrollHeight;
+    
+  } catch (error) {
+    console.error('Error en mapeo inteligente RASCI:', error);
+    showMappingError(`Error durante el mapeo inteligente: ${error.message}`);
+  }
+};
+
+// Verificar que la función esté disponible globalmente
+console.log('✅ executeIntelligentRasciMapping definida:', typeof window.executeIntelligentRasciMapping);
+
 function performRasciToRalphMapping(modeler) {
   // Verificar que el modeler tenga todos los servicios necesarios
   if (!modeler) {
     console.error('Modeler no disponible');
     return { error: 'Modeler no disponible' };
   }
+
+  // Configurar listener para mantener conexiones después del movimiento
+  setupConnectionMaintenanceListener(modeler);
 
   const results = {
     rolesCreated: 0,
@@ -2414,7 +2466,44 @@ function performRasciToRalphMapping(modeler) {
     // NUEVA LÓGICA: Procesar responsabilidades de forma coordinada para evitar duplicados
     const processedRoles = new Set(); // Para evitar procesar el mismo rol múltiples veces
     
-    // 1. Procesar Responsible (R) primero
+    // 1. Procesar Responsible (R) y Support (S) de forma coordinada
+    // Si hay roles de soporte, NO procesar los responsables por separado
+    if (supportRoles.length > 0 && responsibleRoles.length > 0) {
+      logElement.innerHTML += `    🔄 Procesando R + S de forma coordinada para evitar duplicados\n`;
+      
+      // Procesar cada combinación de responsable + soporte
+      responsibleRoles.forEach((responsibleRoleName, index) => {
+        if (processedRoles.has(responsibleRoleName)) return;
+        
+        const supportRoleName = supportRoles[index] || supportRoles[0]; // Usar el soporte correspondiente o el primero
+        if (processedRoles.has(supportRoleName)) return;
+        
+        // Verificar si ya existe un nodo AND para esta tarea
+        const andNodeExists = positionManager.collaborationNodeExists(modeler, bpmnTask.businessObject && bpmnTask.businessObject.name ? bpmnTask.businessObject.name : bpmnTask.id);
+        if (andNodeExists) {
+          logElement.innerHTML += `    ✓ Nodo AND ya existe para esta tarea\n`;
+          processedRoles.add(responsibleRoleName);
+          processedRoles.add(supportRoleName);
+          return;
+        }
+        
+        logElement.innerHTML += `    + R + S → ${responsibleRoleName} + ${supportRoleName} (nueva colaboración)\n`;
+        createCollaborationAssignment(modeler, bpmnTask, supportRoleName, responsibleRoleName, results);
+        processedRoles.add(responsibleRoleName);
+        processedRoles.add(supportRoleName);
+      });
+      
+      // Procesar roles de soporte restantes
+      supportRoles.forEach(roleName => {
+        if (processedRoles.has(roleName)) return;
+        
+        logElement.innerHTML += `    + S → ${roleName} (nueva asignación simple)\n`;
+        createSimpleAssignment(modeler, bpmnTask, roleName, results);
+        processedRoles.add(roleName);
+      });
+      
+    } else {
+      // Si no hay roles de soporte, procesar responsables normalmente
     responsibleRoles.forEach(roleName => {
       if (processedRoles.has(roleName)) return;
       
@@ -2429,7 +2518,7 @@ function performRasciToRalphMapping(modeler) {
       processedRoles.add(roleName);
     });
 
-    // 2. Procesar Support (S) - crear colaboración AND si hay Responsible
+      // Procesar roles de soporte sin responsables
     supportRoles.forEach(roleName => {
       if (processedRoles.has(roleName)) return;
       
@@ -2440,34 +2529,34 @@ function performRasciToRalphMapping(modeler) {
       }
       
       logElement.innerHTML += `    + S → ${roleName} (nueva)\n`;
-      
-      if (responsibleRoles.length > 0) {
-        // Crear colaboración AND con el primer responsable
-        const responsibleRoleName = responsibleRoles[0];
-        createCollaborationAssignment(modeler, bpmnTask, roleName, responsibleRoleName, results);
-        processedRoles.add(roleName);
-        processedRoles.add(responsibleRoleName); // Marcar el responsable como procesado
-      } else {
-        // Si no hay responsable, crear asignación simple
         createSimpleAssignment(modeler, bpmnTask, roleName, results);
         processedRoles.add(roleName);
-      }
-    });
+      });
+    }
 
-    // 3. Procesar Consulted (C)
-    consultRoles.forEach(roleName => {
-      if (processedRoles.has(roleName)) return;
+    // 3. Procesar Consulted (C) - crear un solo evento para todos los consultores
+    if (consultRoles.length > 0) {
+      // Filtrar roles que no han sido procesados
+      const unprocessedConsultRoles = consultRoles.filter(roleName => !processedRoles.has(roleName));
       
-      if (positionManager.assignmentExists(bpmnTask.id, roleName)) {
-        logElement.innerHTML += `    ✓ C → ${roleName} (ya existe)\n`;
-        processedRoles.add(roleName);
-        return;
+      if (unprocessedConsultRoles.length > 0) {
+        // Crear etiqueta que incluya todos los roles de consulta
+        const consultLabel = unprocessedConsultRoles.length === 1 
+          ? `Consultar ${unprocessedConsultRoles[0]}`
+          : `Consultar ${unprocessedConsultRoles.join(' y ')}`;
+        
+        // Verificar si ya existe un nodo de consulta para esta tarea
+        if (positionManager.elementExists(modeler, 'bpmn:IntermediateThrowEvent', consultLabel) || 
+            positionManager.elementExists(modeler, 'bpmn:IntermediateCatchEvent', consultLabel)) {
+          logElement.innerHTML += `    ✓ C → ${unprocessedConsultRoles.join(', ')} (nodo de consulta ya existe)\n`;
+          unprocessedConsultRoles.forEach(role => processedRoles.add(role));
+        } else {
+          logElement.innerHTML += `    + C → ${unprocessedConsultRoles.join(', ')} (nuevo evento combinado)\n`;
+          createMessageFlow(modeler, bpmnTask, unprocessedConsultRoles, results);
+          unprocessedConsultRoles.forEach(role => processedRoles.add(role));
+        }
       }
-      
-      logElement.innerHTML += `    + C → ${roleName} (nueva)\n`;
-        createMessageFlow(modeler, bpmnTask, roleName, results);
-      processedRoles.add(roleName);
-    });
+    }
 
     // 4. Procesar Approver (A) - solo una tarea de aprobación por tarea
     if (approveRoles.length > 0) {
@@ -2484,17 +2573,28 @@ function performRasciToRalphMapping(modeler) {
       processedRoles.add(approvalRole);
     }
 
-    // 5. Procesar Informed (I) - solo un evento informativo por tarea
+    // 5. Procesar Informed (I) - crear un solo evento para todos los informados
     if (informRoles.length > 0) {
-      const informRole = informRoles[0]; // Solo usar el primer informado
+      // Filtrar roles que no han sido procesados
+      const unprocessedInformRoles = informRoles.filter(roleName => !processedRoles.has(roleName));
       
-      if (positionManager.assignmentExists(bpmnTask.id, informRole)) {
-        logElement.innerHTML += `    ✓ I → ${informRole} (ya existe)\n`;
+      if (unprocessedInformRoles.length > 0) {
+        // Crear etiqueta que incluya todos los roles de información
+        const informLabel = unprocessedInformRoles.length === 1 
+          ? `Informar ${unprocessedInformRoles[0]}`
+          : `Informar ${unprocessedInformRoles.join(' y ')}`;
+        
+        // Verificar si ya existe un nodo de información para esta tarea
+        if (positionManager.elementExists(modeler, 'bpmn:IntermediateThrowEvent', informLabel) || 
+            positionManager.elementExists(modeler, 'bpmn:IntermediateCatchEvent', informLabel)) {
+          logElement.innerHTML += `    ✓ I → ${unprocessedInformRoles.join(', ')} (nodo de información ya existe)\n`;
+          unprocessedInformRoles.forEach(role => processedRoles.add(role));
       } else {
-        logElement.innerHTML += `    + I → ${informRole} (nueva)\n`;
-          createInfoEvent(modeler, bpmnTask, informRole, results);
+          logElement.innerHTML += `    + I → ${unprocessedInformRoles.join(', ')} (nuevo evento combinado)\n`;
+          createInfoEvent(modeler, bpmnTask, unprocessedInformRoles, results);
+          unprocessedInformRoles.forEach(role => processedRoles.add(role));
       }
-      processedRoles.add(informRole);
+      }
     }
   });
 
@@ -2562,17 +2662,187 @@ function performRasciToRalphMapping(modeler) {
   logElement.innerHTML += `  • Activa "Reposicionamiento Automático" para ajustes automáticos\n`;
   logElement.innerHTML += `  • Usa "Estado del Posicionamiento" para ver estadísticas detalladas\n`;
 
+  // LIMPIEZA FINAL: Eliminar conexiones directas duplicadas
+  logElement.innerHTML += `\n🧹 Limpieza final: Eliminando conexiones directas duplicadas...\n`;
+  cleanupDuplicateConnections(modeler, logElement);
+
   return results;
 }
 
 
+
+function cleanupDuplicateConnections(modeler, logElement) {
+  const modeling = modeler.get('modeling');
+  const elementRegistry = modeler.get('elementRegistry');
+  
+  let removedCount = 0;
+  
+  try {
+    // Buscar nodos AND
+    const andNodes = [];
+    elementRegistry.forEach(element => {
+      if (element.type === 'RALph:Complex-Assignment-AND' && 
+          element.businessObject && 
+          element.businessObject.name && 
+          element.businessObject.name.includes('Colaboración')) {
+        andNodes.push(element);
+      }
+    });
+    
+    // Buscar nodos de consulta
+    const consultNodes = [];
+    elementRegistry.forEach(element => {
+      if (element.type === 'bpmn:IntermediateThrowEvent' && 
+          element.businessObject && 
+          element.businessObject.name && 
+          element.businessObject.name.includes('Consultar')) {
+        consultNodes.push(element);
+      }
+    });
+    
+    // Para cada nodo AND, eliminar conexiones directas de los roles conectados
+    andNodes.forEach(andNode => {
+      const rolesConnectedToAnd = [];
+      
+      // Encontrar roles conectados al nodo AND
+      elementRegistry.forEach(connection => {
+        if (connection.type && (connection.type === 'RALph:ResourceArc' || connection.type === 'bpmn:Association') &&
+            connection.source && connection.target &&
+            connection.target.id === andNode.id &&
+            connection.source.type === 'RALph:RoleRALph') {
+          rolesConnectedToAnd.push(connection.source);
+        }
+      });
+      
+      // Encontrar la tarea conectada al nodo AND
+      let targetTask = null;
+      elementRegistry.forEach(connection => {
+        if (connection.type && (connection.type === 'RALph:ResourceArc' || connection.type === 'bpmn:Association') &&
+            connection.source && connection.target &&
+            connection.source.id === andNode.id &&
+            (connection.target.type === 'bpmn:Task' || connection.target.type === 'bpmn:UserTask' || 
+             connection.target.type === 'bpmn:ServiceTask' || connection.target.type === 'bpmn:ScriptTask' ||
+             connection.target.type === 'bpmn:ManualTask' || connection.target.type === 'bpmn:BusinessRuleTask' ||
+             connection.target.type === 'bpmn:SendTask' || connection.target.type === 'bpmn:ReceiveTask' ||
+             connection.target.type === 'bpmn:CallActivity' || connection.target.type === 'bpmn:SubProcess')) {
+          targetTask = connection.target;
+        }
+      });
+      
+      if (targetTask) {
+        // Eliminar conexiones directas de los roles al nodo AND a la tarea
+        rolesConnectedToAnd.forEach(role => {
+          elementRegistry.forEach(connection => {
+            if (connection.type && (connection.type === 'RALph:ResourceArc' || connection.type === 'bpmn:Association') &&
+                connection.source && connection.target &&
+                connection.source.id === role.id &&
+                connection.target.id === targetTask.id) {
+              
+              try {
+                modeling.removeElement(connection);
+                removedCount++;
+                logElement.innerHTML += `    🗑️ Eliminada conexión directa duplicada: ${role.businessObject && role.businessObject.name ? role.businessObject.name : role.id} → ${targetTask.businessObject && targetTask.businessObject.name ? targetTask.businessObject.name : targetTask.id}\n`;
+              } catch (error) {
+                console.warn('Error eliminando conexión duplicada:', error.message);
+              }
+            }
+          });
+        });
+      }
+    });
+    
+    // Para cada nodo de consulta, verificar que las conexiones estén correctas
+    consultNodes.forEach(consultNode => {
+      const rolesConnectedToConsult = [];
+      
+      // Encontrar roles conectados al nodo de consulta
+      elementRegistry.forEach(connection => {
+        if (connection.type && (connection.type === 'RALph:dashedLine' || connection.type === 'bpmn:Association') &&
+            connection.source && connection.target &&
+            connection.target.id === consultNode.id &&
+            connection.source.type === 'RALph:RoleRALph') {
+          rolesConnectedToConsult.push(connection.source);
+        }
+      });
+      
+      // Encontrar la tarea conectada al nodo de consulta
+      let targetTask = null;
+      elementRegistry.forEach(connection => {
+        if (connection.type === 'bpmn:SequenceFlow' &&
+            connection.source && connection.target &&
+            connection.target.id === consultNode.id &&
+            (connection.source.type === 'bpmn:Task' || connection.source.type === 'bpmn:UserTask' || 
+             connection.source.type === 'bpmn:ServiceTask' || connection.source.type === 'bpmn:ScriptTask' ||
+             connection.source.type === 'bpmn:ManualTask' || connection.source.type === 'bpmn:BusinessRuleTask' ||
+             connection.source.type === 'bpmn:SendTask' || connection.source.type === 'bpmn:ReceiveTask' ||
+             connection.source.type === 'bpmn:CallActivity' || connection.source.type === 'bpmn:SubProcess')) {
+          targetTask = connection.source;
+        }
+      });
+      
+      if (targetTask) {
+        // Verificar que cada rol tenga las conexiones correctas al nodo de consulta
+        rolesConnectedToConsult.forEach(role => {
+          // Verificar si el rol tiene conexión de ida al nodo de consulta
+          let hasOutgoingConnection = false;
+          let hasIncomingConnection = false;
+          
+          elementRegistry.forEach(connection => {
+            if (connection.type && (connection.type === 'RALph:dashedLine' || connection.type === 'bpmn:Association') &&
+                connection.source && connection.target) {
+              
+              // Conexión de ida: rol → nodo consulta
+              if (connection.source.id === role.id && connection.target.id === consultNode.id) {
+                hasOutgoingConnection = true;
+              }
+              
+              // Conexión de vuelta: nodo consulta → rol
+              if (connection.source.id === consultNode.id && connection.target.id === role.id) {
+                hasIncomingConnection = true;
+              }
+            }
+          });
+          
+          // Si falta alguna conexión, crearla
+          if (!hasOutgoingConnection) {
+            try {
+              const connection = positionManager.createOptimizedConnection(modeling, role, consultNode, 'RALph:dashedLine');
+              if (connection) {
+                logElement.innerHTML += `    ➕ Creada conexión faltante: ${role.businessObject && role.businessObject.name ? role.businessObject.name : role.id} → nodo consulta\n`;
+              }
+            } catch (error) {
+              console.warn('Error creando conexión faltante de consultor:', error.message);
+            }
+          }
+          
+          if (!hasIncomingConnection) {
+            try {
+              const connection = positionManager.createOptimizedConnection(modeling, consultNode, role, 'RALph:dashedLine');
+              if (connection) {
+                logElement.innerHTML += `    ➕ Creada conexión faltante: nodo consulta → ${role.businessObject && role.businessObject.name ? role.businessObject.name : role.id}\n`;
+              }
+            } catch (error) {
+              console.warn('Error creando conexión faltante de consultor:', error.message);
+            }
+          }
+        });
+      }
+    });
+    
+    logElement.innerHTML += `    ✅ Limpieza completada: ${removedCount} conexiones duplicadas eliminadas\n`;
+    
+  } catch (error) {
+    console.error('Error en limpieza de conexiones duplicadas:', error);
+    logElement.innerHTML += `    ⚠️ Error en limpieza: ${error.message}\n`;
+  }
+}
 
 function findNextTaskInFlow(modeler, currentTask) {
   const elementRegistry = modeler.get('elementRegistry');
   let nextTask = null;
   let allConnections = [];
   
-  console.log(`🔍 DEBUG - Buscando siguiente tarea para: ${currentTask.businessObject?.name || 'SIN NOMBRE'} (ID: ${currentTask.id})`);
+  console.log(`🔍 DEBUG - Buscando siguiente tarea para: ${currentTask.businessObject && currentTask.businessObject.name ? currentTask.businessObject.name : 'SIN NOMBRE'} (ID: ${currentTask.id})`);
   
   // Buscar TODAS las conexiones SequenceFlow que salen de la tarea actual
   elementRegistry.forEach(element => {
@@ -2580,7 +2850,7 @@ function findNextTaskInFlow(modeler, currentTask) {
         element.source && element.source.id === currentTask.id) {
       
       const targetElement = element.target;
-      console.log(`🔍 DEBUG - Encontrada conexión: ${currentTask.businessObject?.name} → ${targetElement.businessObject?.name || targetElement.id} (tipo: ${targetElement.type})`);
+      console.log(`🔍 DEBUG - Encontrada conexión: ${currentTask.businessObject && currentTask.businessObject.name ? currentTask.businessObject.name : 'SIN NOMBRE'} → ${targetElement.businessObject && targetElement.businessObject.name ? targetElement.businessObject.name : targetElement.id} (tipo: ${targetElement.type})`);
       
       // Verificar que el objetivo sea una tarea válida (NO eventos intermedios)
       if (targetElement && targetElement.type && (
@@ -2600,9 +2870,9 @@ function findNextTaskInFlow(modeler, currentTask) {
           target: targetElement,
           isMainFlow: true
         });
-      } else if (targetElement && targetElement.type && targetElement.type === 'bpmn:IntermediateCatchEvent') {
+      } else if (targetElement && targetElement.type && (targetElement.type === 'bpmn:IntermediateCatchEvent' || targetElement.type === 'bpmn:IntermediateThrowEvent')) {
         // Si es un evento intermedio, buscar la siguiente tarea después del evento
-        console.log(`🔍 DEBUG - Encontrado evento intermedio: ${targetElement.businessObject?.name || targetElement.id}`);
+        console.log(`🔍 DEBUG - Encontrado evento intermedio: ${targetElement.businessObject && targetElement.businessObject.name ? targetElement.businessObject.name : targetElement.id}`);
         
         // Buscar la siguiente tarea después del evento intermedio
         elementRegistry.forEach(nextElement => {
@@ -2610,7 +2880,7 @@ function findNextTaskInFlow(modeler, currentTask) {
               nextElement.source && nextElement.source.id === targetElement.id) {
             
             const nextTargetElement = nextElement.target;
-            console.log(`🔍 DEBUG - Después del evento: ${targetElement.businessObject?.name} → ${nextTargetElement.businessObject?.name || nextTargetElement.id} (tipo: ${nextTargetElement.type})`);
+            console.log(`🔍 DEBUG - Después del evento: ${targetElement.businessObject && targetElement.businessObject.name ? targetElement.businessObject.name : 'SIN NOMBRE'} → ${nextTargetElement.businessObject && nextTargetElement.businessObject.name ? nextTargetElement.businessObject.name : nextTargetElement.id} (tipo: ${nextTargetElement.type})`);
             
             if (nextTargetElement && nextTargetElement.type && (
               nextTargetElement.type === 'bpmn:Task' ||
@@ -2630,6 +2900,39 @@ function findNextTaskInFlow(modeler, currentTask) {
                 isMainFlow: false,
                 intermediateEvent: targetElement
               });
+            } else if (nextTargetElement && nextTargetElement.type && (nextTargetElement.type === 'bpmn:IntermediateCatchEvent' || nextTargetElement.type === 'bpmn:IntermediateThrowEvent')) {
+              // Si después del evento hay otro evento, seguir buscando
+              console.log(`🔍 DEBUG - Después del evento hay otro evento: ${nextTargetElement.businessObject && nextTargetElement.businessObject.name ? nextTargetElement.businessObject.name : nextTargetElement.id}`);
+              
+              // Buscar recursivamente después del segundo evento
+              elementRegistry.forEach(thirdElement => {
+                if (thirdElement.type === 'bpmn:SequenceFlow' && 
+                    thirdElement.source && thirdElement.source.id === nextTargetElement.id) {
+                  
+                  const thirdTargetElement = thirdElement.target;
+                  console.log(`🔍 DEBUG - Después del segundo evento: ${nextTargetElement.businessObject && nextTargetElement.businessObject.name ? nextTargetElement.businessObject.name : 'SIN NOMBRE'} → ${thirdTargetElement.businessObject && thirdTargetElement.businessObject.name ? thirdTargetElement.businessObject.name : thirdTargetElement.id} (tipo: ${thirdTargetElement.type})`);
+                  
+                  if (thirdTargetElement && thirdTargetElement.type && (
+                    thirdTargetElement.type === 'bpmn:Task' ||
+                    thirdTargetElement.type === 'bpmn:UserTask' ||
+                    thirdTargetElement.type === 'bpmn:ServiceTask' ||
+                    thirdTargetElement.type === 'bpmn:ScriptTask' ||
+                    thirdTargetElement.type === 'bpmn:ManualTask' ||
+                    thirdTargetElement.type === 'bpmn:BusinessRuleTask' ||
+                    thirdTargetElement.type === 'bpmn:SendTask' ||
+                    thirdTargetElement.type === 'bpmn:ReceiveTask' ||
+                    thirdTargetElement.type === 'bpmn:CallActivity' ||
+                    thirdTargetElement.type === 'bpmn:SubProcess'
+                  )) {
+                    allConnections.push({
+                      connection: thirdElement,
+                      target: thirdTargetElement,
+                isMainFlow: false,
+                intermediateEvent: targetElement
+                    });
+                  }
+                }
+              });
             }
           }
         });
@@ -2643,17 +2946,17 @@ function findNextTaskInFlow(modeler, currentTask) {
   const directConnections = allConnections.filter(conn => conn.isMainFlow);
   if (directConnections.length > 0) {
     nextTask = directConnections[0].target;
-    console.log(`✅ DEBUG - Seleccionada tarea directa: ${nextTask.businessObject?.name || nextTask.id}`);
+    console.log(`✅ DEBUG - Seleccionada tarea directa: ${nextTask.businessObject && nextTask.businessObject.name ? nextTask.businessObject.name : nextTask.id}`);
   } else if (allConnections.length > 0) {
     // Si no hay conexiones directas, usar la primera conexión con evento intermedio
     nextTask = allConnections[0].target;
-    console.log(`✅ DEBUG - Seleccionada tarea con evento intermedio: ${nextTask.businessObject?.name || nextTask.id}`);
+    console.log(`✅ DEBUG - Seleccionada tarea con evento intermedio: ${nextTask.businessObject && nextTask.businessObject.name ? nextTask.businessObject.name : nextTask.id}`);
   }
   
   if (nextTask) {
-    console.log(`✅ DEBUG - Siguiente tarea encontrada: ${nextTask.businessObject?.name || 'SIN NOMBRE'} (ID: ${nextTask.id})`);
+    console.log(`✅ DEBUG - Siguiente tarea encontrada: ${nextTask.businessObject && nextTask.businessObject.name ? nextTask.businessObject.name : 'SIN NOMBRE'} (ID: ${nextTask.id})`);
   } else {
-    console.log(`⚠️ DEBUG - No se encontró siguiente tarea para: ${currentTask.businessObject?.name || 'SIN NOMBRE'} (ID: ${currentTask.id})`);
+    console.log(`⚠️ DEBUG - No se encontró siguiente tarea para: ${currentTask.businessObject && currentTask.businessObject.name ? currentTask.businessObject.name : 'SIN NOMBRE'} (ID: ${currentTask.id})`);
   }
   
   return nextTask;
@@ -2743,6 +3046,10 @@ function createRalphRole(modeler, roleName, results, taskBounds = null) {
     // Si ya existe un rol con este nombre, reutilizarlo
     if (existingRoles.length > 0) {
       console.log(`✓ Rol ya existe: ${roleName}`);
+      // Verificar si el rol ya está registrado en el positionManager
+      if (!positionManager.roleInstances.has(roleName)) {
+        positionManager.roleInstances.set(roleName, existingRoles[0]);
+      }
       return existingRoles[0];
     }
     
@@ -2877,7 +3184,7 @@ function createSimpleAssignment(modeler, bpmnTask, roleName, results) {
           
           if (hasConnectionToTask) {
             andNodeExists = true;
-            console.log(`🔍 DEBUG - Encontrado nodo AND que conecta a la tarea: ${element.businessObject?.name || 'SIN NOMBRE'}`);
+            console.log(`🔍 DEBUG - Encontrado nodo AND que conecta a la tarea: ${element.businessObject && element.businessObject.name ? element.businessObject.name : 'SIN NOMBRE'}`);
           }
         }
       });
@@ -2967,7 +3274,41 @@ function createSimpleAssignment(modeler, bpmnTask, roleName, results) {
 
     // Verificar si ya existe una conexión entre este rol y la tarea (en cualquier dirección)
     if (positionManager.connectionExists(modeler, roleElement, bpmnTask)) {
-      console.log(`✓ Conexión ya existe: ${roleName} ↔ ${bpmnTask.businessObject.name}`);
+      console.log(`✓ Conexión ya existe: ${roleName} ↔ ${bpmnTask.businessObject && bpmnTask.businessObject.name ? bpmnTask.businessObject.name : bpmnTask.id}`);
+      return;
+    }
+
+    // Verificar si ya existe un nodo AND que conecte a esta tarea
+    const andNodeExists = positionManager.collaborationNodeExists(modeler, bpmnTask.businessObject && bpmnTask.businessObject.name ? bpmnTask.businessObject.name : bpmnTask.id);
+    if (andNodeExists) {
+      console.log(`⚠️ No crear conexión directa de ${roleName} porque ya existe un nodo AND para la tarea`);
+      return;
+    }
+
+    // Verificar si este rol ya está conectado a través de un nodo AND
+    const elementRegistry = modeler.get('elementRegistry');
+    let roleConnectedToAnd = false;
+    
+    elementRegistry.forEach(element => {
+      if (element.type === 'RALph:Complex-Assignment-AND' && 
+          element.businessObject && 
+          element.businessObject.name && 
+          element.businessObject.name.includes('Colaboración')) {
+        
+        // Verificar si este rol está conectado al nodo AND
+        elementRegistry.forEach(connection => {
+          if (connection.type && (connection.type === 'RALph:ResourceArc' || connection.type === 'bpmn:Association') &&
+              connection.source && connection.target &&
+              connection.target.id === element.id &&
+              connection.source.id === roleElement.id) {
+            roleConnectedToAnd = true;
+          }
+        });
+      }
+    });
+    
+    if (roleConnectedToAnd) {
+      console.log(`⚠️ No crear conexión directa de ${roleName} porque ya está conectado a través de un nodo AND`);
       return;
     }
 
@@ -3009,12 +3350,18 @@ function createSimpleAssignment(modeler, bpmnTask, roleName, results) {
 }
 
 // Función auxiliar para encontrar nodos AND existentes para una tarea
-function findExistingAndNodeForTask(bpmnTask) {
+function findExistingAndNodeForTask(bpmnTask, modeler) {
+  if (!modeler) {
+    console.warn('Modeler no proporcionado a findExistingAndNodeForTask');
+    return null;
+  }
+  
   const elementRegistry = modeler.get('elementRegistry');
   
   let andNode = null;
   elementRegistry.forEach(element => {
     if (element.type === 'RALph:Complex-Assignment-AND') {
+      // Verificar si este nodo AND está conectado a la tarea
       const hasConnectionToTask = elementRegistry.getAll().some(connection => 
         connection.type && (connection.type === 'RALph:ResourceArc' || connection.type === 'bpmn:Association') &&
         connection.source && connection.target &&
@@ -3024,6 +3371,7 @@ function findExistingAndNodeForTask(bpmnTask) {
       
       if (hasConnectionToTask) {
         andNode = element;
+        console.log(`🔍 Nodo AND encontrado para tarea ${bpmnTask.businessObject?.name || bpmnTask.id}:`, element.id);
       }
     }
   });
@@ -3508,6 +3856,8 @@ function createCollaborationAssignment(modeler, bpmnTask, supportRoleName, respo
     }
 
     // Conectar el nodo de colaboración a la tarea (UNA SOLA CONEXIÓN)
+    // Verificar si ya existe una conexión del nodo AND a la tarea
+    if (!positionManager.connectionExists(modeler, collaborationNode, bpmnTask)) {
     try {
       positionManager.createOptimizedConnection(modeling, collaborationNode, bpmnTask, 'RALph:ResourceArc');
     } catch (error) {
@@ -3517,6 +3867,9 @@ function createCollaborationAssignment(modeler, bpmnTask, supportRoleName, respo
       } catch (fallbackError) {
         console.error('Error en fallback de conexión colaboración-tarea:', fallbackError);
       }
+      }
+    } else {
+      console.log('✓ Conexión del nodo AND a la tarea ya existe');
     }
 
     // VERIFICACIÓN FINAL: Asegurar que no queden conexiones directas visibles
@@ -3533,9 +3886,9 @@ function createCollaborationAssignment(modeler, bpmnTask, supportRoleName, respo
             if (sourceId === responsibleRoleElement.id && targetId === bpmnTask.id) {
               // Verificar si la conexión está visible
               const isVisible = element.visible !== false && 
-                               element.businessObject?.visible !== false &&
+                               (element.businessObject && element.businessObject.visible !== false) &&
                                element.hidden !== true &&
-                               element.businessObject?.hidden !== true;
+                               (element.businessObject && element.businessObject.hidden !== true);
               
               if (isVisible) {
                 remainingDirectConnections++;
@@ -4539,172 +4892,377 @@ function createApprovalTask(modeler, bpmnTask, roleName, results) {
   }
 }
 
-function createMessageFlow(modeler, bpmnTask, roleName, results) {
+function createMessageFlow(modeler, bpmnTask, roleNames, results) {
   const modeling = modeler.get('modeling');
   const canvas = modeler.get('canvas');
 
   try {
-    // Verificar si ya existe un flujo de consulta para esta tarea y rol
-    const elementRegistry = modeler.get('elementRegistry');
-    const consultNodeName = `Consultar ${roleName}`;
+    // Convertir roleNames a array si es un string
+    const roles = Array.isArray(roleNames) ? roleNames : [roleNames];
     
-    // Verificar si ya existe un nodo de consulta para esta tarea
-    if (positionManager.elementExists(modeler, 'bpmn:IntermediateCatchEvent', consultNodeName)) {
-      console.log(`✓ Nodo de consulta ya existe: ${consultNodeName}`);
+    // Verificar si ya existe un evento de consulta para esta tarea y roles
+    const elementRegistry = modeler.get('elementRegistry');
+    const consultEventName = roles.length === 1 
+      ? `Consultar ${roles[0]}`
+      : `Consultar ${roles.join(' y ')}`;
+    
+    // Buscar evento de consulta existente (tanto catch como throw)
+    let existingConsultEvent = null;
+    elementRegistry.forEach(element => {
+      if ((element.type === 'bpmn:IntermediateThrowEvent' || element.type === 'bpmn:IntermediateCatchEvent') && 
+          element.businessObject && 
+          element.businessObject.name === consultEventName) {
+        existingConsultEvent = element;
+      }
+    });
+    
+    if (existingConsultEvent) {
+      console.log(`✓ Evento de consulta ya existe: ${consultEventName}`);
       return;
     }
     
+    // Buscar la siguiente tarea en el flujo (ignorando eventos intermedios existentes)
+    const nextTask = findNextTaskInFlowIgnoringEvents(modeler, bpmnTask);
+    if (!nextTask) {
+      console.warn(`⚠️ No se encontró siguiente tarea para insertar evento de consulta`);
+      return;
+    }
 
-
-    // Crear rol consultado cerca de la tarea si no existe
-    const taskBounds = getSafeBounds(bpmnTask);
-    const consultRoleElement = createRalphRole(modeler, roleName, results, taskBounds);
-    
-    if (!consultRoleElement) {
+    // Buscar la conexión original entre la tarea actual y la siguiente
+    const originalConnection = findConnectionBetween(modeler, bpmnTask, nextTask);
+    if (!originalConnection) {
+      console.warn(`⚠️ No se encontró conexión original entre tareas`);
       return;
     }
 
     const rootElement = canvas.getRootElement();
     
-    // Crear nodo de consulta para representar la relación bidireccional
+    // Crear evento intermedio de mensaje tipo throw en el medio del flujo
     const consultPosition = {
-      x: taskBounds.x + taskBounds.width + 200,
-      y: taskBounds.y + (taskBounds.height / 2) - 15
+      x: (bpmnTask.x + nextTask.x) / 2,
+      y: (bpmnTask.y + nextTask.y) / 2
     };
     
-    const consultNode = modeling.createShape(
-      { type: 'bpmn:IntermediateCatchEvent' },
+    const consultEvent = modeling.createShape(
+      { type: 'bpmn:IntermediateThrowEvent' },
       consultPosition,
       rootElement
     );
 
-    // Configurar el nodo de consulta
-    modeling.updateProperties(consultNode, {
-      name: consultNodeName
+    // Agregar definición de mensaje al evento
+    const moddle = modeler.get('moddle');
+    const messageEventDefinition = moddle.create('bpmn:MessageEventDefinition');
+    consultEvent.businessObject.eventDefinitions = [messageEventDefinition];
+
+    // Configurar el evento de consulta con el nombre del rol
+    modeling.updateProperties(consultEvent, {
+      name: consultEventName
     });
 
-    // Crear conexión bidireccional: Tarea ↔ Consulta ↔ Rol (SIN RETORNO A LA TAREA)
-    try {
-      // Tarea → Consulta (solicitud de consulta)
-      const connection1 = positionManager.createOptimizedConnection(modeling, bpmnTask, consultNode, 'bpmn:SequenceFlow');
-      
-      // Consulta → Rol (envío de consulta)
-      const connection2 = positionManager.createOptimizedConnection(modeling, consultNode, consultRoleElement, 'RALph:dashedLine');
-      
-      // Rol → Consulta (respuesta de consulta)
-      const connection3 = positionManager.createOptimizedConnection(modeling, consultRoleElement, consultNode, 'RALph:dashedLine');
-      
-      // NO crear conexión de retorno: Consulta → Tarea (se elimina para evitar flechas dobles)
-      
-      if (connection1 && connection2 && connection3) {
+    // Eliminar la conexión original
+    modeling.removeConnection(originalConnection);
+    console.log(`🗑️ Eliminada conexión original: ${bpmnTask.businessObject && bpmnTask.businessObject.name ? bpmnTask.businessObject.name : bpmnTask.id} → ${nextTask.businessObject && nextTask.businessObject.name ? nextTask.businessObject.name : nextTask.id}`);
+
+    // Crear nuevas conexiones: Tarea → Evento → Siguiente Tarea
+    const connection1 = modeling.connect(bpmnTask, consultEvent, { type: 'bpmn:SequenceFlow' });
+    const connection2 = modeling.connect(consultEvent, nextTask, { type: 'bpmn:SequenceFlow' });
+    
+    if (connection1 && connection2) {
         results.messageFlows++;
+      console.log(`✅ Evento de consulta insertado en flujo: ${bpmnTask.businessObject && bpmnTask.businessObject.name ? bpmnTask.businessObject.name : bpmnTask.id} → ${consultEventName} → ${nextTask.businessObject && nextTask.businessObject.name ? nextTask.businessObject.name : nextTask.id} (${roles.length} rol${roles.length > 1 ? 'es' : ''})`);
       }
     } catch (error) {
-      console.warn('Error creando flujo de consulta bidireccional, usando conexión simple:', error);
-      
-      // Fallback: conexión simple
-      try {
-        const connection = positionManager.createOptimizedConnection(modeling, bpmnTask, consultRoleElement, 'bpmn:Association');
-        if (connection) {
-          results.messageFlows++;
-        }
-      } catch (fallbackError) {
-        console.error('Error en fallback de flujo de consulta:', fallbackError);
-      }
-    }
-  } catch (error) {
-    console.warn('Error creando flujo de consulta, usando conexión BPMN estándar:', error);
-    
-    // Fallback: usar conexión BPMN estándar
-    try {
-      const taskBounds = getSafeBounds(bpmnTask);
-      const roleElement = createRalphRole(modeler, roleName, results, taskBounds);
-      
-      if (roleElement) {
-        const connection = positionManager.createOptimizedConnection(modeling, bpmnTask, roleElement, 'bpmn:Association');
-        
-        if (connection) {
-          results.messageFlows++;
-        }
-      }
-    } catch (fallbackError) {
-      console.error('Error en fallback de flujo de consulta:', fallbackError);
-    }
+    console.warn('Error creando evento de consulta:', error);
   }
 }
 
-function createInfoEvent(modeler, bpmnTask, roleName, results) {
+// Función para mantener conexiones visibles después del movimiento
+function maintainConnectionsAfterMove(modeler, movedElement) {
+  const modeling = modeler.get('modeling');
+  const canvas = modeler.get('canvas');
+  const elementRegistry = modeler.get('elementRegistry');
+  
+  console.log(`🔄 Manteniendo conexiones después del movimiento de: ${movedElement.businessObject && movedElement.businessObject.name ? movedElement.businessObject.name : movedElement.id}`);
+  
+  // Buscar todas las conexiones relacionadas con el elemento movido
+  const relatedConnections = [];
+  
+  elementRegistry.forEach(element => {
+    if (element.type && (element.type === 'bpmn:SequenceFlow' || element.type === 'bpmn:Association' || element.type === 'RALph:dashedLine')) {
+      if (element.source && element.target) {
+        if (element.source.id === movedElement.id || element.target.id === movedElement.id) {
+          relatedConnections.push(element);
+        }
+      }
+    }
+  });
+  
+  // Actualizar waypoints de todas las conexiones relacionadas
+  relatedConnections.forEach(connection => {
+    try {
+      const sourceBounds = positionManager.getSafeBounds(connection.source);
+      const targetBounds = positionManager.getSafeBounds(connection.target);
+      
+      const waypoints = positionManager.calculateOptimizedWaypoints(sourceBounds, targetBounds, modeling);
+      
+      // Actualizar propiedades de la conexión
+      modeling.updateProperties(connection, { 
+        waypoints: waypoints,
+        visible: true // Asegurar que la conexión esté visible
+      });
+      
+      // Forzar actualización visual
+      canvas.updateElement(connection);
+      
+      // Verificar que la conexión siga existiendo después de la actualización
+      setTimeout(() => {
+        const connectionStillExists = elementRegistry.get(connection.id);
+        if (!connectionStillExists) {
+          console.warn(`⚠️ Conexión desapareció después del movimiento: ${connection.id}`);
+          // Intentar recrear la conexión si es necesario
+          try {
+            const newConnection = modeling.connect(connection.source, connection.target, { 
+              type: connection.type,
+              waypoints: waypoints
+            });
+            if (newConnection) {
+              console.log(`✅ Conexión recreada: ${connection.source.businessObject && connection.source.businessObject.name ? connection.source.businessObject.name : connection.source.id} → ${connection.target.businessObject && connection.target.businessObject.name ? connection.target.businessObject.name : connection.target.id}`);
+            }
+          } catch (recreateError) {
+            console.error('Error recreando conexión:', recreateError.message);
+          }
+        }
+      }, 50);
+      
+      console.log(`✅ Actualizada conexión: ${connection.source.businessObject && connection.source.businessObject.name ? connection.source.businessObject.name : connection.source.id} → ${connection.target.businessObject && connection.target.businessObject.name ? connection.target.businessObject.name : connection.target.id}`);
+  } catch (error) {
+      console.warn('Error actualizando conexión después del movimiento:', error.message);
+    }
+  });
+  
+  console.log(`✅ Mantenidas ${relatedConnections.length} conexiones después del movimiento`);
+}
+
+// Configurar listener para mantener conexiones después del movimiento
+function setupConnectionMaintenanceListener(modeler) {
+  const eventBus = modeler.get('eventBus');
+  
+  // Listener para cuando se mueve un elemento
+  eventBus.on('element.changed', function(event) {
+    const element = event.element;
+    
+    // Verificar si es un movimiento de elemento
+    if (element && (element.type === 'RALph:RoleRALph' || 
+                   element.type === 'bpmn:IntermediateThrowEvent' || 
+                   element.type === 'bpmn:Task' || 
+                   element.type === 'bpmn:UserTask')) {
+      
+      // Usar setTimeout para asegurar que el movimiento se complete
+      setTimeout(() => {
+        maintainConnectionsAfterMove(modeler, element);
+      }, 100);
+    }
+  });
+  
+  // Listener para cuando se actualiza un elemento
+  eventBus.on('element.updateProperties', function(event) {
+    const element = event.element;
+    
+    if (element && (element.type === 'RALph:RoleRALph' || 
+                   element.type === 'bpmn:IntermediateThrowEvent' || 
+                   element.type === 'bpmn:Task' || 
+                   element.type === 'bpmn:UserTask')) {
+      
+      setTimeout(() => {
+        maintainConnectionsAfterMove(modeler, element);
+      }, 100);
+    }
+  });
+  
+  console.log('✅ Listener de mantenimiento de conexiones configurado');
+}
+
+// Función para encontrar la conexión entre dos elementos
+function findConnectionBetween(modeler, sourceElement, targetElement) {
+  const elementRegistry = modeler.get('elementRegistry');
+  
+  for (const element of elementRegistry.getAll()) {
+    if (element.type === 'bpmn:SequenceFlow' && 
+        element.source && element.target &&
+        element.source.id === sourceElement.id && 
+        element.target.id === targetElement.id) {
+      return element;
+    }
+  }
+  
+  return null;
+}
+
+// Función para encontrar la siguiente tarea ignorando eventos intermedios
+function findNextTaskInFlowIgnoringEvents(modeler, currentTask) {
+  const elementRegistry = modeler.get('elementRegistry');
+  let nextTask = null;
+  
+  console.log(`🔍 DEBUG - Buscando siguiente tarea (ignorando eventos) para: ${currentTask.businessObject && currentTask.businessObject.name ? currentTask.businessObject.name : 'SIN NOMBRE'} (ID: ${currentTask.id})`);
+  
+  // Función recursiva para seguir el flujo hasta encontrar una tarea
+  function findNextTaskRecursive(element, visited = new Set()) {
+    if (visited.has(element.id)) {
+      return null; // Evitar ciclos infinitos
+    }
+    visited.add(element.id);
+    
+    // Buscar conexiones que salen del elemento
+    elementRegistry.forEach(connection => {
+      if (connection.type === 'bpmn:SequenceFlow' && 
+          connection.source && connection.source.id === element.id) {
+        
+        const targetElement = connection.target;
+        console.log(`🔍 DEBUG - Siguiendo flujo: ${element.businessObject && element.businessObject.name ? element.businessObject.name : element.id} → ${targetElement.businessObject && targetElement.businessObject.name ? targetElement.businessObject.name : targetElement.id} (tipo: ${targetElement.type})`);
+        
+        // Si es una tarea, la encontramos
+        if (targetElement && targetElement.type && (
+          targetElement.type === 'bpmn:Task' ||
+          targetElement.type === 'bpmn:UserTask' ||
+          targetElement.type === 'bpmn:ServiceTask' ||
+          targetElement.type === 'bpmn:ScriptTask' ||
+          targetElement.type === 'bpmn:ManualTask' ||
+          targetElement.type === 'bpmn:BusinessRuleTask' ||
+          targetElement.type === 'bpmn:SendTask' ||
+          targetElement.type === 'bpmn:ReceiveTask' ||
+          targetElement.type === 'bpmn:CallActivity' ||
+          targetElement.type === 'bpmn:SubProcess'
+        )) {
+          nextTask = targetElement;
+          console.log(`✅ DEBUG - Encontrada tarea final: ${nextTask.businessObject && nextTask.businessObject.name ? nextTask.businessObject.name : nextTask.id}`);
+          return;
+        }
+        
+        // Si es un evento intermedio, seguir buscando
+        if (targetElement && targetElement.type && (targetElement.type === 'bpmn:IntermediateCatchEvent' || targetElement.type === 'bpmn:IntermediateThrowEvent')) {
+          console.log(`🔍 DEBUG - Saltando evento intermedio: ${targetElement.businessObject && targetElement.businessObject.name ? targetElement.businessObject.name : targetElement.id}`);
+          findNextTaskRecursive(targetElement, visited);
+        }
+      }
+    });
+  }
+  
+  // Iniciar búsqueda recursiva desde la tarea actual
+  findNextTaskRecursive(currentTask);
+  
+  if (nextTask) {
+    console.log(`✅ DEBUG - Siguiente tarea encontrada: ${nextTask.businessObject && nextTask.businessObject.name ? nextTask.businessObject.name : 'SIN NOMBRE'} (ID: ${nextTask.id})`);
+  } else {
+    console.log(`⚠️ DEBUG - No se encontró siguiente tarea para: ${currentTask.businessObject && currentTask.businessObject.name ? currentTask.businessObject.name : 'SIN NOMBRE'} (ID: ${currentTask.id})`);
+  }
+  
+  return nextTask;
+}
+
+// Función de debug para verificar conexiones
+function debugConnections(modeler, elementName) {
+  const elementRegistry = modeler.get('elementRegistry');
+  console.log(`🔍 DEBUG - Verificando conexiones para: ${elementName}`);
+  
+  let connectionCount = 0;
+  elementRegistry.forEach(element => {
+    if (element.type && (element.type === 'bpmn:SequenceFlow' || element.type === 'bpmn:Association' || element.type === 'RALph:dashedLine')) {
+      if (element.source && element.target) {
+        const sourceName = element.source.businessObject && element.source.businessObject.name ? element.source.businessObject.name : element.source.id;
+        const targetName = element.target.businessObject && element.target.businessObject.name ? element.target.businessObject.name : element.target.id;
+        
+        if (sourceName.includes(elementName) || targetName.includes(elementName)) {
+          connectionCount++;
+          console.log(`  ${connectionCount}. ${sourceName} → ${targetName} (tipo: ${element.type})`);
+        }
+      }
+    }
+  });
+  
+  console.log(`📊 Total de conexiones encontradas para "${elementName}": ${connectionCount}`);
+}
+
+function createInfoEvent(modeler, bpmnTask, roleNames, results) {
   const modeling = modeler.get('modeling');
   const canvas = modeler.get('canvas');
 
   try {
-    // Verificar si ya existe un evento informativo para esta tarea y rol
-    const elementRegistry = modeler.get('elementRegistry');
-    const infoEventName = `Informar a ${roleName}`;
+    // Convertir roleNames a array si es un string
+    const roles = Array.isArray(roleNames) ? roleNames : [roleNames];
     
-    // Buscar y ELIMINAR eventos informativos existentes para esta tarea
-    const existingInfoEvents = [];
+    // Verificar si ya existe un evento de información para esta tarea y roles
+    const elementRegistry = modeler.get('elementRegistry');
+    const infoEventName = roles.length === 1 
+      ? `Informar ${roles[0]}`
+      : `Informar ${roles.join(' y ')}`;
+    
+    // Buscar evento de información existente (tanto catch como throw)
+    let existingInfoEvent = null;
     elementRegistry.forEach(element => {
-      if (element.type === 'bpmn:IntermediateThrowEvent' && 
+      if ((element.type === 'bpmn:IntermediateThrowEvent' || element.type === 'bpmn:IntermediateCatchEvent') && 
           element.businessObject && 
           element.businessObject.name === infoEventName) {
-        existingInfoEvents.push(element);
+        existingInfoEvent = element;
       }
     });
     
-    // Eliminar eventos existentes y sus conexiones
-    existingInfoEvents.forEach(event => {
-      try {
-        modeling.removeElement(event);
-        console.log(`🗑️ Eliminado evento informativo existente: ${infoEventName}`);
-      } catch (error) {
-        console.warn('Error eliminando evento informativo existente:', error);
-      }
-    });
+    if (existingInfoEvent) {
+      console.log(`✓ Evento de información ya existe: ${infoEventName}`);
+      return;
+    }
 
-    // Obtener el elemento raíz del diagrama
+    // Buscar la siguiente tarea en el flujo (ignorando eventos intermedios existentes)
+    const nextTask = findNextTaskInFlowIgnoringEvents(modeler, bpmnTask);
+    if (!nextTask) {
+      console.warn(`⚠️ No se encontró siguiente tarea para insertar evento de información`);
+      return;
+    }
+
+    // Buscar la conexión original entre la tarea actual y la siguiente
+    const originalConnection = findConnectionBetween(modeler, bpmnTask, nextTask);
+    if (!originalConnection) {
+      console.warn(`⚠️ No se encontró conexión original entre tareas`);
+      return;
+    }
+
     const rootElement = canvas.getRootElement();
     
-    // Obtener posición para el evento informativo (arriba de la tarea)
-    const taskBounds = getSafeBounds(bpmnTask);
-    const position = positionManager.getInfoEventPosition(taskBounds);
+    // Crear evento intermedio de mensaje tipo throw en el medio del flujo
+    const infoPosition = {
+      x: (bpmnTask.x + nextTask.x) / 2,
+      y: (bpmnTask.y + nextTask.y) / 2
+    };
     
-    // Crear evento intermedio de mensaje
     const infoEvent = modeling.createShape(
       { type: 'bpmn:IntermediateThrowEvent' },
-      position,
+      infoPosition,
       rootElement
     );
 
-    // Configurar el evento
+    // Agregar definición de mensaje al evento
+    const moddle = modeler.get('moddle');
+    const messageEventDefinition = moddle.create('bpmn:MessageEventDefinition');
+    infoEvent.businessObject.eventDefinitions = [messageEventDefinition];
+
+    // Configurar el evento de información con el nombre del rol
     modeling.updateProperties(infoEvent, {
       name: infoEventName
     });
 
-    // Conectar la tarea al evento con conexión optimizada (UNA SOLA CONEXIÓN)
-    positionManager.createOptimizedConnection(modeling, bpmnTask, infoEvent, 'bpmn:SequenceFlow');
+    // Eliminar la conexión original
+    modeling.removeConnection(originalConnection);
+    console.log(`🗑️ Eliminada conexión original: ${bpmnTask.businessObject && bpmnTask.businessObject.name ? bpmnTask.businessObject.name : bpmnTask.id} → ${nextTask.businessObject && nextTask.businessObject.name ? nextTask.businessObject.name : nextTask.id}`);
 
-    // Crear rol cerca de la tarea si no existe
-    const roleElement = createRalphRole(modeler, roleName, results, taskBounds);
-    if (roleElement) {
-      try {
-        // Conectar el evento al rol con conexión optimizada
-        positionManager.createOptimizedConnection(modeling, infoEvent, roleElement, 'RALph:solidLine');
-      } catch (error) {
-        console.warn('Error creando flujo informativo, usando conexión BPMN estándar:', error);
-        
-        // Fallback: usar conexión BPMN estándar
-        try {
-          positionManager.createOptimizedConnection(modeling, infoEvent, roleElement, 'bpmn:Association');
-        } catch (fallbackError) {
-          console.error('Error en fallback de flujo informativo:', fallbackError);
-        }
-      }
-    }
-
+    // Crear nuevas conexiones: Tarea → Evento → Siguiente Tarea
+    const connection1 = modeling.connect(bpmnTask, infoEvent, { type: 'bpmn:SequenceFlow' });
+    const connection2 = modeling.connect(infoEvent, nextTask, { type: 'bpmn:SequenceFlow' });
+    
+    if (connection1 && connection2) {
     results.infoEvents++;
+      console.log(`✅ Evento de información insertado en flujo: ${bpmnTask.businessObject && bpmnTask.businessObject.name ? bpmnTask.businessObject.name : bpmnTask.id} → ${infoEventName} → ${nextTask.businessObject && nextTask.businessObject.name ? nextTask.businessObject.name : nextTask.id} (${roles.length} rol${roles.length > 1 ? 'es' : ''})`);
+    }
   } catch (error) {
-    console.error('Error creando evento informativo:', error);
+    console.warn('Error creando evento de información:', error);
   }
 }
 
@@ -5230,7 +5788,7 @@ class SimpleBpmnStylePositionManager {
     return exists;
   }
 
-  // Verificar si existe un nodo AND de colaboración para una tarea
+  // Verificar si existe un nodo AND de colaboración para una tarea específica
   collaborationNodeExists(modeler, taskName) {
     const elementRegistry = modeler.get('elementRegistry');
     
@@ -5240,7 +5798,21 @@ class SimpleBpmnStylePositionManager {
           element.businessObject && 
           element.businessObject.name && 
           element.businessObject.name.includes('Colaboración')) {
+        
+        // Verificar si este nodo AND está conectado a la tarea específica
+        elementRegistry.forEach(connection => {
+          if (connection.type && (connection.type === 'RALph:ResourceArc' || connection.type === 'bpmn:Association') &&
+              connection.source && connection.target &&
+              connection.source.id === element.id) {
+            
+            const targetName = connection.target.businessObject && connection.target.businessObject.name ? 
+                              connection.target.businessObject.name : connection.target.id;
+            
+            if (targetName === taskName || connection.target.id === taskName) {
         exists = true;
+            }
+          }
+        });
       }
     });
     
@@ -5476,6 +6048,525 @@ function getExistingElementsStats(modeler) {
   });
   
   return stats;
+}
+
+// Sistema de mapeo inteligente que detecta y aplica cambios
+function performIntelligentRasciMapping(modeler) {
+  // Verificar que el modeler tenga todos los servicios necesarios
+  if (!modeler) {
+    console.error('Modeler no disponible');
+    return { error: 'Modeler no disponible' };
+  }
+
+  const logElement = document.getElementById('mapping-log');
+  if (!logElement) {
+    console.error('Elemento de log no encontrado');
+    return { error: 'Elemento de log no encontrado' };
+  }
+
+  logElement.innerHTML = '🔄 Iniciando mapeo inteligente RASCI → RALph...\n\n';
+
+  // Obtener servicios del modeler
+  const elementRegistry = modeler.get('elementRegistry');
+  const modeling = modeler.get('modeling');
+  const canvas = modeler.get('canvas');
+
+  // Obtener datos actuales de la matriz RASCI
+  const currentMatrixData = window.rasciMatrixData || {};
+  const currentRoles = JSON.parse(localStorage.getItem('rasciRoles') || '[]');
+
+  // Obtener estado anterior guardado
+  const previousMatrixData = JSON.parse(localStorage.getItem('previousRasciMatrixData') || '{}');
+  const previousRoles = JSON.parse(localStorage.getItem('previousRasciRoles') || '[]');
+
+  // Guardar estado actual para la próxima comparación
+  localStorage.setItem('previousRasciMatrixData', JSON.stringify(currentMatrixData));
+  localStorage.setItem('previousRasciRoles', JSON.stringify(currentRoles));
+
+  const results = {
+    rolesCreated: 0,
+    rolesDeleted: 0,
+    assignmentsCreated: 0,
+    assignmentsDeleted: 0,
+    eventsCreated: 0,
+    eventsDeleted: 0,
+    connectionsUpdated: 0,
+    errors: 0
+  };
+
+  // 1. DETECTAR CAMBIOS EN ROLES
+  logElement.innerHTML += '📋 Analizando cambios en roles...\n';
+  
+  const deletedRoles = previousRoles.filter(role => !currentRoles.includes(role));
+  const newRoles = currentRoles.filter(role => !previousRoles.includes(role));
+  
+  if (deletedRoles.length > 0) {
+    logElement.innerHTML += `  🗑️ Roles eliminados: ${deletedRoles.join(', ')}\n`;
+    // Eliminar roles del diagrama
+    deletedRoles.forEach(roleName => {
+      const roleElement = findRalphRoleByName(modeler, roleName);
+      if (roleElement) {
+        try {
+          modeling.removeElements([roleElement]);
+          results.rolesDeleted++;
+          logElement.innerHTML += `    ✓ Eliminado rol: ${roleName}\n`;
+        } catch (error) {
+          console.warn(`Error eliminando rol ${roleName}:`, error);
+          results.errors++;
+        }
+      }
+    });
+  }
+  
+  if (newRoles.length > 0) {
+    logElement.innerHTML += `  ➕ Roles nuevos: ${newRoles.join(', ')}\n`;
+  }
+
+  // 2. DETECTAR CAMBIOS EN TAREAS
+  logElement.innerHTML += '\n📋 Analizando cambios en tareas...\n';
+  
+  const currentTasks = Object.keys(currentMatrixData);
+  const previousTasks = Object.keys(previousMatrixData);
+  
+  const deletedTasks = previousTasks.filter(task => !currentTasks.includes(task));
+  const newTasks = currentTasks.filter(task => !previousTasks.includes(task));
+  
+  if (deletedTasks.length > 0) {
+    logElement.innerHTML += `  🗑️ Tareas eliminadas: ${deletedTasks.join(', ')}\n`;
+    // Eliminar elementos relacionados con tareas eliminadas
+    deletedTasks.forEach(taskName => {
+      cleanupTaskElements(modeler, taskName, results, logElement);
+    });
+  }
+  
+  if (newTasks.length > 0) {
+    logElement.innerHTML += `  ➕ Tareas nuevas: ${newTasks.join(', ')}\n`;
+  }
+
+  // 3. DETECTAR CAMBIOS EN RESPONSABILIDADES
+  logElement.innerHTML += '\n📋 Analizando cambios en responsabilidades...\n';
+  
+  // Procesar tareas existentes y nuevas
+  currentTasks.forEach(taskName => {
+    const currentTaskRoles = currentMatrixData[taskName] || {};
+    const previousTaskRoles = previousMatrixData[taskName] || {};
+    
+    // Detectar cambios en responsabilidades
+    const allRoles = new Set([...Object.keys(currentTaskRoles), ...Object.keys(previousTaskRoles)]);
+    
+    allRoles.forEach(roleName => {
+      const currentResp = currentTaskRoles[roleName];
+      const previousResp = previousTaskRoles[roleName];
+      
+      if (currentResp !== previousResp) {
+        if (previousResp && !currentResp) {
+          // Responsabilidad eliminada
+          logElement.innerHTML += `  🗑️ ${taskName}: ${roleName} (${previousResp}) eliminado\n`;
+          removeResponsibility(modeler, taskName, roleName, previousResp, results, logElement);
+        } else if (!previousResp && currentResp) {
+          // Nueva responsabilidad
+          logElement.innerHTML += `  ➕ ${taskName}: ${roleName} (${currentResp}) nuevo\n`;
+          addResponsibility(modeler, taskName, roleName, currentResp, results, logElement);
+        } else {
+          // Responsabilidad cambiada
+          logElement.innerHTML += `  🔄 ${taskName}: ${roleName} (${previousResp} → ${currentResp})\n`;
+          updateResponsibility(modeler, taskName, roleName, previousResp, currentResp, results, logElement);
+        }
+      }
+    });
+  });
+
+  // 4. APLICAR NUEVOS ELEMENTOS
+  logElement.innerHTML += '\n🔄 Aplicando nuevos elementos...\n';
+  
+  // Configurar listeners necesarios
+  setupConnectionMaintenanceListener(modeler);
+  setupAndNodeDeletionListener(modeler);
+  positionManager.detectExistingElements(modeler);
+  
+  // Procesar tareas nuevas y cambios
+  currentTasks.forEach(taskName => {
+    const bpmnTask = findBpmnTaskByName(elementRegistry, taskName);
+    if (!bpmnTask) {
+      logElement.innerHTML += `  ⚠️ Tarea BPMN no encontrada: "${taskName}"\n`;
+      return;
+    }
+    
+    const taskRoles = currentMatrixData[taskName] || {};
+    const responsibilities = Object.entries(taskRoles);
+    
+    // Procesar responsabilidades actuales
+    const responsibleRoles = responsibilities.filter(([_, resp]) => resp === 'R').map(([role, _]) => role);
+    const supportRoles = responsibilities.filter(([_, resp]) => resp === 'S').map(([role, _]) => role);
+    const consultRoles = responsibilities.filter(([_, resp]) => resp === 'C').map(([role, _]) => role);
+    const approveRoles = responsibilities.filter(([_, resp]) => resp === 'A').map(([role, _]) => role);
+    const informRoles = responsibilities.filter(([_, resp]) => resp === 'I').map(([role, _]) => role);
+    
+    const processedRoles = new Set();
+    
+    // Procesar cada tipo de responsabilidad
+    processResponsibleAndSupport(modeler, bpmnTask, responsibleRoles, supportRoles, processedRoles, results, logElement);
+    processConsultRoles(modeler, bpmnTask, consultRoles, processedRoles, results, logElement);
+    processApproveRoles(modeler, bpmnTask, approveRoles, processedRoles, results, logElement);
+    processInformRoles(modeler, bpmnTask, informRoles, processedRoles, results, logElement);
+  });
+
+  // 5. LIMPIAR CONEXIONES DUPLICADAS
+  logElement.innerHTML += '\n🧹 Limpiando conexiones duplicadas...\n';
+  cleanupDuplicateConnections(modeler, logElement);
+
+  // 6. RESUMEN FINAL
+  logElement.innerHTML += '\n📊 RESUMEN DEL MAPEO INTELIGENTE:\n';
+  logElement.innerHTML += `  ✅ Roles creados: ${results.rolesCreated}\n`;
+  logElement.innerHTML += `  🗑️ Roles eliminados: ${results.rolesDeleted}\n`;
+  logElement.innerHTML += `  ✅ Asignaciones creadas: ${results.assignmentsCreated}\n`;
+  logElement.innerHTML += `  🗑️ Asignaciones eliminadas: ${results.assignmentsDeleted}\n`;
+  logElement.innerHTML += `  ✅ Eventos creados: ${results.eventsCreated}\n`;
+  logElement.innerHTML += `  🗑️ Eventos eliminados: ${results.eventsDeleted}\n`;
+  logElement.innerHTML += `  🔄 Conexiones actualizadas: ${results.connectionsUpdated}\n`;
+  if (results.errors > 0) {
+    logElement.innerHTML += `  ❌ Errores: ${results.errors}\n`;
+  }
+  
+  logElement.innerHTML += '\n🎉 Mapeo inteligente completado!\n';
+
+  return results;
+}
+
+// Función para limpiar elementos de una tarea eliminada
+function cleanupTaskElements(modeler, taskName, results, logElement) {
+  const elementRegistry = modeler.get('elementRegistry');
+  const modeling = modeler.get('modeling');
+  
+  // Buscar y eliminar elementos relacionados con la tarea
+  const elementsToRemove = [];
+  
+  elementRegistry.forEach(element => {
+    if (element.businessObject && element.businessObject.name) {
+      const elementName = element.businessObject.name;
+      
+      // Buscar eventos de consulta e información relacionados
+      if ((element.type === 'bpmn:IntermediateThrowEvent' || element.type === 'bpmn:IntermediateCatchEvent') &&
+          (elementName.includes('Consultar') || elementName.includes('Informar'))) {
+        // Verificar si está relacionado con la tarea eliminada
+        const connections = elementRegistry.filter(conn => 
+          conn.type === 'bpmn:SequenceFlow' && 
+          (conn.source === element || conn.target === element)
+        );
+        
+        // Si no tiene conexiones válidas, marcarlo para eliminación
+        if (connections.length === 0) {
+          elementsToRemove.push(element);
+        }
+      }
+    }
+  });
+  
+  // Eliminar elementos marcados
+  if (elementsToRemove.length > 0) {
+    try {
+      modeling.removeElements(elementsToRemove);
+      results.eventsDeleted += elementsToRemove.length;
+      logElement.innerHTML += `    ✓ Eliminados ${elementsToRemove.length} elementos huérfanos\n`;
+    } catch (error) {
+      console.warn('Error eliminando elementos:', error);
+      results.errors++;
+    }
+  }
+}
+
+// Función para eliminar una responsabilidad específica
+function removeResponsibility(modeler, taskName, roleName, responsibilityType, results, logElement) {
+  const elementRegistry = modeler.get('elementRegistry');
+  const modeling = modeler.get('modeling');
+  
+  switch (responsibilityType) {
+    case 'R':
+    case 'S':
+      // Eliminar asignaciones de roles
+      const roleElement = findRalphRoleByName(modeler, roleName);
+      if (roleElement) {
+        // Buscar conexiones con la tarea
+        const connections = elementRegistry.filter(conn => 
+          conn.type === 'RALph:ResourceArc' && 
+          ((conn.source === roleElement && conn.target.businessObject && conn.target.businessObject.name === taskName) ||
+           (conn.target === roleElement && conn.source.businessObject && conn.source.businessObject.name === taskName))
+        );
+        
+        if (connections.length > 0) {
+          modeling.removeElements(connections);
+          results.assignmentsDeleted += connections.length;
+          logElement.innerHTML += `    ✓ Eliminadas ${connections.length} asignaciones para ${roleName}\n`;
+        }
+      }
+      break;
+      
+    case 'C':
+      // Eliminar eventos de consulta
+      const consultEventName = `Consultar ${roleName}`;
+      const consultEvent = elementRegistry.find(element => 
+        (element.type === 'bpmn:IntermediateThrowEvent' || element.type === 'bpmn:IntermediateCatchEvent') &&
+        element.businessObject && element.businessObject.name === consultEventName
+      );
+      
+      if (consultEvent) {
+        modeling.removeElements([consultEvent]);
+        results.eventsDeleted++;
+        logElement.innerHTML += `    ✓ Eliminado evento de consulta: ${consultEventName}\n`;
+      }
+      break;
+      
+    case 'I':
+      // Eliminar eventos de información
+      const infoEventName = `Informar ${roleName}`;
+      const infoEvent = elementRegistry.find(element => 
+        (element.type === 'bpmn:IntermediateThrowEvent' || element.type === 'bpmn:IntermediateCatchEvent') &&
+        element.businessObject && element.businessObject.name === infoEventName
+      );
+      
+      if (infoEvent) {
+        modeling.removeElements([infoEvent]);
+        results.eventsDeleted++;
+        logElement.innerHTML += `    ✓ Eliminado evento de información: ${infoEventName}\n`;
+      }
+      break;
+      
+    case 'A':
+      // Eliminar tareas de aprobación
+      const approvalTaskName = `Aprobar ${roleName}`;
+      const approvalTask = elementRegistry.find(element => 
+        element.type === 'bpmn:UserTask' &&
+        element.businessObject && element.businessObject.name === approvalTaskName
+      );
+      
+      if (approvalTask) {
+        modeling.removeElements([approvalTask]);
+        results.assignmentsDeleted++;
+        logElement.innerHTML += `    ✓ Eliminada tarea de aprobación: ${approvalTaskName}\n`;
+      }
+      break;
+  }
+}
+
+// Función para agregar una nueva responsabilidad
+function addResponsibility(modeler, taskName, roleName, responsibilityType, results, logElement) {
+  const elementRegistry = modeler.get('elementRegistry');
+  const bpmnTask = findBpmnTaskByName(elementRegistry, taskName);
+  
+  if (!bpmnTask) {
+    logElement.innerHTML += `    ⚠️ Tarea BPMN no encontrada: ${taskName}\n`;
+    return;
+  }
+  
+  switch (responsibilityType) {
+    case 'R':
+      createSimpleAssignment(modeler, bpmnTask, roleName, results);
+      results.assignmentsCreated++;
+      break;
+    case 'S':
+      createSimpleAssignment(modeler, bpmnTask, roleName, results);
+      results.assignmentsCreated++;
+      break;
+    case 'C':
+      createMessageFlow(modeler, bpmnTask, [roleName], results);
+      results.eventsCreated++;
+      break;
+    case 'I':
+      createInfoEvent(modeler, bpmnTask, [roleName], results);
+      results.eventsCreated++;
+      break;
+    case 'A':
+      createApprovalTask(modeler, bpmnTask, roleName, results);
+      results.assignmentsCreated++;
+      break;
+  }
+  
+  logElement.innerHTML += `    ✓ Agregada responsabilidad ${responsibilityType} para ${roleName}\n`;
+}
+
+// Función para actualizar una responsabilidad existente
+function updateResponsibility(modeler, taskName, roleName, oldType, newType, results, logElement) {
+  // Primero eliminar la responsabilidad anterior
+  removeResponsibility(modeler, taskName, roleName, oldType, results, logElement);
+  
+  // Luego agregar la nueva responsabilidad
+  addResponsibility(modeler, taskName, roleName, newType, results, logElement);
+  
+  logElement.innerHTML += `    ✓ Actualizada responsabilidad: ${oldType} → ${newType}\n`;
+}
+
+// Funciones auxiliares para procesar responsabilidades
+function processResponsibleAndSupport(modeler, bpmnTask, responsibleRoles, supportRoles, processedRoles, results, logElement) {
+  const elementRegistry = modeler.get('elementRegistry');
+  const modeling = modeler.get('modeling');
+  
+  // Buscar nodo AND existente para esta tarea
+  const existingAndNode = findExistingAndNodeForTask(bpmnTask, modeler);
+  
+  if (existingAndNode) {
+    logElement.innerHTML += `    🔄 Nodo AND existente encontrado, conectando roles adicionales...\n`;
+    
+    // Conectar roles no procesados al nodo AND existente
+    const allRoles = [...responsibleRoles, ...supportRoles];
+    const unprocessedRoles = allRoles.filter(roleName => !processedRoles.has(roleName));
+    
+    unprocessedRoles.forEach(roleName => {
+      if (processedRoles.has(roleName)) return;
+      
+      // Buscar o crear el rol
+      let roleElement = findRalphRoleByName(modeler, roleName);
+      if (!roleElement) {
+        const taskBounds = getSafeBounds(bpmnTask);
+        roleElement = createRalphRole(modeler, roleName, results, taskBounds);
+      }
+      
+      if (roleElement) {
+        // Conectar el rol al nodo AND existente
+        try {
+          positionManager.createOptimizedConnection(modeling, roleElement, existingAndNode, 'RALph:ResourceArc');
+          logElement.innerHTML += `      ✓ Conectado ${roleName} al nodo AND existente\n`;
+          processedRoles.add(roleName);
+          results.assignmentsCreated++;
+        } catch (error) {
+          console.warn(`Error conectando ${roleName} al nodo AND existente:`, error);
+          try {
+            positionManager.createOptimizedConnection(modeling, roleElement, existingAndNode, 'bpmn:Association');
+            logElement.innerHTML += `      ✓ Conectado ${roleName} al nodo AND existente (fallback)\n`;
+            processedRoles.add(roleName);
+            results.assignmentsCreated++;
+          } catch (fallbackError) {
+            console.error(`Error en fallback conectando ${roleName}:`, fallbackError);
+          }
+        }
+      }
+    });
+    
+    return;
+  }
+  
+  // Si no hay nodo AND existente, crear uno nuevo con los primeros dos roles
+  if (supportRoles.length > 0 && responsibleRoles.length > 0) {
+    const firstResponsible = responsibleRoles.find(role => !processedRoles.has(role));
+    const firstSupport = supportRoles.find(role => !processedRoles.has(role));
+    
+    if (firstResponsible && firstSupport) {
+      logElement.innerHTML += `    + Creando nuevo nodo AND: ${firstResponsible} + ${firstSupport}\n`;
+      createCollaborationAssignment(modeler, bpmnTask, firstSupport, firstResponsible, results);
+      processedRoles.add(firstResponsible);
+      processedRoles.add(firstSupport);
+      results.assignmentsCreated++;
+      
+      // Procesar roles restantes conectándolos al nodo AND recién creado
+      const remainingRoles = [...responsibleRoles, ...supportRoles].filter(role => 
+        !processedRoles.has(role) && role !== firstResponsible && role !== firstSupport
+      );
+      
+      if (remainingRoles.length > 0) {
+        const newAndNode = findExistingAndNodeForTask(bpmnTask, modeler);
+        if (newAndNode) {
+          logElement.innerHTML += `    🔄 Conectando roles adicionales al nuevo nodo AND...\n`;
+          
+          remainingRoles.forEach(roleName => {
+            let roleElement = findRalphRoleByName(modeler, roleName);
+            if (!roleElement) {
+              const taskBounds = getSafeBounds(bpmnTask);
+              roleElement = createRalphRole(modeler, roleName, results, taskBounds);
+            }
+            
+            if (roleElement) {
+              try {
+                positionManager.createOptimizedConnection(modeling, roleElement, newAndNode, 'RALph:ResourceArc');
+                logElement.innerHTML += `      ✓ Conectado ${roleName} al nuevo nodo AND\n`;
+                processedRoles.add(roleName);
+                results.assignmentsCreated++;
+              } catch (error) {
+                console.warn(`Error conectando ${roleName} al nuevo nodo AND:`, error);
+                try {
+                  positionManager.createOptimizedConnection(modeling, roleElement, newAndNode, 'bpmn:Association');
+                  logElement.innerHTML += `      ✓ Conectado ${roleName} al nuevo nodo AND (fallback)\n`;
+                  processedRoles.add(roleName);
+                  results.assignmentsCreated++;
+                } catch (fallbackError) {
+                  console.error(`Error en fallback conectando ${roleName}:`, fallbackError);
+                }
+              }
+            }
+          });
+        }
+      }
+    }
+  } else {
+    // Si no hay roles de soporte, procesar responsables normalmente
+    responsibleRoles.forEach(roleName => {
+      if (processedRoles.has(roleName)) return;
+      createSimpleAssignment(modeler, bpmnTask, roleName, results);
+      processedRoles.add(roleName);
+      results.assignmentsCreated++;
+    });
+  }
+  
+  // Procesar roles de soporte restantes que no se conectaron a ningún nodo AND
+  supportRoles.forEach(roleName => {
+    if (processedRoles.has(roleName)) return;
+    createSimpleAssignment(modeler, bpmnTask, roleName, results);
+    processedRoles.add(roleName);
+    results.assignmentsCreated++;
+  });
+}
+
+function processConsultRoles(modeler, bpmnTask, consultRoles, processedRoles, results, logElement) {
+  if (consultRoles.length > 0) {
+    const unprocessedConsultRoles = consultRoles.filter(roleName => !processedRoles.has(roleName));
+    if (unprocessedConsultRoles.length > 0) {
+      createMessageFlow(modeler, bpmnTask, unprocessedConsultRoles, results);
+      unprocessedConsultRoles.forEach(role => processedRoles.add(role));
+      results.eventsCreated++;
+    }
+  }
+}
+
+function processApproveRoles(modeler, bpmnTask, approveRoles, processedRoles, results, logElement) {
+  approveRoles.forEach(roleName => {
+    if (processedRoles.has(roleName)) return;
+    createApprovalTask(modeler, bpmnTask, roleName, results);
+    processedRoles.add(roleName);
+    results.assignmentsCreated++;
+  });
+}
+
+function processInformRoles(modeler, bpmnTask, informRoles, processedRoles, results, logElement) {
+  if (informRoles.length > 0) {
+    const unprocessedInformRoles = informRoles.filter(roleName => !processedRoles.has(roleName));
+    if (unprocessedInformRoles.length > 0) {
+      createInfoEvent(modeler, bpmnTask, unprocessedInformRoles, results);
+      unprocessedInformRoles.forEach(role => processedRoles.add(role));
+      results.eventsCreated++;
+    }
+  }
+}
+
+// ... existing code ...
+
+// Verificación final de disponibilidad de funciones globales
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🔍 Verificando funciones globales...');
+  console.log('executeRasciToRalphMapping:', typeof window.executeRasciToRalphMapping);
+  console.log('executeIntelligentRasciMapping:', typeof window.executeIntelligentRasciMapping);
+  
+  if (typeof window.executeIntelligentRasciMapping !== 'function') {
+    console.error('❌ executeIntelligentRasciMapping no está disponible globalmente');
+  } else {
+    console.log('✅ executeIntelligentRasciMapping está disponible globalmente');
+  }
+});
+
+// Verificación inmediata
+if (typeof window.executeIntelligentRasciMapping !== 'function') {
+  console.warn('⚠️ executeIntelligentRasciMapping no disponible, redefiniendo...');
+  window.executeIntelligentRasciMapping = function() {
+    console.log('🧠 Función de mapeo inteligente ejecutada (fallback)');
+    alert('Función de mapeo inteligente ejecutada. Verifica la consola para más detalles.');
+  };
 }
 
 

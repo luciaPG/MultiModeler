@@ -84,6 +84,19 @@
           <button class="btn btn-primary btn-full-width" onclick="executeRasciToRalphMapping()">
             <i class="fas fa-magic"></i> Ejecutar Mapeo Automático
           </button>
+          <button class="btn btn-success btn-full-width" onclick="executeIntelligentRasciMapping()" style="margin-top: 10px;">
+            <i class="fas fa-brain"></i> Mapeo Inteligente (Detecta Cambios)
+          </button>
+        </div>
+        
+        <div class="mapping-info" style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px; font-size: 0.9em;">
+          <h5 style="margin: 0 0 8px 0; color: #495057;">💡 Tipos de Mapeo:</h5>
+          <div style="margin-bottom: 8px;">
+            <strong>🔵 Mapeo Automático:</strong> Crea elementos nuevos sin eliminar los existentes. Ideal para la primera ejecución.
+          </div>
+          <div>
+            <strong>🟢 Mapeo Inteligente:</strong> Detecta cambios en la matriz RASCI y aplica solo las modificaciones necesarias (eliminaciones, cambios de posición, nuevas adiciones). Ideal para actualizaciones.
+          </div>
         </div>
 
         <div class="mapping-results" id="mapping-results" style="display: none;">
