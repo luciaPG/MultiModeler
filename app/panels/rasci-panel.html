@@ -94,8 +94,21 @@
           <div style="margin-bottom: 8px;">
             <strong>🔵 Mapeo Automático:</strong> Crea elementos nuevos sin eliminar los existentes. Ideal para la primera ejecución.
           </div>
-          <div>
-            <strong>🟢 Mapeo Inteligente:</strong> Detecta cambios en la matriz RASCI y aplica solo las modificaciones necesarias (eliminaciones, cambios de posición, nuevas adiciones). Ideal para actualizaciones.
+          <div style="margin-bottom: 8px;">
+            <strong>🟢 Mapeo Inteligente:</strong> <strong>NUEVO:</strong> Borra todos los elementos RALph existentes y los recrea desde cero según la matriz RASCI actual. Garantiza sincronización perfecta.
+          </div>
+          <div style="margin-top: 10px; padding: 8px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;">
+            <strong>⚠️ Nota:</strong> El mapeo automático al escribir está <strong>desactivado</strong>. Ahora solo se ejecuta cuando presionas los botones manualmente.
+          </div>
+          <div style="margin-top: 10px; padding: 8px; background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px;">
+            <strong>🔄 Recreación Completa:</strong> En cada ejecución, el sistema elimina todos los elementos RALph existentes y los recrea desde cero, garantizando que el diagrama esté siempre sincronizado con la matriz RASCI.
+          </div>
+          <div style="margin-top: 10px; padding: 8px; background-color: #e8f5e8; border: 1px solid #c3e6cb; border-radius: 4px;">
+            <strong>📍 Preservación Inteligente de Posiciones:</strong> El sistema analiza la matriz RASCI actual y solo mantiene las posiciones de elementos que siguen existiendo. Los elementos eliminados de la matriz se recrean en nuevas posiciones calculadas. <strong>Las puertas AND y roles SIEMPRE preservan sus posiciones exactas con verificación adicional.</strong>
+          </div>
+          
+          <div style="margin-top: 10px; padding: 8px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;">
+            <strong>🔧 Herramienta de Diagnóstico:</strong> Si tienes problemas con roles que no generan flechas (como el rol "gfh"), usa el archivo <code>test-gfh-role.html</code> para diagnosticar y forzar conexiones manualmente.
           </div>
         </div>
 
