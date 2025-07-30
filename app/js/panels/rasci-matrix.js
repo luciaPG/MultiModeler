@@ -209,6 +209,13 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
             autoSaveRasciState();
             console.log(`✅ Estado guardado automáticamente (sin mapeo automático)`);
           }
+          
+          // Trigger auto-mapping if enabled (but debounced for performance)
+          if (typeof window.onRasciMatrixUpdated === 'function') {
+            setTimeout(() => {
+              window.onRasciMatrixUpdated();
+            }, 100); // Small delay to allow multiple changes to batch
+          }
 
         } else if (['-', 'Delete', 'Backspace', 'Escape'].includes(e.key)) {
           e.preventDefault();
@@ -228,7 +235,14 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
           // 🔒 NO se ejecuta mapeo automático - solo se guarda el estado
           if (autoSaveRasciState) {
             autoSaveRasciState();
-            console.log(`✅ Estado guardado automáticamente después de eliminar (sin mapeo automático)`);
+            console.log(`✅ Estado guardado automáticamente después de eliminar ${task}.${role}`);
+          }
+          
+          // Trigger auto-mapping if enabled (but debounced for performance)
+          if (typeof window.onRasciMatrixUpdated === 'function') {
+            setTimeout(() => {
+              window.onRasciMatrixUpdated();
+            }, 100); // Small delay to allow multiple changes to batch
           }
         } else {
           console.log(`⚠️ Tecla no reconocida: ${key}`);

@@ -1,7 +1,7 @@
 // RASCI Core - Main panel initialization and state management
 import { renderMatrix, addNewRole, editRole, deleteRole, showDeleteConfirmModal } from './rasci-matrix.js';
 import { applyStyles } from './rasci-styles.js';
-import { initRasciMapping, executeSimpleRasciMapping } from './rasci-mapping-consolidated.js';
+import { initRasciMapping, executeSimpleRasciMapping, executeSmartRasciMapping } from './rasci-mapping-consolidated.js';
 
 console.log('🚀 rasci-core.js: Archivo cargado correctamente');
 console.log('📊 executeSimpleRasciMapping disponible:', typeof executeSimpleRasciMapping);
@@ -350,6 +350,13 @@ export function initRasciPanel(panel) {
     if (typeof window.updateMatrixFromDiagram === 'function') {
       window.updateMatrixFromDiagram();
     }
+    
+    // Initialize auto-mapping after matrix reload
+    setTimeout(() => {
+      if (typeof window.initializeAutoMapping === 'function') {
+        window.initializeAutoMapping();
+      }
+    }, 100);
   };
 
   // Función de test temporal
@@ -423,4 +430,57 @@ export function initRasciPanel(panel) {
       }
     }, 200);
   });
-} 
+}
+
+// Global function for toggling auto-mapping
+window.toggleAutoMapping = function() {
+  const switchElement = document.getElementById('auto-mapping-switch');
+  const manualBtn = document.getElementById('manual-mapping-btn');
+  
+  if (!switchElement) return false;
+  
+  const isEnabled = switchElement.checked;
+  
+  if (window.rasciAutoMapping) {
+    if (isEnabled) {
+      window.rasciAutoMapping.enable();
+      if (manualBtn) manualBtn.style.display = 'none';
+      
+      // Show notification
+      console.log('✅ Mapeo automático RALph activado');
+      
+      // Trigger initial mapping if matrix exists
+      if (window.rasciMatrixData && Object.keys(window.rasciMatrixData).length > 0) {
+        setTimeout(() => {
+          window.rasciAutoMapping.triggerMapping();
+        }, 100);
+      }
+    } else {
+      window.rasciAutoMapping.disable();
+      if (manualBtn) manualBtn.style.display = 'block';
+      
+      console.log('❌ Mapeo automático RALph desactivado');
+    }
+  }
+  
+  return isEnabled;
+};
+
+// Initialize auto-mapping state when panel loads
+window.initializeAutoMapping = function() {
+  const switchElement = document.getElementById('auto-mapping-switch');
+  const manualBtn = document.getElementById('manual-mapping-btn');
+  
+  if (switchElement) {
+    // Set default state (enabled by default)
+    switchElement.checked = true;
+    
+    // Initialize auto-mapping
+    if (window.rasciAutoMapping) {
+      window.rasciAutoMapping.enable();
+      if (manualBtn) manualBtn.style.display = 'none';
+    }
+    
+    console.log('🔄 Mapeo automático RALph inicializado (activado por defecto)');
+  }
+}; 
