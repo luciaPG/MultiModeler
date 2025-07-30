@@ -477,6 +477,7 @@ function findNextTaskInOriginalFlow(modeler, currentTask) {
   }
   
   return findNextTaskRecursive(currentTask);
+
 }
 
 function createSequentialSpecialElements(modeler, bpmnTask, consultRoles, approveRoles, informRoles, results) {
@@ -589,7 +590,9 @@ function createSpecialElement(modeler, sourceElement, roleName, elementType, eve
     const rootElement = canvas.getRootElement();
     const position = { x: sourceElement.x + 150, y: sourceElement.y };
     
-    const element = modeling.createShape({ type: elementType }, position, rootElement);
+    // Create the element with proper businessObject
+    const elementData = { type: elementType };
+    const element = modeling.createShape(elementData, position, rootElement);
     
     if (!element) {
       console.error(`❌ No se pudo crear el elemento de tipo: ${elementType}`);
@@ -598,21 +601,53 @@ function createSpecialElement(modeler, sourceElement, roleName, elementType, eve
     
     console.log(`🏷️ Asignando label: ${elementName}`);
     
-    // Asegurar que el businessObject existe antes de actualizar propiedades
-    if (element.businessObject) {
-      modeling.updateProperties(element, { name: elementName });
-      console.log(`✅ Label asignado correctamente: ${elementName}`);
-    } else {
-      console.warn(`⚠️ businessObject no disponible para elemento ${elementType}, intentando método alternativo...`);
-      // Método alternativo para asignar el nombre
+    // Wait a bit for the element to be fully created
+    setTimeout(() => {
       try {
-        element.businessObject = element.businessObject || {};
-        element.businessObject.name = elementName;
-        console.log(`✅ Label asignado por método alternativo: ${elementName}`);
-      } catch (altError) {
-        console.error(`❌ Error en método alternativo para label: ${altError.message}`);
+        // For intermediate events, set up proper event definitions
+        if (elementType === 'bpmn:IntermediateThrowEvent') {
+          const moddle = modeler.get('moddle');
+          if (!element.businessObject.eventDefinitions) {
+            const messageEventDefinition = moddle.create('bpmn:MessageEventDefinition');
+            element.businessObject.eventDefinitions = [messageEventDefinition];
+          }
+        }
+        
+        // Multiple attempts to set the name
+        if (element.businessObject) {
+          modeling.updateProperties(element, { name: elementName });
+          console.log(`✅ Label asignado con updateProperties: ${elementName}`);
+        } else if (element.businessObject === undefined) {
+          // Force create businessObject if it doesn't exist
+          const moddle = modeler.get('moddle');
+          element.businessObject = moddle.create(elementType, { name: elementName });
+          console.log(`✅ Label asignado creando businessObject: ${elementName}`);
+        }
+        
+        // Additional fallback - direct assignment
+        if (element.businessObject && !element.businessObject.name) {
+          element.businessObject.name = elementName;
+          console.log(`✅ Label asignado directamente: ${elementName}`);
+        }
+        
+        // Verify the label was set
+        if (element.businessObject && element.businessObject.name === elementName) {
+          console.log(`🎉 Verificación exitosa - Label visible: ${elementName}`);
+        } else {
+          console.error(`❌ Fallo en verificación - Label no asignado correctamente`);
+        }
+        
+        // Force canvas refresh to show the label
+        const canvas = modeler.get('canvas');
+        if (canvas && typeof canvas.zoom === 'function') {
+          const currentZoom = canvas.zoom();
+          canvas.zoom(currentZoom, 'auto');
+        }
+        
+      } catch (labelError) {
+        console.error(`❌ Error asignando label: ${labelError.message}`);
       }
-    }
+    }, 50);
     
     try {
       modeling.connect(sourceElement, element, { type: 'bpmn:SequenceFlow' });
@@ -816,6 +851,11 @@ export function executeSimpleRasciMapping(modeler, matrix) {
   cleanupOrphanedElements(modeler);
   restoreBpmnFlow(modeler);
   
+  // Fix any missing labels after all elements are created
+  setTimeout(() => {
+    fixMissingLabels(modeler);
+  }, 200);
+  
   try {
     localStorage.setItem('previousRasciMatrixData', JSON.stringify(matrix));
   } catch (error) {
@@ -828,6 +868,86 @@ export function executeSimpleRasciMapping(modeler, matrix) {
   }, 500);
   
   return results;
+}
+
+function fixMissingLabels(modeler) {
+  console.log('🔧 Verificando y corrigiendo etiquetas faltantes...');
+  
+  const modeling = modeler.get('modeling');
+  const elementRegistry = modeler.get('elementRegistry');
+  
+  // Find special elements that might be missing labels
+  const specialElements = elementRegistry.filter(element => {
+    return (element.type === 'bpmn:IntermediateThrowEvent' || 
+            element.type === 'bpmn:UserTask') &&
+           (!element.businessObject || !element.businessObject.name ||
+            element.businessObject.name === '' || 
+            element.businessObject.name === 'undefined');
+  });
+  
+  console.log(`🔧 Encontrados ${specialElements.length} elementos sin etiqueta`);
+  
+  specialElements.forEach(element => {
+    // Try to determine what the label should be based on context
+    const incomingConnections = elementRegistry.filter(conn => 
+      conn.type === 'bpmn:SequenceFlow' && conn.target && conn.target.id === element.id
+    );
+    
+    if (incomingConnections.length > 0) {
+      const sourceElement = incomingConnections[0].source;
+      const sourceName = getElementName(sourceElement);
+      
+      console.log(`🔧 Elemento sin etiqueta encontrado después de: ${sourceName}`);
+      
+      // Try to extract role name from RASCI matrix or context
+      if (window.rasciMatrixData) {
+        Object.keys(window.rasciMatrixData).forEach(taskName => {
+          if (sourceName.includes(taskName) || taskName.includes(sourceName)) {
+            const taskRoles = window.rasciMatrixData[taskName];
+            Object.keys(taskRoles).forEach(roleName => {
+              const responsibility = taskRoles[roleName];
+              let labelName = '';
+              
+              if (element.type === 'bpmn:UserTask' && responsibility === 'A') {
+                labelName = `Aprobar ${roleName}`;
+              } else if (element.type === 'bpmn:IntermediateThrowEvent' && responsibility === 'C') {
+                labelName = `Consultar ${roleName}`;
+              } else if (element.type === 'bpmn:IntermediateThrowEvent' && responsibility === 'I') {
+                labelName = `Informar ${roleName}`;
+              }
+              
+              if (labelName) {
+                console.log(`🔧 Asignando etiqueta corregida: ${labelName}`);
+                try {
+                  // Multiple methods to ensure the label sticks
+                  modeling.updateProperties(element, { name: labelName });
+                  
+                  if (element.businessObject) {
+                    element.businessObject.name = labelName;
+                  }
+                  
+                  console.log(`✅ Etiqueta corregida: ${labelName}`);
+                } catch (e) {
+                  console.error(`❌ Error asignando etiqueta corregida: ${e.message}`);
+                }
+              }
+            });
+          }
+        });
+      }
+    }
+  });
+  
+  // Force canvas refresh to show updated labels
+  try {
+    const canvas = modeler.get('canvas');
+    if (canvas && typeof canvas.zoom === 'function') {
+      const currentZoom = canvas.zoom();
+      canvas.zoom(currentZoom, 'auto');
+    }
+  } catch (refreshError) {
+    console.warn('Error refrescando canvas:', refreshError.message);
+  }
 }
 
 window.executeRasciToRalphMapping = function() {
