@@ -1,6 +1,8 @@
 // === app.js limpio ===
 // TODO: A TERMINAR EL DESARROLLO - Sistema de guardado automático implementado
 
+console.log('🚀 app.js: Archivo cargado correctamente');
+
 import $ from 'jquery';
 import MultiNotationModeler from './MultiNotationModeler/index.js';
 import BpmnModdle from 'bpmn-moddle';

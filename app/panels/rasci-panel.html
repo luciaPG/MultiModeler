@@ -31,56 +31,19 @@
         <h3>Mapeo RASCI → RALph</h3>
         <p class="mapping-description">
           Convierte la matriz RASCI en elementos RALph en el diagrama BPMN.
-          <strong>El mapeo es manual y se ejecuta solo al presionar el botón.</strong>
         </p>
-        
-        <!-- ⚠️ NOTA IMPORTANTE SOBRE MAPEO MANUAL -->
-        <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 12px; margin: 16px 0; font-size: 13px;">
-          <strong>🔒 MAPEO COMPLETAMENTE MANUAL:</strong><br>
-          • El mapeo NO se ejecuta automáticamente al escribir letras en la matriz<br>
-          • El mapeo SOLO se ejecuta cuando presionas "Ejecutar Mapeo Manual"<br>
-          • Puedes añadir roles poco a poco sin que se ejecute mapeo automático<br>
-          • El estado se guarda automáticamente, pero el mapeo es manual
-        </div>
         
         <div class="mapping-options">
           <button class="btn btn-primary btn-full-width" onclick="executeRasciToRalphMapping()">
             <i class="fas fa-magic"></i>
-            Ejecutar Mapeo Manual
+            Ejecutar Mapeo
           </button>
           
-          <div class="mapping-info">
-            <h4>Características del Mapeo Manual:</h4>
-            <ul>
-              <li><strong>Procesamiento Completo:</strong> Elimina elementos obsoletos y crea nuevos según la matriz actual</li>
-              <li><strong>Orden Correcto:</strong> Los elementos se insertan en el flujo: Tarea → Consulta → Aprobación → Información</li>
-              <li><strong>Limpieza Automática:</strong> Elimina elementos especiales que ya no están en la matriz</li>
-              <li><strong>Control Manual:</strong> Solo se ejecuta cuando presionas el botón, no automáticamente al escribir</li>
-            </ul>
-          </div>
-        </div>
-        
-        <div class="test-buttons">
-          <h4>Botones de Prueba:</h4>
-          <button class="btn btn-warning btn-full-width" onclick="testSimpleCandI()" style="margin-top: 10px;">
-            <i class="fas fa-flask"></i>
-            Prueba Simple C e I
+          <!-- Botón de test temporal -->
+          <button class="btn btn-secondary btn-full-width" onclick="testRasciMapping()" style="margin-top: 10px;">
+            <i class="fas fa-bug"></i>
+            Test Mapeo
           </button>
-          
-          <button class="btn btn-info btn-full-width" onclick="testCandIRoles()" style="margin-top: 10px;">
-            <i class="fas fa-vial"></i>
-            Probar Roles C e I
-          </button>
-          
-          <button class="btn btn-success btn-full-width" onclick="testIncrementalAddition()" style="margin-top: 10px;">
-            <i class="fas fa-plus-circle"></i>
-            Prueba Adición Incremental
-          </button>
-        </div>
-        
-        <div class="mapping-results" id="mapping-results" style="display: none;">
-          <h4>Resultados del Mapeo:</h4>
-          <pre id="mapping-log" class="mapping-log"></pre>
         </div>
       </div>
     </div>

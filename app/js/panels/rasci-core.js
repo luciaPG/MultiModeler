@@ -3,6 +3,9 @@ import { renderMatrix, addNewRole, editRole, deleteRole, showDeleteConfirmModal 
 import { applyStyles } from './rasci-styles.js';
 import { initRasciMapping, executeSimpleRasciMapping } from './rasci-mapping-consolidated.js';
 
+console.log('🚀 rasci-core.js: Archivo cargado correctamente');
+console.log('📊 executeSimpleRasciMapping disponible:', typeof executeSimpleRasciMapping);
+
 export function initRasciPanel(panel) {
   const container = panel.querySelector('#matrix-container');
 
@@ -236,36 +239,49 @@ export function initRasciPanel(panel) {
   // Inicializar mapeo
   initRasciMapping(panel);
   
-  // Asegurar que las funciones globales estén disponibles
+  // Verificar que la función de mapeo esté disponible
   setTimeout(() => {
-    if (typeof window.executeRasciToRalphMapping !== 'function') {
-      console.warn('⚠️ Función executeRasciToRalphMapping no disponible, configurando fallback...');
-      
-      // Fallback: configurar función básica usando la función importada
-      window.executeRasciToRalphMapping = function() {
-        console.log('🔄 Ejecutando mapeo manual...');
-        
-        if (!window.bpmnModeler) {
-          alert('❌ BPMN Modeler no disponible. Asegúrate de tener un diagrama BPMN abierto.');
-          return;
-        }
-
-        if (!window.rasciMatrixData || Object.keys(window.rasciMatrixData).length === 0) {
-          alert('❌ No hay datos en la matriz RASCI para mapear. Primero agrega algunos roles en la matriz.');
-          return;
-        }
-
-        try {
-          const results = executeSimpleRasciMapping(window.bpmnModeler, window.rasciMatrixData);
-          console.log('✅ Mapeo manual completado:', results);
-        } catch (error) {
-          console.error('❌ Error en mapeo manual:', error);
-        }
-      };
-      
-      console.log('✅ Función executeRasciToRalphMapping configurada como fallback');
+    console.log('🔍 Verificando disponibilidad de funciones de mapeo...');
+    console.log('📊 window.executeRasciToRalphMapping:', typeof window.executeRasciToRalphMapping);
+    console.log('📊 window.bpmnModeler:', typeof window.bpmnModeler);
+    console.log('📊 window.rasciMatrixData:', window.rasciMatrixData);
+    
+    if (typeof window.executeRasciToRalphMapping === 'function') {
+      console.log('✅ Función executeRasciToRalphMapping disponible');
     } else {
-      console.log('✅ Función executeRasciToRalphMapping ya disponible');
+      console.warn('⚠️ Función executeRasciToRalphMapping no disponible');
+      console.log('🔧 Intentando definir función de mapeo...');
+      
+      // Intentar definir la función manualmente si no está disponible
+      if (typeof executeSimpleRasciMapping === 'function') {
+        window.executeRasciToRalphMapping = function() {
+          console.log('🚀 Función executeRasciToRalphMapping ejecutándose (definida manualmente)...');
+          
+          if (!window.bpmnModeler) {
+            console.error('❌ BPMN Modeler no disponible');
+            console.warn('⚠️ BPMN Modeler no disponible. Asegúrate de tener un diagrama BPMN abierto.');
+            return;
+          }
+
+          if (!window.rasciMatrixData || Object.keys(window.rasciMatrixData).length === 0) {
+            console.error('❌ No hay datos en la matriz RASCI');
+            console.warn('⚠️ No hay datos en la matriz RASCI para mapear. Primero agrega algunos roles en la matriz.');
+            return;
+          }
+
+          try {
+            console.log('🔄 Ejecutando executeSimpleRasciMapping...');
+            const results = executeSimpleRasciMapping(window.bpmnModeler, window.rasciMatrixData);
+            console.log('✅ Mapeo completado con resultados:', results);
+          } catch (error) {
+            console.error('❌ Error en el mapeo:', error);
+            console.error(`❌ Error en el mapeo: ${error.message}`);
+          }
+        };
+        console.log('✅ Función executeRasciToRalphMapping definida manualmente');
+      } else {
+        console.error('❌ executeSimpleRasciMapping no está disponible');
+      }
     }
   }, 1000);
 
@@ -333,6 +349,24 @@ export function initRasciPanel(panel) {
   window.reloadRasciMatrix = () => {
     if (typeof window.updateMatrixFromDiagram === 'function') {
       window.updateMatrixFromDiagram();
+    }
+  };
+
+  // Función de test temporal
+  window.testRasciMapping = () => {
+    console.log('🧪 testRasciMapping: Función de test ejecutándose...');
+    console.log('📊 Estado actual:');
+    console.log('  - window.executeRasciToRalphMapping:', typeof window.executeRasciToRalphMapping);
+    console.log('  - window.bpmnModeler:', typeof window.bpmnModeler);
+    console.log('  - window.rasciMatrixData:', window.rasciMatrixData);
+    console.log('  - executeSimpleRasciMapping:', typeof executeSimpleRasciMapping);
+    
+    if (typeof window.executeRasciToRalphMapping === 'function') {
+      console.log('✅ Ejecutando función de mapeo...');
+      window.executeRasciToRalphMapping();
+    } else {
+      console.error('❌ Función de mapeo no disponible');
+      console.warn('⚠️ Función de mapeo no disponible. Revisa la consola para más detalles.');
     }
   };
 
