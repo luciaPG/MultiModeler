@@ -11,19 +11,81 @@
   </div>
 
   <div class="panel-tabs">
-    <div class="tab active" data-tab="main" onclick="cambiarPestana('main')">Matriz</div>
-    <div class="tab" data-tab="config" onclick="cambiarPestana('config')">Leyenda</div>
+    <div class="tab active" data-tab="main" onclick="cambiarPestana('main')">Matriz RASCI</div>
     <div class="tab" data-tab="mapping" onclick="cambiarPestana('mapping')">Mapeo RALph</div>
+    <div class="tab" data-tab="config" onclick="cambiarPestana('config')">Leyenda</div>
   </div>
 
   <div class="panel-content">
-    <div id="main-tab" class="tab-content active">
+    <!-- PESTAÑA 1: MATRIZ RASCI -->
+    <div id="main-tab" class="tab-content active" style="display: flex;">
       <button class="btn btn-primary btn-full-width" onclick="reloadRasciMatrix()">
         <i class="fas fa-sync-alt"></i> Recargar Matriz
       </button>
       <div id="matrix-container"></div>
     </div>
 
+    <!-- PESTAÑA 2: MAPEO RALPH -->
+    <div class="tab-content" id="mapping-tab">
+      <div class="mapping-section">
+        <h3>Mapeo RASCI → RALph</h3>
+        <p class="mapping-description">
+          Convierte la matriz RASCI en elementos RALph en el diagrama BPMN.
+          <strong>El mapeo es manual y se ejecuta solo al presionar el botón.</strong>
+        </p>
+        
+        <!-- ⚠️ NOTA IMPORTANTE SOBRE MAPEO MANUAL -->
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 12px; margin: 16px 0; font-size: 13px;">
+          <strong>🔒 MAPEO COMPLETAMENTE MANUAL:</strong><br>
+          • El mapeo NO se ejecuta automáticamente al escribir letras en la matriz<br>
+          • El mapeo SOLO se ejecuta cuando presionas "Ejecutar Mapeo Manual"<br>
+          • Puedes añadir roles poco a poco sin que se ejecute mapeo automático<br>
+          • El estado se guarda automáticamente, pero el mapeo es manual
+        </div>
+        
+        <div class="mapping-options">
+          <button class="btn btn-primary btn-full-width" onclick="executeRasciToRalphMapping()">
+            <i class="fas fa-magic"></i>
+            Ejecutar Mapeo Manual
+          </button>
+          
+          <div class="mapping-info">
+            <h4>Características del Mapeo Manual:</h4>
+            <ul>
+              <li><strong>Procesamiento Completo:</strong> Elimina elementos obsoletos y crea nuevos según la matriz actual</li>
+              <li><strong>Orden Correcto:</strong> Los elementos se insertan en el flujo: Tarea → Consulta → Aprobación → Información</li>
+              <li><strong>Limpieza Automática:</strong> Elimina elementos especiales que ya no están en la matriz</li>
+              <li><strong>Control Manual:</strong> Solo se ejecuta cuando presionas el botón, no automáticamente al escribir</li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="test-buttons">
+          <h4>Botones de Prueba:</h4>
+          <button class="btn btn-warning btn-full-width" onclick="testSimpleCandI()" style="margin-top: 10px;">
+            <i class="fas fa-flask"></i>
+            Prueba Simple C e I
+          </button>
+          
+          <button class="btn btn-info btn-full-width" onclick="testCandIRoles()" style="margin-top: 10px;">
+            <i class="fas fa-vial"></i>
+            Probar Roles C e I
+          </button>
+          
+          <button class="btn btn-success btn-full-width" onclick="testIncrementalAddition()" style="margin-top: 10px;">
+            <i class="fas fa-plus-circle"></i>
+            Prueba Adición Incremental
+          </button>
+        </div>
+        
+        <div class="mapping-results" id="mapping-results" style="display: none;">
+          <h4>Resultados del Mapeo:</h4>
+          <pre id="mapping-log" class="mapping-log"></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- PESTAÑA 3: LEYENDA -->
     <div id="config-tab" class="tab-content" style="display: none;">
       <div class="rasci-legend">
         <div class="legend-header">
@@ -68,86 +130,6 @@
           <div class="legend-content">
             <div class="legend-name">Informado (Informed)</div>
             <div class="legend-description">Persona que debe ser notificada sobre las decisiones y avances, pero no participa activamente.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="mapping-tab" class="tab-content" style="display: none;">
-      <div class="mapping-container">
-        <div class="mapping-header">
-          <h3 class="mapping-title">Mapeo Automático RASCI → RALph</h3>
-          <p class="mapping-subtitle">Convierte automáticamente la matriz RASCI en elementos RALph sobre el diagrama BPMN</p>
-        </div>
-        
-        <div class="mapping-controls">
-          <button class="btn btn-primary btn-full-width" onclick="executeRasciToRalphMapping()">
-            <i class="fas fa-magic"></i> Ejecutar Mapeo Automático
-          </button>
-          <button class="btn btn-success btn-full-width" onclick="executeIntelligentRasciMapping()" style="margin-top: 10px;">
-            <i class="fas fa-brain"></i> Mapeo Inteligente (Detecta Cambios)
-          </button>
-        </div>
-        
-        <div class="mapping-info" style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px; font-size: 0.9em;">
-          <h5 style="margin: 0 0 8px 0; color: #495057;">💡 Tipos de Mapeo:</h5>
-          <div style="margin-bottom: 8px;">
-            <strong>🔵 Mapeo Automático:</strong> Crea elementos nuevos sin eliminar los existentes. Ideal para la primera ejecución.
-          </div>
-          <div style="margin-bottom: 8px;">
-            <strong>🟢 Mapeo Inteligente:</strong> <strong>NUEVO:</strong> Borra todos los elementos RALph existentes y los recrea desde cero según la matriz RASCI actual. Garantiza sincronización perfecta.
-          </div>
-          <div style="margin-top: 10px; padding: 8px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;">
-            <strong>⚠️ Nota:</strong> El mapeo automático al escribir está <strong>desactivado</strong>. Ahora solo se ejecuta cuando presionas los botones manualmente.
-          </div>
-          <div style="margin-top: 10px; padding: 8px; background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px;">
-            <strong>🔄 Recreación Completa:</strong> En cada ejecución, el sistema elimina todos los elementos RALph existentes y los recrea desde cero, garantizando que el diagrama esté siempre sincronizado con la matriz RASCI.
-          </div>
-          <div style="margin-top: 10px; padding: 8px; background-color: #e8f5e8; border: 1px solid #c3e6cb; border-radius: 4px;">
-            <strong>📍 Preservación Inteligente de Posiciones:</strong> El sistema analiza la matriz RASCI actual y solo mantiene las posiciones de elementos que siguen existiendo. Los elementos eliminados de la matriz se recrean en nuevas posiciones calculadas. <strong>Las puertas AND y roles SIEMPRE preservan sus posiciones exactas con verificación adicional.</strong>
-          </div>
-          
-          <div style="margin-top: 10px; padding: 8px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;">
-            <strong>🔧 Herramienta de Diagnóstico:</strong> Si tienes problemas con roles que no generan flechas (como el rol "gfh"), usa el archivo <code>test-gfh-role.html</code> para diagnosticar y forzar conexiones manualmente.
-          </div>
-        </div>
-
-        <div class="mapping-results" id="mapping-results" style="display: none;">
-          <h4>Resultado del Mapeo</h4>
-          <div id="mapping-log"></div>
-        </div>
-
-        <div class="mapping-legend">
-          <h4>Lógica de Mapeo</h4>
-          <div class="mapping-rule">
-            <span class="rule-letter r">R</span>
-            <div class="rule-content">
-              <strong>Responsable:</strong> Una flecha directa del rol a la tarea (ROL → TAREA)
-            </div>
-          </div>
-          <div class="mapping-rule">
-            <span class="rule-letter a">A</span>
-            <div class="rule-content">
-              <strong>Aprobador:</strong> Tarea intermedia "Aprobar [X]" entre la tarea actual y la siguiente
-            </div>
-          </div>
-          <div class="mapping-rule">
-            <span class="rule-letter s">S</span>
-            <div class="rule-content">
-              <strong>Soporte:</strong> Ambos roles (R + S) van al nodo AND, y el AND va a la tarea
-            </div>
-          </div>
-          <div class="mapping-rule">
-            <span class="rule-letter c">C</span>
-            <div class="rule-content">
-              <strong>Consultado:</strong> Nodo de consulta con flujo bidireccional (pregunta ↔ respuesta)
-            </div>
-          </div>
-          <div class="mapping-rule">
-            <span class="rule-letter i">I</span>
-            <div class="rule-content">
-              <strong>Informado:</strong> Evento intermedio que envía notificación al rol
-            </div>
           </div>
         </div>
       </div>

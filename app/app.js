@@ -7,7 +7,7 @@ import BpmnModdle from 'bpmn-moddle';
 import PPINOTModdle from './PPINOT-modeler/PPINOT/PPINOTModdle.json';
 import RALphModdle from './RALPH-modeler/RALph/RALphModdle.json';
 import { PanelLoader } from './js/panel-loader.js';
-import { initRasciPanel } from './js/panels/rasci.js';
+import { initRasciPanel } from './js/panels/rasci-core.js';
 // import './js/panel-snap-system.js'; // REMOVIDO - No se necesita desplazamiento de ventanas
 import './js/panel-manager.js';
 

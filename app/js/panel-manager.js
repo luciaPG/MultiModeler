@@ -40,7 +40,6 @@ class PanelManager {
   }
 
   init() {
-    this.createPanelSelector();
     this.createStyles();
     this.bindEvents();
     
@@ -533,19 +532,21 @@ class PanelManager {
       }
       
       .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.5);
-        z-index: 51;
-        display: none;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: rgba(0,0,0,0.5) !important;
+        z-index: 10001 !important;
+        display: none !important;
+        pointer-events: none !important;
       }
       
       .modal-overlay.show {
-        display: block;
-        animation: overlayFadeIn 0.3s ease-out;
+        display: block !important;
+        pointer-events: auto !important;
+        animation: overlayFadeIn 0.3s ease-out !important;
       }
       
       @keyframes overlayFadeIn {
@@ -882,6 +883,11 @@ class PanelManager {
     `;
     
     document.body.appendChild(selector);
+    
+    // Configurar event listeners para el modal
+    overlay.addEventListener('click', () => {
+      this.closeSelector();
+    });
   }
 
 
@@ -986,10 +992,10 @@ class PanelManager {
 
     });
 
-    // Overlay click to close
-    document.getElementById('panel-selector-overlay').addEventListener('click', () => {
-      this.closeSelector();
-    });
+    // Overlay click to close - se configurará cuando se cree el modal
+    // document.getElementById('panel-selector-overlay').addEventListener('click', () => {
+    //   this.closeSelector();
+    // });
   }
 
   updatePanelSelector() {
@@ -1000,17 +1006,38 @@ class PanelManager {
   }
 
   showSelector() {
+    // Crear el selector si no existe
+    if (!document.getElementById('panel-selector-overlay')) {
+      this.createPanelSelector();
+    }
+    
     // Actualizar lista de paneles y opciones de layout antes de mostrar
     this.updatePanelSelector();
     this.updateLayoutOptions();
     
-    document.getElementById('panel-selector-overlay').classList.add('show');
-    document.getElementById('panel-selector').classList.add('show');
+    const overlay = document.getElementById('panel-selector-overlay');
+    const selector = document.getElementById('panel-selector');
+    
+    if (overlay) {
+      overlay.classList.add('show');
+    }
+    
+    if (selector) {
+      selector.classList.add('show');
+    }
   }
 
   closeSelector() {
-    document.getElementById('panel-selector-overlay').classList.remove('show');
-    document.getElementById('panel-selector').classList.remove('show');
+    const overlay = document.getElementById('panel-selector-overlay');
+    const selector = document.getElementById('panel-selector');
+    
+    if (overlay) {
+      overlay.classList.remove('show');
+    }
+    
+    if (selector) {
+      selector.classList.remove('show');
+    }
   }
 
   async applyConfiguration() {
