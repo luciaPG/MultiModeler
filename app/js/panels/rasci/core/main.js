@@ -236,6 +236,13 @@ export function initRasciPanel(panel) {
   // Renderizar matriz inicial
   renderMatrix(panel, roles, autoSaveRasciState);
 
+  // Sincronizar nombres de roles desde RASCI hacia canvas al cargar
+  setTimeout(() => {
+    if (typeof window.syncOnLoad === 'function') {
+      window.syncOnLoad();
+    }
+  }, 1000); // Esperar 1 segundo para asegurar que todo esté cargado
+
   // Inicializar mapeo
   initRasciMapping(panel);
   

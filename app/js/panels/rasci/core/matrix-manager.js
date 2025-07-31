@@ -1,6 +1,5 @@
 // RASCI Matrix Manager - Matrix rendering and role management
 
-// Global variables for roles and matrix data
 let roles = [];
 let autoSaveRasciState = null;
 
@@ -8,18 +7,15 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
   roles = rolesArray;
   autoSaveRasciState = autoSaveFunction;
   
-  // Obtener el contenedor de matriz específico de la pestaña activa
   const mainTab = panel.querySelector('#main-tab');
   const matrixContainer = mainTab ? mainTab.querySelector('#matrix-container') : null;
   
   if (!matrixContainer) {
-    console.error('❌ No se encontró el contenedor de matriz');
     return;
   }
   
   matrixContainer.innerHTML = '';
 
-  // Configurar el contenedor principal - CON ALTURA MÁXIMA
   matrixContainer.style.cssText = `
     width: 100%;
     height: 100%;
@@ -35,7 +31,6 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
     display: block;
   `;
   
-  // Crear tabla directamente
   const table = document.createElement('table');
   table.className = 'rasci-matrix';
   table.style.cssText = `
@@ -53,16 +48,13 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
     table-layout: fixed;
   `;
 
-  // Crear encabezado
   const thead = document.createElement('thead');
   const headerRow = document.createElement('tr');
 
-  // Encabezado de tareas
   const taskHeader = document.createElement('th');
   taskHeader.textContent = 'Tarea';
   headerRow.appendChild(taskHeader);
 
-  // Encabezados de roles
   roles.forEach((role, index) => {
     const roleHeader = document.createElement('th');
     roleHeader.className = 'role-header';
@@ -82,7 +74,6 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
     deleteBtn.textContent = '×';
     deleteBtn.title = 'Eliminar rol';
 
-    // Event listeners para edición
     roleNameSpan.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -115,7 +106,6 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
     headerRow.appendChild(roleHeader);
   });
 
-  // Botón agregar rol
   const addRoleHeader = document.createElement('th');
   addRoleHeader.className = 'add-role-header';
   const addBtn = document.createElement('button');
@@ -129,20 +119,16 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
   thead.appendChild(headerRow);
   table.appendChild(thead);
 
-  // Obtener tareas del diagrama BPMN
   const tasks = getBpmnTasks();
 
-  // Crear cuerpo de tabla
   const tbody = document.createElement('tbody');
   tasks.forEach(task => {
     const row = document.createElement('tr');
 
-    // Celda de tarea
     const taskCell = document.createElement('td');
     taskCell.textContent = task;
     row.appendChild(taskCell);
 
-    // Celdas de roles
     roles.forEach(role => {
       const cell = document.createElement('td');
       const container = document.createElement('div');
@@ -161,7 +147,6 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
         I: '#6c757d'
       };
 
-      // Inicializar con datos existentes
       if (window.rasciMatrixData && window.rasciMatrixData[task] && window.rasciMatrixData[task][role]) {
         const existingValue = window.rasciMatrixData[task][role];
         const circle = document.createElement('span');
@@ -173,16 +158,11 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
         cell.classList.add('cell-with-content');
       }
 
-      // Eventos de teclado - SIN MAPEO AUTOMÁTICO
-      // ⚠️ IMPORTANTE: El mapeo NO se ejecuta automáticamente al escribir letras
-      // El mapeo SOLO se ejecuta cuando se presiona el botón "Ejecutar Mapeo Manual"
       container.addEventListener('keydown', e => {
         const key = e.key.toUpperCase();
-        console.log(`🔍 Tecla presionada: ${key} para tarea ${task}, rol ${role}`);
 
         if (['R', 'A', 'S', 'C', 'I'].includes(key)) {
           e.preventDefault();
-          console.log(`✅ Aplicando responsabilidad ${key} a ${task} - ${role}`);
 
           container.classList.remove('rasci-ready');
           cell.classList.remove('cell-ready');
@@ -200,26 +180,18 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
           cell.setAttribute('data-value', key);
           cell.classList.add('cell-with-content');
           
-          console.log(`💾 Guardando estado: ${task}.${role} = ${key}`);
-          console.log(`📊 Estado actual de la matriz:`, window.rasciMatrixData);
-          
-          // Guardar el estado automáticamente (SOLO EL ESTADO, NO EL MAPEO)
-          // 🔒 NO se ejecuta mapeo automático - solo se guarda el estado
           if (autoSaveRasciState) {
             autoSaveRasciState();
-            console.log(`✅ Estado guardado automáticamente (sin mapeo automático)`);
           }
           
-          // Trigger auto-mapping if enabled (but debounced for performance)
           if (typeof window.onRasciMatrixUpdated === 'function') {
             setTimeout(() => {
               window.onRasciMatrixUpdated();
-            }, 100); // Small delay to allow multiple changes to batch
+            }, 100);
           }
 
         } else if (['-', 'Delete', 'Backspace', 'Escape'].includes(e.key)) {
           e.preventDefault();
-          console.log(`🗑️ Eliminando responsabilidad de ${task} - ${role}`);
 
           container.classList.remove('rasci-ready');
           cell.classList.remove('cell-ready', 'cell-with-content');
@@ -227,39 +199,29 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
           display.innerHTML = '';
           if (window.rasciMatrixData && window.rasciMatrixData[task] && window.rasciMatrixData[task][role]) {
             delete window.rasciMatrixData[task][role];
-            console.log(`🗑️ Eliminado ${task}.${role} de la matriz`);
           }
           cell.removeAttribute('data-value');
           
-          // Guardar el estado automáticamente (SOLO EL ESTADO, NO EL MAPEO)
-          // 🔒 NO se ejecuta mapeo automático - solo se guarda el estado
           if (autoSaveRasciState) {
             autoSaveRasciState();
-            console.log(`✅ Estado guardado automáticamente después de eliminar ${task}.${role}`);
           }
           
-          // Trigger auto-mapping if enabled (but debounced for performance)
           if (typeof window.onRasciMatrixUpdated === 'function') {
             setTimeout(() => {
               window.onRasciMatrixUpdated();
-            }, 100); // Small delay to allow multiple changes to batch
+            }, 100);
           }
-        } else {
-          console.log(`⚠️ Tecla no reconocida: ${key}`);
         }
       });
 
-      // Eventos de focus
       container.addEventListener('click', e => {
         e.preventDefault();
         container.focus();
-        console.log(`🎯 Celda enfocada: ${task} - ${role}`);
       });
 
       container.addEventListener('focus', () => {
         container.classList.add('rasci-ready');
         cell.classList.add('cell-ready');
-        console.log(`🎯 Celda enfocada: ${task} - ${role}`);
       });
 
       container.addEventListener('blur', () => {
@@ -284,9 +246,6 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
 
   table.appendChild(tbody);
   matrixContainer.appendChild(table);
-  
-  console.log(`✅ Matriz RASCI renderizada con ${tasks.length} tareas y ${roles.length} roles`);
-  console.log(`📊 Estado inicial de la matriz:`, window.rasciMatrixData);
 }
 
 // Función para obtener tareas del diagrama BPMN
@@ -327,7 +286,6 @@ export function updateMatrixFromDiagram() {
     return;
   }
 
-  const tasks = getBpmnTasks();
   const rasciPanel = document.querySelector('#rasci-panel');
   
   if (rasciPanel) {
@@ -357,10 +315,8 @@ export function addNewRole(panel, rolesArray, autoSaveFunction) {
   const newRoleName = `Rol ${roles.length + 1}`;
   roles.push(newRoleName);
   
-  // Guardar en localStorage
   if (autoSaveRasciState) autoSaveRasciState();
   
-  // Re-renderizar matriz
   renderMatrix(panel, roles, autoSaveRasciState);
 }
 
@@ -408,7 +364,6 @@ function makeRoleEditable(roleHeader, roleIndex) {
     input.select();
   }, 0);
 
-  // Guardar métodos originales del documento
   const originalPreventDefault = Event.prototype.preventDefault;
   const originalStopPropagation = Event.prototype.stopPropagation;
 
@@ -424,7 +379,6 @@ function makeRoleEditable(roleHeader, roleIndex) {
       roles[roleIndex] = newName;
       roleNameSpan.textContent = newName;
       
-      // Guardar en localStorage
       if (autoSaveRasciState) autoSaveRasciState();
     }
     
@@ -511,12 +465,18 @@ export function showDeleteConfirmModal(roleIndex, panel) {
 export function deleteRole(roleIndex, panel) {
   roles.splice(roleIndex, 1);
   
-  // Guardar en localStorage
   if (autoSaveRasciState) autoSaveRasciState();
   
-  // Re-renderizar matriz
   renderMatrix(panel, roles, autoSaveRasciState);
 }
 
 // Configurar función global para actualizar matriz
 window.updateMatrixFromDiagram = updateMatrixFromDiagram;
+
+// Función global para recargar la matriz RASCI
+window.reloadRasciMatrix = function() {
+  const rasciPanel = document.querySelector('#rasci-panel');
+  if (rasciPanel) {
+    renderMatrix(rasciPanel, roles, autoSaveRasciState);
+  }
+};
