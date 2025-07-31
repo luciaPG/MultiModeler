@@ -6,7 +6,7 @@ import { getElementName, originalFlowMap, saveOriginalFlow } from './core-functi
 function findNextTaskInOriginalFlow(modeler, currentTask) {
   const elementRegistry = modeler.get('elementRegistry');
   
-  function findNextTaskRecursive(task, visited = new Set()) {
+  function findNextElementRecursive(task, visited = new Set()) {
     if (visited.has(task.id)) {
       return null;
     }
@@ -21,30 +21,43 @@ function findNextTaskInOriginalFlow(modeler, currentTask) {
       const targetName = getElementName(target);
       const targetType = target.type;
       
+      // Saltar elementos especiales (Aprobar, Consultar, Informar)
       if (targetName && ['Aprobar ', 'Consultar ', 'Informar '].some(prefix => targetName.startsWith(prefix))) {
-        const nextTask = findNextTaskRecursive(target, visited);
-        if (nextTask) return nextTask;
+        const nextElement = findNextElementRecursive(target, visited);
+        if (nextElement) return nextElement;
         continue;
       }
       
-      const validTypes = ['bpmn:Task', 'bpmn:UserTask', 'bpmn:ServiceTask', 'bpmn:ScriptTask', 
-                         'bpmn:ManualTask', 'bpmn:BusinessRuleTask', 'bpmn:SendTask', 'bpmn:ReceiveTask',
-                         'bpmn:CallActivity', 'bpmn:SubProcess'];
+      // Aceptar cualquier elemento BPMN válido como destino (no solo tareas)
+      const validTypes = [
+        // Tareas
+        'bpmn:Task', 'bpmn:UserTask', 'bpmn:ServiceTask', 'bpmn:ScriptTask', 
+        'bpmn:ManualTask', 'bpmn:BusinessRuleTask', 'bpmn:SendTask', 'bpmn:ReceiveTask',
+        // Actividades
+        'bpmn:CallActivity', 'bpmn:SubProcess',
+        // Eventos
+        'bpmn:StartEvent', 'bpmn:EndEvent', 'bpmn:IntermediateCatchEvent', 'bpmn:IntermediateThrowEvent',
+        'bpmn:BoundaryEvent', 'bpmn:TerminateEndEvent',
+        // Gateways
+        'bpmn:ExclusiveGateway', 'bpmn:ParallelGateway', 'bpmn:InclusiveGateway', 
+        'bpmn:ComplexGateway', 'bpmn:EventBasedGateway'
+      ];
       
       if (validTypes.includes(targetType)) {
         return target;
       }
       
-      if (targetType && targetType.includes('Gateway')) {
-        const nextTask = findNextTaskRecursive(target, visited);
-        if (nextTask) return nextTask;
+      // Si es otro tipo de gateway o elemento, continuar buscando
+      if (targetType && (targetType.includes('Gateway') || targetType.includes('Event'))) {
+        const nextElement = findNextElementRecursive(target, visited);
+        if (nextElement) return nextElement;
       }
     }
     
     return null;
   }
   
-  return findNextTaskRecursive(currentTask);
+  return findNextElementRecursive(currentTask);
 }
 
 function createSpecialElement(modeler, sourceElement, roleName, elementType, eventType, results, sourceTaskName = null) {
@@ -237,15 +250,31 @@ function createSequentialSpecialElements(modeler, bpmnTask, consultRoles, approv
   }
   
   const nextRealTask = findNextTaskInOriginalFlow(modeler, bpmnTask);
-  console.log(`🎯 Próxima tarea encontrada:`, nextRealTask ? getElementName(nextRealTask) : 'NINGUNA');
+  console.log(`🎯 Próximo elemento encontrado:`, nextRealTask ? `${getElementName(nextRealTask)} (${nextRealTask.type})` : 'NINGUNO');
   
   // Eliminar conexión directa existente
-  const directConnection = elementRegistry.find(conn => 
-    conn.type === 'bpmn:SequenceFlow' &&
-    conn.source && conn.source.id === bpmnTask.id &&
-    conn.target && conn.target && 
-    (nextRealTask ? conn.target.id === nextRealTask.id : ['bpmn:EndEvent', 'bpmn:TerminateEndEvent'].includes(conn.target.type))
-  );
+  let targetForConnection = nextRealTask;
+  let directConnection = null;
+  
+  if (nextRealTask) {
+    directConnection = elementRegistry.find(conn => 
+      conn.type === 'bpmn:SequenceFlow' &&
+      conn.source && conn.source.id === bpmnTask.id &&
+      conn.target && conn.target.id === nextRealTask.id
+    );
+  } else {
+    // Si no hay próximo elemento, buscar cualquier conexión saliente
+    const outgoingConnections = elementRegistry.filter(conn => 
+      conn.type === 'bpmn:SequenceFlow' &&
+      conn.source && conn.source.id === bpmnTask.id
+    );
+    
+    if (outgoingConnections.length > 0) {
+      directConnection = outgoingConnections[0];
+      targetForConnection = directConnection.target;
+      console.log(`🔍 Usando conexión existente hacia: ${getElementName(targetForConnection)} (${targetForConnection.type})`);
+    }
+  }
   
   if (directConnection) {
     console.log(`🔌 Removiendo conexión directa existente`);
@@ -292,31 +321,17 @@ function createSequentialSpecialElements(modeler, bpmnTask, consultRoles, approv
     }
   });
   
-  // 4. Conectar al siguiente elemento o EndEvent
-  if (!nextRealTask) {
-    console.log(`⚠️ No se encontró próxima tarea, buscando EndEvent...`);
-    const allElements = elementRegistry.filter(element => 
-      ['bpmn:EndEvent', 'bpmn:TerminateEndEvent'].includes(element.type)
-    );
-    
-    if (allElements.length > 0) {
-      const endEvent = allElements[0];
-      console.log(`🏁 Conectando último elemento ${getElementName(currentSource)} -> EndEvent`);
-      try {
-        modeling.connect(currentSource, endEvent, { type: 'bpmn:SequenceFlow' });
-        console.log(`✅ Conexión a EndEvent exitosa`);
-      } catch (e) {
-        console.error(`❌ Error conectando a EndEvent:`, e);
-      }
+  // 4. Conectar al siguiente elemento o mantener sin conexión si no hay nada
+  if (targetForConnection) {
+    console.log(`🔄 Conectando último elemento ${getElementName(currentSource)} -> ${getElementName(targetForConnection)} (${targetForConnection.type})`);
+    try {
+      modeling.connect(currentSource, targetForConnection, { type: 'bpmn:SequenceFlow' });
+      console.log(`✅ Flujo conectado correctamente`);
+    } catch (e) {
+      console.error(`❌ Error conectando flujo:`, e);
     }
   } else {
-    console.log(`🔄 Conectando último elemento ${getElementName(currentSource)} -> ${getElementName(nextRealTask)}`);
-    try {
-      modeling.connect(currentSource, nextRealTask, { type: 'bpmn:SequenceFlow' });
-      console.log(`✅ Flujo restaurado correctamente`);
-    } catch (e) {
-      console.error(`❌ Error restaurando flujo:`, e);
-    }
+    console.log(`ℹ️ No hay elemento siguiente - dejando ${getElementName(currentSource)} como elemento final`);
   }
   
   console.log(`🏁 createSequentialSpecialElements completado para ${taskName}`);
@@ -379,97 +394,107 @@ function restoreFlowAfterApprovalRemoval(modeler) {
 }
 
 function restoreBpmnFlow(modeler) {
-  const modeling = modeler.get('modeling');
   const elementRegistry = modeler.get('elementRegistry');
   
-  const bpmnTasks = elementRegistry.filter(element => 
+  console.log('🔄 Iniciando restauración de flujo BPMN');
+  
+  // Incluir más tipos de elementos BPMN para una restauración más completa
+  const bpmnElements = elementRegistry.filter(element => 
     ['bpmn:Task', 'bpmn:UserTask', 'bpmn:ServiceTask', 'bpmn:ScriptTask', 
      'bpmn:StartEvent', 'bpmn:EndEvent', 'bpmn:IntermediateThrowEvent', 
-     'bpmn:IntermediateCatchEvent'].includes(element.type)
+     'bpmn:IntermediateCatchEvent', 'bpmn:CallActivity', 'bpmn:SubProcess',
+     'bpmn:ExclusiveGateway', 'bpmn:ParallelGateway', 'bpmn:InclusiveGateway'].includes(element.type)
   );
   
-  bpmnTasks.forEach(task => {
-    const taskName = getElementName(task);
+  bpmnElements.forEach(element => {
+    const elementName = getElementName(element);
     const outgoingConnections = elementRegistry.filter(conn => 
-      conn.type === 'bpmn:SequenceFlow' && conn.source && conn.source.id === task.id
+      conn.type === 'bpmn:SequenceFlow' && conn.source && conn.source.id === element.id
     );
     
+    // Solo intentar restaurar conexiones para elementos que no tienen conexiones salientes
     if (outgoingConnections.length === 0) {
-      if (taskName && taskName.startsWith('Aprobar ')) {
-        // Para tareas de aprobación, buscar la tarea original y conectar a su siguiente tarea
-        const roleName = taskName.replace('Aprobar ', '');
-        let originalTaskName = null;
-        
-        if (window.rasciMatrixData) {
-          Object.keys(window.rasciMatrixData).forEach(taskKey => {
-            const taskRoles = window.rasciMatrixData[taskKey];
-            if (taskRoles && taskRoles[roleName] === 'A') {
-              originalTaskName = taskKey;
-            }
-          });
-        }
-        
-        if (originalTaskName) {
-          const originalNextTasks = originalFlowMap.get(originalTaskName);
-          if (originalNextTasks && originalNextTasks.length > 0) {
-            for (const originalNextTask of originalNextTasks) {
-              const originalNextTaskName = getElementName(originalNextTask);
-              const currentNextTask = elementRegistry.find(element => 
-                element.id === originalNextTask.id || 
-                (element.businessObject && element.businessObject.name === originalNextTaskName)
-              );
-              
-              if (currentNextTask) {
-                // Verificar que no exista ya una conexión a esta tarea
-                const existingConnection = elementRegistry.find(conn => 
-                  conn.type === 'bpmn:SequenceFlow' && 
-                  conn.target && conn.target.id === currentNextTask.id
-                );
-                
-                if (!existingConnection) {
-                  try {
-                    modeling.connect(task, currentNextTask, { type: 'bpmn:SequenceFlow' });
-                    break;
-                  } catch (e) {
-                    // Handle error silently
-                  }
-                }
-              }
-            }
-          }
-        }
-      } else if (!taskName.startsWith('Consultar ') && !taskName.startsWith('Informar ')) {
-        // Solo reconectar tareas normales (no especiales)
-        const originalNextTasks = originalFlowMap.get(taskName);
-        if (originalNextTasks && originalNextTasks.length > 0) {
-          for (const originalNextTask of originalNextTasks) {
-            const originalNextTaskName = getElementName(originalNextTask);
-            const currentNextTask = elementRegistry.find(element => 
-              element.id === originalNextTask.id || 
-              (element.businessObject && element.businessObject.name === originalNextTaskName)
-            );
-            
-            if (currentNextTask) {
-              // Verificar que no exista ya una conexión a esta tarea
-              const existingConnection = elementRegistry.find(conn => 
-                conn.type === 'bpmn:SequenceFlow' && 
-                conn.target && conn.target.id === currentNextTask.id
-              );
-              
-              if (!existingConnection) {
-                try {
-                  modeling.connect(task, currentNextTask, { type: 'bpmn:SequenceFlow' });
-                  break;
-                } catch (e) {
-                  // Handle error silently
-                }
-              }
-            }
-          }
-        }
+      console.log(`🔍 Elemento sin conexiones salientes: ${elementName} (${element.type})`);
+      
+      if (elementName && elementName.startsWith('Aprobar ')) {
+        // Para tareas de aprobación, buscar la tarea original y conectar a su siguiente elemento
+        handleApprovalTaskReconnection(modeler, element, elementName);
+      } else if (!elementName || (!elementName.startsWith('Consultar ') && !elementName.startsWith('Informar '))) {
+        // Solo reconectar elementos normales (no especiales de consulta/información)
+        handleNormalElementReconnection(modeler, element, elementName);
       }
     }
   });
+  
+  console.log('✅ Restauración de flujo BPMN completada');
+}
+
+function handleApprovalTaskReconnection(modeler, approvalTask, approvalTaskName) {
+  // Extraer el nombre de la tarea original del nombre de aprobación
+  let originalTaskName = null;
+  
+  if (approvalTaskName.includes(' ')) {
+    // Formato: "Aprobar TaskName" o "Aprobar Rol para TaskName"
+    if (approvalTaskName.includes(' para ')) {
+      originalTaskName = approvalTaskName.split(' para ')[1];
+    } else {
+      originalTaskName = approvalTaskName.replace('Aprobar ', '');
+    }
+  }
+  
+  if (originalTaskName && window.rasciMatrixData && window.rasciMatrixData[originalTaskName]) {
+    const originalNextElements = originalFlowMap.get(originalTaskName);
+    if (originalNextElements && originalNextElements.length > 0) {
+      attemptReconnection(modeler, approvalTask, originalNextElements);
+    } else {
+      console.log(`ℹ️ No hay elementos siguientes para la tarea de aprobación: ${approvalTaskName}`);
+    }
+  }
+}
+
+function handleNormalElementReconnection(modeler, element, elementName) {
+  if (!elementName) return;
+  
+  const originalNextElements = originalFlowMap.get(elementName);
+  if (originalNextElements && originalNextElements.length > 0) {
+    attemptReconnection(modeler, element, originalNextElements);
+  } else {
+    console.log(`ℹ️ No hay elementos siguientes registrados para: ${elementName}`);
+  }
+}
+
+function attemptReconnection(modeler, sourceElement, targetElements) {
+  const modeling = modeler.get('modeling');
+  const elementRegistry = modeler.get('elementRegistry');
+  
+  for (const originalTargetElement of targetElements) {
+    const originalTargetName = getElementName(originalTargetElement);
+    const currentTargetElement = elementRegistry.find(element => 
+      element.id === originalTargetElement.id || 
+      (element.businessObject && element.businessObject.name === originalTargetName)
+    );
+    
+    if (currentTargetElement) {
+      // Verificar que no exista ya una conexión hacia este elemento
+      const existingConnection = elementRegistry.find(conn => 
+        conn.type === 'bpmn:SequenceFlow' && 
+        conn.source && conn.source.id === sourceElement.id &&
+        conn.target && conn.target.id === currentTargetElement.id
+      );
+      
+      if (!existingConnection) {
+        try {
+          modeling.connect(sourceElement, currentTargetElement, { type: 'bpmn:SequenceFlow' });
+          console.log(`✅ Reconectado: ${getElementName(sourceElement)} -> ${getElementName(currentTargetElement)}`);
+          break; // Solo conectar al primer elemento válido
+        } catch (e) {
+          console.warn(`⚠️ Error reconectando ${getElementName(sourceElement)} -> ${getElementName(currentTargetElement)}:`, e);
+        }
+      } else {
+        console.log(`ℹ️ Ya existe conexión: ${getElementName(sourceElement)} -> ${getElementName(currentTargetElement)}`);
+      }
+    }
+  }
 }
 
 function restoreFlowByElementNames(modeler) {
