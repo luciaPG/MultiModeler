@@ -37,8 +37,6 @@ function saveBpmnState() {
         if (result && result.xml && result.xml.trim().length > 0) {
           localStorage.setItem('bpmnDiagram', result.xml);
           showBpmnSaveIndicator();
-          console.log('✅ Estado BPMN guardado automáticamente');
-          console.log('📊 Tamaño del XML:', result.xml.length, 'caracteres');
         } else {
           console.warn('⚠️ XML BPMN vacío, no se guardó');
         }

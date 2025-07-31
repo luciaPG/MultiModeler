@@ -3,6 +3,34 @@
 
 import { getElementName, originalFlowMap } from './core-functions.js';
 
+// Función auxiliar para verificar si un elemento está conectado a alguna de las tareas esperadas
+function isConnectedToTaskInMatrix(modeler, sourceElement, expectedTaskNames, visited = new Set()) {
+  if (!sourceElement || !expectedTaskNames || visited.has(sourceElement.id)) {
+    return false;
+  }
+  
+  const elementName = getElementName(sourceElement);
+  if (elementName && expectedTaskNames.has(elementName)) {
+    return true;
+  }
+  
+  visited.add(sourceElement.id);
+  
+  const elementRegistry = modeler.get('elementRegistry');
+  const incomingConnections = elementRegistry.filter(conn => 
+    conn.type === 'bpmn:SequenceFlow' && 
+    conn.target && conn.target.id === sourceElement.id
+  );
+  
+  for (const conn of incomingConnections) {
+    if (isConnectedToTaskInMatrix(modeler, conn.source, expectedTaskNames, visited)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
 function cleanupOrphanedElements(modeler) {
   const modeling = modeler.get('modeling');
   const elementRegistry = modeler.get('elementRegistry');
@@ -159,7 +187,7 @@ function completeRasciCleanup(modeler, matrix) {
   const modeling = modeler.get('modeling');
   
   const activeRoles = new Set();
-  const expectedApprovalElements = new Set();
+  const expectedApprovalElements = new Map(); // Cambiar a Map para manejar múltiples tareas
   const expectedConsultElements = new Set();
   const expectedInformElements = new Set();
   
@@ -171,7 +199,18 @@ function completeRasciCleanup(modeler, matrix) {
         activeRoles.add(roleName);
         
         if (responsibility === 'A') {
-          expectedApprovalElements.add(`Aprobar ${roleName}`);
+          const specificApprovalElementName = `Aprobar ${roleName} para ${taskName}`;
+          const genericApprovalElementName = `Aprobar ${roleName}`;
+          
+          if (!expectedApprovalElements.has(specificApprovalElementName)) {
+            expectedApprovalElements.set(specificApprovalElementName, new Set());
+          }
+          expectedApprovalElements.get(specificApprovalElementName).add(taskName);
+          
+          if (!expectedApprovalElements.has(genericApprovalElementName)) {
+            expectedApprovalElements.set(genericApprovalElementName, new Set());
+          }
+          expectedApprovalElements.get(genericApprovalElementName).add(taskName);
         } else if (responsibility === 'C') {
           expectedConsultElements.add(`Consultar ${roleName}`);
         } else if (responsibility === 'I') {
@@ -198,6 +237,24 @@ function completeRasciCleanup(modeler, matrix) {
     
     if (elementName.startsWith('Aprobar ')) {
       shouldKeep = expectedApprovalElements.has(elementName);
+      
+      // Verificar si esta tarea de aprobación específica está conectada a una tarea que requiere aprobación
+      if (shouldKeep) {
+        const incomingConnections = elementRegistry.filter(conn => 
+          conn.type === 'bpmn:SequenceFlow' && 
+          conn.target && conn.target.id === element.id
+        );
+        
+        let isConnectedToExpectedTask = false;
+        for (const conn of incomingConnections) {
+          const sourceElement = conn.source;
+          if (isConnectedToTaskInMatrix(modeler, sourceElement, expectedApprovalElements.get(elementName))) {
+            isConnectedToExpectedTask = true;
+            break;
+          }
+        }
+        shouldKeep = isConnectedToExpectedTask;
+      }
     } else if (elementName.startsWith('Consultar ')) {
       shouldKeep = expectedConsultElements.has(elementName);
     } else if (elementName.startsWith('Informar ')) {

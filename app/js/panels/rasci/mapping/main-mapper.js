@@ -29,76 +29,235 @@ import {
   pendingReconnections
 } from './core-functions.js';
 
-function handleRolesAndAssignments(modeler, matrix, results) {
+// Función auxiliar para verificar si un elemento está conectado a una tarea específica
+function isConnectedToTask(modeler, sourceElement, targetTask, visited = new Set()) {
+  if (!sourceElement || !targetTask || visited.has(sourceElement.id)) {
+    return false;
+  }
+  
+  if (sourceElement.id === targetTask.id) {
+    return true;
+  }
+  
+  visited.add(sourceElement.id);
+  
+  const elementRegistry = modeler.get('elementRegistry');
+  const incomingConnections = elementRegistry.filter(conn => 
+    conn.type === 'bpmn:SequenceFlow' && 
+    conn.target && conn.target.id === sourceElement.id
+  );
+  
+  for (const conn of incomingConnections) {
+    if (isConnectedToTask(modeler, conn.source, targetTask, visited)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+// Función para hacer una limpieza completa de todos los elementos RALph y especiales
+function performCompleteCleanup(modeler) {
+  console.log('🧹 Iniciando limpieza completa de elementos RALph y especiales');
+  
   const elementRegistry = modeler.get('elementRegistry');
   const modeling = modeler.get('modeling');
   
-  const expectedApprovalTasks = new Set();
+  let elementsRemoved = 0;
+  
+  // 1. Eliminar todas las conexiones RALph
+  const allRalphConnections = elementRegistry.filter(conn => 
+    conn.type === 'RALph:ResourceArc' || conn.type === 'bpmn:Association'
+  );
+  
+  if (allRalphConnections.length > 0) {
+    try {
+      modeling.removeElements(allRalphConnections);
+      elementsRemoved += allRalphConnections.length;
+      console.log(`🔗 Eliminadas ${allRalphConnections.length} conexiones RALph`);
+    } catch (e) {
+      console.warn('Error eliminando conexiones RALph:', e);
+    }
+  }
+  
+  // 2. Eliminar todos los elementos especiales (Aprobar, Consultar, Informar)
+  const allSpecialElements = elementRegistry.filter(element => 
+    element.businessObject && element.businessObject.name &&
+    (element.businessObject.name.startsWith('Aprobar ') ||
+     element.businessObject.name.startsWith('Consultar ') ||
+     element.businessObject.name.startsWith('Informar '))
+  );
+  
+  if (allSpecialElements.length > 0) {
+    try {
+      modeling.removeElements(allSpecialElements);
+      elementsRemoved += allSpecialElements.length;
+      console.log(`🎯 Eliminados ${allSpecialElements.length} elementos especiales`);
+    } catch (e) {
+      console.warn('Error eliminando elementos especiales:', e);
+    }
+  }
+  
+  // 3. Eliminar todos los roles RALph
+  const allRalphRoles = elementRegistry.filter(element => 
+    element.type === 'RALph:RoleRALph' || element.type === 'ralph:Role'
+  );
+  
+  if (allRalphRoles.length > 0) {
+    try {
+      modeling.removeElements(allRalphRoles);
+      elementsRemoved += allRalphRoles.length;
+      console.log(`👥 Eliminados ${allRalphRoles.length} roles RALph`);
+    } catch (e) {
+      console.warn('Error eliminando roles RALph:', e);
+    }
+  }
+  
+  // 4. Eliminar todos los AND Gates
+  const allAndGates = elementRegistry.filter(element => 
+    element.type === 'RALph:Complex-Assignment-AND'
+  );
+  
+  if (allAndGates.length > 0) {
+    try {
+      modeling.removeElements(allAndGates);
+      elementsRemoved += allAndGates.length;
+      console.log(`🏗️ Eliminados ${allAndGates.length} AND Gates`);
+    } catch (e) {
+      console.warn('Error eliminando AND Gates:', e);
+    }
+  }
+  
+  console.log(`✅ Limpieza completa terminada. Total elementos eliminados: ${elementsRemoved}`);
+  return elementsRemoved;
+}
+
+// Función para hacer una limpieza selectiva según la nueva matriz
+function performSelectiveCleanup(modeler, matrix) {
+  console.log('🎯 Iniciando limpieza selectiva basada en la nueva matriz');
+  
+  const elementRegistry = modeler.get('elementRegistry');
+  const modeling = modeler.get('modeling');
+  
+  let elementsRemoved = 0;
+  
+  // Crear sets de elementos que deberían existir según la nueva matriz
+  const expectedRoles = new Set();
+  const expectedSpecialElements = new Set();
+  
   Object.keys(matrix).forEach(taskName => {
     const taskRoles = matrix[taskName];
-    Object.keys(taskRoles).forEach(roleKey => {
-      const responsibility = taskRoles[roleKey];
-      if (responsibility === 'A') {
-        expectedApprovalTasks.add(`Aprobar ${roleKey}`);
+    Object.keys(taskRoles).forEach(roleName => {
+      const responsibility = taskRoles[roleName];
+      if (responsibility && responsibility !== '-' && responsibility !== '') {
+        expectedRoles.add(roleName);
+        
+        if (responsibility === 'A') {
+          expectedSpecialElements.add(`Aprobar ${taskName}`);
+          expectedSpecialElements.add(`Aprobar ${roleName} para ${taskName}`);
+          expectedSpecialElements.add(`Aprobar ${roleName}`);
+        } else if (responsibility === 'C') {
+          expectedSpecialElements.add(`Consultar ${roleName}`);
+        } else if (responsibility === 'I') {
+          expectedSpecialElements.add(`Informar ${roleName}`);
+        }
       }
     });
   });
   
-  const allApprovalTasks = elementRegistry.filter(element => 
-    element.type === 'bpmn:UserTask' && 
-    element.businessObject && element.businessObject.name &&
-    element.businessObject.name.startsWith('Aprobar ')
+  // 1. Eliminar roles que ya no están en la matriz
+  const currentRoles = elementRegistry.filter(element => 
+    element.type === 'RALph:RoleRALph' || element.type === 'ralph:Role'
   );
   
-  allApprovalTasks.forEach(approvalTask => {
-    const taskName = approvalTask.businessObject.name;
-    if (!expectedApprovalTasks.has(taskName)) {
-      try {
-        const incomingConnections = elementRegistry.filter(conn => 
-          conn.type === 'bpmn:SequenceFlow' && conn.target && conn.target.id === approvalTask.id
-        );
-        const outgoingConnections = elementRegistry.filter(conn => 
-          conn.type === 'bpmn:SequenceFlow' && conn.source && conn.source.id === approvalTask.id
-        );
-        
-        const roleConnections = elementRegistry.filter(conn => 
-          (conn.type === 'RALph:ResourceArc' || conn.type === 'bpmn:Association') &&
-          conn.source && conn.source.id === approvalTask.id
-        );
-        
-        if (roleConnections.length > 0) {
-          modeling.removeElements(roleConnections);
-        }
-        
-        if (incomingConnections.length > 0 && outgoingConnections.length > 0) {
-          const sourceElement = incomingConnections[0].source;
-          const targetElement = outgoingConnections[0].target;
-          
-          modeling.removeElements([approvalTask]);
-          
-          setTimeout(() => {
-            try {
-              modeling.connect(sourceElement, targetElement, { type: 'bpmn:SequenceFlow' });
-            } catch (reconnectError) {
-              // Handle error silently
-            }
-          }, 50);
-        } else {
-          modeling.removeElements([approvalTask]);
-        }
-        
-        results.elementsRemoved++;
-      } catch (error) {
-        // Handle error silently
-      }
-    }
+  const rolesToRemove = currentRoles.filter(role => {
+    const roleName = role.businessObject && role.businessObject.name;
+    return roleName && !expectedRoles.has(roleName);
   });
   
+  if (rolesToRemove.length > 0) {
+    try {
+      modeling.removeElements(rolesToRemove);
+      elementsRemoved += rolesToRemove.length;
+      console.log(`👥 Eliminados ${rolesToRemove.length} roles obsoletos`);
+    } catch (e) {
+      console.warn('Error eliminando roles obsoletos:', e);
+    }
+  }
+  
+  // 2. Eliminar elementos especiales que ya no están en la matriz
+  const currentSpecialElements = elementRegistry.filter(element => 
+    element.businessObject && element.businessObject.name &&
+    (element.businessObject.name.startsWith('Aprobar ') ||
+     element.businessObject.name.startsWith('Consultar ') ||
+     element.businessObject.name.startsWith('Informar '))
+  );
+  
+  const specialElementsToRemove = currentSpecialElements.filter(element => {
+    const elementName = element.businessObject.name;
+    return !expectedSpecialElements.has(elementName);
+  });
+  
+  if (specialElementsToRemove.length > 0) {
+    try {
+      modeling.removeElements(specialElementsToRemove);
+      elementsRemoved += specialElementsToRemove.length;
+      console.log(`🎯 Eliminados ${specialElementsToRemove.length} elementos especiales obsoletos`);
+    } catch (e) {
+      console.warn('Error eliminando elementos especiales obsoletos:', e);
+    }
+  }
+  
+  // 3. Limpiar conexiones huérfanas
+  const orphanedConnections = elementRegistry.filter(conn => 
+    (conn.type === 'RALph:ResourceArc' || conn.type === 'bpmn:Association') &&
+    (!conn.source || !conn.target || 
+     !elementRegistry.get(conn.source.id) || 
+     !elementRegistry.get(conn.target.id))
+  );
+  
+  if (orphanedConnections.length > 0) {
+    try {
+      modeling.removeElements(orphanedConnections);
+      elementsRemoved += orphanedConnections.length;
+      console.log(`🔗 Eliminadas ${orphanedConnections.length} conexiones huérfanas`);
+    } catch (e) {
+      console.warn('Error eliminando conexiones huérfanas:', e);
+    }
+  }
+  
+  console.log(`✅ Limpieza selectiva terminada. Total elementos eliminados: ${elementsRemoved}`);
+  return elementsRemoved;
+}
+
+function handleRolesAndAssignments(modeler, matrix, results) {
+  console.log(`🔧 Iniciando handleRolesAndAssignments con limpieza previa`);
+  
+  const elementRegistry = modeler.get('elementRegistry');
+  const modeling = modeler.get('modeling');
+  
+  // 🧹 PASO 0: Eliminar TODAS las conexiones RALph existentes antes de crear nuevas
+  const existingRalphConnections = elementRegistry.filter(conn => 
+    conn.type === 'RALph:ResourceArc' || conn.type === 'bpmn:Association'
+  );
+  
+  if (existingRalphConnections.length > 0) {
+    try {
+      modeling.removeElements(existingRalphConnections);
+      console.log(`🔗 Eliminadas ${existingRalphConnections.length} conexiones RALph existentes`);
+    } catch (e) {
+      console.warn('Error eliminando conexiones RALph existentes:', e);
+    }
+  }
+  
+  // ⏭️ PASO 1: Crear roles y asignaciones de forma limpia
   Object.keys(matrix).forEach(taskName => {
     const taskRoles = matrix[taskName];
     const bpmnTask = findBpmnTaskByName(modeler, taskName);
     
     if (!bpmnTask) return;
+    
+    console.log(`📋 Procesando tarea: ${taskName}`);
     
     const responsibleRoles = [];
     const supportRoles = [];
@@ -124,56 +283,33 @@ function handleRolesAndAssignments(modeler, matrix, results) {
       }
     });
     
+    console.log(`  Roles: R=${responsibleRoles}, S=${supportRoles}, A=${approveRoles}`);
+    
+    // Limpiar AND Gates existentes para esta tarea
+    const existingAndGate = findExistingAndGate(modeler, bpmnTask);
+    if (existingAndGate) {
+      try {
+        modeling.removeElements([existingAndGate]);
+        console.log(`🏗️ Eliminado AND Gate existente para ${taskName}`);
+      } catch (error) {
+        console.warn('Error eliminando AND Gate existente:', error);
+      }
+    }
+    
+    // Manejar roles R y S
     if (responsibleRoles.length === 0 && supportRoles.length === 0) {
-      const existingAndGate = findExistingAndGate(modeler, bpmnTask);
-      if (existingAndGate) {
-        try {
-          modeling.removeElements([existingAndGate]);
-        } catch (error) {
-          // Handle error silently
-        }
-      }
+      console.log(`  ❌ No hay roles R o S para ${taskName}`);
     } else if (responsibleRoles.length === 1 && supportRoles.length === 0) {
+      // Caso simple: un solo rol responsable
       const roleName = responsibleRoles[0];
-      const existingAndGate = findExistingAndGate(modeler, bpmnTask);
-      
-      if (existingAndGate) {
-        try {
-          modeling.removeElements([existingAndGate]);
-        } catch (error) {
-          // Handle error silently
-        }
-      }
+      console.log(`  👤 Asignación directa: ${taskName} -> ${roleName}`);
       
       createRalphRole(modeler, roleName, results);
-      
-      const existingDirectConnection = elementRegistry.filter(conn => 
-        (conn.type === 'RALph:ResourceArc' || conn.type === 'bpmn:Association') &&
-        conn.source && conn.source.id === bpmnTask.id &&
-        conn.target && conn.target.businessObject && conn.target.businessObject.name === roleName
-      );
-      
-      if (existingDirectConnection.length === 0) {
-        createSimpleAssignment(modeler, bpmnTask, roleName, results);
-      }
+      createSimpleAssignment(modeler, bpmnTask, roleName, results);
     } else {
+      // Caso complejo: múltiples roles (crear AND Gate)
       const allRoles = [...responsibleRoles, ...supportRoles];
-      
-      responsibleRoles.forEach(roleName => {
-        const existingConnections = elementRegistry.filter(conn => 
-          (conn.type === 'RALph:ResourceArc' || conn.type === 'bpmn:Association') &&
-          conn.source && conn.source.id === bpmnTask.id &&
-          conn.target && conn.target.businessObject && conn.target.businessObject.name === roleName
-        );
-        
-        if (existingConnections.length > 0) {
-          try {
-            modeling.removeElements(existingConnections);
-          } catch (error) {
-            // Handle error silently
-          }
-        }
-      });
+      console.log(`  🏗️ Creando AND Gate para ${taskName} con roles: ${allRoles}`);
       
       allRoles.forEach(roleName => {
         createRalphRole(modeler, roleName, results);
@@ -182,22 +318,39 @@ function handleRolesAndAssignments(modeler, matrix, results) {
       createAndGate(modeler, bpmnTask, allRoles, results);
     }
     
+    // Manejar roles A - crear asignaciones para tareas de aprobación existentes
     if (approveRoles.length > 0) {
+      console.log(`🔍 Procesando roles de aprobación para ${taskName}: ${approveRoles}`);
+      
       for (const roleName of approveRoles) {
         createRalphRole(modeler, roleName, results);
         
-        const approvalTaskName = `Aprobar ${roleName}`;
-        const approvalTask = elementRegistry.find(element => 
+        // Buscar tareas de aprobación con el nuevo formato "Aprobar {TaskName}"
+        const newApprovalTaskName = `Aprobar ${taskName}`;
+        const specificApprovalTaskName = `Aprobar ${roleName} para ${taskName}`;
+        const genericApprovalTaskName = `Aprobar ${roleName}`;
+        
+        const approvalTasksForRole = elementRegistry.filter(element => 
           element.type === 'bpmn:UserTask' && 
-          element.businessObject && element.businessObject.name === approvalTaskName
+          element.businessObject && 
+          (element.businessObject.name === newApprovalTaskName ||
+           element.businessObject.name === specificApprovalTaskName ||
+           element.businessObject.name === genericApprovalTaskName)
         );
         
-        if (approvalTask) {
+        console.log(`  📋 Tareas de aprobación encontradas para ${roleName}:`, 
+          approvalTasksForRole.map(t => t.businessObject.name));
+        
+        // Crear asignaciones para todas las tareas de aprobación encontradas
+        approvalTasksForRole.forEach(approvalTask => {
+          console.log(`  🔗 Creando asignación: ${approvalTask.businessObject.name} -> ${roleName}`);
           createSimpleAssignment(modeler, approvalTask, roleName, results);
-        }
+        });
       }
     }
   });
+  
+  console.log(`✅ handleRolesAndAssignments completado`);
 }
 
 export function executeSimpleRasciMapping(modeler, matrix) {
@@ -206,14 +359,11 @@ export function executeSimpleRasciMapping(modeler, matrix) {
   const elementRegistry = modeler.get('elementRegistry');
   if (!elementRegistry) return { error: 'elementRegistry no disponible' };
   
-  // ✨ LIMPIEZA PREVIA: Eliminar elementos duplicados antes de empezar
-  // Esto evita que se acumulen elementos cuando se ejecuta mapeo manual después del automático
-  const cleanupCount = completeRasciCleanup(modeler, matrix);
+  console.log('🚀 Iniciando executeSimpleRasciMapping');
   
-  const hasSpecialElements = elementRegistry.filter(element => {
-    const name = getElementName(element);
-    return name && (['Consultar ', 'Aprobar ', 'Informar '].some(prefix => name.startsWith(prefix)));
-  }).length > 0;
+  // 🧹 LIMPIEZA COMPLETA: Eliminar TODOS los elementos RALph y especiales existentes
+  const completeCleanupCount = performCompleteCleanup(modeler);
+  console.log(`🗑️ Elementos eliminados en limpieza completa: ${completeCleanupCount}`);
   
   originalFlowMap.clear();
   saveOriginalFlow(modeler);
@@ -224,7 +374,7 @@ export function executeSimpleRasciMapping(modeler, matrix) {
     approvalTasks: 0,
     messageFlows: 0,
     infoEvents: 0,
-    elementsRemoved: cleanupCount // Contar elementos eliminados en la limpieza previa
+    elementsRemoved: completeCleanupCount // Contar elementos eliminados en la limpieza completa
   };
   
   const taskMappings = {};
@@ -235,7 +385,7 @@ export function executeSimpleRasciMapping(modeler, matrix) {
     }
   });
   
-  let sequencesCreated = 0;
+  // 🔥 CREAR ELEMENTOS ESPECIALES PRIMERO
   Object.keys(matrix).forEach(taskName => {
     const taskRoles = matrix[taskName];
     const bpmnTask = taskMappings[taskName];
@@ -267,23 +417,24 @@ export function executeSimpleRasciMapping(modeler, matrix) {
     });
     
     if (consultRoles.length > 0 || approveRoles.length > 0 || informRoles.length > 0) {
+      console.log(`Creando elementos especiales para tarea: ${taskName}`, { consultRoles, approveRoles, informRoles });
       createSequentialSpecialElements(modeler, bpmnTask, consultRoles, approveRoles, informRoles, results);
-      sequencesCreated++;
     }
   });
   
+  // Guardar el flujo después de crear elementos especiales
   saveOriginalFlow(modeler);
   
+  // 🔥 MANEJAR ROLES Y ASIGNACIONES (con limpieza previa integrada)
   handleRolesAndAssignments(modeler, matrix, results);
   
-  cleanupOrphanedElements(modeler);
+  // ⚠️ NO ejecutar más limpiezas automáticas para evitar conflictos
+  // cleanupOrphanedElements(modeler);
   
-  setTimeout(() => {
-    completeRasciCleanup(modeler, matrix);
-  }, 50);
-  
+  // Restaurar flujo BPMN principal
   restoreBpmnFlow(modeler);
   
+  // Verificaciones finales con delay para asegurar estabilidad
   setTimeout(() => {
     checkAllTasksForDirectConnectionRestoration(modeler);
   }, 100);
@@ -311,13 +462,19 @@ export function executeSmartRasciMapping(modeler, matrix) {
   const elementRegistry = modeler.get('elementRegistry');
   if (!elementRegistry) return { error: 'elementRegistry no disponible' };
   
+  console.log('🚀 Iniciando executeSmartRasciMapping');
+  
+  // 🧹 LIMPIEZA SELECTIVA: Eliminar elementos obsoletos según la nueva matriz
+  const cleanupCount = performSelectiveCleanup(modeler, matrix);
+  console.log(`🗑️ Elementos eliminados en limpieza selectiva: ${cleanupCount}`);
+  
   const results = {
     rolesCreated: 0,
     roleAssignments: 0,
     approvalTasks: 0,
     messageFlows: 0,
     infoEvents: 0,
-    elementsRemoved: 0
+    elementsRemoved: cleanupCount
   };
   
   const hasExistingSequences = elementRegistry.filter(element => {
@@ -516,7 +673,7 @@ function fixMissingLabels(modeler) {
               let labelName = '';
               
               if (element.type === 'bpmn:UserTask' && responsibility === 'A') {
-                labelName = `Aprobar ${roleName}`;
+                labelName = `Aprobar ${taskName}`;
               } else if (element.type === 'bpmn:IntermediateThrowEvent' && responsibility === 'C') {
                 labelName = `Consultar ${roleName}`;
               } else if (element.type === 'bpmn:IntermediateThrowEvent' && responsibility === 'I') {
@@ -841,7 +998,15 @@ function checkAndRestoreDirectConnectionsAfterAndGateDeletion(modeler, deletedAn
 }
 
 function removeAssociatedRole(modeler, approvalTaskName) {
-  const roleName = approvalTaskName.replace('Aprobar ', '');
+  // Extraer el nombre del rol del nombre de la tarea de aprobación
+  let roleName;
+  if (approvalTaskName.includes(' para ')) {
+    // Formato: "Aprobar {Rol} para {Tarea}"
+    roleName = approvalTaskName.replace('Aprobar ', '').split(' para ')[0];
+  } else {
+    // Formato: "Aprobar {Rol}"
+    roleName = approvalTaskName.replace('Aprobar ', '');
+  }
   
   const modeling = modeler.get('modeling');
   const elementRegistry = modeler.get('elementRegistry');

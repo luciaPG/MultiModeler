@@ -47,7 +47,9 @@ function findNextTaskInOriginalFlow(modeler, currentTask) {
   return findNextTaskRecursive(currentTask);
 }
 
-function createSpecialElement(modeler, sourceElement, roleName, elementType, eventType, results) {
+function createSpecialElement(modeler, sourceElement, roleName, elementType, eventType, results, sourceTaskName = null) {
+  console.log(`🔨 Creando elemento especial: ${eventType} ${roleName}${sourceTaskName ? ` para ${sourceTaskName}` : ''}`);
+  
   const modeling = modeler.get('modeling');
   const canvas = modeler.get('canvas');
   const elementRegistry = modeler.get('elementRegistry');
@@ -58,35 +60,47 @@ function createSpecialElement(modeler, sourceElement, roleName, elementType, eve
   } else if (eventType === 'Informar') {
     elementName = `Informar ${roleName}`;
   } else if (eventType === 'Aprobar') {
-    elementName = `Aprobar ${roleName}`;
+    // Usar el formato simplificado "Aprobar Tarea X"
+    if (sourceTaskName) {
+      elementName = `Aprobar ${sourceTaskName}`;
+    } else {
+      elementName = `Aprobar ${roleName}`;
+    }
   } else {
     elementName = `${eventType} ${roleName}`;
   }
   
-  const existingElement = elementRegistry.find(element => 
-    element.type === elementType && 
-    element.businessObject && element.businessObject.name === elementName
-  );
+  console.log(`📝 Nombre del elemento: ${elementName}`);
   
-  if (existingElement) {
-    elementRegistry.forEach(conn => {
-      if (conn.type === 'bpmn:SequenceFlow' &&
-          (conn.source && conn.source.id === existingElement.id || conn.target && conn.target.id === existingElement.id)) {
-        try {
-          modeling.removeConnection(conn);
-        } catch (e) {
-          // Handle error silently
+  // Para tareas de aprobación con nombre específico, siempre crear nuevos elementos
+  // Para otros tipos o tareas genéricas, verificar si existe uno reutilizable
+  if (eventType !== 'Aprobar') {
+    const existingElement = elementRegistry.find(element => 
+      element.type === elementType && 
+      element.businessObject && element.businessObject.name === elementName
+    );
+    
+    if (existingElement) {
+      console.log(`♻️ Reutilizando elemento existente: ${elementName}`);
+      elementRegistry.forEach(conn => {
+        if (conn.type === 'bpmn:SequenceFlow' &&
+            (conn.source && conn.source.id === existingElement.id || conn.target && conn.target.id === existingElement.id)) {
+          try {
+            modeling.removeConnection(conn);
+          } catch (e) {
+            // Handle error silently
+          }
         }
+      });
+      
+      try {
+        modeling.connect(sourceElement, existingElement, { type: 'bpmn:SequenceFlow' });
+      } catch (e) {
+        // Handle error silently
       }
-    });
-    
-    try {
-      modeling.connect(sourceElement, existingElement, { type: 'bpmn:SequenceFlow' });
-    } catch (e) {
-      // Handle error silently
+      
+      return existingElement;
     }
-    
-    return existingElement;
   }
   
   try {
@@ -189,131 +203,123 @@ function createSpecialElement(modeler, sourceElement, roleName, elementType, eve
     else if (eventType === 'Consultar') results.messageFlows++;
     else results.infoEvents++;
     
+    console.log(`✅ Elemento creado exitosamente: ${elementName}, ID: ${element.id}`);
     return element;
   } catch (error) {
+    console.error(`❌ Error creando elemento ${elementName}:`, error);
     return null;
   }
 }
 
 function createSequentialSpecialElements(modeler, bpmnTask, consultRoles, approveRoles, informRoles, results) {
+  console.log(`🚀 Iniciando createSequentialSpecialElements para tarea: ${getElementName(bpmnTask)}`);
+  console.log(`Roles: C=${consultRoles}, A=${approveRoles}, I=${informRoles}`);
+  
   const modeling = modeler.get('modeling');
   const elementRegistry = modeler.get('elementRegistry');
   
   const taskName = getElementName(bpmnTask);
   
-  const nextRealTask = findNextTaskInOriginalFlow(modeler, bpmnTask);
-  if (!nextRealTask) {
-    const allElements = elementRegistry.filter(element => 
-      ['bpmn:EndEvent', 'bpmn:TerminateEndEvent'].includes(element.type)
-    );
+  // 🛡️ VERIFICAR SI YA EXISTEN ELEMENTOS ESPECIALES PARA ESTA TAREA
+  const existingSpecialElements = elementRegistry.filter(element => {
+    if (!element.businessObject || !element.businessObject.name) return false;
+    const name = element.businessObject.name;
     
-    if (allElements.length > 0) {
-      const endEvent = allElements[0];
-      
-      let currentSource = bpmnTask;
-      const flowElements = [];
-      
-      [...consultRoles, ...approveRoles, ...informRoles].forEach((roleName, index) => {
-        let elementType, eventType;
-        
-        if (consultRoles.includes(roleName)) {
-          elementType = 'bpmn:IntermediateThrowEvent';
-          eventType = 'Consultar';
-        } else if (approveRoles.includes(roleName)) {
-          elementType = 'bpmn:UserTask';
-          eventType = 'Aprobar';
-        } else {
-          elementType = 'bpmn:IntermediateThrowEvent';
-          eventType = 'Informar';
-        }
-        
-        const element = createSpecialElement(modeler, currentSource, roleName, elementType, eventType, results);
-        if (element) {
-          flowElements.push(element);
-          currentSource = element;
-        }
-      });
-      
-      if (flowElements.length > 0) {
-        try {
-          modeling.connect(currentSource, endEvent, { type: 'bpmn:SequenceFlow' });
-        } catch (e) {
-          // Handle error silently
-        }
-      }
-    }
+    // Verificar si es un elemento especial relacionado con esta tarea
+    return (name.startsWith('Consultar ') && consultRoles.some(role => name.includes(role))) ||
+           (name.startsWith('Aprobar ') && name.includes(taskName)) ||
+           (name.startsWith('Informar ') && informRoles.some(role => name.includes(role)));
+  });
+  
+  if (existingSpecialElements.length > 0) {
+    console.log(`⚠️ Ya existen elementos especiales para ${taskName}, saltando creación`);
     return;
   }
   
+  const nextRealTask = findNextTaskInOriginalFlow(modeler, bpmnTask);
+  console.log(`🎯 Próxima tarea encontrada:`, nextRealTask ? getElementName(nextRealTask) : 'NINGUNA');
+  
+  // Eliminar conexión directa existente
   const directConnection = elementRegistry.find(conn => 
     conn.type === 'bpmn:SequenceFlow' &&
     conn.source && conn.source.id === bpmnTask.id &&
-    conn.target && conn.target.id === nextRealTask.id
+    conn.target && conn.target && 
+    (nextRealTask ? conn.target.id === nextRealTask.id : ['bpmn:EndEvent', 'bpmn:TerminateEndEvent'].includes(conn.target.type))
   );
   
   if (directConnection) {
+    console.log(`🔌 Removiendo conexión directa existente`);
     try {
       modeling.removeConnection(directConnection);
     } catch (e) {
-      // Handle error silently
+      console.error(`❌ Error removiendo conexión:`, e);
     }
   }
   
   let currentSource = bpmnTask;
   const flowElements = [];
   
-  [...consultRoles, ...approveRoles, ...informRoles].forEach((roleName, index) => {
-    let elementType, eventType;
-    
-    if (consultRoles.includes(roleName)) {
-      elementType = 'bpmn:IntermediateThrowEvent';
-      eventType = 'Consultar';
-    } else if (approveRoles.includes(roleName)) {
-      elementType = 'bpmn:UserTask';
-      eventType = 'Aprobar';
-    } else {
-      elementType = 'bpmn:IntermediateThrowEvent';
-      eventType = 'Informar';
-    }
-    
-    const element = createSpecialElement(modeler, currentSource, roleName, elementType, eventType, results);
+  // 📝 CREAR ELEMENTOS EN ORDEN: Consultar -> Aprobar -> Informar
+  
+  // 1. Elementos de Consulta (uno por rol)
+  consultRoles.forEach(roleName => {
+    const element = createSpecialElement(modeler, currentSource, roleName, 'bpmn:IntermediateThrowEvent', 'Consultar', results, taskName);
     if (element) {
+      console.log(`🔗 Consulta: ${getElementName(currentSource)} -> ${getElementName(element)}`);
       flowElements.push(element);
       currentSource = element;
     }
   });
   
-  if (flowElements.length > 0) {
-    // Verificar que no exista ya una conexión entre el último elemento y nextRealTask
-    const existingConnection = elementRegistry.find(conn => 
-      conn.type === 'bpmn:SequenceFlow' &&
-      conn.source && conn.source.id === currentSource.id &&
-      conn.target && conn.target.id === nextRealTask.id
+  // 2. UN SOLO elemento de Aprobación para la tarea (independientemente del número de roles)
+  if (approveRoles.length > 0) {
+    const element = createSpecialElement(modeler, currentSource, approveRoles[0], 'bpmn:UserTask', 'Aprobar', results, taskName);
+    if (element) {
+      console.log(`🔗 Aprobación: ${getElementName(currentSource)} -> ${getElementName(element)}`);
+      flowElements.push(element);
+      currentSource = element;
+      results.approvalTasks++;
+    }
+  }
+  
+  // 3. Elementos de Información (uno por rol)
+  informRoles.forEach(roleName => {
+    const element = createSpecialElement(modeler, currentSource, roleName, 'bpmn:IntermediateThrowEvent', 'Informar', results, taskName);
+    if (element) {
+      console.log(`🔗 Información: ${getElementName(currentSource)} -> ${getElementName(element)}`);
+      flowElements.push(element);
+      currentSource = element;
+    }
+  });
+  
+  // 4. Conectar al siguiente elemento o EndEvent
+  if (!nextRealTask) {
+    console.log(`⚠️ No se encontró próxima tarea, buscando EndEvent...`);
+    const allElements = elementRegistry.filter(element => 
+      ['bpmn:EndEvent', 'bpmn:TerminateEndEvent'].includes(element.type)
     );
     
-    if (!existingConnection) {
+    if (allElements.length > 0) {
+      const endEvent = allElements[0];
+      console.log(`🏁 Conectando último elemento ${getElementName(currentSource)} -> EndEvent`);
       try {
-        modeling.connect(currentSource, nextRealTask, { type: 'bpmn:SequenceFlow' });
+        modeling.connect(currentSource, endEvent, { type: 'bpmn:SequenceFlow' });
+        console.log(`✅ Conexión a EndEvent exitosa`);
       } catch (e) {
-        // Handle error silently
+        console.error(`❌ Error conectando a EndEvent:`, e);
       }
     }
   } else {
-    // Verificar que no exista ya una conexión directa
-    const existingDirectConnection = elementRegistry.find(conn => 
-      conn.type === 'bpmn:SequenceFlow' &&
-      conn.source && conn.source.id === bpmnTask.id &&
-      conn.target && conn.target.id === nextRealTask.id
-    );
-    
-    if (!existingDirectConnection) {
-      try {
-        modeling.connect(bpmnTask, nextRealTask, { type: 'bpmn:SequenceFlow' });
-      } catch (e) {
-        // Handle error silently
-      }
+    console.log(`🔄 Conectando último elemento ${getElementName(currentSource)} -> ${getElementName(nextRealTask)}`);
+    try {
+      modeling.connect(currentSource, nextRealTask, { type: 'bpmn:SequenceFlow' });
+      console.log(`✅ Flujo restaurado correctamente`);
+    } catch (e) {
+      console.error(`❌ Error restaurando flujo:`, e);
     }
   }
+  
+  console.log(`🏁 createSequentialSpecialElements completado para ${taskName}`);
 }
 
 function restoreFlowAfterApprovalRemoval(modeler) {
