@@ -1,4 +1,4 @@
-// RASCI Matrix - Matrix rendering and role management
+// RASCI Matrix Manager - Matrix rendering and role management
 
 // Global variables for roles and matrix data
 let roles = [];
@@ -519,4 +519,4 @@ export function deleteRole(roleIndex, panel) {
 }
 
 // Configurar función global para actualizar matriz
-window.updateMatrixFromDiagram = updateMatrixFromDiagram; 
+window.updateMatrixFromDiagram = updateMatrixFromDiagram;

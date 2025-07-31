@@ -1,9 +1,9 @@
 // RASCI Core - Main panel initialization and state management
-import { renderMatrix, addNewRole, editRole, deleteRole, showDeleteConfirmModal } from './rasci-matrix.js';
-import { applyStyles } from './rasci-styles.js';
-import { initRasciMapping, executeSimpleRasciMapping, executeSmartRasciMapping } from './rasci-mapping-consolidated.js';
+import { renderMatrix, addNewRole, editRole, showDeleteConfirmModal } from './matrix-manager.js';
+import { applyStyles } from './styles.js';
+import { initRasciMapping, executeSimpleRasciMapping } from '../mapping/index.js';
 
-console.log('🚀 rasci-core.js: Archivo cargado correctamente');
+console.log('🚀 rasci/core/main.js: Archivo cargado correctamente');
 console.log('📊 executeSimpleRasciMapping disponible:', typeof executeSimpleRasciMapping);
 
 export function initRasciPanel(panel) {
@@ -483,4 +483,4 @@ window.initializeAutoMapping = function() {
     
     console.log('🔄 Mapeo automático RALph inicializado (activado por defecto)');
   }
-}; 
+};
