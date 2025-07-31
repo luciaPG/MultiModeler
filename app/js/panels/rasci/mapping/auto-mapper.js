@@ -2,36 +2,10 @@
 // Automatic mapping functionality
 
 import { executeSimpleRasciMapping } from './main-mapper.js';
-import { completeRasciCleanup } from './cleanup-utils.js';
 
+// Función unificada que usa la misma lógica para manual y automático
 function executeAutoMappingWithCleanup(modeler, matrix) {
-  const results = {
-    rolesCreated: 0,
-    roleAssignments: 0,
-    approvalTasks: 0,
-    messageFlows: 0,
-    infoEvents: 0,
-    elementsRemoved: 0
-  };
-  
-  const cleanupCount = completeRasciCleanup(modeler, matrix);
-  results.elementsRemoved = cleanupCount;
-  
-  let hasActiveResponsibilities = false;
-  Object.keys(matrix).forEach(taskName => {
-    const taskRoles = matrix[taskName];
-    Object.keys(taskRoles).forEach(roleName => {
-      const responsibility = taskRoles[roleName];
-      if (responsibility && responsibility !== '-' && responsibility !== '') {
-        hasActiveResponsibilities = true;
-      }
-    });
-  });
-  
-  if (!hasActiveResponsibilities) {
-    return results;
-  }
-  
+  // La función executeSimpleRasciMapping ya incluye limpieza
   return executeSimpleRasciMapping(modeler, matrix);
 }
 
@@ -93,7 +67,7 @@ const rasciAutoMapping = {
     this.smartTimer = setTimeout(() => {
       if (window.bpmnModeler && window.rasciMatrixData) {
         try {
-          const results = executeSimpleRasciMapping(window.bpmnModeler, window.rasciMatrixData);
+          executeSimpleRasciMapping(window.bpmnModeler, window.rasciMatrixData);
         } catch (error) {
           // Handle error silently
         }
@@ -128,8 +102,9 @@ function onRasciMatrixUpdated() {
   });
   
   if (!hasActiveResponsibilities) {
+    // Si no hay responsabilidades activas, solo hacer limpieza
     try {
-      const elementsRemoved = completeRasciCleanup(window.bpmnModeler, window.rasciMatrixData);
+      executeSimpleRasciMapping(window.bpmnModeler, window.rasciMatrixData);
     } catch (error) {
       // Handle error silently
     }
@@ -141,7 +116,7 @@ function onRasciMatrixUpdated() {
       clearTimeout(rasciAutoMapping.debounceTimer);
     }
     
-    const results = executeAutoMappingWithCleanup(window.bpmnModeler, window.rasciMatrixData);
+    executeAutoMappingWithCleanup(window.bpmnModeler, window.rasciMatrixData);
     
   } catch (error) {
     setTimeout(() => {
@@ -165,7 +140,7 @@ function executeRasciToRalphMapping() {
   }
   
   try {
-    const results = executeSimpleRasciMapping(window.bpmnModeler, window.rasciMatrixData);
+    executeSimpleRasciMapping(window.bpmnModeler, window.rasciMatrixData);
   } catch (error) {
     // Handle error silently
   }
@@ -182,7 +157,7 @@ function syncRasciConnections() {
   }
   
   try {
-    const results = executeSimpleRasciMapping(window.bpmnModeler, window.rasciMatrixData);
+    executeSimpleRasciMapping(window.bpmnModeler, window.rasciMatrixData);
   } catch (error) {
     // Handle error silently
   }

@@ -1,7 +1,7 @@
 // RASCI Mapping Elements - Clean Version
 // Special element creation and flow restoration functionality
 
-import { getElementName, originalFlowMap } from './core-functions.js';
+import { getElementName, originalFlowMap, saveOriginalFlow } from './core-functions.js';
 
 function findNextTaskInOriginalFlow(modeler, currentTask) {
   const elementRegistry = modeler.get('elementRegistry');
@@ -284,16 +284,34 @@ function createSequentialSpecialElements(modeler, bpmnTask, consultRoles, approv
   });
   
   if (flowElements.length > 0) {
-    try {
-      modeling.connect(currentSource, nextRealTask, { type: 'bpmn:SequenceFlow' });
-    } catch (e) {
-      // Handle error silently
+    // Verificar que no exista ya una conexión entre el último elemento y nextRealTask
+    const existingConnection = elementRegistry.find(conn => 
+      conn.type === 'bpmn:SequenceFlow' &&
+      conn.source && conn.source.id === currentSource.id &&
+      conn.target && conn.target.id === nextRealTask.id
+    );
+    
+    if (!existingConnection) {
+      try {
+        modeling.connect(currentSource, nextRealTask, { type: 'bpmn:SequenceFlow' });
+      } catch (e) {
+        // Handle error silently
+      }
     }
   } else {
-    try {
-      modeling.connect(bpmnTask, nextRealTask, { type: 'bpmn:SequenceFlow' });
-    } catch (e) {
-      // Handle error silently
+    // Verificar que no exista ya una conexión directa
+    const existingDirectConnection = elementRegistry.find(conn => 
+      conn.type === 'bpmn:SequenceFlow' &&
+      conn.source && conn.source.id === bpmnTask.id &&
+      conn.target && conn.target.id === nextRealTask.id
+    );
+    
+    if (!existingDirectConnection) {
+      try {
+        modeling.connect(bpmnTask, nextRealTask, { type: 'bpmn:SequenceFlow' });
+      } catch (e) {
+        // Handle error silently
+      }
     }
   }
 }
@@ -333,11 +351,20 @@ function restoreFlowAfterApprovalRemoval(modeler) {
         }
         
         if (targetElement) {
-          try {
-            modeling.connect(sourceElement, targetElement, { type: 'bpmn:SequenceFlow' });
-            break;
-          } catch (e) {
-            // Handle error silently
+          // Verificar que no exista ya una conexión a esta tarea
+          const existingConnection = elementRegistry.find(conn => 
+            conn.type === 'bpmn:SequenceFlow' && 
+            conn.source && conn.source.id === sourceElement.id &&
+            conn.target && conn.target.id === targetElement.id
+          );
+          
+          if (!existingConnection) {
+            try {
+              modeling.connect(sourceElement, targetElement, { type: 'bpmn:SequenceFlow' });
+              break;
+            } catch (e) {
+              // Handle error silently
+            }
           }
         }
       }
@@ -363,6 +390,7 @@ function restoreBpmnFlow(modeler) {
     
     if (outgoingConnections.length === 0) {
       if (taskName && taskName.startsWith('Aprobar ')) {
+        // Para tareas de aprobación, buscar la tarea original y conectar a su siguiente tarea
         const roleName = taskName.replace('Aprobar ', '');
         let originalTaskName = null;
         
@@ -386,17 +414,26 @@ function restoreBpmnFlow(modeler) {
               );
               
               if (currentNextTask) {
-                try {
-                  modeling.connect(task, currentNextTask, { type: 'bpmn:SequenceFlow' });
-                  break;
-                } catch (e) {
-                  // Handle error silently
+                // Verificar que no exista ya una conexión a esta tarea
+                const existingConnection = elementRegistry.find(conn => 
+                  conn.type === 'bpmn:SequenceFlow' && 
+                  conn.target && conn.target.id === currentNextTask.id
+                );
+                
+                if (!existingConnection) {
+                  try {
+                    modeling.connect(task, currentNextTask, { type: 'bpmn:SequenceFlow' });
+                    break;
+                  } catch (e) {
+                    // Handle error silently
+                  }
                 }
               }
             }
           }
         }
-      } else {
+      } else if (!taskName.startsWith('Consultar ') && !taskName.startsWith('Informar ')) {
+        // Solo reconectar tareas normales (no especiales)
         const originalNextTasks = originalFlowMap.get(taskName);
         if (originalNextTasks && originalNextTasks.length > 0) {
           for (const originalNextTask of originalNextTasks) {
@@ -407,11 +444,19 @@ function restoreBpmnFlow(modeler) {
             );
             
             if (currentNextTask) {
-              try {
-                modeling.connect(task, currentNextTask, { type: 'bpmn:SequenceFlow' });
-                break;
-              } catch (e) {
-                // Handle error silently
+              // Verificar que no exista ya una conexión a esta tarea
+              const existingConnection = elementRegistry.find(conn => 
+                conn.type === 'bpmn:SequenceFlow' && 
+                conn.target && conn.target.id === currentNextTask.id
+              );
+              
+              if (!existingConnection) {
+                try {
+                  modeling.connect(task, currentNextTask, { type: 'bpmn:SequenceFlow' });
+                  break;
+                } catch (e) {
+                  // Handle error silently
+                }
               }
             }
           }
@@ -453,10 +498,20 @@ function restoreFlowByElementNames(modeler) {
       
       if (potentialTargets.length > 0) {
         const target = potentialTargets[0];
-        try {
-          modeling.connect(element, target, { type: 'bpmn:SequenceFlow' });
-        } catch (e) {
-          // Handle error silently
+        
+        // Verificar que no exista ya una conexión entre estos elementos
+        const existingConnection = elementRegistry.find(conn => 
+          conn.type === 'bpmn:SequenceFlow' && 
+          conn.source && conn.source.id === element.id &&
+          conn.target && conn.target.id === target.id
+        );
+        
+        if (!existingConnection) {
+          try {
+            modeling.connect(element, target, { type: 'bpmn:SequenceFlow' });
+          } catch (e) {
+            // Handle error silently
+          }
         }
       }
     }

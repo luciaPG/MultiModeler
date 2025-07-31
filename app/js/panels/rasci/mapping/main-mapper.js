@@ -206,6 +206,10 @@ export function executeSimpleRasciMapping(modeler, matrix) {
   const elementRegistry = modeler.get('elementRegistry');
   if (!elementRegistry) return { error: 'elementRegistry no disponible' };
   
+  // ✨ LIMPIEZA PREVIA: Eliminar elementos duplicados antes de empezar
+  // Esto evita que se acumulen elementos cuando se ejecuta mapeo manual después del automático
+  const cleanupCount = completeRasciCleanup(modeler, matrix);
+  
   const hasSpecialElements = elementRegistry.filter(element => {
     const name = getElementName(element);
     return name && (['Consultar ', 'Aprobar ', 'Informar '].some(prefix => name.startsWith(prefix)));
@@ -220,7 +224,7 @@ export function executeSimpleRasciMapping(modeler, matrix) {
     approvalTasks: 0,
     messageFlows: 0,
     infoEvents: 0,
-    elementsRemoved: 0
+    elementsRemoved: cleanupCount // Contar elementos eliminados en la limpieza previa
   };
   
   const taskMappings = {};
