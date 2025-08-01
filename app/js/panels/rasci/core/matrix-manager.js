@@ -1,4 +1,5 @@
 // RASCI Matrix Manager - Matrix rendering and role management
+import { rasciUIValidator } from '../ui/matrix-ui-validator.js';
 
 let roles = [];
 let autoSaveRasciState = null;
@@ -52,7 +53,58 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
   const headerRow = document.createElement('tr');
 
   const taskHeader = document.createElement('th');
-  taskHeader.textContent = 'Tarea';
+  taskHeader.style.position = 'relative';
+  
+  const taskHeaderContent = document.createElement('div');
+  taskHeaderContent.style.display = 'flex';
+  taskHeaderContent.style.alignItems = 'center';
+  taskHeaderContent.style.justifyContent = 'space-between';
+  taskHeaderContent.style.padding = '0 8px';
+  
+  const taskText = document.createElement('span');
+  taskText.textContent = 'Tarea';
+  taskText.style.fontWeight = 'bold';
+  
+  const reloadBtn = document.createElement('button');
+  reloadBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+  reloadBtn.title = 'Recargar tareas del canvas';
+  reloadBtn.style.cssText = `
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-size: 10px;
+    cursor: pointer;
+    margin-left: 8px;
+    transition: background-color 0.2s;
+  `;
+  
+  reloadBtn.addEventListener('mouseenter', () => {
+    reloadBtn.style.background = '#2563eb';
+  });
+  
+  reloadBtn.addEventListener('mouseleave', () => {
+    reloadBtn.style.background = '#3b82f6';
+  });
+  
+  reloadBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    reloadBtn.style.background = '#1d4ed8';
+    reloadBtn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i>';
+    
+    // Llamar a la función de recarga forzada
+    setTimeout(() => {
+      forceReloadMatrix();
+      reloadBtn.style.background = '#3b82f6';
+      reloadBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+    }, 500);
+  });
+  
+  taskHeaderContent.appendChild(taskText);
+  taskHeaderContent.appendChild(reloadBtn);
+  taskHeader.appendChild(taskHeaderContent);
   headerRow.appendChild(taskHeader);
 
   roles.forEach((role, index) => {
@@ -121,6 +173,25 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
 
   const tasks = getBpmnTasks();
 
+  // Asegurar que todas las tareas estén en window.rasciMatrixData
+  if (!window.rasciMatrixData) {
+    window.rasciMatrixData = {};
+  }
+  
+  tasks.forEach(taskName => {
+    if (!window.rasciMatrixData[taskName]) {
+      // Inicializar la tarea con estructura de roles vacíos para que el validador la detecte
+      const taskRoles = {};
+      if (roles && roles.length > 0) {
+        roles.forEach(role => {
+          taskRoles[role] = ''; // Inicializar con string vacío para que el validador detecte la estructura
+        });
+      }
+      
+      window.rasciMatrixData[taskName] = taskRoles;
+    }
+  });
+
   const tbody = document.createElement('tbody');
   tasks.forEach(task => {
     const row = document.createElement('tr');
@@ -164,6 +235,38 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
         if (['R', 'A', 'S', 'C', 'I'].includes(key)) {
           e.preventDefault();
 
+          // Validación preventiva para R y A
+          if (key === 'R' || key === 'A') {
+            const currentTaskData = window.rasciMatrixData && window.rasciMatrixData[task] ? window.rasciMatrixData[task] : {};
+            
+            // Verificar si ya existe una R o A en esta tarea
+            const existingRoles = Object.values(currentTaskData);
+            const hasR = existingRoles.some(value => value.includes('R'));
+            const hasA = existingRoles.some(value => value.includes('A'));
+            
+            if (key === 'R' && hasR) {
+              // Mostrar feedback visual en lugar de alert
+              cell.style.backgroundColor = '#ffebee';
+              cell.style.border = '2px solid #f44336';
+              setTimeout(() => {
+                cell.style.backgroundColor = '';
+                cell.style.border = '';
+              }, 1000);
+              return;
+            }
+            
+            if (key === 'A' && hasA) {
+              // Mostrar feedback visual en lugar de alert
+              cell.style.backgroundColor = '#ffebee';
+              cell.style.border = '2px solid #f44336';
+              setTimeout(() => {
+                cell.style.backgroundColor = '';
+                cell.style.border = '';
+              }, 1000);
+              return;
+            }
+          }
+
           container.classList.remove('rasci-ready');
           cell.classList.remove('cell-ready');
 
@@ -190,6 +293,11 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
             }, 100);
           }
 
+          // Validar matriz en tiempo real (más lento para evitar recargas constantes)
+          setTimeout(() => {
+            rasciUIValidator.forceValidation();
+          }, 500);
+
         } else if (['-', 'Delete', 'Backspace', 'Escape'].includes(e.key)) {
           e.preventDefault();
 
@@ -211,6 +319,11 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
               window.onRasciMatrixUpdated();
             }, 100);
           }
+
+          // Validar matriz en tiempo real (más lento para evitar recargas constantes)
+          setTimeout(() => {
+            rasciUIValidator.forceValidation();
+          }, 500);
         }
       });
 
@@ -246,14 +359,21 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
 
   table.appendChild(tbody);
   matrixContainer.appendChild(table);
+  
+  // Validación automática después de renderizar la matriz (una sola vez)
+  setTimeout(() => {
+    if (window.rasciUIValidator && typeof window.rasciUIValidator.autoValidateAfterMatrixUpdate === 'function') {
+      window.rasciUIValidator.autoValidateAfterMatrixUpdate();
+    }
+  }, 500);
 }
 
 // Función para obtener tareas del diagrama BPMN
-function getBpmnTasks() {
+export function getBpmnTasks() {
   if (!window.bpmnModeler) {
     return [];
   }
-
+  
   const elementRegistry = window.bpmnModeler.get('elementRegistry');
   const tasks = [];
 
@@ -271,41 +391,94 @@ function getBpmnTasks() {
       element.type === 'bpmn:SubProcess'
     )) {
       const taskName = (element.businessObject && element.businessObject.name) || element.id;
+      
       if (taskName && !tasks.includes(taskName)) {
         tasks.push(taskName);
       }
     }
   });
-
+  
   return tasks;
 }
 
-// Función para actualizar matriz desde el diagrama
-export function updateMatrixFromDiagram() {
-  if (!window.bpmnModeler) {
-    return;
-  }
+  // Función para actualizar matriz desde el diagrama (sin recargo visual)
+  export function updateMatrixFromDiagram() {
+    if (!window.bpmnModeler) {
+      return;
+    }
 
-  const rasciPanel = document.querySelector('#rasci-panel');
-  
-  if (rasciPanel) {
-    renderMatrix(rasciPanel, roles, autoSaveRasciState);
-  }
-}
+    // Obtener las tareas actuales del diagrama
+    const currentTasks = getBpmnTasks();
+    
+    // Asegurar que window.rasciMatrixData existe
+    if (!window.rasciMatrixData) {
+      window.rasciMatrixData = {};
+    }
+    
+    // Añadir nuevas tareas al window.rasciMatrixData si no existen
+    let hasNewTasks = false;
+    
+    currentTasks.forEach(taskName => {
+      if (!window.rasciMatrixData[taskName]) {
+        // Inicializar la tarea con estructura de roles vacíos para que el validador la detecte
+        const taskRoles = {};
+        if (roles && roles.length > 0) {
+          roles.forEach(role => {
+            taskRoles[role] = ''; // Inicializar con string vacío para que el validador detecte la estructura
+          });
+        }
+        
+        window.rasciMatrixData[taskName] = taskRoles;
+        hasNewTasks = true;
+      }
+    });
+    
+    // Eliminar tareas que ya no existen en el diagrama
+    const existingTasks = Object.keys(window.rasciMatrixData);
+    
+    existingTasks.forEach(taskName => {
+      if (!currentTasks.includes(taskName)) {
+        delete window.rasciMatrixData[taskName];
+        hasNewTasks = true;
+      }
+    });
 
-// Función para configurar listener de cambios en el diagrama
-export function setupDiagramChangeListener() {
-  if (!window.bpmnModeler) {
-    return;
-  }
-
-  const eventBus = window.bpmnModeler.get('eventBus');
-  eventBus.on('element.changed', () => {
+    // Solo recargar visualmente si hay cambios significativos
+    if (hasNewTasks) {
+      const rasciPanel = document.querySelector('#rasci-panel');
+      if (rasciPanel) {
+        renderMatrix(rasciPanel, roles, autoSaveRasciState);
+      }
+    }
+    
+    // Validación sin recargo visual
     setTimeout(() => {
-      updateMatrixFromDiagram();
-    }, 100);
-  });
-}
+      if (window.rasciUIValidator && typeof window.rasciUIValidator.autoValidateAfterMatrixUpdate === 'function') {
+        window.rasciUIValidator.autoValidateAfterMatrixUpdate();
+      } else if (window.rasciUIValidator && typeof window.rasciUIValidator.forceValidation === 'function') {
+        window.rasciUIValidator.forceValidation();
+      }
+      
+      // Validación adicional específica para tareas vacías
+      if (window.rasciUIValidator && typeof window.rasciUIValidator.validateEmptyTasks === 'function') {
+        window.rasciUIValidator.validateEmptyTasks();
+      }
+    }, 200);
+  }
+
+  // Función para configurar listener de cambios en el diagrama
+  export function setupDiagramChangeListener() {
+    if (!window.bpmnModeler) {
+      return;
+    }
+
+    const eventBus = window.bpmnModeler.get('eventBus');
+    eventBus.on('element.changed', () => {
+      setTimeout(() => {
+        updateMatrixFromDiagram();
+      }, 500); // Más lento para evitar recargas constantes
+    });
+  }
 
 // Función para agregar nuevo rol
 export function addNewRole(panel, rolesArray, autoSaveFunction) {
@@ -318,6 +491,11 @@ export function addNewRole(panel, rolesArray, autoSaveFunction) {
   if (autoSaveRasciState) autoSaveRasciState();
   
   renderMatrix(panel, roles, autoSaveRasciState);
+
+  // Validar matriz después de agregar rol (más lento)
+  setTimeout(() => {
+    rasciUIValidator.forceValidation();
+  }, 1000);
 }
 
 // Función para hacer editable un rol
@@ -380,6 +558,11 @@ function makeRoleEditable(roleHeader, roleIndex) {
       roleNameSpan.textContent = newName;
       
       if (autoSaveRasciState) autoSaveRasciState();
+
+      // Validar matriz después de editar rol (más lento)
+      setTimeout(() => {
+        rasciUIValidator.forceValidation();
+      }, 1000);
     }
     
     restoreView();
@@ -468,6 +651,11 @@ export function deleteRole(roleIndex, panel) {
   if (autoSaveRasciState) autoSaveRasciState();
   
   renderMatrix(panel, roles, autoSaveRasciState);
+
+  // Validar matriz después de eliminar rol (más lento)
+  setTimeout(() => {
+    rasciUIValidator.forceValidation();
+  }, 1000);
 }
 
 // Configurar función global para actualizar matriz
@@ -480,3 +668,233 @@ window.reloadRasciMatrix = function() {
     renderMatrix(rasciPanel, roles, autoSaveRasciState);
   }
 };
+
+// Función global para forzar la detección de nuevas tareas y validación
+export function forceDetectNewTasks() {
+  if (!window.bpmnModeler) {
+    return;
+  }
+  
+  // Obtener tareas actuales
+  const currentTasks = getBpmnTasks();
+  
+  // Asegurar que window.rasciMatrixData existe
+  if (!window.rasciMatrixData) {
+    window.rasciMatrixData = {};
+  }
+  
+  // Añadir nuevas tareas si no existen
+  let hasNewTasks = false;
+  currentTasks.forEach(taskName => {
+    if (!window.rasciMatrixData[taskName]) {
+      // Inicializar la tarea con estructura de roles vacíos para que el validador la detecte
+      const taskRoles = {};
+      if (roles && roles.length > 0) {
+        roles.forEach(role => {
+          taskRoles[role] = ''; // Inicializar con string vacío para que el validador detecte la estructura
+        });
+      }
+      
+      window.rasciMatrixData[taskName] = taskRoles;
+      hasNewTasks = true;
+    }
+  });
+  
+  if (hasNewTasks) {
+    // Forzar validación inmediata
+    setTimeout(() => {
+      if (window.rasciUIValidator && typeof window.rasciUIValidator.forceValidation === 'function') {
+        window.rasciUIValidator.forceValidation();
+      }
+      if (window.rasciUIValidator && typeof window.rasciUIValidator.validateEmptyTasks === 'function') {
+        window.rasciUIValidator.validateEmptyTasks();
+      }
+    }, 100);
+  }
+}
+
+// Hacer la función disponible globalmente
+window.forceDetectNewTasks = forceDetectNewTasks;
+
+// Función global para forzar la detección y validación completa
+window.forceDetectAndValidate = () => {
+  forceDetectNewTasks();
+  
+  // También forzar validación después de un breve delay
+  setTimeout(() => {
+    if (window.rasciUIValidator && typeof window.rasciUIValidator.validateEmptyTasks === 'function') {
+      window.rasciUIValidator.validateEmptyTasks();
+    }
+    if (window.rasciUIValidator && typeof window.rasciUIValidator.forceValidation === 'function') {
+      window.rasciUIValidator.forceValidation();
+    }
+  }, 200);
+};
+
+// Función global para diagnóstico completo del estado
+window.diagnoseRasciState = () => {
+  // 1. Verificar bpmnModeler
+  console.log('1. Estado de bpmnModeler:', {
+    available: !!window.bpmnModeler,
+    type: typeof window.bpmnModeler
+  });
+  
+  // 2. Obtener tareas del BPMN
+  const bpmnTasks = getBpmnTasks();
+  console.log('2. Tareas del BPMN:', bpmnTasks);
+  console.log('   Número de tareas BPMN:', bpmnTasks.length);
+  
+  // 3. Verificar window.rasciMatrixData
+  console.log('3. Estado de window.rasciMatrixData:', {
+    exists: !!window.rasciMatrixData,
+    type: typeof window.rasciMatrixData,
+    keys: window.rasciMatrixData ? Object.keys(window.rasciMatrixData) : [],
+    data: window.rasciMatrixData
+  });
+  
+  // 4. Verificar roles
+  console.log('4. Estado de roles:', {
+    roles: roles,
+    count: roles ? roles.length : 0
+  });
+  
+  // 5. Verificar validador de UI
+  console.log('5. Estado del validador de UI:', {
+    exists: !!window.rasciUIValidator,
+    type: typeof window.rasciUIValidator,
+    hasValidateEmptyTasks: window.rasciUIValidator ? typeof window.rasciUIValidator.validateEmptyTasks === 'function' : false,
+    hasForceValidation: window.rasciUIValidator ? typeof window.rasciUIValidator.forceValidation === 'function' : false
+  });
+  
+  // 6. Verificar localStorage
+  console.log('6. Estado de localStorage:', {
+    rasciMatrixData: localStorage.getItem('rasciMatrixData'),
+    rasciRoles: localStorage.getItem('rasciRoles')
+  });
+  
+  // 7. Verificar panel RASCI
+  const rasciPanel = document.querySelector('#rasci-panel');
+  console.log('7. Estado del panel RASCI:', {
+    exists: !!rasciPanel,
+    id: rasciPanel ? rasciPanel.id : null
+  });
+  
+  // 8. Análisis de sincronización
+  if (window.rasciMatrixData && bpmnTasks.length > 0) {
+    const matrixTasks = Object.keys(window.rasciMatrixData);
+    const missingInMatrix = bpmnTasks.filter(task => !matrixTasks.includes(task));
+    const extraInMatrix = matrixTasks.filter(task => !bpmnTasks.includes(task));
+    
+    console.log('8. Análisis de sincronización:', {
+      tareasEnBPMN: bpmnTasks,
+      tareasEnMatriz: matrixTasks,
+      faltantesEnMatriz: missingInMatrix,
+      extraEnMatriz: extraInMatrix,
+      sincronizado: missingInMatrix.length === 0 && extraInMatrix.length === 0
+    });
+  }
+  
+};
+
+// Función global para forzar sincronización completa
+window.forceFullSync = () => {
+  // 1. Obtener tareas del BPMN
+  const bpmnTasks = getBpmnTasks();
+  
+  // 2. Asegurar que window.rasciMatrixData existe
+  if (!window.rasciMatrixData) {
+    window.rasciMatrixData = {};
+  }
+  
+  // 3. Sincronizar completamente
+  let changes = 0;
+  
+  // Añadir tareas faltantes
+  bpmnTasks.forEach(taskName => {
+    if (!window.rasciMatrixData[taskName]) {
+      const taskRoles = {};
+      if (roles && roles.length > 0) {
+        roles.forEach(role => {
+          taskRoles[role] = '';
+        });
+      }
+      window.rasciMatrixData[taskName] = taskRoles;
+      changes++;
+    }
+  });
+  
+  // Eliminar tareas extra
+  const matrixTasks = Object.keys(window.rasciMatrixData);
+  matrixTasks.forEach(taskName => {
+    if (!bpmnTasks.includes(taskName)) {
+      delete window.rasciMatrixData[taskName];
+      changes++;
+    }
+  });
+  
+  // 4. Forzar validación
+  setTimeout(() => {
+    if (window.rasciUIValidator) {
+      if (typeof window.rasciUIValidator.validateEmptyTasks === 'function') {
+        window.rasciUIValidator.validateEmptyTasks();
+      }
+      if (typeof window.rasciUIValidator.forceValidation === 'function') {
+        window.rasciUIValidator.forceValidation();
+      }
+    }
+  }, 100);
+};
+
+// Función para forzar la recarga completa de la matriz
+export function forceReloadMatrix() {
+  if (!window.bpmnModeler) {
+    console.log('❌ No hay modelador BPMN disponible');
+    return;
+  }
+
+  console.log('🔄 Forzando recarga de matriz...');
+  
+  // Obtener las tareas actuales del diagrama
+  const currentTasks = getBpmnTasks();
+  console.log('📋 Tareas encontradas:', currentTasks);
+  
+  // Asegurar que window.rasciMatrixData existe
+  if (!window.rasciMatrixData) {
+    window.rasciMatrixData = {};
+  }
+  
+  // Limpiar datos existentes y reinicializar
+  window.rasciMatrixData = {};
+  
+  // Añadir todas las tareas al window.rasciMatrixData
+  currentTasks.forEach(taskName => {
+    const taskRoles = {};
+    if (roles && roles.length > 0) {
+      roles.forEach(role => {
+        taskRoles[role] = ''; // Inicializar con string vacío
+      });
+    }
+    window.rasciMatrixData[taskName] = taskRoles;
+  });
+  
+  console.log('📊 Datos de matriz actualizados:', window.rasciMatrixData);
+  
+  // Forzar recarga visual
+  const rasciPanel = document.querySelector('#rasci-panel');
+  if (rasciPanel) {
+    renderMatrix(rasciPanel, roles, autoSaveRasciState);
+    console.log('✅ Matriz recargada visualmente');
+  } else {
+    console.log('❌ No se encontró el panel RASCI');
+  }
+  
+  // Validación después de recargar
+  setTimeout(() => {
+    if (window.rasciUIValidator && typeof window.rasciUIValidator.forceValidation === 'function') {
+      window.rasciUIValidator.forceValidation();
+      console.log('✅ Validación ejecutada');
+    }
+  }, 300);
+}
+
+

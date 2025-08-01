@@ -19,9 +19,29 @@
     <!-- PESTAÑA 1: MATRIZ RASCI -->
     <div id="main-tab" class="tab-content active" style="display: flex;">
       <div class="rasci-controls">
-        <button class="btn btn-primary btn-full-width" onclick="reloadRasciMatrix()">
+        <!-- Botón de recarga manual (oculto por defecto, recarga automática activada) -->
+        <button class="btn btn-secondary btn-full-width" id="manual-reload-btn" onclick="reloadRasciMatrix()" style="display: none;">
           <i class="fas fa-sync-alt"></i> Recargar Matriz
         </button>
+        
+        <!-- Indicador de recarga discreto (oculto para evitar molestias) -->
+        <div class="auto-reload-indicator" id="auto-reload-indicator" style="
+          position: absolute;
+          top: 6px;
+          right: 6px;
+          width: 16px;
+          height: 16px;
+          display: none !important;
+          align-items: center;
+          justify-content: center;
+          z-index: 10;
+        ">
+          <i class="fas fa-sync-alt fa-spin" style="
+            color: #6b7280;
+            font-size: 12px;
+            opacity: 0.5;
+          "></i>
+        </div>
         
         <!-- Switch para mapeo automático -->
         <div class="auto-mapping-control">
