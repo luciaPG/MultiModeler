@@ -58,14 +58,27 @@ class PanelLoader {
   }
 
   async createPanel(panelType, container) {
+    // Verificar si ya existe un panel de este tipo en el contenedor
+    const expectedId = (this.panelConfigs[panelType] && this.panelConfigs[panelType].id) || `${panelType}-panel`;
+    const existingPanel = container.querySelector(`#${expectedId}`) || 
+                         container.querySelector(`[data-panel-type="${panelType}"]`);
+    
+    if (existingPanel) {
+      console.log(`⚠️ Panel ${panelType} ya existe, devolviendo el existente`);
+      return existingPanel;
+    }
+
     const panel = await this.loadPanel(panelType);
     if (!panel || !container) return null;
 
     // Asegurar que el panel tiene la clase y un id único
     panel.classList.add('panel');
     if (!panel.id) {
-      panel.id = (this.panelConfigs[panelType] && this.panelConfigs[panelType].id) || `${panelType}-panel-${Date.now()}`;
+      panel.id = expectedId;
     }
+    
+    // Marcar el tipo de panel para evitar duplicados
+    panel.setAttribute('data-panel-type', panelType);
 
     container.appendChild(panel);
 

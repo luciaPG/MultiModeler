@@ -36,43 +36,63 @@ class PanelManager {
     this.activePanels = this.loadActivePanels();
     this.panelLoader = null;
     this.preservedBpmnState = null; // Para preservar el estado BPMN cuando se oculta
+    this.isApplyingConfiguration = false; // Bandera para prevenir ejecuciones múltiples
+    
+    // Limpiar cualquier modal remanente al inicializar
+    this.cleanupExistingModals();
+    
     this.init();
+  }
+
+  cleanupExistingModals() {
+    const existingOverlay = document.getElementById('panel-selector-overlay');
+    const existingSelector = document.getElementById('panel-selector');
+    
+    if (existingOverlay && existingOverlay.parentNode) {
+      existingOverlay.remove();
+    }
+    
+    if (existingSelector && existingSelector.parentNode) {
+      existingSelector.remove();
+    }
+    
+    const orphanOverlays = document.querySelectorAll('.modal-overlay:not(#panel-selector-overlay)');
+    orphanOverlays.forEach(overlay => {
+      if (overlay.parentNode) {
+        overlay.remove();
+      }
+    });
   }
 
   init() {
     this.createStyles();
     this.bindEvents();
     
-    // Verificar si hay paneles activos al inicio y ocultar contenedor si no los hay
     setTimeout(() => {
-      // Ocultar contenedor si no hay paneles activos
       const container = document.getElementById('panel-container');
       if (container && this.activePanels.length === 0) {
         container.style.display = 'none';
-        console.log('Inicialización: No hay paneles activos - contenedor oculto');
       }
       
-      // Configurar observador para detectar cuando el panel RASCI se hace visible
       this.setupRasciVisibilityObserver();
     }, 100);
   }
 
-  // Función para cargar paneles activos desde localStorage
   loadActivePanels() {
     try {
       const saved = localStorage.getItem('activePanels');
       if (saved) {
         const panels = JSON.parse(saved);
-        // Verificar que los paneles existan en availablePanels
-        return panels.filter(panel => this.availablePanels[panel]);
+        const validPanels = panels.filter(panel => this.availablePanels[panel]);
+        return validPanels;
       }
     } catch (e) {
       console.warn('Error al cargar paneles activos:', e);
     }
-    return []; // Sin paneles por defecto
+    
+    return ['bpmn'];
   }
 
-  // Función para guardar configuración de paneles
   savePanelConfiguration() {
     try {
       localStorage.setItem('activePanels', JSON.stringify(this.activePanels));
@@ -241,23 +261,21 @@ class PanelManager {
       }
       
       .panel-selector {
-        position: fixed;
-        top: 55%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-        padding: 20px;
-        width: 600px;
-        max-width: 85vw;
-        max-height: 85vh;
-        overflow-y: auto;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-        z-index: 10002;
-        display: none;
-        border: 1px solid #e0e0e0;
+        background: white !important;
+        border-radius: 12px !important;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
+        padding: 20px !important;
+        width: 600px !important;
+        max-width: 85vw !important;
+        max-height: 85vh !important;
+        overflow-y: auto !important;
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+        z-index: 10001 !important;
+        position: relative !important;
+        border: 1px solid #e0e0e0 !important;
+        margin: 0 !important;
+        pointer-events: auto !important;
       }
       
       .panel-selector::-webkit-scrollbar {
@@ -265,18 +283,17 @@ class PanelManager {
       }
       
       .panel-selector.show {
-        display: block;
         animation: modalFadeIn 0.3s ease-out;
       }
       
       @keyframes modalFadeIn {
         from {
           opacity: 0;
-          transform: translate(-50%, -50%) scale(0.9);
+          transform: scale(0.9);
         }
         to {
           opacity: 1;
-          transform: translate(-50%, -50%) scale(1);
+          transform: scale(1);
         }
       }
       
@@ -538,14 +555,16 @@ class PanelManager {
         right: 0 !important;
         bottom: 0 !important;
         background: rgba(0,0,0,0.5) !important;
-        z-index: 10001 !important;
+        z-index: 10000 !important;
         display: none !important;
-        pointer-events: none !important;
+        align-items: center !important;
+        justify-content: center !important;
+        backdrop-filter: blur(2px) !important;
+        pointer-events: auto !important;
       }
       
       .modal-overlay.show {
-        display: block !important;
-        pointer-events: auto !important;
+        display: flex !important;
         animation: overlayFadeIn 0.3s ease-out !important;
       }
       
@@ -844,13 +863,14 @@ class PanelManager {
   }
 
   createPanelSelector() {
-    // Crear overlay
+    if (document.getElementById('panel-selector') || document.getElementById('panel-selector-overlay')) {
+      return;
+    }
+    
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.id = 'panel-selector-overlay';
-    document.body.appendChild(overlay);
 
-    // Crear selector
     const selector = document.createElement('div');
     selector.className = 'panel-selector';
     selector.id = 'panel-selector';
@@ -858,7 +878,7 @@ class PanelManager {
     selector.innerHTML = `
       <div class="panel-selector-header">
         <div class="panel-selector-title">Configurar Paneles</div>
-        <button class="panel-selector-close" onclick="panelManager.closeSelector()">×</button>
+                <button class="panel-selector-close" id="panel-selector-close-btn" onclick="window.closePanelSelector()">×</button>
       </div>
       
       <div class="panel-selector-section">
@@ -877,17 +897,104 @@ class PanelManager {
       </div>
       
       <div class="panel-selector-actions">
-        <button class="panel-selector-btn" onclick="panelManager.closeSelector()">Cancelar</button>
-        <button class="panel-selector-btn primary" onclick="panelManager.applyConfiguration()">Aplicar</button>
+        <button class="panel-selector-btn" id="panel-selector-cancel-btn">Cancelar</button>
+        <button class="panel-selector-btn primary" id="panel-selector-apply-btn">Aplicar</button>
       </div>
     `;
     
-    document.body.appendChild(selector);
+    overlay.appendChild(selector);
+    document.body.appendChild(overlay);
+    this.setupModalEventListeners(overlay, selector);
+  }
+
+  setupModalEventListeners(overlay, selector) {
+    let closeBtn = selector.querySelector('#panel-selector-close-btn');
+    let cancelBtn = selector.querySelector('#panel-selector-cancel-btn');
+    let applyBtn = selector.querySelector('#panel-selector-apply-btn');
     
-    // Configurar event listeners para el modal
-    overlay.addEventListener('click', () => {
-      this.closeSelector();
+    if (!closeBtn) closeBtn = selector.querySelector('.panel-selector-close');
+    if (!cancelBtn) cancelBtn = selector.querySelector('.panel-selector-btn:not(.primary)');
+    if (!applyBtn) applyBtn = selector.querySelector('.panel-selector-btn.primary');
+    
+    if (closeBtn) {
+      const newCloseBtn = closeBtn.cloneNode(true);
+      closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+      
+      newCloseBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closeSelector();
+      });
+    }
+    
+    if (cancelBtn) {
+      const newCancelBtn = cancelBtn.cloneNode(true);
+      cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+      
+      newCancelBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closeSelector();
+      });
+    }
+    
+    if (applyBtn) {
+      const newApplyBtn = applyBtn.cloneNode(true);
+      applyBtn.parentNode.replaceChild(newApplyBtn, applyBtn);
+      
+      newApplyBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.applyConfiguration();
+      });
+    }
+    
+    const panelItems = selector.querySelectorAll('.panel-item');
+    
+    panelItems.forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const panelKey = item.getAttribute('data-panel');
+        
+        if (this.activePanels.includes(panelKey)) {
+          this.activePanels = this.activePanels.filter(p => p !== panelKey);
+          item.classList.remove('active');
+          const checkbox = item.querySelector('.panel-item-checkbox');
+          if (checkbox) checkbox.textContent = '';
+        } else {
+          this.activePanels.push(panelKey);
+          item.classList.add('active');
+          const checkbox = item.querySelector('.panel-item-checkbox');
+          if (checkbox) checkbox.textContent = '✓';
+        }
+        
+        this.savePanelConfiguration();
+        this.updateLayoutOptions();
+        this.updatePanelSelector();
+      });
     });
+    
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        this.closeSelector();
+      }
+    });
+    
+    selector.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+    
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        this.closeSelector();
+        document.removeEventListener('keydown', handleEscape);
+      }
+    };
+    
+    document.addEventListener('keydown', handleEscape);
   }
 
 
@@ -934,7 +1041,6 @@ class PanelManager {
     const orderSection = document.getElementById('panel-order-section');
     const orderContainer = document.getElementById('panel-order');
     
-    // Establecer layout automáticamente basado en el número de paneles
     const panelCount = this.activePanels.length;
     if (panelCount === 1) {
       this.currentLayout = '1';
@@ -946,7 +1052,6 @@ class PanelManager {
       this.currentLayout = '4v';
     }
     
-    // Mostrar sección de orden solo si hay más de 1 panel
     if (orderSection && orderContainer) {
       if (this.activePanels.length > 1) {
         orderSection.style.display = 'block';
@@ -961,106 +1066,163 @@ class PanelManager {
 
 
   bindEvents() {
-    // Panel items
-    document.addEventListener('click', (e) => {
-      if (e.target.closest('.panel-item')) {
-        const item = e.target.closest('.panel-item');
-        const panelKey = item.getAttribute('data-panel');
-        
-        if (this.activePanels.includes(panelKey)) {
-          this.activePanels = this.activePanels.filter(p => p !== panelKey);
-          item.classList.remove('active');
-          item.querySelector('.panel-item-checkbox').textContent = '';
-        } else {
-          this.activePanels.push(panelKey);
-          item.classList.add('active');
-          item.querySelector('.panel-item-checkbox').textContent = '✓';
-        }
-        
-        // Guardar configuración automáticamente
-        this.savePanelConfiguration();
-        
-        // Actualizar opciones de layout basadas en el número de paneles
-        this.updateLayoutOptions();
-        
-        // Actualizar la lista de paneles para reflejar los cambios
-        this.updatePanelSelector();
-        
-        // NO aplicar automáticamente - solo actualizar la vista del selector
-      }
-      
-
-    });
-
-    // Overlay click to close - se configurará cuando se cree el modal
-    // document.getElementById('panel-selector-overlay').addEventListener('click', () => {
-    //   this.closeSelector();
-    // });
+    // Event listeners del modal se configuran dinámicamente
   }
 
   updatePanelSelector() {
     const panelList = document.getElementById('panel-list');
     if (panelList) {
+      this.refreshPanelList();
+    }
+  }
+
+  setupPanelItemEventListeners() {
+    const panelItems = document.querySelectorAll('.panel-item');
+    
+    panelItems.forEach((item) => {
+      const panelKey = item.getAttribute('data-panel');
+      
+      if (item.hasAttribute('data-listener-configured')) {
+        return;
+      }
+      
+      item.setAttribute('data-listener-configured', 'true');
+      
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (this.activePanels.includes(panelKey)) {
+          this.activePanels = this.activePanels.filter(p => p !== panelKey);
+          item.classList.remove('active');
+          const checkbox = item.querySelector('.panel-item-checkbox');
+          if (checkbox) checkbox.textContent = '';
+        } else {
+          this.activePanels.push(panelKey);
+          item.classList.add('active');
+          const checkbox = item.querySelector('.panel-item-checkbox');
+          if (checkbox) checkbox.textContent = '✓';
+        }
+        
+        this.savePanelConfiguration();
+        this.updateLayoutOptions();
+        
+        setTimeout(() => {
+          this.refreshPanelList();
+        }, 50);
+      });
+    });
+  }
+  
+  refreshPanelList() {
+    const panelList = document.getElementById('panel-list');
+    if (panelList) {
+      const existingItems = panelList.querySelectorAll('.panel-item');
+      existingItems.forEach(item => {
+        item.removeAttribute('data-listener-configured');
+      });
+      
       panelList.innerHTML = this.generatePanelList();
+      this.setupPanelItemEventListeners();
     }
   }
 
   showSelector() {
-    // Crear el selector si no existe
-    if (!document.getElementById('panel-selector-overlay')) {
-      this.createPanelSelector();
+    let overlay = document.getElementById('panel-selector-overlay');
+    let selector = document.getElementById('panel-selector');
+    
+    if (overlay || selector) {
+      if (overlay && overlay.parentNode) overlay.remove();
+      if (selector && selector.parentNode) selector.remove();
     }
     
-    // Actualizar lista de paneles y opciones de layout antes de mostrar
+    this.createPanelSelector();
+
+    overlay = document.getElementById('panel-selector-overlay');
+    selector = document.getElementById('panel-selector');
+
+    if (!overlay || !selector) {
+      return;
+    }
+
     this.updatePanelSelector();
     this.updateLayoutOptions();
+
+    overlay.classList.add('show');
+    overlay.style.display = 'flex';
+    selector.classList.add('show');
     
-    const overlay = document.getElementById('panel-selector-overlay');
-    const selector = document.getElementById('panel-selector');
+    setTimeout(() => {
+      this.setupPanelItemEventListeners();
+      this.forceReconfigureButtonListeners(overlay, selector);
+      this.savePanelConfiguration();
+    }, 100);
+  }
+  
+  forceReconfigureButtonListeners(overlay, selector) {
+    const closeBtn = selector.querySelector('#panel-selector-close-btn');
+    const cancelBtn = selector.querySelector('#panel-selector-cancel-btn');
+    const applyBtn = selector.querySelector('#panel-selector-apply-btn');
     
-    if (overlay) {
-      overlay.classList.add('show');
+    if (closeBtn && !closeBtn.hasAttribute('data-emergency-configured')) {
+      closeBtn.setAttribute('data-emergency-configured', 'true');
+      closeBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closeSelector();
+      };
     }
     
-    if (selector) {
-      selector.classList.add('show');
+    if (cancelBtn && !cancelBtn.hasAttribute('data-emergency-configured')) {
+      cancelBtn.setAttribute('data-emergency-configured', 'true');
+      cancelBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closeSelector();
+      };
+    }
+    
+    if (applyBtn && !applyBtn.hasAttribute('data-emergency-configured')) {
+      applyBtn.setAttribute('data-emergency-configured', 'true');
+      applyBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.applyConfiguration();
+      };
     }
   }
 
   closeSelector() {
     const overlay = document.getElementById('panel-selector-overlay');
     const selector = document.getElementById('panel-selector');
-    
+
     if (overlay) {
-      overlay.classList.remove('show');
+      overlay.remove();
+    }
+
+    // El selector se elimina junto con el overlay ya que está dentro
+    if (selector && selector.parentNode !== overlay) {
+      console.log('� Eliminando selector órfano...');
+      selector.remove();
     }
     
-    if (selector) {
-      selector.classList.remove('show');
-    }
+    console.log('✅ Modal eliminado correctamente');
   }
 
   async applyConfiguration() {
-    const container = document.getElementById('panel-container');
-    if (!container) return;
-
-    // Preservar el estado del BPMN si existe
-    let bpmnState = null;
-    const existingBpmnPanel = container.querySelector('#bpmn-panel');
-    if (existingBpmnPanel && window.bpmnModeler) {
-      try {
-        // Guardar el estado actual del modeler
-        bpmnState = {
-          xml: await window.bpmnModeler.saveXML({ format: true }),
-          svg: await window.bpmnModeler.saveSVG()
-        };
-        console.log('Estado BPMN preservado');
-      } catch (error) {
-        console.error('Error preservando estado BPMN:', error);
-      }
+    // Prevenir ejecuciones múltiples concurrentes
+    if (this.isApplyingConfiguration) {
+      return;
     }
+    
+    this.isApplyingConfiguration = true;
+    
+    try {
+      const container = document.getElementById('panel-container');
+      if (!container) {
+        return;
+      }
 
-    // Restaurar completamente todos los paneles existentes antes de limpiar
     const existingPanels = container.querySelectorAll('.panel');
     existingPanels.forEach(panel => {
       this.restorePanel(panel);
@@ -1080,7 +1242,6 @@ class PanelManager {
       container.style.height = '0';
       container.style.overflow = 'hidden';
       container.style.zIndex = '-1';
-      console.log('No hay paneles activos - contenedor completamente oculto');
       this.closeSelector();
       return;
     }
@@ -1111,18 +1272,8 @@ class PanelManager {
       }
     }
 
-    // NO ajustar layout automáticamente - usar el layout seleccionado por el usuario
-    // El layout ya está establecido en this.currentLayout
-
-    // Aplicar layout directamente sin snap system
-    console.log('Aplicando layout:', this.currentLayout);
-    console.log('Número de paneles activos:', this.activePanels.length);
-    
-    // Aplicar layout directamente al contenedor
     if (container) {
-      // Remover todas las clases de layout anteriores
       container.className = 'panel-container';
-      // Agregar la clase del layout actual
       container.classList.add(`layout-${this.currentLayout}`);
     }
     
@@ -1139,20 +1290,17 @@ class PanelManager {
         if (typeof window.initializeModeler === 'function') {
           window.initializeModeler();
           
-          // Debug del estado antes de cargar
           if (typeof window.debugBpmnState === 'function') {
             window.debugBpmnState();
           }
           
-          // Usar la función loadBpmnState que carga desde localStorage
-          // en lugar de intentar restaurar desde el estado preservado
           setTimeout(() => {
             if (typeof window.loadBpmnState === 'function') {
               window.loadBpmnState();
             }
-          }, 200); // Pequeño delay para asegurar que el modeler esté listo
+          }, 200);
         }
-      }, 500); // Aumentar el tiempo para asegurar que el DOM esté listo
+      }, 500);
     }
 
     // Recargar automáticamente el panel RASCI si está activo
@@ -1160,14 +1308,18 @@ class PanelManager {
       setTimeout(() => {
         const rasciPanel = container.querySelector('#rasci-panel');
         if (rasciPanel && typeof window.reloadRasciMatrix === 'function') {
-          console.log('Recargando automáticamente matriz RASCI');
           window.reloadRasciMatrix();
         }
-      }, 300); // Delay para asegurar que el panel RASCI esté completamente cargado
+      }, 300);
     }
 
     this.closeSelector();
-    console.log(`Configuración aplicada: Layout ${this.currentLayout}, Paneles: ${this.activePanels.join(', ')}`);
+    
+    } catch (error) {
+      console.error('❌ Error en applyConfiguration:', error);
+    } finally {
+      this.isApplyingConfiguration = false;
+    }
   }
 
   adjustLayoutForVisiblePanels() {
@@ -1215,7 +1367,6 @@ class PanelManager {
     this.panelLoader = loader;
   }
 
-  // Función para restaurar completamente un panel oculto
   restorePanel(panel) {
     if (panel) {
       const wasHidden = panel.style.display === 'none';
@@ -1236,29 +1387,23 @@ class PanelManager {
       panel.style.opacity = '';
       panel.style.pointerEvents = '';
       
-      // Si el panel RASCI se está restaurando desde un estado oculto, recargarlo
       if (wasHidden && panelType === 'rasci' && typeof window.reloadRasciMatrix === 'function') {
         setTimeout(() => {
-          console.log('Panel RASCI restaurado - recargando matriz automáticamente');
           window.reloadRasciMatrix();
         }, 100);
       }
     }
   }
 
-  // Configurar observador para detectar cuando el panel RASCI se hace visible
   setupRasciVisibilityObserver() {
-    // Usar MutationObserver para detectar cambios en el DOM
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === 'childList') {
           mutation.addedNodes.forEach((node) => {
             if (node.nodeType === Node.ELEMENT_NODE) {
-              // Verificar si se agregó un panel RASCI
               if (node.id === 'rasci-panel' || node.querySelector('#rasci-panel')) {
                 setTimeout(() => {
                   if (typeof window.reloadRasciMatrix === 'function') {
-                    console.log('Panel RASCI detectado en DOM - recargando matriz automáticamente');
                     window.reloadRasciMatrix();
                   }
                 }, 200);
@@ -1269,7 +1414,6 @@ class PanelManager {
       });
     });
 
-    // Observar cambios en el contenedor de paneles
     const container = document.getElementById('panel-container');
     if (container) {
       observer.observe(container, {
@@ -1292,9 +1436,8 @@ class PanelManager {
         e.dataTransfer.effectAllowed = 'move';
       });
 
-      item.addEventListener('dragend', (e) => {
+      item.addEventListener('dragend', () => {
         item.classList.remove('dragging');
-        // Remover todas las clases de drag-over
         items.forEach(i => i.classList.remove('drag-over'));
       });
 
@@ -1305,7 +1448,6 @@ class PanelManager {
       });
 
       item.addEventListener('dragleave', (e) => {
-        // Solo remover la clase si no estamos sobre el elemento
         if (!item.contains(e.relatedTarget)) {
           item.classList.remove('drag-over');
         }
@@ -1330,19 +1472,23 @@ class PanelManager {
     
     if (draggedIndex === -1 || targetIndex === -1) return;
     
-    // Remover el panel arrastrado de su posición actual
     this.activePanels.splice(draggedIndex, 1);
-    
-    // Insertar el panel arrastrado en la nueva posición
     this.activePanels.splice(targetIndex, 0, draggedPanel);
     
-    // Guardar la nueva configuración
     this.savePanelConfiguration();
-    
-    // Actualizar la vista del orden
     this.updateLayoutOptions();
   }
 }
 
-// Exportar la clase
-window.PanelManager = PanelManager; 
+window.PanelManager = PanelManager;
+
+window.closePanelSelector = function() {
+  if (window.panelManager && typeof window.panelManager.closeSelector === 'function') {
+    window.panelManager.closeSelector();
+  } else {
+    const overlay = document.getElementById('panel-selector-overlay');
+    if (overlay && overlay.parentNode) {
+      overlay.remove();
+    }
+  }
+}; 
