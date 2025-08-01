@@ -33,6 +33,14 @@
       padding: 0;
     }
     
+    html, body {
+      height: 100vh;
+      width: 100vw;
+      min-height: 0;
+      min-width: 0;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
     body {
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       height: 100vh;
@@ -152,57 +160,7 @@
       border-radius: 0 !important;
     }
     
-    /* Zonas de snap */
-    .snap-zones {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      pointer-events: none;
-      z-index: 5;
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
-    
-    .snap-zones.visible {
-      opacity: 1;
-    }
-    
-    .snap-zone {
-      position: absolute;
-      border: 2px dashed rgba(67, 97, 238, 0.3);
-      background: rgba(67, 97, 238, 0.05);
-      border-radius: 8px;
-    }
-    
-    .snap-zone.active {
-      border-color: rgba(67, 97, 238, 0.8);
-      background: rgba(67, 97, 238, 0.1);
-    }
-    
-    .snap-label {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: rgba(67, 97, 238, 0.8);
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-align: center;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
-    
-    .snap-zone.visible .snap-label {
-      opacity: 1;
-    }
-    
-    .snap-zone.active .snap-label {
-      opacity: 1;
-      color: rgba(67, 97, 238, 1);
-    }
+
     
     /* Botones de restaurar en header */
     .restore-buttons {
@@ -233,16 +191,22 @@
     
     /* Área de trabajo principal */
     .workspace {
-      flex: 1;
-      display: flex;
+      height: 100vh;
+      min-height: 0;
+      min-width: 0;
+      box-sizing: border-box;
       overflow: hidden;
-      position: relative;
-      background: #f1f3f5;
+      display: flex;
+      flex-direction: column;
     }
     
     /* Contenedor de paneles */
     .panel-container {
-      flex: 1;
+      height: 100%;
+      min-height: 0;
+      min-width: 0;
+      box-sizing: border-box;
+      overflow: hidden;
       display: flex;
       overflow: hidden;
       position: relative;
@@ -264,52 +228,7 @@
       transition: transform 0.2s ease;
     }
     
-    /* Bordes redimensionables */
-    .panel-resize-handle {
-      position: absolute;
-      background: transparent;
-      z-index: 10;
-    }
-    
-    .panel-resize-handle.right {
-      right: 0;
-      top: 0;
-      bottom: 0;
-      width: 6px;
-      cursor: col-resize;
-    }
-    
-    .panel-resize-handle.left {
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 6px;
-      cursor: col-resize;
-    }
-    
-    .panel-resize-handle.bottom {
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 6px;
-      cursor: row-resize;
-    }
-    
-    .panel-resize-handle.top {
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 6px;
-      cursor: row-resize;
-    }
-    
-    .panel-resize-handle:hover {
-      background: rgba(67, 97, 238, 0.1);
-    }
-    
-    .panel-resize-handle.resizing {
-      background: rgba(67, 97, 238, 0.2);
-    }
+
     
     .panel-header {
       height: var(--panel-header-height);
@@ -570,7 +489,7 @@
   <header class="app-header">
     <div class="logo">
       <i class="fas fa-project-diagram"></i>
-      <span>PPINOT-RALPH Modeler</span>
+      <span>MultiModeler</span>
     </div>
     
     <div class="toolbar">
@@ -586,29 +505,17 @@
         </button>
       </div>
       
+     
+      
+   
+      
       <div class="tool-group">
-        <button class="tool-btn">
-          <i class="fas fa-undo"></i> Deshacer
-        </button>
-        <button class="tool-btn">
-          <i class="fas fa-redo"></i> Rehacer
+        <button class="tool-btn header-panel-btn" onclick="panelManager.showSelector()">
+          <i class="fas fa-th-large"></i> Paneles
         </button>
       </div>
       
-      <div class="tool-group">
-        <button class="tool-btn">
-          <i class="fas fa-search"></i> Buscar
-        </button>
-        <button class="tool-btn">
-          <i class="fas fa-cog"></i> Configuración
-        </button>
-      </div>
       
-      <div class="tool-group">
-        <button class="tool-btn danger">
-          <i class="fas fa-play"></i> Validar
-        </button>
-      </div>
       
       <!-- Botones de restaurar paneles -->
       <div class="restore-buttons">
@@ -618,6 +525,9 @@
         <button class="restore-btn hidden" id="restore-ppinot" data-panel="ppinot">
           <i class="fas fa-sliders"></i> Restaurar PPINOT
         </button>
+        <button class="restore-btn hidden" id="restore-rasci" data-panel="rasci">
+          <i class="fas fa-table"></i> Restaurar RASCI
+        </button>
       </div>
     </div>
   </header>
@@ -625,60 +535,23 @@
   <!-- Área de trabajo con paneles -->
   <div class="workspace">
     <div class="panel-container" id="panel-container">
-      <!-- Zonas de snap -->
-      <div class="snap-zones" id="snap-zones">
-        <div class="snap-zone" data-zone="left" style="top: 0; left: 0; width: 50%; height: 100%;">
-          <div class="snap-label">Izquierda (1/2)</div>
-        </div>
-        <div class="snap-zone" data-zone="right" style="top: 0; right: 0; width: 50%; height: 100%;">
-          <div class="snap-label">Derecha (1/2)</div>
-        </div>
-        <div class="snap-zone" data-zone="top" style="top: 0; left: 0; width: 100%; height: 50%;">
-          <div class="snap-label">Arriba (1/2)</div>
-        </div>
-        <div class="snap-zone" data-zone="bottom" style="bottom: 0; left: 0; width: 100%; height: 50%;">
-          <div class="snap-label">Abajo (1/2)</div>
-        </div>
-      </div>
+
       <!-- Los paneles se cargarán dinámicamente aquí -->
     </div>
     
-    <!-- Selector de layout -->
-    <div class="layout-selector">
-      <button class="layout-btn active" data-layout="horizontal" title="Dos paneles horizontal">
-        <i class="fas fa-columns"></i>
-      </button>
-      <button class="layout-btn" data-layout="vertical" title="Dos paneles vertical">
-        <i class="fas fa-grip-lines-vertical"></i>
-      </button>
-      <button class="layout-btn" data-layout="grid" title="Cuatro paneles en cuadrícula">
-        <i class="fas fa-th-large"></i>
-      </button>
-    </div>
+   
+    
   </div>
   
-  <!-- Barra de estado -->
-  <div class="status-bar">
-    <div class="status-item">
-      <i class="fas fa-circle-info"></i>
-      <span>Listo</span>
-    </div>
-    <div class="status-item">
-      <i class="fas fa-bolt"></i>
-      <span>Modo: Edición</span>
-    </div>
-    <div class="status-item" style="margin-left: auto;">
-      <i class="fas fa-user"></i>
-      <span>Usuario: admin</span>
-    </div>
-  </div>
+  
   
   <input type="file" id="file-input" accept=".bpmn,.xml,.cbpmn" style="display:none" />
   
     <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
-  <script src="js/panel-loader.js"></script>
   <script src="bundle.js"></script>
+  <script src="js/panel-manager-debug.js"></script>
+  <script src="js/panel-manager-debug2.js"></script>
   
   <script>
     // Application initialization is now handled in app.js

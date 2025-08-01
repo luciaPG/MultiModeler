@@ -927,7 +927,11 @@ export default function RALphLabelEditingProvider(
 
     // Helper para saber si un elemento es no editable
     function isNonEditable(element) {
-        console.log('Comprobando editable:', element && element.type, element);
+        if (!element) {
+            console.log('Comprobando editable: elemento nulo/undefined');
+            return true;
+        }
+        console.log('Comprobando editable:', element.type, element);
         const nonEditableElements = [
             'RALph:history',
             'RALph:historyStart',
@@ -954,7 +958,18 @@ export default function RALphLabelEditingProvider(
     const observer = new MutationObserver(() => {
         document.querySelectorAll('input[type="text"]').forEach(input => {
             const activeElement = window.activeRALPHOverlayElement;
-            if (isNonEditable(activeElement)) {
+            
+            // Solo eliminar inputs que estén dentro del contexto de RALph/BPMN
+            // No afectar inputs de la tabla RASCI u otros paneles
+            const isRasciInput = input.classList.contains('role-edit-input') || 
+                               input.closest('#matrix-container') ||
+                               input.closest('.rasci-matrix') ||
+                               input.closest('#rasci-panel') ||
+                               input.closest('[id*="rasci"]') ||
+                               input.closest('[class*="rasci"]');
+            
+            // Solo proceder si NO es un input de RASCI y hay un elemento no editable
+            if (!isRasciInput && activeElement && isNonEditable(activeElement)) {
                 if (input.parentElement) {
                     try { input.parentElement.removeChild(input); } catch (e) {}
                 }

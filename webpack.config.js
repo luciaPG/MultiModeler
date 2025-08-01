@@ -67,10 +67,6 @@ module.exports = {
                 {
                     from: 'app/panels',
                     to: 'panels'
-                },
-                {
-                    from: 'app/test-panels.html',
-                    to: 'test-panels.html'
                 }
             ]
         })

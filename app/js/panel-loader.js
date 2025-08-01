@@ -1,670 +1,777 @@
-// Panel Loader - Maneja la carga dinámica de paneles
+// === panel-loader.js limpio ===
+
 class PanelLoader {
   constructor() {
     this.panelCache = new Map();
     this.panelConfigs = {
-      'bpmn': {
-        file: 'panels/bpmn-panel.html',
-        id: 'bpmn-panel',
-        type: 'bpmn'
-      },
-      'ppinot': {
-        file: 'panels/ppinot-panel.html',
-        id: 'ppinot-panel',
-        type: 'ppinot'
-      }
-    };
+      bpmn: { file: 'panels/bpmn-panel.html', id: 'bpmn-panel', type: 'bpmn' },
+      rasci: { file: 'panels/rasci-panel.html', id: 'rasci-panel', type: 'rasci' },
+      test: { file: 'panels/test-panel.html', id: 'test-panel', type: 'test' },
+      logs: { file: 'panels/logs-panel.html', id: 'logs-panel', type: 'logs' },
+    };  
   }
 
-  // Cargar panel desde archivo HTML
   async loadPanel(panelType) {
-    console.log(`🔄 Cargando panel: ${panelType}`);
     const config = this.panelConfigs[panelType];
-    if (!config) {
-      console.error(`Configuración no encontrada para el panel: ${panelType}`);
-      return null;
-    }
-
-    console.log(`📁 Archivo a cargar: ${config.file}`);
-
-    // Verificar cache
-    if (this.panelCache.has(panelType)) {
-      console.log(`✅ Panel ${panelType} encontrado en cache`);
-      return this.panelCache.get(panelType).cloneNode(true);
-    }
+    if (!config) return null;
+    if (this.panelCache.has(panelType)) return this.panelCache.get(panelType).cloneNode(true);
 
     try {
-      console.log(`🌐 Haciendo fetch a: ${config.file}`);
       const response = await fetch(config.file);
-      console.log(`📡 Respuesta del servidor:`, response.status, response.statusText);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
+      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
       const html = await response.text();
-      console.log(`📄 HTML cargado, longitud:`, html.length);
-      
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = html.trim();
-      
       const panel = tempDiv.firstElementChild;
-      if (!panel) {
-        throw new Error('No se pudo parsear el HTML del panel');
-      }
-
-      console.log(`✅ Panel ${panelType} parseado correctamente:`, panel);
-
-      // Cachear el panel
+      if (!panel) throw new Error('HTML inválido para panel');
       this.panelCache.set(panelType, panel.cloneNode(true));
-      
       return panel;
-    } catch (error) {
-      console.error(`❌ Error cargando panel ${panelType}:`, error);
+    } catch (err) {
+      console.error(`❌ Error cargando ${panelType}:`, err);
       return this.createFallbackPanel(panelType);
     }
   }
 
-  // Crear panel de respaldo si falla la carga
   createFallbackPanel(panelType) {
-    console.log(`🛠️ Creando panel de fallback para: ${panelType}`);
-    const config = this.panelConfigs[panelType];
     const panel = document.createElement('div');
     panel.className = 'panel';
-    panel.id = config.id;
-    panel.setAttribute('data-panel-type', config.type);
-    
-    if (panelType === 'bpmn') {
-      panel.innerHTML = `
-        <div class="panel-header">
-          <div class="panel-title">
-            <i class="fas fa-diagram-project"></i>
-            <span>Diagrama BPMN (Fallback)</span>
-          </div>
-          <div class="panel-actions">
-            <button class="panel-btn" title="Minimizar"><i class="fas fa-minus"></i></button>
-            <button class="panel-btn" title="Maximizar"><i class="fas fa-expand"></i></button>
-            <button class="panel-btn" title="Cerrar"><i class="fas fa-times"></i></button>
-          </div>
+    panel.id = (this.panelConfigs[panelType] && this.panelConfigs[panelType].id) || `${panelType}-panel`;
+    panel.setAttribute('data-panel-type', panelType);
+    panel.innerHTML = `
+      <div class="panel-header">
+        <div class="panel-title">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>Panel ${panelType.toUpperCase()} (Fallback)</span>
         </div>
-        <div class="panel-content">
-          <div id="js-canvas" class="bpmn-container" style="width: 100%; height: 100%; background: #f8f9fa; display: flex; align-items: center; justify-content: center;">
-            <div style="text-align: center; color: #666;">
-              <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
-              <p>Panel BPMN cargado en modo fallback</p>
-            </div>
-          </div>
+        <div class="panel-actions">
+          <button class="panel-btn" title="Ocultar"><i class="fas fa-eye-slash"></i></button>
+          <button class="panel-btn" title="Solo este panel"><i class="fas fa-expand"></i></button>
         </div>
-      `;
-    } else if (panelType === 'ppinot') {
-      panel.innerHTML = `
-        <div class="panel-header">
-          <div class="panel-title">
-            <i class="fas fa-sliders"></i>
-            <span>Propiedades PPINOT (Fallback)</span>
-          </div>
-          <div class="panel-actions">
-            <button class="panel-btn" title="Minimizar"><i class="fas fa-minus"></i></button>
-            <button class="panel-btn" title="Maximizar"><i class="fas fa-expand"></i></button>
-            <button class="panel-btn" title="Cerrar"><i class="fas fa-times"></i></button>
-          </div>
+      </div>
+      <div class="panel-content">
+        <div style="padding: 20px; text-align: center; color: #666;">
+          <p>Error al cargar panel: ${panelType}</p>
         </div>
-        <div class="panel-content">
-          <div style="padding: 20px; text-align: center; color: #666;">
-            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
-            <p>Panel PPINOT cargado en modo fallback</p>
-          </div>
-        </div>
-      `;
-    } else {
-      panel.innerHTML = `
-        <div class="panel-header">
-          <div class="panel-title">
-            <i class="fas fa-exclamation-triangle"></i>
-            <span>Panel ${panelType.toUpperCase()} (Fallback)</span>
-          </div>
-          <div class="panel-actions">
-            <button class="panel-btn" title="Minimizar"><i class="fas fa-minus"></i></button>
-            <button class="panel-btn" title="Maximizar"><i class="fas fa-expand"></i></button>
-            <button class="panel-btn" title="Cerrar"><i class="fas fa-times"></i></button>
-          </div>
-        </div>
-        <div class="panel-content">
-          <div style="padding: 20px; text-align: center; color: #666;">
-            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
-            <p>Error cargando panel ${panelType}</p>
-            <button onclick="location.reload()" class="tool-btn">Recargar</button>
-          </div>
-        </div>
-      `;
-    }
-    
-    console.log(`✅ Panel de fallback creado:`, panel);
+      </div>
+    `;
     return panel;
   }
 
-  // Crear y agregar panel al contenedor
   async createPanel(panelType, container) {
-    console.log(`🔧 Creando panel: ${panelType}`);
-    console.log(`📦 Container:`, container);
+    // Verificar si ya existe un panel de este tipo en el contenedor
+    const expectedId = (this.panelConfigs[panelType] && this.panelConfigs[panelType].id) || `${panelType}-panel`;
+    const existingPanel = container.querySelector(`#${expectedId}`) || 
+                         container.querySelector(`[data-panel-type="${panelType}"]`);
     
+    if (existingPanel) {
+      console.log(`⚠️ Panel ${panelType} ya existe, devolviendo el existente`);
+      return existingPanel;
+    }
+
     const panel = await this.loadPanel(panelType);
-    console.log(`📋 Panel cargado:`, panel);
-    
-    if (panel && container) {
-      console.log(`➕ Agregando panel al container...`);
-      container.appendChild(panel);
-      console.log(`✅ Panel agregado al container`);
-      
-      // Reinicializar eventos del panel
-      this.initializePanelEvents(panel);
-      console.log(`🎯 Eventos del panel inicializados`);
-      
-      return panel;
-    } else {
-      console.error(`❌ No se pudo crear el panel: panel=${!!panel}, container=${!!container}`);
-    }
-    return null;
-  }
+    if (!panel || !container) return null;
 
-  // Inicializar eventos del panel
-  initializePanelEvents(panel) {
-    // Eventos de botones del panel
-    const buttons = panel.querySelectorAll('.panel-btn');
-    buttons.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.handlePanelButtonClick(btn, panel);
-      });
-    });
-
-    // Eventos de tabs
-    const tabs = panel.querySelectorAll('.tab');
-    tabs.forEach(tab => {
-      tab.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.handleTabClick(tab);
-      });
-    });
-
-    // Hacer el header arrastrable
-    const header = panel.querySelector('.panel-header');
-    if (header) {
-      this.makeHeaderDraggable(header, panel);
-    }
-
-    // Agregar handles de redimensionamiento
-    setTimeout(() => {
-      this.addResizeHandles(panel);
-    }, 100);
-  }
-
-  // Manejar clicks en botones del panel
-  handlePanelButtonClick(btn, panel) {
-    const icon = btn.querySelector('i');
-    if (!icon) return;
-
-    if (icon.classList.contains('fa-times')) {
-      this.closePanel(panel);
-    } else if (icon.classList.contains('fa-expand')) {
-      this.maximizePanel(panel);
-    } else if (icon.classList.contains('fa-minus')) {
-      this.minimizePanel(panel);
-    }
-  }
-
-  // Manejar clicks en tabs
-  handleTabClick(clickedTab) {
-    const tabContainer = clickedTab.parentNode;
-    tabContainer.querySelectorAll('.tab').forEach(tab => {
-      tab.classList.remove('active');
-    });
-    clickedTab.classList.add('active');
-  }
-
-  // Cerrar panel
-  closePanel(panel) {
-    const allPanels = Array.from(document.querySelectorAll('.panel:not(.closed)'));
-    const otherPanel = allPanels.find(p => p !== panel);
-    
-    if (otherPanel) {
-      this.maximizePanel(otherPanel);
-      if (panel.getAttribute('data-panel-type') === 'bpmn') {
-        this.preserveBpmnCanvas();
-      }
+    // Asegurar que el panel tiene la clase y un id único
+    panel.classList.add('panel');
+    if (!panel.id) {
+      panel.id = expectedId;
     }
     
-    panel.style.display = 'none';
-    panel.classList.add('closed');
+    // Marcar el tipo de panel para evitar duplicados
+    panel.setAttribute('data-panel-type', panelType);
+
+    container.appendChild(panel);
+
+    // Funcionalidad de redimensionamiento y arrastre deshabilitada
+    // this.makePanelResizable(panel, container);
+    // this.makePanelDraggable(panel);
+
+    this.initializePanelEvents(panel);
+    this.loadPanelController(panelType, panel);
+    return panel;
   }
 
-  // Maximizar panel
-  maximizePanel(panelToMaximize) {
-    const allPanels = document.querySelectorAll('.panel:not(.closed)');
-    const restoreButtons = document.querySelectorAll('.restore-btn');
-    
-    // Restaurar todos los paneles primero
-    allPanels.forEach(panel => {
-      panel.classList.remove('maximized', 'minimized');
-      panel.style.width = '';
-      panel.style.height = '';
-      panel.style.position = '';
-      panel.style.zIndex = '';
-      panel.style.flex = '';
-      panel.setAttribute('data-x', '0');
-      panel.setAttribute('data-y', '0');
-    });
-    
-    // Ocultar todos los botones de restaurar
-    restoreButtons.forEach(btn => btn.classList.add('hidden'));
-    
-    // Maximizar el panel seleccionado
-    panelToMaximize.classList.add('maximized');
-    
-    // Minimizar el otro panel
-    allPanels.forEach(panel => {
-      if (panel !== panelToMaximize) {
-        panel.classList.add('minimized');
-        
-        const panelType = panel.getAttribute('data-panel-type');
-        const restoreBtn = document.getElementById(`restore-${panelType}`);
-        if (restoreBtn) {
-          restoreBtn.classList.remove('hidden');
-        }
-      }
-    });
-    
-    this.resizeCanvas();
-  }
-
-  // Minimizar panel
-  minimizePanel(panel) {
-    const allPanels = Array.from(document.querySelectorAll('.panel:not(.closed)'));
-    const otherPanel = allPanels.find(p => p !== panel);
-    if (otherPanel) {
-      this.maximizePanel(otherPanel);
-    }
-  }
-
-  // Preservar canvas BPMN
-  preserveBpmnCanvas() {
-    const canvas = document.getElementById('js-canvas');
-    if (canvas && window.bpmnModeler) {
-      window._preservedCanvas = canvas.cloneNode(true);
-      window._preservedCanvas.id = 'js-canvas-preserved';
-    }
-  }
-
-    // Restaurar canvas BPMN
-  restoreBpmnCanvas() {
-    const canvas = document.getElementById('js-canvas');
-    if (canvas && window._preservedCanvas) {
-      canvas.innerHTML = window._preservedCanvas.innerHTML;
-      canvas.className = window._preservedCanvas.className;
-      
-      if (window.bpmnModeler) {
-        const canvasService = window.bpmnModeler.get('canvas');
-        if (canvasService && canvasService._container) {
-          canvasService._container = canvas;
+  makePanelResizable(panel, container) {
+    // Crear estilos de resize si no existen
+    if (!document.querySelector('#panel-resize-styles')) {
+      const style = document.createElement('style');
+      style.id = 'panel-resize-styles';
+      style.textContent = `
+        .panel-container {
+          display: flex;
+          flex-direction: row;
+          gap: 8px;
+          height: 100%;
+          overflow: hidden;
         }
         
-        setTimeout(() => {
-          try {
-            canvasService.resized();
-          } catch (error) {
-            console.warn('Error resizing canvas:', error);
-          }
-        }, 100);
-      }
+        .panel {
+          position: relative;
+          overflow: hidden;
+          flex: 1;
+          min-width: 200px;
+          min-height: 200px;
+          transition: flex 0.1s ease-out;
+        }
+        
+        .panel.resizing {
+          transition: none;
+        }
+        
+        .panel-resize-handle {
+          position: absolute;
+          background: transparent;
+          border: none;
+          border-radius: 2px;
+          z-index: 1000;
+          transition: all 0.2s ease;
+          opacity: 0;
+        }
+        
+        .panel-resize-handle:hover {
+          background: rgba(58, 86, 212, 0.1);
+          border: none;
+          opacity: 1;
+        }
+        
+        .panel-resize-handle.left {
+          left: 0;
+          top: 0;
+          width: 6px;
+          height: 100%;
+          cursor: ew-resize;
+        }
+        
+        .panel-resize-handle.right {
+          right: 0;
+          top: 0;
+          width: 6px;
+          height: 100%;
+          cursor: ew-resize;
+        }
+        
+        .panel-resize-handle.bottom {
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          height: 6px;
+          cursor: ns-resize;
+        }
+        
+        .panel-resize-handle.corner {
+          right: 0;
+          bottom: 0;
+          width: 12px;
+          height: 12px;
+          cursor: nw-resize;
+          background: transparent;
+        }
+        
+        .panel-resize-handle.corner:hover {
+          background: rgba(58, 86, 212, 0.1);
+        }
+        
+        .panel.maximized .panel-resize-handle {
+          display: none;
+        }
+        
+        .panel.minimized .panel-resize-handle {
+          display: none;
+        }
+        
+        .panel.maximized {
+          flex: 1 !important;
+          min-width: 100% !important;
+          min-height: 100% !important;
+        }
+        
+        .panel.minimized {
+          flex: 0 !important;
+          min-width: 0 !important;
+          min-height: 0 !important;
+          overflow: hidden;
+        }
+      `;
+      document.head.appendChild(style);
     }
+
+    // Añadir handles de resize
+    const handles = ['left', 'right', 'bottom', 'corner'];
+    handles.forEach(type => {
+      const handle = document.createElement('div');
+      handle.className = `panel-resize-handle ${type}`;
+      panel.appendChild(handle);
+    });
+
+    // Implementar resize manual
+    this.setupResizeHandlers(panel, container);
   }
 
+  setupResizeHandlers(panel, container) {
+    const leftHandle = panel.querySelector('.panel-resize-handle.left');
+    const rightHandle = panel.querySelector('.panel-resize-handle.right');
+    const bottomHandle = panel.querySelector('.panel-resize-handle.bottom');
+    const cornerHandle = panel.querySelector('.panel-resize-handle.corner');
 
+    let isResizing = false;
+    let startX, startY, startWidth, startHeight;
+    let currentDirection = null;
+    let originalFlexValues = {};
 
-  // Hacer header arrastrable
-  makeHeaderDraggable(header, panel) {
-    if (typeof interact === 'undefined') {
-      console.warn('Interact.js no está disponible');
-      return;
+    function startResize(e, direction) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      isResizing = true;
+      currentDirection = direction;
+      
+      // Agregar clase resizing para desactivar transiciones
+      panel.classList.add('resizing');
+      
+      startX = e.clientX;
+      startY = e.clientY;
+      
+      // Guardar el estado inicial de todos los paneles
+      const allPanels = Array.from(container.children);
+      allPanels.forEach(p => {
+        originalFlexValues[p.id] = {
+          flex: p.style.flex || '1',
+          width: p.style.width || '',
+          height: p.style.height || ''
+        };
+      });
+      
+      // Obtener dimensiones actuales del panel
+      const rect = panel.getBoundingClientRect();
+      startWidth = rect.width;
+      startHeight = rect.height;
+      
+      document.addEventListener('mousemove', handleResize);
+      document.addEventListener('mouseup', stopResize);
     }
 
-    interact(header).draggable({
-      inertia: true,
-      modifiers: [
-        interact.modifiers.restrictRect({
-          restriction: 'parent',
-          endOnly: true
-        })
-      ],
-      autoScroll: true,
-      listeners: {
-        start: (event) => {
-          panel.style.zIndex = 10;
-          panel.style.boxShadow = '0 4px 20px rgba(0,0,0,0.15)';
-          this.toggleSnapZones(true);
-        },
-        move: (event) => {
-          const x = (parseFloat(panel.getAttribute('data-x')) || 0) + event.dx;
-          const y = (parseFloat(panel.getAttribute('data-y')) || 0) + event.dy;
+    function handleResize(e) {
+      if (!isResizing) return;
+      
+      // Usar requestAnimationFrame para sincronizar con el movimiento del ratón
+      requestAnimationFrame(() => {
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+      
+      if (currentDirection === 'horizontal' || currentDirection === 'both') {
+        const newWidth = startWidth + deltaX;
+        const containerWidth = container.offsetWidth;
+        const gap = 8;
+        const minWidth = 200;
+        
+        // Calcular el ancho disponible considerando gaps
+        const otherPanels = Array.from(container.children).filter(p => p !== panel);
+        const totalGaps = (otherPanels.length + 1) * gap;
+        const availableWidth = containerWidth - totalGaps;
+        const maxWidth = availableWidth - (otherPanels.length * minWidth);
+        
+        if (newWidth >= minWidth && newWidth <= maxWidth) {
+          // Establecer ancho fijo para el panel actual
+          panel.style.flex = `0 0 ${newWidth}px`;
           
-          panel.style.transform = `translate(${x}px, ${y}px)`;
-          panel.setAttribute('data-x', x);
-          panel.setAttribute('data-y', y);
+          // Distribuir el espacio restante entre los otros paneles
+          const remainingWidth = availableWidth - newWidth;
           
-          const snapPosition = this.getSnapPosition(panel, x, y);
-          this.highlightSnapZone(snapPosition);
-        },
-        end: (event) => {
-          const x = parseFloat(panel.getAttribute('data-x')) || 0;
-          const y = parseFloat(panel.getAttribute('data-y')) || 0;
-          
-          const snapPosition = this.getSnapPosition(panel, x, y);
-          this.applySnapAndReorganize(panel, snapPosition);
-          
-          this.toggleSnapZones(false);
-          panel.style.zIndex = '';
-          panel.style.boxShadow = '';
+          if (otherPanels.length > 0) {
+            // Calcular cuánto espacio le corresponde a cada panel
+            const widthPerPanel = Math.max(minWidth, remainingWidth / otherPanels.length);
+            
+            otherPanels.forEach(otherPanel => {
+              otherPanel.style.flex = `1 1 ${widthPerPanel}px`;
+            });
+          }
         }
       }
-    });
-  }
-
-  // Agregar handles de redimensionamiento
-  addResizeHandles(panel) {
-    if (typeof interact === 'undefined') {
-      console.warn('Interact.js no está disponible');
-      return;
-    }
-
-    console.log('🔧 Agregando handles de redimensionamiento al panel:', panel.id);
-    
-    // Aplicar interact.js a los handles específicos de este panel
-    const handles = panel.querySelectorAll('.panel-resize-handle');
-    console.log('📏 Handles encontrados:', handles.length);
-    
-    handles.forEach(handle => {
-      console.log('🔧 Configurando handle:', handle.className);
-    });
-
-    interact('.panel-resize-handle').draggable({
-      modifiers: [
-        interact.modifiers.restrictEdges({
-          outer: 'parent',
-          endOnly: true
-        }),
-        interact.modifiers.restrictSize({
-          min: { width: 300, height: 200 }
-        })
-      ],
-      listeners: {
-        start: (event) => {
-          const panel = event.target.closest('.panel');
-          const handle = event.target;
-          const container = panel.parentElement;
-          const panels = Array.from(container.children).filter(el => el.classList.contains('panel'));
+      
+      if (currentDirection === 'vertical' || currentDirection === 'both') {
+        const newHeight = startHeight + deltaY;
+        const containerHeight = container.offsetHeight;
+        const minHeight = 200;
+        const maxHeight = containerHeight;
+        
+        if (newHeight >= minHeight && newHeight <= maxHeight) {
+          // Establecer altura fija para el panel actual
+          panel.style.flex = `1 1 auto`;
+          panel.style.height = `${newHeight}px`;
           
-          handle.classList.add('resizing');
+          // Ajustar otros paneles para que rellenen el espacio vertical restante
+          const otherPanels = Array.from(container.children).filter(p => p !== panel);
+          const remainingHeight = containerHeight - newHeight;
           
-          panel._initialWidth = panel.offsetWidth;
-          panel._initialHeight = panel.offsetHeight;
-          panel._initialX = event.clientX;
-          panel._initialY = event.clientY;
-          
-          panels.forEach(p => {
-            p._initialWidth = p.offsetWidth;
-            p._initialHeight = p.offsetHeight;
-          });
-          
-          const panelIndex = panels.indexOf(panel);
-          panel._adjacentPanels = {
-            left: panelIndex > 0 ? panels[panelIndex - 1] : null,
-            right: panelIndex < panels.length - 1 ? panels[panelIndex + 1] : null,
-            top: panelIndex > 0 ? panels[panelIndex - 1] : null,
-            bottom: panelIndex < panels.length - 1 ? panels[panelIndex + 1] : null
-          };
-          
-          panel._isVerticalLayout = container.style.flexDirection === 'column';
-        },
-        move: (event) => {
-          const panel = event.target.closest('.panel');
-          const handle = event.target;
-          const deltaX = event.clientX - panel._initialX;
-          const deltaY = event.clientY - panel._initialY;
-          
-          if (panel._isVerticalLayout) {
-            if (handle.classList.contains('bottom')) {
-              const newHeight = Math.max(200, panel._initialHeight + deltaY);
-              const heightDiff = newHeight - panel._initialHeight;
-              
-              panel.style.height = newHeight + 'px';
-              panel.style.flex = 'none';
-              
-              if (panel._adjacentPanels.bottom) {
-                const bottomPanel = panel._adjacentPanels.bottom;
-                const newBottomHeight = Math.max(200, bottomPanel._initialHeight - heightDiff);
-                bottomPanel.style.height = newBottomHeight + 'px';
-                bottomPanel.style.flex = 'none';
-              }
-            } else if (handle.classList.contains('top')) {
-              const newHeight = Math.max(200, panel._initialHeight - deltaY);
-              const heightDiff = panel._initialHeight - newHeight;
-              
-              panel.style.height = newHeight + 'px';
-              panel.style.flex = 'none';
-              
-              if (panel._adjacentPanels.top) {
-                const topPanel = panel._adjacentPanels.top;
-                const newTopHeight = Math.max(200, topPanel._initialHeight + heightDiff);
-                topPanel.style.height = newTopHeight + 'px';
-                topPanel.style.flex = 'none';
-              }
-            }
-          } else {
-            if (handle.classList.contains('right')) {
-              const newWidth = Math.max(300, panel._initialWidth + deltaX);
-              const widthDiff = newWidth - panel._initialWidth;
-              
-              panel.style.width = newWidth + 'px';
-              panel.style.flex = 'none';
-              
-              if (panel._adjacentPanels.right) {
-                const rightPanel = panel._adjacentPanels.right;
-                const newRightWidth = Math.max(300, rightPanel._initialWidth - widthDiff);
-                rightPanel.style.width = newRightWidth + 'px';
-                rightPanel.style.flex = 'none';
-              }
-            } else if (handle.classList.contains('left')) {
-              const newWidth = Math.max(300, panel._initialWidth - deltaX);
-              const widthDiff = panel._initialWidth - newWidth;
-              
-              panel.style.width = newWidth + 'px';
-              panel.style.flex = 'none';
-              
-              if (panel._adjacentPanels.left) {
-                const leftPanel = panel._adjacentPanels.left;
-                const newLeftWidth = Math.max(300, leftPanel._initialWidth + widthDiff);
-                leftPanel.style.width = newLeftWidth + 'px';
-                leftPanel.style.flex = 'none';
-              }
-            }
+          if (remainingHeight > 0 && otherPanels.length > 0) {
+            const heightPerPanel = Math.max(minHeight, remainingHeight / otherPanels.length);
+            
+            otherPanels.forEach(otherPanel => {
+              otherPanel.style.flex = `1 1 auto`;
+              otherPanel.style.height = `${heightPerPanel}px`;
+            });
           }
-        },
-        end: (event) => {
-          const handle = event.target;
-          handle.classList.remove('resizing');
-          this.resizeCanvas();
         }
       }
-    });
-  }
+      });
+    }
 
-  // Funciones de snap (reutilizadas del código original)
-  getSnapPosition(panel, x, y) {
-    const container = document.getElementById('panel-container');
-    const containerRect = container.getBoundingClientRect();
-    const panelRect = panel.getBoundingClientRect();
-    
-    const snapPositions = [
-      { x: 0, y: 0, name: 'left', zone: 'left' },
-      { x: containerRect.width - panelRect.width, y: 0, name: 'right', zone: 'right' },
-      { x: 0, y: 0, name: 'top', zone: 'top' },
-      { x: 0, y: containerRect.height - panelRect.height, name: 'bottom', zone: 'bottom' }
-    ];
-    
-    let closestSnap = snapPositions[0];
-    let minDistance = Infinity;
-    
-    snapPositions.forEach(snap => {
-      const distance = Math.sqrt(
-        Math.pow(x - snap.x, 2) + Math.pow(y - snap.y, 2)
-      );
-      if (distance < minDistance) {
-        minDistance = distance;
-        closestSnap = snap;
-      }
-    });
-    
-    return closestSnap;
-  }
-
-  toggleSnapZones(show) {
-    const snapZones = document.getElementById('snap-zones');
-    if (snapZones) {
-      if (show) {
-        snapZones.classList.add('visible');
-      } else {
-        snapZones.classList.remove('visible');
-        snapZones.querySelectorAll('.snap-zone').forEach(zone => {
-          zone.classList.remove('active');
+    function stopResize() {
+      if (isResizing) {
+        // Asegurar que todos los paneles tengan flex apropiado después del resize
+        const allPanels = Array.from(container.children);
+        allPanels.forEach(p => {
+          if (!p.style.flex || p.style.flex === '0 0 auto') {
+            p.style.flex = '1';
+          }
         });
+        
+        // Remover clase resizing para reactivar transiciones
+        panel.classList.remove('resizing');
       }
-    }
-  }
-
-  highlightSnapZone(snapPosition) {
-    const snapZones = document.getElementById('snap-zones');
-    if (snapZones) {
-      snapZones.querySelectorAll('.snap-zone').forEach(zone => {
-        zone.classList.remove('active');
-      });
       
-      const activeZone = snapZones.querySelector(`[data-zone="${snapPosition.zone}"]`);
-      if (activeZone) {
-        activeZone.classList.add('active');
+      isResizing = false;
+      currentDirection = null;
+      originalFlexValues = {};
+      document.removeEventListener('mousemove', handleResize);
+      document.removeEventListener('mouseup', stopResize);
+    }
+
+    // Configurar eventos para cada handle
+    if (leftHandle) {
+      leftHandle.addEventListener('mousedown', (e) => startResize(e, 'horizontal'));
+    }
+    
+    if (rightHandle) {
+      rightHandle.addEventListener('mousedown', (e) => startResize(e, 'horizontal'));
+    }
+    
+    if (bottomHandle) {
+      bottomHandle.addEventListener('mousedown', (e) => startResize(e, 'vertical'));
+    }
+    
+    if (cornerHandle) {
+      cornerHandle.addEventListener('mousedown', (e) => startResize(e, 'both'));
+    }
+  }
+
+  makePanelDraggable(panel) {
+    const header = panel.querySelector('.panel-header');
+    if (!header) return;
+
+    let isDragging = false;
+    let startX, startY, startLeft, startTop;
+    let wasMaximized = false;
+    let originalStyles = {};
+    let originalSize = {};
+    let isReordering = false; // Para distinguir entre arrastrar y reordenar
+
+    header.addEventListener('mousedown', (e) => {
+      // Evitar arrastrar si se hace clic en botones
+      if (e.target.closest('.panel-btn')) return;
+      
+      e.preventDefault();
+      
+      // Si se mantiene presionado Shift, es para reordenar
+      if (e.shiftKey) {
+        isReordering = true;
+        this.startPanelReorder(panel, e);
+        return;
       }
-    }
-  }
-
-  applySnapAndReorganize(panel, snapPosition) {
-    this.reorganizePanelsForSnap(panel, snapPosition);
-  }
-
-  reorganizePanelsForSnap(panel, snapPosition) {
-    const container = document.getElementById('panel-container');
-    const visiblePanels = Array.from(document.querySelectorAll('.panel:not(.closed)'));
-    const zone = snapPosition.zone;
-    
-    visiblePanels.forEach(p => {
-      p.style.transform = '';
-      p.setAttribute('data-x', '0');
-      p.setAttribute('data-y', '0');
+      
+      isDragging = true;
+      
+      // Guardar estado original completo
+      wasMaximized = panel.classList.contains('maximized');
+      originalStyles = {
+        position: panel.style.position,
+        left: panel.style.left,
+        top: panel.style.top,
+        width: panel.style.width,
+        height: panel.style.height,
+        flex: panel.style.flex,
+        right: panel.style.right,
+        bottom: panel.style.bottom,
+        margin: panel.style.margin
+      };
+      
+      // Guardar dimensiones originales
+      const rect = panel.getBoundingClientRect();
+      originalSize = {
+        width: rect.width,
+        height: rect.height
+      };
+      
+      startX = e.clientX;
+      startY = e.clientY;
+      startLeft = rect.left;
+      startTop = rect.top;
+      
+      // Si estaba maximizado, quitar temporalmente la clase para permitir el arrastre
+      if (wasMaximized) {
+        panel.classList.remove('maximized');
+      }
+      
+      // Configurar para arrastre manteniendo el tamaño original
+      panel.style.position = 'fixed';
+      panel.style.zIndex = '10000';
+      panel.style.opacity = '0.9';
+      
+      // Mantener el tamaño original durante el arrastre
+      panel.style.width = `${originalSize.width}px`;
+      panel.style.height = `${originalSize.height}px`;
+      panel.style.flex = 'none';
+      
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
     });
-    
-    let panelOrder = [];
-    
-    if (visiblePanels.length === 1) {
-      panelOrder = [panel];
-      container.style.flexDirection = 'row';
-      panel.style.flex = '1';
-    } else if (zone === 'left') {
-      panelOrder = [panel, ...visiblePanels.filter(p => p !== panel)];
-      container.style.flexDirection = 'row';
-      panel.style.flex = '2';
-      visiblePanels.filter(p => p !== panel).forEach(p => p.style.flex = '1');
-    } else if (zone === 'right') {
-      panelOrder = [...visiblePanels.filter(p => p !== panel), panel];
-      container.style.flexDirection = 'row';
-      panel.style.flex = '2';
-      visiblePanels.filter(p => p !== panel).forEach(p => p.style.flex = '1');
-    } else if (zone === 'top') {
-      panelOrder = [panel, ...visiblePanels.filter(p => p !== panel)];
-      container.style.flexDirection = 'column';
-      panel.style.flex = '2';
-      visiblePanels.filter(p => p !== panel).forEach(p => p.style.flex = '1');
-    } else if (zone === 'bottom') {
-      panelOrder = [...visiblePanels.filter(p => p !== panel), panel];
-      container.style.flexDirection = 'column';
-      panel.style.flex = '2';
-      visiblePanels.filter(p => p !== panel).forEach(p => p.style.flex = '1');
-    }
-    
-    container.style.display = 'flex';
-    container.style.gap = '8px';
-    
-    if (panelOrder.length > 0) {
-      panelOrder.forEach((p, index) => {
-        if (p.parentNode) {
-          container.appendChild(p);
-        }
-      });
-    }
-    
-    setTimeout(() => {
-      this.resizeCanvas();
-    }, 100);
-  }
 
-  // Redimensionar canvas
-  resizeCanvas() {
-    if (window.bpmnModeler) {
-      setTimeout(() => {
-        try {
-          const canvas = window.bpmnModeler.get('canvas');
-          if (canvas && typeof canvas.resized === 'function') {
-            canvas.resized();
-          }
-        } catch (error) {
-          console.warn('Error resizing canvas:', error);
-        }
-      }, 50);
-    }
-  }
+    const handleMouseMove = (e) => {
+      if (!isDragging) return;
+      
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+      
+      // Mover manteniendo el tamaño original
+      panel.style.left = `${startLeft + deltaX}px`;
+      panel.style.top = `${startTop + deltaY}px`;
+      
+      // Asegurar que mantenga el tamaño durante el movimiento
+      panel.style.width = `${originalSize.width}px`;
+      panel.style.height = `${originalSize.height}px`;
+    };
 
-  // Restaurar layout compartido
-  restoreSharedLayout() {
-    const container = document.getElementById('panel-container');
-    const visiblePanels = document.querySelectorAll('.panel:not(.closed)');
-    
-    visiblePanels.forEach(panel => {
-      panel.classList.remove('maximized', 'minimized');
+    const handleMouseUp = () => {
+      if (!isDragging) return;
+      
+      isDragging = false;
+      panel.style.opacity = '1';
+      
+      // Limpiar todos los estilos inline aplicados durante el arrastre
+      panel.style.position = '';
+      panel.style.left = '';
+      panel.style.top = '';
+      panel.style.right = '';
+      panel.style.bottom = '';
       panel.style.width = '';
       panel.style.height = '';
-      panel.style.position = '';
-      panel.style.zIndex = '';
+      panel.style.margin = '';
       panel.style.flex = '';
-      panel.setAttribute('data-x', '0');
-      panel.setAttribute('data-y', '0');
-    });
-    
-    if (visiblePanels.length >= 2) {
-      container.style.flexDirection = 'row';
-      container.style.display = 'flex';
-      container.style.gap = '8px';
-      visiblePanels[0].style.flex = '2';
-      visiblePanels[1].style.flex = '1';
-    } else if (visiblePanels.length === 1) {
-      container.style.flexDirection = 'row';
-      container.style.display = 'flex';
-      visiblePanels[0].style.flex = '1';
+      panel.style.zIndex = '';
+      
+      // Restaurar estado apropiado
+      if (wasMaximized) {
+        // Si estaba maximizado, restaurar a maximizado
+        panel.classList.add('maximized');
+      } else {
+        // Restaurar estilos originales solo si no estaban vacíos
+        if (originalStyles.position) panel.style.position = originalStyles.position;
+        if (originalStyles.width) panel.style.width = originalStyles.width;
+        if (originalStyles.height) panel.style.height = originalStyles.height;
+        if (originalStyles.flex) panel.style.flex = originalStyles.flex;
+        if (originalStyles.right) panel.style.right = originalStyles.right;
+        if (originalStyles.bottom) panel.style.bottom = originalStyles.bottom;
+        if (originalStyles.margin) panel.style.margin = originalStyles.margin;
+      }
+      
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }
+
+  initializePanelEvents(panel) {
+    // Eventos para los botones del panel
+    const header = panel.querySelector('.panel-header');
+    if (!header) return;
+
+    const hideBtn = header.querySelector('.panel-btn[title="Ocultar"]');
+    const soloBtn = header.querySelector('.panel-btn[title="Solo este panel"]');
+
+    if (hideBtn) {
+      hideBtn.addEventListener('click', async () => {
+        // Ocultar el panel completamente
+        panel.style.display = 'none';
+        panel.style.visibility = 'hidden';
+        panel.style.position = 'absolute';
+        panel.style.left = '-9999px';
+        panel.style.top = '-9999px';
+        panel.style.width = '0';
+        panel.style.height = '0';
+        panel.style.flex = '0';
+        panel.style.overflow = 'hidden';
+        panel.style.zIndex = '-1';
+        
+        // Preservar estado BPMN si se está ocultando el panel BPMN
+        const panelType = panel.getAttribute('data-panel-type');
+        if (panelType === 'bpmn' && window.bpmnModeler && window.bpmnModeler.get) {
+          try {
+            const xml = await window.bpmnModeler.saveXML({ format: true });
+            const svg = await window.bpmnModeler.saveSVG();
+            
+            // Verificar que el XML no esté vacío
+            if (xml && xml.xml && xml.xml.trim().length > 0) {
+              const bpmnState = {
+                xml: xml.xml,
+                svg: svg
+              };
+              // Guardar el estado en el panel manager
+              if (window.panelManager) {
+                window.panelManager.preservedBpmnState = bpmnState;
+                console.log('Estado BPMN preservado al ocultar panel:', bpmnState.xml.substring(0, 100) + '...');
+              }
+            } else {
+              console.warn('XML BPMN vacío, no se preserva estado');
+            }
+          } catch (error) {
+            console.error('Error preservando estado BPMN:', error);
+          }
+        }
+        
+        // Actualizar la lista de paneles activos en el panel manager
+        if (window.panelManager) {
+          if (panelType && window.panelManager.activePanels.includes(panelType)) {
+            window.panelManager.activePanels = window.panelManager.activePanels.filter(p => p !== panelType);
+            console.log(`Panel ${panelType} ocultado y removido de la lista activa`);
+            
+            // Actualizar el selector de paneles para mostrar el cambio
+            if (window.panelManager.updatePanelSelector) {
+              window.panelManager.updatePanelSelector();
+            }
+            
+            // Notificar al panel manager para que reajuste el layout
+            setTimeout(() => {
+              if (window.panelManager && typeof window.panelManager.adjustLayoutForVisiblePanels === 'function') {
+                window.panelManager.adjustLayoutForVisiblePanels();
+              }
+            }, 50);
+          }
+        }
+      });
     }
+
+    if (soloBtn) {
+      soloBtn.addEventListener('click', () => {
+        // Ocultar todos los otros paneles
+        const container = panel.parentElement;
+        const allPanels = container.querySelectorAll('.panel');
+        
+        allPanels.forEach(otherPanel => {
+          if (otherPanel !== panel) {
+            otherPanel.style.display = 'none';
+            otherPanel.style.visibility = 'hidden';
+            otherPanel.style.position = 'absolute';
+            otherPanel.style.left = '-9999px';
+            otherPanel.style.top = '-9999px';
+            otherPanel.style.width = '0';
+            otherPanel.style.height = '0';
+            otherPanel.style.flex = '0';
+            otherPanel.style.overflow = 'hidden';
+            otherPanel.style.zIndex = '-1';
+            
+            // Remover de la lista activa
+            const otherPanelType = otherPanel.getAttribute('data-panel-type');
+            if (otherPanelType && window.panelManager && window.panelManager.activePanels.includes(otherPanelType)) {
+              window.panelManager.activePanels = window.panelManager.activePanels.filter(p => p !== otherPanelType);
+            }
+          }
+        });
+        
+        // Mostrar solo este panel
+        panel.style.display = 'flex';
+        panel.style.flex = '1';
+        
+        // Ajustar layout para un solo panel
+        setTimeout(() => {
+          if (window.panelManager && typeof window.panelManager.adjustLayoutForVisiblePanels === 'function') {
+            window.panelManager.adjustLayoutForVisiblePanels();
+          }
+        }, 50);
+      });
+    }
+  }
+
+
+
+  loadPanelController(panelType, panel) {
+    // Cargar controladores específicos según el tipo de panel
+    switch (panelType) {
+      case 'rasci':
+        this.loadRasciController(panel);
+        break;
+      case 'bpmn':
+        this.loadBpmnController();
+        break;
+      default:
+        break;
+    }
+  }
+
+  loadRasciController(panel) {
+    // Inicializar el controlador RASCI
+    if (window.initRasciPanel) {
+      window.initRasciPanel(panel);
+    }
+  }
+
+  startPanelReorder(panel, e) {
+    const container = panel.parentElement;
+    if (!container) return;
+
+    // Crear indicador visual de reordenamiento
+    panel.style.opacity = '0.7';
+    panel.style.transform = 'rotate(2deg)';
+    panel.style.zIndex = '1000';
+    panel.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)';
+
+    // Crear indicadores de drop zones
+    this.createDropZones(container, panel);
+
+    // Event listeners para el reordenamiento
+    const handleMouseMove = (e) => {
+      this.updateDropZones(e, container, panel);
+    };
+
+    const handleMouseUp = (e) => {
+      this.finishPanelReorder(panel, container, e);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }
+
+  createDropZones(container, draggedPanel) {
+    const panels = Array.from(container.querySelectorAll('.panel')).filter(p => p !== draggedPanel);
     
-    document.querySelectorAll('.restore-btn').forEach(btn => btn.classList.add('hidden'));
+    panels.forEach((panel, index) => {
+      const dropZone = document.createElement('div');
+      dropZone.className = 'panel-drop-zone';
+      dropZone.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(58, 86, 212, 0.1);
+        border: 2px dashed #3a56d4;
+        border-radius: 8px;
+        z-index: 999;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        pointer-events: none;
+      `;
+      dropZone.setAttribute('data-panel-index', index);
+      panel.appendChild(dropZone);
+    });
+  }
+
+  updateDropZones(e, container, draggedPanel) {
+    const dropZones = container.querySelectorAll('.panel-drop-zone');
+    const mouseY = e.clientY;
     
+    dropZones.forEach((zone, index) => {
+      const panel = zone.parentElement;
+      const rect = panel.getBoundingClientRect();
+      const centerY = rect.top + rect.height / 2;
+      
+      if (mouseY < centerY) {
+        zone.style.opacity = '1';
+        zone.style.borderColor = '#3a56d4';
+      } else {
+        zone.style.opacity = '0.3';
+        zone.style.borderColor = '#ccc';
+      }
+    });
+  }
+
+  finishPanelReorder(draggedPanel, container, e) {
+    // Restaurar estilo del panel arrastrado
+    draggedPanel.style.opacity = '1';
+    draggedPanel.style.transform = '';
+    draggedPanel.style.zIndex = '';
+    draggedPanel.style.boxShadow = '';
+
+    // Encontrar la posición de destino
+    const panels = Array.from(container.querySelectorAll('.panel'));
+    const mouseY = e.clientY;
+    let targetIndex = panels.length;
+
+    // Encontrar la posición correcta basada en la posición del mouse
+    for (let i = 0; i < panels.length; i++) {
+      const panel = panels[i];
+      if (panel === draggedPanel) continue;
+      
+      const rect = panel.getBoundingClientRect();
+      const centerY = rect.top + rect.height / 2;
+      
+      if (mouseY < centerY) {
+        targetIndex = i;
+        break;
+      }
+    }
+
+    // Si no se encontró posición, poner al final
+    if (targetIndex === panels.length) {
+      targetIndex = panels.length - 1;
+    }
+
+    console.log(`Posición de destino calculada: ${targetIndex}`);
+
+    // Reordenar el panel
+    this.reorderPanel(draggedPanel, targetIndex);
+
+    // Limpiar drop zones
+    container.querySelectorAll('.panel-drop-zone').forEach(zone => zone.remove());
+  }
+
+  reorderPanel(panel, targetIndex) {
+    const container = panel.parentElement;
+    if (!container) return;
+
+    const panels = Array.from(container.querySelectorAll('.panel'));
+    const currentIndex = panels.indexOf(panel);
+
+    if (currentIndex === targetIndex) return;
+
+    // Obtener el tipo de panel que se está reordenando
+    const panelType = panel.getAttribute('data-panel-type');
+    if (!panelType || !window.panelManager) return;
+
+    // Reordenar en el array de paneles activos del panel manager
+    const activePanels = window.panelManager.activePanels;
+    const currentPanelIndex = activePanels.indexOf(panelType);
+    
+    if (currentPanelIndex === -1) return;
+
+    // Remover el panel de su posición actual en el array
+    activePanels.splice(currentPanelIndex, 1);
+    
+    // Insertar en la nueva posición
+    if (targetIndex >= activePanels.length) {
+      activePanels.push(panelType);
+    } else {
+      activePanels.splice(targetIndex, 0, panelType);
+    }
+
+    console.log(`Panel ${panelType} reordenado de posición ${currentIndex} a ${targetIndex}`);
+    console.log('Nuevo orden de paneles:', activePanels);
+
+    // Reaplicar la configuración para reflejar el nuevo orden
     setTimeout(() => {
-      this.resizeCanvas();
+      if (window.panelManager && typeof window.panelManager.applyConfiguration === 'function') {
+        window.panelManager.applyConfiguration();
+      }
     }, 100);
+  }
+
+  loadBpmnController() {
+    // El controlador BPMN se maneja principalmente en app.js
   }
 }
 
-// Exportar para uso global
-window.PanelLoader = PanelLoader; 
+// Exportar la clase para ES6 modules
+export { PanelLoader };
+
+// También mantener la referencia global para compatibilidad
+window.PanelLoader = PanelLoader;
