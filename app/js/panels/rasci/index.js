@@ -14,8 +14,3 @@ export { initRasciMapping, executeSimpleRasciMapping } from './mapping/index.js'
 
 // Auto-mapping functionality
 export { initializeAutoMapping } from './mapping/auto-mapper.js';
-
-console.log('✅ RASCI Panel: Sistema de validación inteligente cargado');
-console.log('🔍 Validador de matrices RASCI disponible');
-console.log('📊 UI Validator disponible');
-console.log('🔄 Sistema de mapeo disponible');

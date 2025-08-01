@@ -164,9 +164,7 @@ export class RasciMatrixValidator {
       .map(([role]) => role);
 
     // Debug: mostrar información sobre roles válidos
-    if (this.validRoles.size > 0) {
-      console.log(`Roles válidos disponibles para validación:`, Array.from(this.validRoles));
-    }
+    
 
     supportRoles.forEach(role => {
       if (this.validRoles.size > 0 && !this.validRoles.has(role)) {

@@ -53,51 +53,145 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
   const headerRow = document.createElement('tr');
 
   const taskHeader = document.createElement('th');
-  taskHeader.style.position = 'relative';
+  taskHeader.style.cssText = `
+    position: relative;
+    background: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+    padding: 12px 16px;
+    text-align: center;
+    font-weight: 400;
+    color: #1f2937;
+    min-width: 160px;
+    vertical-align: middle;
+    font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  `;
   
   const taskHeaderContent = document.createElement('div');
-  taskHeaderContent.style.display = 'flex';
-  taskHeaderContent.style.alignItems = 'center';
-  taskHeaderContent.style.justifyContent = 'space-between';
-  taskHeaderContent.style.padding = '0 8px';
+  taskHeaderContent.style.cssText = `
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    position: relative;
+    height: 100%;
+    min-height: 24px;
+  `;
   
   const taskText = document.createElement('span');
   taskText.textContent = 'Tarea';
-  taskText.style.fontWeight = 'bold';
+  taskText.style.cssText = `
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 12px;
+    text-transform: capitalize;
+    letter-spacing: 0.2px;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+    padding-left: 10px;
+    margin-left: 5px;
+  `;
   
   const reloadBtn = document.createElement('button');
   reloadBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
   reloadBtn.title = 'Recargar tareas del canvas';
   reloadBtn.style.cssText = `
-    background: #3b82f6;
-    color: white;
+    background: transparent;
+    color: #6b7280;
     border: none;
     border-radius: 4px;
-    padding: 4px 6px;
-    font-size: 10px;
+    padding: 2px;
+    font-size: 11px;
     cursor: pointer;
-    margin-left: 8px;
-    transition: background-color 0.2s;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    line-height: 1;
   `;
   
   reloadBtn.addEventListener('mouseenter', () => {
-    reloadBtn.style.background = '#2563eb';
+    reloadBtn.style.cssText = `
+      background: #f3f4f6;
+      color: #374151;
+      border: none;
+      border-radius: 4px;
+      padding: 2px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      line-height: 1;
+    `;
   });
   
   reloadBtn.addEventListener('mouseleave', () => {
-    reloadBtn.style.background = '#3b82f6';
+    reloadBtn.style.cssText = `
+      background: transparent;
+      color: #6b7280;
+      border: none;
+      border-radius: 4px;
+      padding: 2px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      line-height: 1;
+    `;
   });
   
   reloadBtn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    reloadBtn.style.background = '#1d4ed8';
+    reloadBtn.style.cssText = `
+      background: #e5e7eb;
+      color: #374151;
+      border: none;
+      border-radius: 4px;
+      padding: 2px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      line-height: 1;
+    `;
     reloadBtn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i>';
     
     // Llamar a la función de recarga forzada
     setTimeout(() => {
       forceReloadMatrix();
-      reloadBtn.style.background = '#3b82f6';
+      reloadBtn.style.cssText = `
+        background: transparent;
+        color: #6b7280;
+        border: none;
+        border-radius: 4px;
+        padding: 2px;
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 18px;
+        height: 18px;
+        line-height: 1;
+      `;
       reloadBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
     }, 500);
   });
@@ -197,7 +291,41 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
     const row = document.createElement('tr');
 
     const taskCell = document.createElement('td');
-    taskCell.textContent = task;
+    taskCell.style.cssText = `
+      background: #f8fafc;
+      border-right: 2px solid #e2e8f0;
+      padding: 20px 16px;
+      text-align: left;
+      font-weight: 600;
+      color: #1f2937;
+      margin-left: 15px;
+      font-size: 12px;
+      vertical-align: middle;
+      min-width: 160px;
+      max-width: 240px;
+      word-wrap: break-word;
+      position: relative;
+      font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+    `;
+    
+    const taskNameSpan = document.createElement('span');
+    taskNameSpan.textContent = task;
+    taskNameSpan.style.cssText = `
+      display: block;
+      line-height: 1.4;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 600;
+      color: #1f2937;
+      font-size: 12px;
+      font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+      letter-spacing: 0.2px;
+      padding-left: 10px;
+      margin-left: 5px;
+    `;
+    
+    taskCell.appendChild(taskNameSpan);
     row.appendChild(taskCell);
 
     roles.forEach(role => {
@@ -551,6 +679,12 @@ function makeRoleEditable(roleHeader, roleIndex) {
   }
 
   function saveChanges() {
+    // Verificar si el input aún existe antes de procesar
+    if (!input || !document.contains(input)) {
+      restoreView();
+      return;
+    }
+    
     const newName = input.value.trim();
     
     if (newName && newName !== currentName) {
@@ -561,7 +695,9 @@ function makeRoleEditable(roleHeader, roleIndex) {
 
       // Validar matriz después de editar rol (más lento)
       setTimeout(() => {
-        rasciUIValidator.forceValidation();
+        if (window.rasciUIValidator && typeof window.rasciUIValidator.forceValidation === 'function') {
+          window.rasciUIValidator.forceValidation();
+        }
       }, 1000);
     }
     
@@ -570,9 +706,16 @@ function makeRoleEditable(roleHeader, roleIndex) {
 
   function restoreView() {
     roleNameSpan.style.visibility = 'visible';
-    if (input.parentNode) {
-      input.parentNode.removeChild(input);
+    
+    // Verificar si el input existe y está en el DOM antes de intentar eliminarlo
+    if (input && input.parentNode && document.contains(input)) {
+      try {
+        input.parentNode.removeChild(input);
+              } catch (error) {
+          // Input ya fue eliminado o movido
+        }
     }
+    
     restoreDocumentMethods();
   }
 

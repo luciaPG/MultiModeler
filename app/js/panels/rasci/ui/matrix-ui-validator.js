@@ -792,7 +792,7 @@ export class RasciMatrixUIValidator {
 
   // Forzar validación (para uso externo)
   forceValidation() {
-    console.log('🚀 Forzando validación inmediata...');
+
     this.validateCurrentMatrix();
   }
 
@@ -827,14 +827,7 @@ export class RasciMatrixUIValidator {
 
   // Función para debug del estado de datos
   debugDataState() {
-    console.log('=== DEBUG ESTADO DE DATOS ===');
-    console.log('Roles actuales:', this.getCurrentRoles());
-    console.log('Matriz actual:', this.getCurrentMatrixData());
-    console.log('Roles organizativos:', this.getOrganizationalRoles());
-    console.log('window.rasciMatrixData:', window.rasciMatrixData);
-    console.log('localStorage.rasciMatrixData:', localStorage.getItem('rasciMatrixData'));
-    console.log('localStorage.rasciRoles:', localStorage.getItem('rasciRoles'));
-    console.log('=== FIN DEBUG ===');
+
   }
 
   // Función global para diagnóstico completo del validador
@@ -854,11 +847,7 @@ export class RasciMatrixUIValidator {
     const currentMatrixData = this.getCurrentMatrixData();
     const organizationalRoles = this.getOrganizationalRoles();
     
-    console.log('2. Datos actuales:', {
-      roles: currentRoles,
-      matrixData: currentMatrixData,
-      organizationalRoles: organizationalRoles
-    });
+
     
     // 3. Análisis de tareas
     if (currentMatrixData && Object.keys(currentMatrixData).length > 0) {
@@ -873,24 +862,10 @@ export class RasciMatrixUIValidator {
         return Object.values(taskData).some(value => value && value.trim() !== '');
       });
       
-      console.log('3. Análisis de tareas:', {
-        total: allTasks.length,
-        conEstructura: tasksWithData.length,
-        conRoles: tasksWithRoles.length,
-        vacias: allTasks.length - tasksWithRoles.length,
-        tareas: allTasks,
-        tareasVacias: allTasks.filter(taskName => {
-          const taskData = currentMatrixData[taskName] || {};
-          return !Object.values(taskData).some(value => value && value.trim() !== '');
-        })
-      });
+
     }
     
-    // 4. Estado de validación
-    console.log('4. Estado de validación:', {
-      lastValidation: this.lastValidation,
-      canExport: this.canExport()
-    });
+
     
     // console.log('✅ === FIN DIAGNÓSTICO DEL VALIDADOR ===');
   }
@@ -918,7 +893,7 @@ export class RasciMatrixUIValidator {
       return;
     }
 
-    console.log('📋 Mostrando mensaje de no datos:', message);
+
 
     const validation = {
       criticalErrors: [{

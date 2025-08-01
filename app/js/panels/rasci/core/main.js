@@ -4,8 +4,7 @@ import { applyStyles } from './styles.js';
 import { initRasciMapping, executeSimpleRasciMapping } from '../mapping/index.js';
 import { rasciUIValidator } from '../ui/matrix-ui-validator.js';
 
-console.log('🚀 rasci/core/main.js: Archivo cargado correctamente');
-console.log('📊 executeSimpleRasciMapping disponible:', typeof executeSimpleRasciMapping);
+
 
 export function initRasciPanel(panel) {
   const container = panel.querySelector('#matrix-container');
@@ -119,13 +118,13 @@ export function initRasciPanel(panel) {
       const savedRoles = localStorage.getItem('rasciRoles');
       if (savedRoles) {
         roles = JSON.parse(savedRoles);
-        console.log('📂 Roles RASCI cargados:', roles.length, 'roles');
+    
       }
       
       const savedMatrixData = localStorage.getItem('rasciMatrixData');
       if (savedMatrixData) {
         window.rasciMatrixData = JSON.parse(savedMatrixData);
-        console.log('📂 Matriz RASCI cargada:', Object.keys(window.rasciMatrixData).length, 'tareas');
+
       }
     } catch (e) {
       console.warn('❌ No se pudo cargar el estado RASCI:', e);
@@ -256,21 +255,18 @@ export function initRasciPanel(panel) {
   
   // Verificar que la función de mapeo esté disponible
   setTimeout(() => {
-    console.log('🔍 Verificando disponibilidad de funciones de mapeo...');
-    console.log('📊 window.executeRasciToRalphMapping:', typeof window.executeRasciToRalphMapping);
-    console.log('📊 window.bpmnModeler:', typeof window.bpmnModeler);
-    console.log('📊 window.rasciMatrixData:', window.rasciMatrixData);
+    
     
     if (typeof window.executeRasciToRalphMapping === 'function') {
       // console.log('✅ Función executeRasciToRalphMapping disponible');
     } else {
       console.warn('⚠️ Función executeRasciToRalphMapping no disponible');
-      console.log('🔧 Intentando definir función de mapeo...');
+
       
       // Intentar definir la función manualmente si no está disponible
       if (typeof executeSimpleRasciMapping === 'function') {
         window.executeRasciToRalphMapping = function() {
-          console.log('🚀 Función executeRasciToRalphMapping ejecutándose (definida manualmente)...');
+    
           
           if (!window.bpmnModeler) {
             console.error('❌ BPMN Modeler no disponible');
@@ -295,7 +291,7 @@ export function initRasciPanel(panel) {
           }
 
           try {
-            console.log('🔄 Ejecutando executeSimpleRasciMapping...');
+      
             const results = executeSimpleRasciMapping(window.bpmnModeler, window.rasciMatrixData);
             // console.log('✅ Mapeo completado con resultados:', results);
           } catch (error) {
