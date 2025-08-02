@@ -17,6 +17,12 @@ class PanelManager {
         description: 'Gestión de responsabilidades',
         enabled: true
       },
+      'ppi': {
+        name: 'PPI Indicators',
+        icon: 'fas fa-chart-line',
+        description: 'Indicadores de Rendimiento de Procesos',
+        enabled: true
+      },
       'test': {
         name: 'Panel de Prueba',
         icon: 'fas fa-flask',
@@ -1202,11 +1208,11 @@ class PanelManager {
 
     // El selector se elimina junto con el overlay ya que está dentro
     if (selector && selector.parentNode !== overlay) {
-      console.log('� Eliminando selector órfano...');
+      // console.log('🗑️ Eliminando selector órfano...');
       selector.remove();
     }
     
-    console.log('✅ Modal eliminado correctamente');
+    // console.log('✅ Modal eliminado correctamente');
   }
 
   async applyConfiguration() {
@@ -1342,7 +1348,7 @@ class PanelManager {
       }
     });
     
-    console.log(`Paneles visibles: ${visibleCount}`);
+    // console.log(`Paneles visibles: ${visibleCount}`);
     
     // Ajustar layout automáticamente
     let newLayout;
@@ -1357,7 +1363,7 @@ class PanelManager {
     }
     
     if (newLayout && newLayout !== this.currentLayout) {
-      console.log(`Ajustando layout automáticamente de ${this.currentLayout} a ${newLayout}`);
+      // console.log(`Ajustando layout automáticamente de ${this.currentLayout} a ${newLayout}`);
       this.currentLayout = newLayout;
       window.snapSystem.changeLayout(newLayout);
     }

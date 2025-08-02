@@ -6,6 +6,7 @@ class PanelLoader {
     this.panelConfigs = {
       bpmn: { file: 'panels/bpmn-panel.html', id: 'bpmn-panel', type: 'bpmn' },
       rasci: { file: 'panels/rasci-panel.html', id: 'rasci-panel', type: 'rasci' },
+      ppi: { file: 'panels/ppi-panel.html', id: 'ppi-panel', type: 'ppi' },
       test: { file: 'panels/test-panel.html', id: 'test-panel', type: 'test' },
       logs: { file: 'panels/logs-panel.html', id: 'logs-panel', type: 'logs' },
     };  
@@ -64,7 +65,7 @@ class PanelLoader {
                          container.querySelector(`[data-panel-type="${panelType}"]`);
     
     if (existingPanel) {
-      console.log(`⚠️ Panel ${panelType} ya existe, devolviendo el existente`);
+      // console.log(`⚠️ Panel ${panelType} ya existe, devolviendo el existente`);
       return existingPanel;
     }
 
@@ -517,7 +518,7 @@ class PanelLoader {
               // Guardar el estado en el panel manager
               if (window.panelManager) {
                 window.panelManager.preservedBpmnState = bpmnState;
-                console.log('Estado BPMN preservado al ocultar panel:', bpmnState.xml.substring(0, 100) + '...');
+                // console.log('Estado BPMN preservado al ocultar panel:', bpmnState.xml.substring(0, 100) + '...');
               }
             } else {
               console.warn('XML BPMN vacío, no se preserva estado');
@@ -531,7 +532,7 @@ class PanelLoader {
         if (window.panelManager) {
           if (panelType && window.panelManager.activePanels.includes(panelType)) {
             window.panelManager.activePanels = window.panelManager.activePanels.filter(p => p !== panelType);
-            console.log(`Panel ${panelType} ocultado y removido de la lista activa`);
+            // console.log(`Panel ${panelType} ocultado y removido de la lista activa`);
             
             // Actualizar el selector de paneles para mostrar el cambio
             if (window.panelManager.updatePanelSelector) {
@@ -601,6 +602,9 @@ class PanelLoader {
       case 'bpmn':
         this.loadBpmnController();
         break;
+      case 'ppi':
+        this.loadPpiController(panel);
+        break;
       default:
         break;
     }
@@ -610,6 +614,19 @@ class PanelLoader {
     // Inicializar el controlador RASCI
     if (window.initRasciPanel) {
       window.initRasciPanel(panel);
+    }
+  }
+
+  loadPpiController(panel) {
+    // Inicializar el controlador PPI
+                    if (window.ppiManager) {
+                  // El PPI Manager ya está inicializado globalmente
+                  console.log('PPI Manager encontrado, re-inicializando file upload...');
+                  // Re-inicializar el file upload porque el panel se cargó dinámicamente
+                  window.ppiManager.setupFileUpload();
+                  window.ppiManager.setupEventListeners();
+                } else {
+      console.warn('PPI Manager no encontrado');
     }
   }
 
@@ -716,7 +733,7 @@ class PanelLoader {
       targetIndex = panels.length - 1;
     }
 
-    console.log(`Posición de destino calculada: ${targetIndex}`);
+    // console.log(`Posición de destino calculada: ${targetIndex}`);
 
     // Reordenar el panel
     this.reorderPanel(draggedPanel, targetIndex);
@@ -754,8 +771,8 @@ class PanelLoader {
       activePanels.splice(targetIndex, 0, panelType);
     }
 
-    console.log(`Panel ${panelType} reordenado de posición ${currentIndex} a ${targetIndex}`);
-    console.log('Nuevo orden de paneles:', activePanels);
+    // console.log(`Panel ${panelType} reordenado de posición ${currentIndex} a ${targetIndex}`);
+    // console.log('Nuevo orden de paneles:', activePanels);
 
     // Reaplicar la configuración para reflejar el nuevo orden
     setTimeout(() => {

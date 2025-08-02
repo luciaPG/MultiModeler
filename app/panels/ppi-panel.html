@@ -1,0 +1,240 @@
+<div class="panel" id="ppi-panel" data-panel-type="ppi">
+  <div class="panel-header">
+    <div class="panel-title">
+      <i class="fas fa-chart-line"></i>
+      <span>PPI Indicators</span>
+    </div>
+    <div class="panel-actions">
+      <button class="panel-btn" title="Ocultar"><i class="fas fa-eye-slash"></i></button>
+      <button class="panel-btn" title="Solo este panel"><i class="fas fa-expand"></i></button>
+    </div>
+  </div>
+
+  <div class="panel-tabs">
+    <div class="tab active" data-tab="template" onclick="ppiManager.switchTab('template')">Plantilla</div>
+    <div class="tab" data-tab="form" onclick="ppiManager.switchTab('form')">Formulario</div>
+    <div class="tab" data-tab="visualization" onclick="ppiManager.switchTab('visualization')">Visualización</div>
+  </div>
+
+  <div class="panel-content">
+    <!-- PESTAÑA 1: MODO PLANTILLA -->
+    <div id="template-tab" class="tab-content active">
+      <div class="ppi-controls">
+        <div class="file-upload-section">
+          <h4>Importar desde archivo</h4>
+          <div class="file-upload-area" id="file-upload-area">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>Arrastra archivos aquí o haz clic para seleccionar</p>
+            <p class="file-types">Soportado: .doc, .txt, .json</p>
+            <input type="file" id="ppi-file-input" accept=".doc,.txt,.json" multiple style="display: none;">
+          </div>
+          <button class="btn btn-primary btn-full-width" onclick="document.getElementById('ppi-file-input').click()">
+            <i class="fas fa-folder-open"></i> Seleccionar Archivos
+          </button>
+        </div>
+
+        <div class="template-example">
+          <h4>Ejemplo de plantilla</h4>
+          <div class="template-preview">
+            <pre><code>Proceso: Gestión de Incidencias
+Objetivo de negocio: Reducir tiempo de resolución
+Definición de medida: Tiempo desde apertura hasta cierre
+Objetivo: Menos de 24 horas
+Alcance: Mensual
+Fuente: Sistema de helpdesk
+Responsable: Jefe de soporte
+Informado: Responsable TI
+Comentarios: Indicador SLA crítico</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PESTAÑA 2: MODO FORMULARIO DINÁMICO -->
+    <div id="form-tab" class="tab-content">
+      <div class="ppi-form-container">
+        <form id="ppi-form" class="ppi-form">
+          <div class="form-section collapsible">
+            <div class="form-section-header" onclick="ppiManager.toggleSection(this)">
+              <h4>Información General</h4>
+              <i class="fas fa-chevron-down section-icon"></i>
+            </div>
+            <div class="form-section-content">
+              <div class="form-group">
+                <label for="process-name">Proceso *</label>
+                <input type="text" id="process-name" name="process" required 
+                       placeholder="Ej: Gestión de Incidencias">
+              </div>
+
+              <div class="form-group">
+                <label for="business-objective">Objetivo de Negocio *</label>
+                <textarea id="business-objective" name="businessObjective" required
+                          placeholder="Descripción del objetivo de negocio"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section collapsible">
+            <div class="form-section-header" onclick="ppiManager.toggleSection(this)">
+              <h4>Definición de Medida</h4>
+              <i class="fas fa-chevron-down section-icon"></i>
+            </div>
+            <div class="form-section-content">
+              <div class="form-group">
+                <label for="measure-type">Tipo de Medida *</label>
+                <select id="measure-type" name="measureType" required onchange="ppiManager.onMeasureTypeChange()">
+                  <option value="">Seleccionar tipo...</option>
+                  <option value="time">Time Measure</option>
+                  <option value="count">Count Measure</option>
+                  <option value="state">State Condition</option>
+                  <option value="data">Data Measure</option>
+                  <option value="derived">Derived Measure</option>
+                  <option value="aggregated">Aggregated Measure</option>
+                </select>
+              </div>
+
+              <div class="form-group" id="time-measure-fields" style="display: none;">
+                <label for="from-event">Desde Evento</label>
+                <input type="text" id="from-event" name="fromEvent" 
+                       placeholder="Ej: ticket abierto">
+                <label for="to-event">Hasta Evento</label>
+                <input type="text" id="to-event" name="toEvent" 
+                       placeholder="Ej: ticket resuelto">
+                <label for="time-unit">Unidad de Tiempo</label>
+                <select id="time-unit" name="timeUnit">
+                  <option value="minutes">Minutos</option>
+                  <option value="hours">Horas</option>
+                  <option value="days">Días</option>
+                </select>
+              </div>
+
+              <div class="form-group" id="count-measure-fields" style="display: none;">
+                <label for="count-element">Elemento a Contar</label>
+                <input type="text" id="count-element" name="countElement" 
+                       placeholder="Ej: incidencias resueltas">
+              </div>
+
+              <div class="form-group">
+                <label for="measure-definition">Definición de Medida *</label>
+                <textarea id="measure-definition" name="measureDefinition" required
+                          placeholder="Descripción detallada de la medida"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section collapsible">
+            <div class="form-section-header" onclick="ppiManager.toggleSection(this)">
+              <h4>Objetivos y Alcance</h4>
+              <i class="fas fa-chevron-down section-icon"></i>
+            </div>
+            <div class="form-section-content">
+              <div class="form-group">
+                <label for="target">Objetivo *</label>
+                <input type="text" id="target" name="target" required 
+                       placeholder="Ej: menos de 24h">
+              </div>
+
+              <div class="form-group">
+                <label for="scope">Alcance *</label>
+                <select id="scope" name="scope" required>
+                  <option value="">Seleccionar alcance...</option>
+                  <option value="daily">Diario</option>
+                  <option value="weekly">Semanal</option>
+                  <option value="monthly">Mensual</option>
+                  <option value="quarterly">Trimestral</option>
+                  <option value="yearly">Anual</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section collapsible">
+            <div class="form-section-header" onclick="ppiManager.toggleSection(this)">
+              <h4>Responsabilidades y Fuentes</h4>
+              <i class="fas fa-chevron-down section-icon"></i>
+            </div>
+            <div class="form-section-content">
+              <div class="form-group">
+                <label for="source">Fuente de Datos *</label>
+                <input type="text" id="source" name="source" required 
+                       placeholder="Ej: sistema de helpdesk">
+              </div>
+
+              <div class="form-group">
+                <label for="responsible">Responsable *</label>
+                <input type="text" id="responsible" name="responsible" required 
+                       placeholder="Ej: Jefe de soporte">
+              </div>
+
+              <div class="form-group">
+                <label for="informed">Informados</label>
+                <input type="text" id="informed" name="informed" 
+                       placeholder="Ej: Responsable TI, Director Operaciones">
+              </div>
+
+              <div class="form-group">
+                <label for="comments">Comentarios</label>
+                <textarea id="comments" name="comments" 
+                          placeholder="Comentarios adicionales"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <div class="form-actions-left">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="ppiManager.expandAllSections()">
+                <i class="fas fa-expand-alt"></i> Expandir Todo
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="ppiManager.collapseAllSections()">
+                <i class="fas fa-compress-alt"></i> Colapsar Todo
+              </button>
+            </div>
+            <div class="form-actions-right">
+              <button type="button" class="btn btn-secondary" onclick="ppiManager.clearForm()">
+                <i class="fas fa-eraser"></i> Limpiar
+              </button>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Crear PPI
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- PESTAÑA 3: VISUALIZACIÓN -->
+    <div id="visualization-tab" class="tab-content">
+      <div class="ppi-visualization-container">
+        <div class="ppi-list-header">
+          <h4>PPIs Definidos</h4>
+          <button class="btn btn-secondary btn-sm" onclick="ppiManager.refreshPPIList()">
+            <i class="fas fa-sync-alt"></i> Actualizar
+          </button>
+        </div>
+        
+        <div class="ppi-list" id="ppi-list">
+          <!-- Los PPIs se cargarán dinámicamente aquí -->
+        </div>
+
+        <div class="ppi-detail-modal" id="ppi-detail-modal" style="display: none;">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3 id="modal-ppi-title">Detalle del PPI</h3>
+              <button class="modal-close" onclick="ppiManager.closeDetailModal()">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div class="modal-body" id="modal-ppi-content">
+              <!-- Contenido del PPI -->
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" onclick="ppiManager.closeDetailModal()">Cerrar</button>
+              <button class="btn btn-primary" onclick="ppiManager.editPPI()">Editar</button>
+              <button class="btn btn-danger" onclick="ppiManager.deletePPI()">Eliminar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 
