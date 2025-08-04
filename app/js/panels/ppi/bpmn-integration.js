@@ -137,6 +137,25 @@ class BpmnIntegration {
     if (event.originalEvent.button === 2) { // Clic derecho
       this.showContextMenu(event.originalEvent, element);
     }
+    
+    // Manejar clic izquierdo en elementos PPI
+    if (event.originalEvent.button === 0) { // Clic izquierdo
+      this.handlePPIElementSelection(element);
+    }
+  }
+
+  handlePPIElementSelection(element) {
+    // Verificar si es un elemento PPI o hijo de PPI
+    const isPPIElement = element.type === 'PPINOT:Ppi' || 
+                        element.type === 'PPINOT:Scope' || 
+                        element.type === 'PPINOT:Target' ||
+                        element.type === 'PPINOT:Measure' ||
+                        element.type === 'PPINOT:Condition';
+    
+    if (isPPIElement && window.ppiManager && window.ppiManager.ui && window.ppiManager.ui.setActivePPI) {
+      window.ppiManager.ui.setActivePPI(element.id);
+      console.log(`🎯 Elemento PPI clickeado: ${element.id} (tipo: ${element.type})`);
+    }
   }
 
   showContextMenu(event, element) {

@@ -63,6 +63,7 @@ if (typeof window.PPIUI === 'undefined') {
     const isComplete = completedFields === totalFields;
     
     div.className = `ppi-card ${!isComplete ? 'needs-attention' : ''}`;
+    div.setAttribute('data-ppi-id', ppi.id);
     
     div.innerHTML = `
       <div class="card-header">
@@ -70,7 +71,7 @@ if (typeof window.PPIUI === 'undefined') {
           <i class="${measureType.icon}"></i>
         </div>
         <div class="header-content">
-          <h3 class="card-title" title="${cardTitle}">${this.core.truncateText(cardTitle, 50)}</h3>
+          <h3 class="card-title">${this.core.truncateText(cardTitle, 50)}</h3>
           <div class="meta-info">
             <div class="badges-container">
               <!-- Sin badges de completitud -->
@@ -78,13 +79,13 @@ if (typeof window.PPIUI === 'undefined') {
           </div>
         </div>
         <div class="actions-panel">
-          <button class="icon-btn primary" onclick="ppiManager.viewPPI('${ppi.id}')" title="Ver detalles">
+          <button class="icon-btn primary" onclick="ppiManager.viewPPI('${ppi.id}')">
             <i class="fas fa-eye"></i>
           </button>
-          <button class="icon-btn secondary" onclick="ppiManager.editPPI('${ppi.id}')" title="Editar">
+          <button class="icon-btn secondary" onclick="ppiManager.editPPI('${ppi.id}')">
             <i class="fas fa-edit"></i>
           </button>
-          <button class="icon-btn danger" onclick="ppiManager.confirmDeletePPI('${ppi.id}')" title="Eliminar">
+          <button class="icon-btn danger" onclick="ppiManager.confirmDeletePPI('${ppi.id}')">
             <i class="fas fa-trash-alt"></i>
           </button>
         </div>
@@ -96,24 +97,24 @@ if (typeof window.PPIUI === 'undefined') {
             <div class="field-group target-group">
               <i class="fas fa-bullseye field-icon target-icon"></i>
               <span class="field-label">Target:</span>
-              <span class="field-value target-value" title="${ppi.target || 'No definido'}">
-                ${ppi.target?this.core.truncateText(ppi.target || 'No definido', 35):'No definido'}
+              <span class="field-value target-value">
+                ${ppi.target ? this.core.truncateText(ppi.target, 60) : 'No definido'}
               </span>
             </div>
             
             <div class="field-group scope-group">
               <i class="fas fa-crosshairs field-icon scope-icon"></i>
               <span class="field-label">Scope:</span>
-              <span class="field-value scope-value" title="${ppi.scope || 'Sin scope'}">
-                ${this.core.truncateText(ppi.scope || 'Sin scope', 35)}
+              <span class="field-value scope-value">
+                ${this.core.truncateText(ppi.scope || 'Sin scope', 60)}
               </span>
             </div>
             
             <div class="field-group responsible-group">
               <i class="fas fa-user-tie field-icon responsible-icon"></i>
               <span class="field-label">Responsable:</span>
-              <span class="field-value responsible-value" title="${ppi.responsible || 'No asignado'}">
-                ${this.core.truncateText(ppi.responsible || 'No asignado', 45)}
+              <span class="field-value responsible-value">
+                ${this.core.truncateText(ppi.responsible || 'No asignado', 70)}
               </span>
             </div>
           </div>
@@ -122,7 +123,7 @@ if (typeof window.PPIUI === 'undefined') {
             <div class="info-line description">
               <div class="description-group">
                 <i class="fas fa-lightbulb field-icon description-icon"></i>
-                <span class="field-value description-text" title="${ppi.businessObjective}">
+                <span class="field-value description-text">
                   ${this.core.truncateText(ppi.businessObjective, 140)}
                 </span>
               </div>
@@ -144,8 +145,12 @@ if (typeof window.PPIUI === 'undefined') {
     const totalFields = 4;
     const isComplete = completedFields === totalFields;
     
-    // Actualizar clase del elemento
+    // Actualizar clase del elemento (preservar estado activo si existe)
+    const wasActive = element.classList.contains('active-working');
     element.className = `ppi-card ${!isComplete ? 'needs-attention' : ''}`;
+    if (wasActive) {
+      element.classList.add('active-working');
+    }
     
     // Actualizar título
     const titleElement = element.querySelector('.card-title');
@@ -206,7 +211,7 @@ if (typeof window.PPIUI === 'undefined') {
           <div class="info-line description">
             <div class="description-group">
               <i class="fas fa-lightbulb field-icon description-icon"></i>
-              <span class="field-value description-text" title="${ppi.businessObjective}">
+              <span class="field-value description-text">
                 ${this.core.truncateText(ppi.businessObjective, 140)}
               </span>
             </div>
@@ -1104,7 +1109,6 @@ if (typeof window.PPIUI === 'undefined') {
         flex-direction: column;
       }
 
-
       /* Estados especiales de card */
       .ppi-card.has-bpmn-data {
         background: linear-gradient(135deg, #fafbff 0%, #f8f9fa 100%);
@@ -1120,6 +1124,39 @@ if (typeof window.PPIUI === 'undefined') {
         background: var(--ppi-danger);
         border-radius: 50%;
         animation: pulse 2s infinite;
+        z-index: 1001;
+      }
+
+      .ppi-card.active-working::after {
+        content: '';
+        position: absolute;
+        top: var(--spacing-sm);
+        right: var(--spacing-sm);
+        width: 10px;
+        height: 10px;
+        background: var(--ppi-success) !important;
+        border-radius: 50%;
+        box-shadow: 0 0 8px rgba(67, 233, 123, 0.6);
+        animation: glow 1.5s ease-in-out infinite alternate !important;
+        z-index: 1001;
+      }
+
+      /* Estado activo tiene prioridad sobre needs-attention */
+      .ppi-card.needs-attention.active-working::after {
+        background: var(--ppi-success) !important;
+        width: 10px !important;
+        height: 10px !important;
+        animation: glow 1.5s ease-in-out infinite alternate !important;
+        z-index: 1001;
+      }
+
+      @keyframes glow {
+        from {
+          box-shadow: 0 0 8px rgba(67, 233, 123, 0.6);
+        }
+        to {
+          box-shadow: 0 0 15px rgba(67, 233, 123, 0.9);
+        }
       }
 
       /* Header de la card */
@@ -1161,6 +1198,19 @@ if (typeof window.PPIUI === 'undefined') {
         margin-bottom: 5px;
         line-height: 1.2;
         word-wrap: break-word;
+        position: relative;
+      }
+
+      /* Asegurar que los títulos no tengan pseudo-elementos no deseados */
+      .card-title::before,
+      .card-title::after {
+        display: none !important;
+      }
+
+      /* Prevenir pseudo-elementos no deseados en h3 elementos */
+      .ppi-card h3::before,
+      .ppi-card h3::after {
+        display: none !important;
       }
 
       .meta-info {
@@ -1517,22 +1567,15 @@ if (typeof window.PPIUI === 'undefined') {
         scroll-behavior: smooth;
       }
 
-      /* Tooltips mejorados */
-      [title]:hover::after {
-        content: attr(title);
-        position: absolute;
-        background: var(--bg-dark);
-        color: white;
-        padding: var(--spacing-xs) var(--spacing-sm);
-        border-radius: var(--border-radius-sm);
-        font-size: 11px;
-        white-space: nowrap;
-        z-index: 1000;
-        bottom: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        margin-bottom: var(--spacing-xs);
-        pointer-events: none;
+      /* Eliminar TODOS los tooltips nativos del navegador */
+      .ppi-card *[title],
+      .ppi-card *::after,
+      .ppi-card *::before {
+        title: none !important;
+      }
+      
+      .ppi-card * {
+        title: none !important;
       }
 
       /* Optimización para alta densidad de información */
@@ -1861,6 +1904,80 @@ if (typeof window.PPIUI === 'undefined') {
     });
     
 
+  }
+
+  // === ACTIVE WORKING STATE MANAGEMENT ===
+  
+  setActivePPI(elementId) {
+    // Limpiar todos los estados activos anteriores
+    this.clearAllActivePPIs();
+    
+    // Encontrar el PPI asociado al elemento
+    const ppi = this.findPPIByElement(elementId);
+    if (!ppi) return;
+    
+    // Marcar la card como activa
+    this.markPPICardAsActive(ppi.id);
+    
+    console.log(`🎯 PPI activo establecido: ${ppi.id} (elemento: ${elementId})`);
+  }
+  
+  clearAllActivePPIs() {
+    const container = document.getElementById('ppi-list');
+    if (!container) return;
+    
+    const activeCards = container.querySelectorAll('.ppi-card.active-working');
+    activeCards.forEach(card => {
+      card.classList.remove('active-working');
+    });
+  }
+  
+  markPPICardAsActive(ppiId) {
+    const container = document.getElementById('ppi-list');
+    if (!container) return;
+    
+    const ppiCard = container.querySelector(`[data-ppi-id="${ppiId}"]`);
+    if (ppiCard) {
+      ppiCard.classList.add('active-working');
+      
+      // Añadir efecto visual de activación
+      ppiCard.style.transition = 'all 0.3s ease';
+      ppiCard.style.transform = 'scale(1.02)';
+      setTimeout(() => {
+        ppiCard.style.transform = 'scale(1)';
+      }, 300);
+    }
+  }
+  
+  findPPIByElement(elementId) {
+    // Buscar por elementId directo
+    let ppi = this.core.ppis.find(p => p.elementId === elementId);
+    if (ppi) return ppi;
+    
+    // Buscar por elementos padre de PPIs hijo (Target, Scope, etc.)
+    if (window.modeler) {
+      try {
+        const elementRegistry = window.modeler.get('elementRegistry');
+        const element = elementRegistry.get(elementId);
+        
+        if (element && element.parent) {
+          // Si es un elemento hijo PPI, buscar por el padre
+          const parentElement = element.parent;
+          ppi = this.core.ppis.find(p => p.elementId === parentElement.id);
+          if (ppi) return ppi;
+          
+          // También buscar por nombre del padre
+          if (parentElement.businessObject && parentElement.businessObject.name) {
+            ppi = this.core.ppis.find(p => p.title === parentElement.businessObject.name);
+            if (ppi) return ppi;
+          }
+        }
+      } catch (error) {
+        console.warn('Error buscando PPI por elemento:', error);
+      }
+    }
+    
+    return null;
   }
   };
 } 

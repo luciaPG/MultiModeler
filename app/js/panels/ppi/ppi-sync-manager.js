@@ -301,12 +301,31 @@ class PPISyncManager {
     }
 
   handleSelectionChange(event) {
-    // No procesar cambios de selección, solo para debugging
+    // Procesar cambios de selección para detectar elementos PPI activos
     const selection = event.newSelection || [];
     const ppiChildren = selection.filter(element => this.isPPIChildElement(element));
+    const ppiElements = selection.filter(element => this.isPPIElement(element));
     
     if (ppiChildren.length > 0) {
       console.log(`🎯 Elementos hijo PPI seleccionados: ${ppiChildren.map(el => el.id).join(', ')}`);
+      
+      // Notificar al UI que hay un elemento PPI activo
+      if (window.ppiManager && window.ppiManager.ui && window.ppiManager.ui.setActivePPI) {
+        // Usar el primer elemento hijo seleccionado
+        window.ppiManager.ui.setActivePPI(ppiChildren[0].id);
+      }
+    } else if (ppiElements.length > 0) {
+      console.log(`🎯 Elementos PPI principales seleccionados: ${ppiElements.map(el => el.id).join(', ')}`);
+      
+      // Notificar al UI que hay un elemento PPI principal activo
+      if (window.ppiManager && window.ppiManager.ui && window.ppiManager.ui.setActivePPI) {
+        window.ppiManager.ui.setActivePPI(ppiElements[0].id);
+      }
+    } else {
+      // Si no hay elementos PPI seleccionados, limpiar estado activo
+      if (window.ppiManager && window.ppiManager.ui && window.ppiManager.ui.clearAllActivePPIs) {
+        window.ppiManager.ui.clearAllActivePPIs();
+      }
     }
   }
 
