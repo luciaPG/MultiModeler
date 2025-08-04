@@ -1,63 +1,34 @@
-// === PPI Panel - Main Entry Point ===
-// Punto de entrada principal que carga los componentes modulares
-
-// Función para cargar scripts de forma dinámica
 async function loadPPIComponents() {
   try {
-    // Cargar scripts en orden secuencial para garantizar dependencias
-    console.log('🔄 Cargando PPI Core...');
     await loadScript('./js/panels/ppi/ppi-core.js');
-    
-    console.log('🔄 Cargando PPI UI...');
     await loadScript('./js/panels/ppi/ppi-ui.js');
-    
-    console.log('🔄 Cargando PPI Manager...');
     await loadScript('./js/panels/ppi/ppi-manager.js');
     
-    console.log('✅ PPI Panel - Arquitectura modular cargada');
-    
-    // Inicializar PPIManager
     try {
       if (typeof window.PPIManager !== 'undefined') {
         window.ppiManagerInstance = new window.PPIManager();
-        window.ppiManager = window.ppiManagerInstance; // Alias para compatibilidad
-        
-        // Funciones de debug globales
-        window.debugPPI = () => window.ppiManagerInstance.debugSearchPPIElements();
-        window.forceAnalyzePPIChildren = () => window.ppiManagerInstance.forceAnalyzePPIChildren();
-        window.forceRestorePPINOT = () => window.ppiManagerInstance.forceRestorePPINOTElements();
-        window.createSamplePPIs = () => window.ppiManagerInstance.createSamplePPIs();
-        
-        console.log('✅ PPIManager inicializado correctamente');
-      } else {
-        console.error('❌ PPIManager no está disponible');
+        window.ppiManager = window.ppiManagerInstance;
       }
     } catch (error) {
-      console.error('❌ Error inicializando PPIManager:', error);
+      // Error inicializando PPIManager
     }
     
-    // Verificar que ppiManager esté disponible globalmente
     if (window.ppiManagerInstance && typeof window.ppiManagerInstance.refreshPPIList === 'function') {
-      console.log('✅ ppiManager disponible globalmente');
+      // ppiManager disponible globalmente
     } else {
-      console.warn('⚠️ ppiManager no está completamente disponible. Esperando inicialización...');
-      // Esperar un poco más para la inicialización
       setTimeout(() => {
         if (window.ppiManagerInstance && typeof window.ppiManagerInstance.refreshPPIList === 'function') {
-          console.log('✅ ppiManager disponible después de espera');
-        } else {
-          console.error('❌ ppiManager no se pudo inicializar correctamente');
+          // ppiManager disponible después de espera
         }
       }, 1000);
     }
   } catch (error) {
-    console.error('❌ Error cargando componentes PPI:', error);
+    // Error cargando componentes PPI
   }
 }
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
-    // Verificar si el script ya está cargado
     if (document.querySelector(`script[src="${src}"]`)) {
       resolve();
       return;
@@ -65,24 +36,15 @@ function loadScript(src) {
 
     const script = document.createElement('script');
     script.src = src;
-    script.onload = () => {
-      console.log(`✅ Script cargado: ${src}`);
-      resolve();
-    };
-    script.onerror = (error) => {
-      console.error(`❌ Error cargando script: ${src}`, error);
-      reject(error);
-    };
+    script.onload = () => resolve();
+    script.onerror = (error) => reject(error);
     document.head.appendChild(script);
   });
 }
 
-// Funciones de fallback para evitar errores en el HTML
-// Estas funciones están disponibles inmediatamente
 function createPPIManagerFallback() {
   return {
     showCreatePPIModal: () => {
-      console.warn('Esperando inicialización de ppiManager...');
       setTimeout(() => {
         if (window.ppiManagerInstance && window.ppiManagerInstance.showCreatePPIModal) {
           window.ppiManagerInstance.showCreatePPIModal();
@@ -90,7 +52,6 @@ function createPPIManagerFallback() {
       }, 500);
     },
     exportPPIsToFile: () => {
-      console.warn('Esperando inicialización de ppiManager...');
       setTimeout(() => {
         if (window.ppiManagerInstance && window.ppiManagerInstance.exportPPIsToFile) {
           window.ppiManagerInstance.exportPPIsToFile();
@@ -98,7 +59,6 @@ function createPPIManagerFallback() {
       }, 500);
     },
     refreshPPIList: () => {
-      console.warn('Esperando inicialización de ppiManager...');
       setTimeout(() => {
         if (window.ppiManagerInstance && window.ppiManagerInstance.refreshPPIList) {
           window.ppiManagerInstance.refreshPPIList();
@@ -106,7 +66,6 @@ function createPPIManagerFallback() {
       }, 500);
     },
     forceAnalyzePPIChildren: () => {
-      console.warn('Esperando inicialización de ppiManager...');
       setTimeout(() => {
         if (window.ppiManagerInstance && window.ppiManagerInstance.forceAnalyzePPIChildren) {
           window.ppiManagerInstance.forceAnalyzePPIChildren();
@@ -114,7 +73,6 @@ function createPPIManagerFallback() {
       }, 500);
     },
     viewPPI: (id) => {
-      console.warn('Esperando inicialización de ppiManager...');
       setTimeout(() => {
         if (window.ppiManagerInstance && window.ppiManagerInstance.viewPPI) {
           window.ppiManagerInstance.viewPPI(id);
@@ -122,7 +80,6 @@ function createPPIManagerFallback() {
       }, 500);
     },
     editPPI: (id) => {
-      console.warn('Esperando inicialización de ppiManager...');
       setTimeout(() => {
         if (window.ppiManagerInstance && window.ppiManagerInstance.editPPI) {
           window.ppiManagerInstance.editPPI(id);
@@ -130,7 +87,6 @@ function createPPIManagerFallback() {
       }, 500);
     },
     confirmDeletePPI: (id) => {
-      console.warn('Esperando inicialización de ppiManager...');
       setTimeout(() => {
         if (window.ppiManagerInstance && window.ppiManagerInstance.confirmDeletePPI) {
           window.ppiManagerInstance.confirmDeletePPI(id);
@@ -138,7 +94,6 @@ function createPPIManagerFallback() {
       }, 500);
     },
     saveEditedPPI: (id) => {
-      console.warn('Esperando inicialización de ppiManager...');
       setTimeout(() => {
         if (window.ppiManagerInstance && window.ppiManagerInstance.saveEditedPPI) {
           window.ppiManagerInstance.saveEditedPPI(id);
@@ -146,7 +101,6 @@ function createPPIManagerFallback() {
       }, 500);
     },
     createSamplePPIs: () => {
-      console.warn('Esperando inicialización de ppiManager...');
       setTimeout(() => {
         if (window.ppiManagerInstance && window.ppiManagerInstance.createSamplePPIs) {
           window.ppiManagerInstance.createSamplePPIs();
@@ -156,12 +110,10 @@ function createPPIManagerFallback() {
   };
 }
 
-// Inicializar el fallback inmediatamente
 if (!window.ppiManager) {
   window.ppiManager = createPPIManagerFallback();
 }
 
-// Cargar componentes cuando el DOM esté listo
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', loadPPIComponents);
 } else {

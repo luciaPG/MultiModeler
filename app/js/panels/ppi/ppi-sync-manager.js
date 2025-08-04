@@ -1,7 +1,3 @@
-// === PPI Synchronization Manager ===
-// Sistema mejorado para sincronizar PPIs, targets y scopes entre canvas y pantalla
-
-// Prevent duplicate class declaration
 if (typeof window.PPISyncManager === 'undefined') {
 class PPISyncManager {
   constructor(ppiManager) {
@@ -9,7 +5,6 @@ class PPISyncManager {
     this.core = ppiManager.core;
     this.ui = ppiManager.ui;
     
-    // Estado de sincronización
     this.syncState = {
       isSyncing: false,
       lastSyncTime: 0,
@@ -17,19 +12,16 @@ class PPISyncManager {
       syncQueue: []
     };
     
-    // Cache de relaciones
     this.relationshipCache = new Map();
     this.elementCache = new Map();
     
-         // Configuración
-     this.syncConfig = {
-       autoSync: true,
-       syncInterval: 1000, // 1 segundo (más rápido)
-       maxRetries: 3,
-       debounceDelay: 200 // Más rápido (200ms en lugar de 500ms)
-     };
+    this.syncConfig = {
+      autoSync: true,
+      syncInterval: 1000,
+      maxRetries: 3,
+      debounceDelay: 200
+    };
     
-    // Timers
     this.syncTimer = null;
     this.debounceTimer = null;
     
@@ -37,14 +29,12 @@ class PPISyncManager {
   }
 
   init() {
-    console.log('🔄 PPISyncManager inicializado');
     this.setupEventListeners();
     this.startAutoSync();
   }
 
   setupEventListeners() {
     if (!window.modeler) {
-      console.warn('⚠️ Modeler no disponible para PPISyncManager');
       return;
     }
 
@@ -95,16 +85,14 @@ class PPISyncManager {
       this.handleDropEnd(event);
     });
 
-    // NUEVOS: Eventos adicionales para detectar cambios de padre
+    // Eventos adicionales para detectar cambios de padre
     eventBus.on('modeling.moveShape', () => {
-      console.log('🔄 [DEBUG] modeling.moveShape detectado');
       setTimeout(() => {
         this.checkAllParentChanges();
       }, 50);
     });
 
     eventBus.on('elements.move', () => {
-      console.log('🔄 [DEBUG] elements.move detectado');
       setTimeout(() => {
         this.checkAllParentChanges();
       }, 50);
@@ -115,10 +103,8 @@ class PPISyncManager {
       this.handleSelectionChange(event);
     });
 
-    // NUEVO: Evento para detectar cambios de propiedades que podrían afectar relaciones padre-hijo
+    // Evento para detectar cambios de propiedades que podrían afectar relaciones padre-hijo
     eventBus.on('element.changed', (event) => {
-      console.log('🔄 [DEBUG] element.changed detectado');
-      // Verificar si el cambio afecta a elementos que podrían ser hijos PPI
       if (event.element && this.isPPIChildElement(event.element)) {
         setTimeout(() => {
           this.checkAllParentChanges();
@@ -126,29 +112,24 @@ class PPISyncManager {
       }
     });
 
-    // NUEVO: Eventos adicionales para capturar TODOS los cambios en el canvas
+    // Eventos adicionales para capturar cambios en el canvas
     eventBus.on('shape.move', () => {
-      console.log('🔄 [DEBUG] shape.move detectado');
       setTimeout(() => {
         this.checkAllParentChanges();
       }, 50);
     });
 
     eventBus.on('element.updateParent', () => {
-      console.log('🔄 [DEBUG] element.updateParent detectado');
       setTimeout(() => {
         this.checkAllParentChanges();
       }, 50);
     });
 
     eventBus.on('modeling.updateProperties', () => {
-      console.log('🔄 [DEBUG] modeling.updateProperties detectado');
       setTimeout(() => {
         this.checkAllParentChanges();
       }, 50);
     });
-
-    console.log('✅ Event listeners configurados en PPISyncManager');
   }
 
   // === HANDLERS DE EVENTOS ===

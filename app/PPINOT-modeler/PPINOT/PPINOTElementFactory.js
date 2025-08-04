@@ -82,7 +82,6 @@ export class PPINOTNotation {
     const defaultTexts = {
       'PPINOT:Target': 'Target',
       'PPINOT:Scope': 'Scope',
-      'PPINOT:Ppi': 'PPI',
       'PPINOT:BaseMeasure': 'Measure',
       'PPINOT:CountMeasure': 'Count',
       'PPINOT:TimeMeasure': 'Time',
@@ -100,6 +99,11 @@ export class PPINOTNotation {
       'PPINOT:CyclicTimeMeasure': 'Cyclic Time',
       'PPINOT:CyclicTimeAggregatedMeasure': 'Cyclic Time Aggregated'
     };
+
+    // Para PPI, usar el ID del elemento en lugar de "PPI"
+    if (elementType === 'PPINOT:Ppi') {
+      return elementId || elementType.replace('PPINOT:', '');
+    }
 
     // Para scope y target, usar el ID como fallback si no hay texto por defecto
     if (elementType === 'PPINOT:Scope' || elementType === 'PPINOT:Target') {

@@ -44,7 +44,6 @@ class PPISyncUI {
       const status = this.ppiManager.getSyncStatus();
       this.updateStatusDisplay(status);
     } catch (error) {
-      console.warn('⚠️ Error actualizando estado de sincronización:', error);
       this.showErrorStatus('Error de estado');
     }
   }

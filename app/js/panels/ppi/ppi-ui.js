@@ -47,7 +47,7 @@ if (typeof window.PPIUI === 'undefined') {
     
     // Calcular progreso/completitud
     const completedFields = [ppi.title, ppi.target, ppi.scope, ppi.responsible].filter(Boolean).length;
-    console.log('completedFields'+"title:"+ ppi.title, "target:"+ ppi.target, "scope:"+ ppi.scope, "responsible:"+ ppi.responsible);
+
     const totalFields = 4;
     const completionPercentage = Math.round((completedFields / totalFields) * 100);
     const isComplete = completionPercentage === 100;
@@ -135,11 +135,7 @@ if (typeof window.PPIUI === 'undefined') {
 
   // Función para actualizar un elemento PPI existente sin recrearlo
   updatePPIElement(element, ppi) {
-    console.log(`🔄 Actualizando elemento PPI ${ppi.id}:`, {
-      target: ppi.target,
-      scope: ppi.scope,
-      businessObjective: ppi.businessObjective
-    });
+    
     
     // Calcular datos actualizados
     const completedFields = [ppi.title, ppi.target, ppi.scope, ppi.responsible].filter(Boolean).length;
@@ -156,6 +152,7 @@ if (typeof window.PPIUI === 'undefined') {
       const cardTitle = ppi.title || ppi.id;
       titleElement.textContent = this.core.truncateText(cardTitle, 50);
       titleElement.setAttribute('title', cardTitle);
+
     }
     
     // Actualizar badges
@@ -260,7 +257,7 @@ if (typeof window.PPIUI === 'undefined') {
       element.style.transform = 'scale(1)';
     }, 300);
     
-    console.log(`✅ Elemento PPI ${ppi.id} actualizado correctamente`);
+
     return element;
   }
 
@@ -273,6 +270,8 @@ if (typeof window.PPIUI === 'undefined') {
     // Use filtered PPIs if available, otherwise use all PPIs
     const ppisToShow = this.core.filteredPPIs.length > 0 ? this.core.filteredPPIs : this.core.ppis;
     
+
+    
     // Crear un mapa de PPIs existentes para evitar recrear elementos innecesariamente
     const existingCards = new Map();
     container.querySelectorAll('.ppi-card[data-ppi-id]').forEach(card => {
@@ -280,18 +279,7 @@ if (typeof window.PPIUI === 'undefined') {
       existingCards.set(ppiId, card);
     });
     
-    if (ppisToShow.length === 0) {
-      container.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-icon">
-            <i class="fas fa-chart-line"></i>
-          </div>
-          <h3>${this.core.ppis.length === 0 ? 'No hay PPIs definidos' : 'No se encontraron PPIs'}</h3>
-          <p>${this.core.ppis.length === 0 ? 'Los PPIs se crearán automáticamente cuando agregues elementos PPI al canvas BPMN' : 'Intenta ajustar los filtros de búsqueda'}</p>
-        </div>
-      `;
-      return;
-    }
+ 
     
     // Añadir estilos mejorados
     this.addImprovedStyles();
@@ -319,12 +307,7 @@ if (typeof window.PPIUI === 'undefined') {
         ppiElement.setAttribute('data-ppi-data', currentData);
         newCards.add(ppi.id);
         
-        // Log para debugging
-        console.log(`🔄 Actualizando card PPI: ${ppi.id}`, {
-          target: ppi.target,
-          scope: ppi.scope,
-          updatedAt: ppi.updatedAt
-        });
+
       } else {
         // Crear nuevo elemento
         const newElement = this.createPPIElement(ppi);
@@ -341,7 +324,7 @@ if (typeof window.PPIUI === 'undefined') {
         fragment.appendChild(newElement);
         newCards.add(ppi.id);
         
-        console.log(`➕ Creando nueva card PPI: ${ppi.id}`);
+
       }
     });
     
@@ -365,7 +348,7 @@ if (typeof window.PPIUI === 'undefined') {
       container.appendChild(newElement);
     });
     
-    console.log(`✅ Lista de PPIs actualizada: ${ppisToShow.length} PPIs mostrados`);
+
   }
 
   filterPPIs() {
@@ -1461,17 +1444,17 @@ if (typeof window.PPIUI === 'undefined') {
     
     const ppiElement = container.querySelector(`[data-ppi-id="${ppiId}"]`);
     if (!ppiElement) {
-      console.warn(`⚠️ No se encontró la card PPI con ID: ${ppiId}`);
+
       return;
     }
     
     const ppi = this.core.ppis.find(p => p.id === ppiId);
     if (!ppi) {
-      console.warn(`⚠️ No se encontró el PPI con ID: ${ppiId}`);
+
       return;
     }
     
-    console.log(`🔄 Forzando actualización de card PPI: ${ppiId}`);
+
     this.updatePPIElement(ppiElement, ppi);
   }
 
@@ -1506,7 +1489,7 @@ if (typeof window.PPIUI === 'undefined') {
       }
     });
     
-    console.log(`✅ Actualizadas ${updatedCount} cards de PPIs`);
+
   }
   };
 } 

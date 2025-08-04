@@ -71,6 +71,7 @@ class PPICore {
   updatePPI(ppiId, updatedData) {
     const index = this.ppis.findIndex(ppi => ppi.id === ppiId);
     if (index !== -1) {
+
       this.ppis[index] = { 
         ...this.ppis[index], 
         ...updatedData, 
@@ -103,12 +104,9 @@ class PPICore {
 
   deletePPIFromCanvas(ppiId, ppiData = null) {
     try {
-      console.log(`🔄 Intentando eliminar PPI del canvas: ${ppiId}`);
-      
-      if (!window.modeler) {
-        console.warn('⚠️ Modeler no disponible para eliminar PPI del canvas');
-        return;
-      }
+          if (!window.modeler) {
+      return;
+    }
       
       // Use provided PPI data or find it in the list
       let ppi = ppiData;
@@ -117,17 +115,13 @@ class PPICore {
       }
       
       if (!ppi) {
-        console.log(`ℹ️ PPI no encontrado en la lista: ${ppiId}`);
         return;
       }
       
       const elementId = ppi.elementId;
       if (!elementId) {
-        console.log(`ℹ️ PPI ${ppiId} no tiene elementId asociado`);
         return;
       }
-      
-      console.log(`🔍 Buscando elemento en canvas con elementId: ${elementId}`);
       
       const elementRegistry = window.modeler.get('elementRegistry');
       const modeling = window.modeler.get('modeling');
@@ -135,8 +129,6 @@ class PPICore {
       // Find the PPI element on the canvas using elementId
       const ppiElement = elementRegistry.get(elementId);
       if (ppiElement) {
-        console.log(`🗑️ PPI encontrado en canvas: ${elementId} (tipo: ${ppiElement.type})`);
-        
         // Find all child elements (scope, target, measure, condition)
         const allElements = elementRegistry.getAll();
         const childElements = allElements.filter(el => 
@@ -154,29 +146,22 @@ class PPICore {
           )
         );
         
-        console.log(`🎯 Elementos hijo encontrados: ${childElements.length}`);
-        
         // Remove child elements first
         childElements.forEach(child => {
           try {
-            console.log(`🗑️ Eliminando elemento hijo: ${child.id} (${child.type})`);
             modeling.removeElements([child]);
           } catch (error) {
-            console.warn(`⚠️ Error eliminando hijo ${child.id}:`, error);
+            // Error eliminando hijo
           }
         });
         
         // Remove the PPI element
         try {
-          console.log(`🗑️ Eliminando elemento PPI principal: ${elementId}`);
           modeling.removeElements([ppiElement]);
-          console.log(`✅ PPI eliminado exitosamente del canvas: ${elementId}`);
         } catch (error) {
-          console.warn(`⚠️ Error eliminando PPI ${elementId}:`, error);
+          // Error eliminando PPI
         }
       } else {
-        console.log(`ℹ️ PPI no encontrado en canvas con elementId: ${elementId}`);
-        
         // Try to find by searching all elements for PPINOT types
         const allElements = elementRegistry.getAll();
         const ppiElements = allElements.filter(el => 
@@ -186,17 +171,15 @@ class PPICore {
         );
         
         if (ppiElements.length > 0) {
-          console.log(`🔍 Encontrados ${ppiElements.length} elementos PPINOT alternativos, intentando eliminar el primero`);
           try {
             modeling.removeElements([ppiElements[0]]);
-            console.log(`✅ PPI alternativo eliminado del canvas: ${ppiElements[0].id}`);
           } catch (error) {
-            console.warn(`⚠️ Error eliminando PPI alternativo ${ppiElements[0].id}:`, error);
+            // Error eliminando PPI alternativo
           }
         }
       }
     } catch (error) {
-      console.error('❌ Error eliminando PPI del canvas:', error);
+      // Error eliminando PPI del canvas
     }
   }
 
@@ -257,7 +240,7 @@ class PPICore {
       
       localStorage.setItem('ppis', JSON.stringify(this.ppis));
     } catch (e) {
-      console.error('Error al guardar PPIs:', e);
+      // Error al guardar PPIs
     }
   }
 
@@ -266,19 +249,15 @@ class PPICore {
       const saved = localStorage.getItem('ppis');
       if (saved) {
         this.ppis = JSON.parse(saved);
-        console.log('PPIs loaded from localStorage:', this.ppis.length);
-      } else {
-        console.log('No PPIs found in localStorage');
       }
     } catch (e) {
-      console.error('Error al cargar PPIs:', e);
       this.ppis = [];
     }
   }
 
   // === PPINOT ELEMENTS PERSISTENCE ===
   
-  savePPINOTElements(force = false) {
+  savePPINOTElements() {
     try {
       if (!this.isAutoSaveEnabled()) {
         return;
@@ -320,15 +299,7 @@ class PPICore {
         return isChildOfPPI && isValidChildType;
       });
       
-      // Debug: Log what we found
-      const scopeElements = ppiChildren.filter(el => 
-        el.type === 'PPINOT:Scope' || 
-        (el.businessObject && el.businessObject.$type === 'PPINOT:Scope')
-      );
-      const targetElements = ppiChildren.filter(el => 
-        el.type === 'PPINOT:Target' || 
-        (el.businessObject && el.businessObject.$type === 'PPINOT:Target')
-      );
+
       
 
       
@@ -485,7 +456,6 @@ class PPICore {
       this.pendingPPINOTRestore = ppinotData;
       return true;
     } catch (e) {
-      console.error('Error al cargar elementos PPINOT:', e);
       return false;
     }
   }
@@ -1077,7 +1047,6 @@ class PPICore {
     try {
       // Limpiar elementos procesados antiguos
       const currentTime = Date.now();
-      const maxAge = 24 * 60 * 60 * 1000; // 24 horas
       
       // Limpiar datos PPINOT muy antiguos (más de 7 días)
       const ppinotData = localStorage.getItem('ppinotElements');
@@ -1087,18 +1056,14 @@ class PPICore {
           const dataAge = currentTime - new Date(data.timestamp).getTime();
           if (dataAge > 7 * 24 * 60 * 60 * 1000) { // 7 días
             localStorage.removeItem('ppinotElements');
-            console.log('🧹 Datos PPINOT antiguos eliminados');
           }
         } catch (e) {
           // Si hay error al parsear, eliminar datos corruptos
           localStorage.removeItem('ppinotElements');
-          console.log('🧹 Datos PPINOT corruptos eliminados');
         }
       }
-      
-      console.log('🧹 Limpieza de datos completada');
     } catch (e) {
-      console.error('Error en limpieza de datos:', e);
+      // Error en limpieza de datos
     }
   }
 
@@ -1106,12 +1071,10 @@ class PPICore {
   
   enableAutoSave() {
     this.autoSaveEnabled = true;
-    console.log('💾 Auto-guardado habilitado');
   }
 
   disableAutoSave() {
     this.autoSaveEnabled = false;
-    console.log('💾 Auto-guardado deshabilitado');
   }
 
   isAutoSaveEnabled() {
