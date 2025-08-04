@@ -1,10 +1,11 @@
 // === PPI UI Components ===
 // Componentes de interfaz de usuario para el gestor de PPIs
 
-class PPIUI {
-  constructor(ppiCore) {
-    this.core = ppiCore;
-  }
+if (typeof window.PPIUI === 'undefined') {
+  window.PPIUI = class PPIUI {
+    constructor(ppiCore) {
+      this.core = ppiCore;
+    }
 
   // === UI INITIALIZATION ===
   
@@ -46,6 +47,7 @@ class PPIUI {
     
     // Calcular progreso/completitud
     const completedFields = [ppi.title, ppi.target, ppi.scope, ppi.responsible].filter(Boolean).length;
+    console.log('completedFields'+"title:"+ ppi.title, "target:"+ ppi.target, "scope:"+ ppi.scope, "responsible:"+ ppi.responsible);
     const totalFields = 4;
     const completionPercentage = Math.round((completedFields / totalFields) * 100);
     const isComplete = completionPercentage === 100;
@@ -93,7 +95,7 @@ class PPIUI {
               <i class="fas fa-bullseye field-icon target-icon"></i>
               <span class="field-label">Target:</span>
               <span class="field-value target-value" title="${ppi.target || 'No definido'}">
-                ${this.core.truncateText(ppi.target || 'No definido', 35)}
+                ${ppi.target?this.core.truncateText(ppi.target || 'No definido', 35):'No definido'}
               </span>
             </div>
             
@@ -131,47 +133,239 @@ class PPIUI {
     return div;
   }
 
+  // Función para actualizar un elemento PPI existente sin recrearlo
+  updatePPIElement(element, ppi) {
+    console.log(`🔄 Actualizando elemento PPI ${ppi.id}:`, {
+      target: ppi.target,
+      scope: ppi.scope,
+      businessObjective: ppi.businessObjective
+    });
+    
+    // Calcular datos actualizados
+    const completedFields = [ppi.title, ppi.target, ppi.scope, ppi.responsible].filter(Boolean).length;
+    const totalFields = 4;
+    const completionPercentage = Math.round((completedFields / totalFields) * 100);
+    const isComplete = completionPercentage === 100;
+    
+    // Actualizar clase del elemento
+    element.className = `ppi-card ${!isComplete ? 'needs-attention' : ''}`;
+    
+    // Actualizar título
+    const titleElement = element.querySelector('.card-title');
+    if (titleElement) {
+      const cardTitle = ppi.title || ppi.id;
+      titleElement.textContent = this.core.truncateText(cardTitle, 50);
+      titleElement.setAttribute('title', cardTitle);
+    }
+    
+    // Actualizar badges
+    const badgesContainer = element.querySelector('.badges-container');
+    if (badgesContainer) {
+      const badges = [];
+      if (isComplete) {
+        badges.push('<span class="status-badge complete"><i class="fas fa-check-circle"></i> Completo</span>');
+      } else {
+        badges.push('<span class="status-badge incomplete"><i class="fas fa-exclamation-triangle"></i> Incompleto</span>');
+      }
+      badgesContainer.innerHTML = badges.join('');
+    }
+    
+    // Actualizar target - MEJORADO
+    const targetElement = element.querySelector('.target-value');
+    if (targetElement) {
+      const targetText = ppi.target || 'No definido';
+      targetElement.textContent = this.core.truncateText(targetText, 35);
+      targetElement.setAttribute('title', targetText);
+      
+      // Añadir indicador visual si el target cambió
+      if (ppi.target) {
+        targetElement.classList.add('has-value');
+        targetElement.style.color = '#28a745'; // Verde para indicar que tiene valor
+      } else {
+        targetElement.classList.remove('has-value');
+        targetElement.style.color = '#6c757d'; // Gris para indicar que no tiene valor
+      }
+    }
+    
+    // Actualizar scope - MEJORADO
+    const scopeElement = element.querySelector('.scope-value');
+    if (scopeElement) {
+      const scopeText = ppi.scope || 'Sin scope';
+      scopeElement.textContent = this.core.truncateText(scopeText, 35);
+      scopeElement.setAttribute('title', scopeText);
+      
+      // Añadir indicador visual si el scope cambió
+      if (ppi.scope) {
+        scopeElement.classList.add('has-value');
+        scopeElement.style.color = '#28a745'; // Verde para indicar que tiene valor
+      } else {
+        scopeElement.classList.remove('has-value');
+        scopeElement.style.color = '#6c757d'; // Gris para indicar que no tiene valor
+      }
+    }
+    
+    // Actualizar responsible
+    const responsibleElement = element.querySelector('.responsible-value');
+    if (responsibleElement) {
+      const responsibleText = ppi.responsible || 'No asignado';
+      responsibleElement.textContent = this.core.truncateText(responsibleText, 45);
+      responsibleElement.setAttribute('title', responsibleText);
+    }
+    
+    // Actualizar business objective si existe
+    const descriptionLine = element.querySelector('.info-line.description');
+    if (ppi.businessObjective) {
+      if (!descriptionLine) {
+        // Crear la sección de descripción si no existe
+        const descriptionHTML = `
+          <div class="info-line description">
+            <div class="description-group">
+              <i class="fas fa-lightbulb field-icon description-icon"></i>
+              <span class="field-value description-text" title="${ppi.businessObjective}">
+                ${this.core.truncateText(ppi.businessObjective, 140)}
+              </span>
+            </div>
+          </div>
+        `;
+        const essentialInfo = element.querySelector('.essential-info');
+        if (essentialInfo) {
+          essentialInfo.insertAdjacentHTML('beforeend', descriptionHTML);
+        }
+      } else {
+        // Actualizar descripción existente
+        const descriptionText = descriptionLine.querySelector('.description-text');
+        if (descriptionText) {
+          descriptionText.textContent = this.core.truncateText(ppi.businessObjective, 140);
+          descriptionText.setAttribute('title', ppi.businessObjective);
+        }
+      }
+    } else if (descriptionLine) {
+      // Remover descripción si ya no hay business objective
+      descriptionLine.remove();
+    }
+    
+    // Actualizar botones de acción (en caso de que el ID haya cambiado)
+    const viewBtn = element.querySelector('button[onclick*="viewPPI"]');
+    const editBtn = element.querySelector('button[onclick*="editPPI"]');
+    const deleteBtn = element.querySelector('button[onclick*="confirmDeletePPI"]');
+    
+    if (viewBtn) viewBtn.setAttribute('onclick', `ppiManager.viewPPI('${ppi.id}')`);
+    if (editBtn) editBtn.setAttribute('onclick', `ppiManager.editPPI('${ppi.id}')`);
+    if (deleteBtn) deleteBtn.setAttribute('onclick', `ppiManager.confirmDeletePPI('${ppi.id}')`);
+    
+    // Añadir efecto visual de actualización
+    element.style.transition = 'all 0.3s ease';
+    element.style.transform = 'scale(1.02)';
+    setTimeout(() => {
+      element.style.transform = 'scale(1)';
+    }, 300);
+    
+    console.log(`✅ Elemento PPI ${ppi.id} actualizado correctamente`);
+    return element;
+  }
+
   // === LIST MANAGEMENT ===
   
   refreshPPIList() {
     const container = document.getElementById('ppi-list');
     if (!container) return;
     
-    // Add loading state
-    container.style.opacity = '0.6';
-    container.style.pointerEvents = 'none';
+    // Use filtered PPIs if available, otherwise use all PPIs
+    const ppisToShow = this.core.filteredPPIs.length > 0 ? this.core.filteredPPIs : this.core.ppis;
     
-    setTimeout(() => {
-      container.innerHTML = '';
-      
-      // Use filtered PPIs if available, otherwise use all PPIs
-      const ppisToShow = this.core.filteredPPIs.length > 0 ? this.core.filteredPPIs : this.core.ppis;
-      
-      if (ppisToShow.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon">
-              <i class="fas fa-chart-line"></i>
-            </div>
-            <h3>${this.core.ppis.length === 0 ? 'No hay PPIs definidos' : 'No se encontraron PPIs'}</h3>
-            <p>${this.core.ppis.length === 0 ? 'Los PPIs se crearán automáticamente cuando agregues elementos PPI al canvas BPMN' : 'Intenta ajustar los filtros de búsqueda'}</p>
+    // Crear un mapa de PPIs existentes para evitar recrear elementos innecesariamente
+    const existingCards = new Map();
+    container.querySelectorAll('.ppi-card[data-ppi-id]').forEach(card => {
+      const ppiId = card.getAttribute('data-ppi-id');
+      existingCards.set(ppiId, card);
+    });
+    
+    if (ppisToShow.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">
+            <i class="fas fa-chart-line"></i>
           </div>
-        `;
-      } else {
-        // Añadir estilos mejorados
-        this.addImprovedStyles();
-        
-        ppisToShow.forEach((ppi, index) => {
-          const ppiElement = this.createPPIElement(ppi);
-          ppiElement.style.animationDelay = `${index * 0.1}s`;
-          container.appendChild(ppiElement);
-        });
-      }
+          <h3>${this.core.ppis.length === 0 ? 'No hay PPIs definidos' : 'No se encontraron PPIs'}</h3>
+          <p>${this.core.ppis.length === 0 ? 'Los PPIs se crearán automáticamente cuando agregues elementos PPI al canvas BPMN' : 'Intenta ajustar los filtros de búsqueda'}</p>
+        </div>
+      `;
+      return;
+    }
+    
+    // Añadir estilos mejorados
+    this.addImprovedStyles();
+    
+    // Crear un fragmento para los nuevos elementos
+    const fragment = document.createDocumentFragment();
+    const newCards = new Set();
+    
+    ppisToShow.forEach((ppi, index) => {
+      let ppiElement = existingCards.get(ppi.id);
       
-      // Restore normal state
-      container.style.opacity = '1';
-      container.style.pointerEvents = 'auto';
-    }, 150);
+      if (ppiElement) {
+        // SIEMPRE actualizar el elemento existente para asegurar que los cambios se reflejen
+        this.updatePPIElement(ppiElement, ppi);
+        
+        // Actualizar los datos almacenados
+        const currentData = JSON.stringify({
+          title: ppi.title,
+          target: ppi.target,
+          scope: ppi.scope,
+          responsible: ppi.responsible,
+          businessObjective: ppi.businessObjective,
+          updatedAt: ppi.updatedAt
+        });
+        ppiElement.setAttribute('data-ppi-data', currentData);
+        newCards.add(ppi.id);
+        
+        // Log para debugging
+        console.log(`🔄 Actualizando card PPI: ${ppi.id}`, {
+          target: ppi.target,
+          scope: ppi.scope,
+          updatedAt: ppi.updatedAt
+        });
+      } else {
+        // Crear nuevo elemento
+        const newElement = this.createPPIElement(ppi);
+        const currentData = JSON.stringify({
+          title: ppi.title,
+          target: ppi.target,
+          scope: ppi.scope,
+          responsible: ppi.responsible,
+          businessObjective: ppi.businessObjective,
+          updatedAt: ppi.updatedAt
+        });
+        newElement.setAttribute('data-ppi-data', currentData);
+        newElement.style.animationDelay = `${index * 0.05}s`;
+        fragment.appendChild(newElement);
+        newCards.add(ppi.id);
+        
+        console.log(`➕ Creando nueva card PPI: ${ppi.id}`);
+      }
+    });
+    
+    // Limpiar elementos que ya no existen
+    const elementsToRemove = [];
+    existingCards.forEach((card, ppiId) => {
+      if (!newCards.has(ppiId)) {
+        elementsToRemove.push(card);
+      }
+    });
+    
+    elementsToRemove.forEach(element => {
+      if (element.parentNode) {
+        element.remove();
+      }
+    });
+    
+    // Añadir nuevos elementos (solo los que realmente son nuevos)
+    const fragmentChildren = Array.from(fragment.children);
+    fragmentChildren.forEach(newElement => {
+      container.appendChild(newElement);
+    });
+    
+    console.log(`✅ Lista de PPIs actualizada: ${ppisToShow.length} PPIs mostrados`);
   }
 
   filterPPIs() {
@@ -1199,10 +1393,26 @@ class PPIUI {
     this.showMessage(message, 'success');
   }
 
+  showWarningMessage(message) {
+    this.showMessage(message, 'warning');
+  }
+
   showMessage(message, type) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message message-${type}`;
     messageDiv.textContent = message;
+    
+    let backgroundColor;
+    switch(type) {
+      case 'success':
+        backgroundColor = '#28a745';
+        break;
+      case 'warning':
+        backgroundColor = '#ffc107';
+        break;
+      default:
+        backgroundColor = '#dc3545';
+    }
     
     messageDiv.style.cssText = `
       position: fixed;
@@ -1210,11 +1420,11 @@ class PPIUI {
       right: 20px;
       padding: 12px 20px;
       border-radius: 4px;
-      color: white;
+      color: ${type === 'warning' ? '#212529' : 'white'};
       font-weight: bold;
       z-index: 10000;
       box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-      ${type === 'success' ? 'background-color: #28a745;' : 'background-color: #dc3545;'}
+      background-color: ${backgroundColor};
     `;
     
     document.body.appendChild(messageDiv);
@@ -1243,7 +1453,60 @@ class PPIUI {
     if (linkedElement) linkedElement.textContent = stats.linked;
     if (timeElement) timeElement.textContent = stats.timeMeasures;
   }
-}
 
-// Exportar para uso global
-window.PPIUI = PPIUI; 
+  // NUEVO: Forzar actualización de una card específica
+  forceUpdatePPICard(ppiId) {
+    const container = document.getElementById('ppi-list');
+    if (!container) return;
+    
+    const ppiElement = container.querySelector(`[data-ppi-id="${ppiId}"]`);
+    if (!ppiElement) {
+      console.warn(`⚠️ No se encontró la card PPI con ID: ${ppiId}`);
+      return;
+    }
+    
+    const ppi = this.core.ppis.find(p => p.id === ppiId);
+    if (!ppi) {
+      console.warn(`⚠️ No se encontró el PPI con ID: ${ppiId}`);
+      return;
+    }
+    
+    console.log(`🔄 Forzando actualización de card PPI: ${ppiId}`);
+    this.updatePPIElement(ppiElement, ppi);
+  }
+
+  // NUEVO: Actualizar todas las cards que tengan cambios
+  updateChangedCards() {
+    const container = document.getElementById('ppi-list');
+    if (!container) return;
+    
+    const cards = container.querySelectorAll('.ppi-card[data-ppi-id]');
+    let updatedCount = 0;
+    
+    cards.forEach(card => {
+      const ppiId = card.getAttribute('data-ppi-id');
+      const ppi = this.core.ppis.find(p => p.id === ppiId);
+      
+      if (ppi) {
+        const storedData = card.getAttribute('data-ppi-data') || '';
+        const currentData = JSON.stringify({
+          title: ppi.title,
+          target: ppi.target,
+          scope: ppi.scope,
+          responsible: ppi.responsible,
+          businessObjective: ppi.businessObjective,
+          updatedAt: ppi.updatedAt
+        });
+        
+        if (storedData !== currentData) {
+          this.updatePPIElement(card, ppi);
+          card.setAttribute('data-ppi-data', currentData);
+          updatedCount++;
+        }
+      }
+    });
+    
+    console.log(`✅ Actualizadas ${updatedCount} cards de PPIs`);
+  }
+  };
+} 

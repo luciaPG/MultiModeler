@@ -37,6 +37,49 @@ function saveBpmnState() {
         if (result && result.xml && result.xml.trim().length > 0) {
           localStorage.setItem('bpmnDiagram', result.xml);
           showBpmnSaveIndicator();
+          
+          // GUARDAR TAMBIÉN LAS RELACIONES PPINOT EN EL XML
+          if (window.ppiManager && window.ppiManager.core) {
+            // Obtener las relaciones actuales y guardarlas en el XML
+            const elementRegistry = modeler.get('elementRegistry');
+            const allElements = elementRegistry.getAll();
+            
+            // Filtrar elementos hijos de PPINOT
+            const ppiChildren = allElements.filter(element => {
+              const isChildOfPPI = element.parent && 
+                (element.parent.type === 'PPINOT:Ppi' || 
+                 (element.parent.businessObject && element.parent.businessObject.$type === 'PPINOT:Ppi'));
+              
+              const isValidChildType = element.type === 'PPINOT:Scope' || 
+                element.type === 'PPINOT:Target' ||
+                element.type === 'PPINOT:Measure' ||
+                element.type === 'PPINOT:Condition' ||
+                (element.businessObject && (
+                  element.businessObject.$type === 'PPINOT:Scope' ||
+                  element.businessObject.$type === 'PPINOT:Target' ||
+                  element.businessObject.$type === 'PPINOT:Measure' ||
+                  element.businessObject.$type === 'PPINOT:Condition'
+                ));
+              
+              return isChildOfPPI && isValidChildType;
+            });
+            
+            // Crear relaciones para guardar
+            const relationships = ppiChildren.map(el => ({
+              childId: el.id,
+              parentId: el.parent ? el.parent.id : null,
+              childType: el.type,
+              parentType: el.parent ? el.parent.type : null,
+              childBusinessObjectType: el.businessObject ? el.businessObject.$type : null,
+              parentBusinessObjectType: el.parent && el.parent.businessObject ? el.parent.businessObject.$type : null,
+              childName: el.businessObject ? el.businessObject.name : '',
+              parentName: el.parent && el.parent.businessObject ? el.parent.businessObject.name : '',
+              timestamp: Date.now()
+            }));
+            
+            // Guardar relaciones en el XML
+            window.ppiManager.core.savePPINOTRelationshipsToXML(relationships);
+          }
         } else {
           console.warn('⚠️ XML BPMN vacío, no se guardó');
         }
@@ -132,6 +175,10 @@ function loadBpmnState() {
       modeler.importXML(savedDiagram).then(() => {
         // console.log('✅ Estado BPMN cargado automáticamente');
         updateUI('Diagrama BPMN restaurado.');
+        
+        // La restauración de relaciones PPINOT se maneja automáticamente en PPIManager
+        // No es necesario llamar aquí ya que se ejecuta cuando el modeler está listo
+        
       }).catch(err => {
         console.warn('❌ Error al cargar estado BPMN:', err);
         // console.log('📂 Creando nuevo diagrama BPMN...');

@@ -137,6 +137,20 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
       return currentText;
     }
 
+    // Para elementos scope y target, asegurar que siempre tengan un nombre válido
+    if (is(element, 'PPINOT:Scope') || is(element, 'PPINOT:Target')) {
+      // Si el businessObject tiene un nombre, usarlo
+      if (element.businessObject && element.businessObject.name && element.businessObject.name.trim() !== '') {
+        return element.businessObject.name;
+      }
+      // Si no, usar el ID como fallback
+      if (element.id) {
+        return element.id;
+      }
+      // Último fallback: usar el tipo
+      return element.type.replace('PPINOT:', '');
+    }
+
     // Solo asignar texto por defecto para conexiones PPINOT
     if (isPPINOTConnection(element)) {
       if (is(element, 'PPINOT:ToConnection')) {
@@ -284,6 +298,16 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
       return;
     }
 
+    // Asegurar que scope y target elementos siempre tengan un nombre válido
+    if (is(shape, 'PPINOT:Scope') || is(shape, 'PPINOT:Target')) {
+      if (!shape.businessObject) {
+        shape.businessObject = {};
+      }
+      if (!shape.businessObject.name || shape.businessObject.name.trim() === '') {
+        shape.businessObject.name = shape.id || shape.type.replace('PPINOT:', '');
+      }
+    }
+
     if (!shape.labelTarget && !shape.hidden && !shape.label && shouldCreateExternalLabel(shape)) {
       createLabel(shape, getExternalLabelPosition(shape));
     }
@@ -294,6 +318,16 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
       // Para conexiones PPINOT, no crear aquí
       if (isPPINOTConnection(element)) {
         return;
+      }
+      
+      // Asegurar que scope y target elementos siempre tengan un nombre válido después de importar
+      if (is(element, 'PPINOT:Scope') || is(element, 'PPINOT:Target')) {
+        if (!element.businessObject) {
+          element.businessObject = {};
+        }
+        if (!element.businessObject.name || element.businessObject.name.trim() === '') {
+          element.businessObject.name = element.id || element.type.replace('PPINOT:', '');
+        }
       }
       
       if (shouldCreateExternalLabel(element) && !element.label) {

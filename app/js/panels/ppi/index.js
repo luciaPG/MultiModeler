@@ -16,14 +16,33 @@ async function loadPPIComponents() {
     
     console.log('✅ PPI Panel - Arquitectura modular cargada');
     
+    // Inicializar PPIManager
+    try {
+      if (typeof window.PPIManager !== 'undefined') {
+        window.ppiManagerInstance = new window.PPIManager();
+        window.ppiManager = window.ppiManagerInstance; // Alias para compatibilidad
+        
+        // Funciones de debug globales
+        window.debugPPI = () => window.ppiManagerInstance.debugSearchPPIElements();
+        window.forceAnalyzePPIChildren = () => window.ppiManagerInstance.forceAnalyzePPIChildren();
+        window.forceRestorePPINOT = () => window.ppiManagerInstance.forceRestorePPINOTElements();
+        
+        console.log('✅ PPIManager inicializado correctamente');
+      } else {
+        console.error('❌ PPIManager no está disponible');
+      }
+    } catch (error) {
+      console.error('❌ Error inicializando PPIManager:', error);
+    }
+    
     // Verificar que ppiManager esté disponible globalmente
-    if (window.ppiManager && typeof window.ppiManager.refreshPPIList === 'function') {
+    if (window.ppiManagerInstance && typeof window.ppiManagerInstance.refreshPPIList === 'function') {
       console.log('✅ ppiManager disponible globalmente');
     } else {
       console.warn('⚠️ ppiManager no está completamente disponible. Esperando inicialización...');
       // Esperar un poco más para la inicialización
       setTimeout(() => {
-        if (window.ppiManager && typeof window.ppiManager.refreshPPIList === 'function') {
+        if (window.ppiManagerInstance && typeof window.ppiManagerInstance.refreshPPIList === 'function') {
           console.log('✅ ppiManager disponible después de espera');
         } else {
           console.error('❌ ppiManager no se pudo inicializar correctamente');

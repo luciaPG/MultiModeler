@@ -5,6 +5,9 @@
       <span>Gestión de PPIs</span>
     </div>
     <div class="panel-actions">
+      <button class="panel-btn" onclick="ppiManager.refreshPPINOTRelationships()" title="Refrescar Relaciones PPINOT">
+        <i class="fas fa-project-diagram"></i>
+      </button>
       <button class="panel-btn" onclick="ppiManager.exportPPIsToFile()" title="Exportar PPIs">
         <i class="fas fa-download"></i>
       </button>
@@ -24,6 +27,18 @@
         </div>
         <div class="ppi-section-meta">
           <span class="section-description">Gestión y monitoreo de métricas clave</span>
+        </div>
+      </div>
+
+      <!-- Información sobre sincronización -->
+      <div class="ppi-info-container">
+        <div class="ppi-info-box">
+          <i class="fas fa-info-circle"></i>
+          <span>Sistema de sincronización automática activo. Usa el botón <i class="fas fa-project-diagram"></i> para refrescar manualmente si es necesario</span>
+        </div>
+        <div class="ppi-sync-status" id="ppi-sync-status">
+          <i class="fas fa-sync-alt"></i>
+          <span>Sincronización: <span class="sync-status-text">Inicializando...</span></span>
         </div>
       </div>
 

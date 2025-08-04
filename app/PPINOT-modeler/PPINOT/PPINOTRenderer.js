@@ -321,45 +321,6 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
     });
   }
 
-   function addMarker(id, options) {
-    var attrs = assign({
-      fill: 'black',
-      strokeWidth: 1,
-      strokeLinecap: 'round',
-      strokeDasharray: 'none'
-    }, options.attrs);
-
-    var ref = options.ref || { x: 0, y: 0 };
-    var scale = options.scale || 1;
-
-    if (attrs.strokeDasharray === 'none') {
-      attrs.strokeDasharray = [10000, 1];
-    }
-
-    var marker = svgCreate('marker');
-    svgAttr(options.element, attrs);
-    svgAppend(marker, options.element);
-
-    svgAttr(marker, {
-      id: id,
-      viewBox: '0 0 20 20',
-      refX: ref.x,
-      refY: ref.y,
-      markerWidth: 20 * scale,
-      markerHeight: 20 * scale,
-      orient: 'auto'
-    });
-
-    var defs = domQuery('defs', canvas._svg);
-
-    if (!defs) {
-      defs = svgCreate('defs');
-      svgAppend(canvas._svg, defs);
-    }
-    svgAppend(defs, marker);
-    markers[id] = marker;
-  }
-
   // The following functions define the shape of the element to be rendered 
   // You have to define x, y, width, height and href (this format is the same for all elements)
   // --> href is the svg element defined in svg -> index.js
@@ -376,11 +337,8 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
   }
 
   function drawTarget(element) {
-    var iconUrl = Svg.dataURLtarget;
-
-    if (element.parent && element.parent.type === 'PPINOT:Ppi') {
-      iconUrl = Svg.dataURLtargetMini;
-    }
+    // Always use mini icon for target elements
+    var iconUrl = Svg.dataURLtargetMini;
 
     var target = svgCreate('image', {
       x: 10,
@@ -393,18 +351,11 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
   }
 
   function drawScope(element) {
-    // Switch between normal and mini icon based on parent
-    var iconUrl = Svg.dataURLscope;
-    var scaleFactor = 0.85;
-    var offsetX = 10;
-    var offsetY = 5;
-
-    if (element.parent && element.parent.type === 'PPINOT:Ppi') {
-      iconUrl = Svg.dataURLscopeMini;
-      scaleFactor = 0.25;
-      offsetX = 10 + (element.width * (1 - scaleFactor)) / 2;
-      offsetY = 5 + (element.height * (1 - scaleFactor)) / 2 - 5;
-    }
+    // Always use mini icon for scope elements
+    var iconUrl = Svg.dataURLscopeMini;
+    var scaleFactor = 0.25;
+    var offsetX = 10 + (element.width * (1 - scaleFactor)) / 2;
+    var offsetY = 5 + (element.height * (1 - scaleFactor)) / 2 - 5;
 
     var scope = svgCreate('image', {
       x: offsetX,
@@ -608,8 +559,8 @@ export default function PPINOTRenderer(styles, canvas, textRenderer) {
       let scope = drawScope(element)
       svgAppend(p, scope);
 
-      var alignment = (element.parent && element.parent.type === 'PPINOT:Ppi') ? 'right-middle' : 'center-middle';
-      renderEmbeddedLabel(p, element, alignment);
+      // Always use right-middle alignment since we're always rendering as mini
+      renderEmbeddedLabel(p, element, 'right-middle');
       return scope;
     },
     'PPINOT:AggregatedMeasure': (p, element) => {

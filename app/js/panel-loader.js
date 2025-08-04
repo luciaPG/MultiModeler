@@ -619,13 +619,26 @@ class PanelLoader {
 
   loadPpiController(panel) {
     // Inicializar el controlador PPI
-                    if (window.ppiManager) {
-                  // El PPI Manager ya está inicializado globalmente
-                  console.log('PPI Manager encontrado, re-inicializando file upload...');
-                  // Re-inicializar el file upload porque el panel se cargó dinámicamente
-                  window.ppiManager.setupFileUpload();
-                  window.ppiManager.setupEventListeners();
-                } else {
+    if (window.ppiManager) {
+      // El PPI Manager ya está inicializado globalmente
+      console.log('PPI Manager encontrado, inicializando panel...');
+      
+      // Verificar que los métodos existan antes de llamarlos
+      if (typeof window.ppiManager.setupFileUpload === 'function') {
+        window.ppiManager.setupFileUpload();
+      }
+      
+      if (typeof window.ppiManager.setupEventListeners === 'function') {
+        window.ppiManager.setupEventListeners();
+      }
+      
+      // Forzar actualización de la lista de PPIs
+      if (typeof window.ppiManager.refreshPPIList === 'function') {
+        setTimeout(() => {
+          window.ppiManager.refreshPPIList();
+        }, 100);
+      }
+    } else {
       console.warn('PPI Manager no encontrado');
     }
   }
