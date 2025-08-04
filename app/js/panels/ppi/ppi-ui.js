@@ -426,6 +426,7 @@ if (typeof window.PPIUI === 'undefined') {
     if (isEdit) {
       this.setupTabNavigation();
       this.setupFormValidation();
+      this.setupTargetScopeValidation(ppi);
     } else {
       // También configurar pestañas para el modal de visualización
       this.setupTabNavigation();
@@ -680,6 +681,10 @@ if (typeof window.PPIUI === 'undefined') {
                        placeholder="Ej: Must be ≥ 90%">
                 <div class="field-help">Valor objetivo del indicador</div>
                 ${ppi.target ? `<div class="bpmn-info"><i class="fas fa-link"></i> Del canvas: ${ppi.target}</div>` : ''}
+                <div id="target-validation-warning" class="field-warning" style="display: none;">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  <span>Vincula primero el Target en el diagrama para editarlo aquí</span>
+                </div>
               </div>
 
               <div class="form-group">
@@ -688,6 +693,10 @@ if (typeof window.PPIUI === 'undefined') {
                        placeholder="Ej: Instancias en periodo de vacaciones">
                 <div class="field-help">Qué instancias se consideran</div>
                 ${ppi.scope ? `<div class="bpmn-info"><i class="fas fa-link"></i> Del canvas: ${ppi.scope}</div>` : ''}
+                <div id="scope-validation-warning" class="field-warning" style="display: none;">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  <span>Vincula primero el Scope en el diagrama para editarlo aquí</span>
+                </div>
               </div>
           
           </div>
@@ -796,6 +805,107 @@ if (typeof window.PPIUI === 'undefined') {
     const existingError = field.parentNode.querySelector('.field-error');
     if (existingError) {
       existingError.remove();
+    }
+  }
+
+  // === TARGET AND SCOPE VALIDATION ===
+  
+  setupTargetScopeValidation(ppi) {
+    const targetInput = document.getElementById('edit-target');
+    const scopeInput = document.getElementById('edit-scope');
+    const targetWarning = document.getElementById('target-validation-warning');
+    const scopeWarning = document.getElementById('scope-validation-warning');
+    
+    if (!targetInput || !scopeInput) return;
+    
+    // Verificar si el PPI tiene elementos Target y Scope vinculados
+    const hasLinkedTarget = this.hasLinkedElement(ppi, 'PPINOT:Target');
+    const hasLinkedScope = this.hasLinkedElement(ppi, 'PPINOT:Scope');
+    
+    // Configurar Target
+    if (!hasLinkedTarget) {
+      targetInput.disabled = true;
+      targetInput.placeholder = 'Vincula primero un Target en el diagrama';
+      targetInput.classList.add('readonly-field');
+      if (targetWarning) targetWarning.style.display = 'block';
+    } else {
+      // Configurar listener para actualizar diagrama cuando se cambie
+      targetInput.addEventListener('input', () => {
+        this.updateDiagramElement(ppi, 'PPINOT:Target', targetInput.value);
+      });
+    }
+    
+    // Configurar Scope
+    if (!hasLinkedScope) {
+      scopeInput.disabled = true;
+      scopeInput.placeholder = 'Vincula primero un Scope en el diagrama';
+      scopeInput.classList.add('readonly-field');
+      if (scopeWarning) scopeWarning.style.display = 'block';
+    } else {
+      // Configurar listener para actualizar diagrama cuando se cambie
+      scopeInput.addEventListener('input', () => {
+        this.updateDiagramElement(ppi, 'PPINOT:Scope', scopeInput.value);
+      });
+    }
+  }
+  
+  hasLinkedElement(ppi, elementType) {
+    if (!window.modeler || !ppi) return false;
+    
+    try {
+      const elementRegistry = window.modeler.get('elementRegistry');
+      
+      // Buscar elementos vinculados del tipo especificado
+      const linkedElements = elementRegistry.filter(element => {
+        if (element.type !== elementType) return false;
+        
+        // Verificar si está vinculado a este PPI
+        const parentElement = element.parent;
+        if (!parentElement) return false;
+        
+        // Verificar si el padre es el PPI actual
+        return parentElement.id === ppi.elementId ||
+               (parentElement.businessObject && parentElement.businessObject.name === ppi.title);
+      });
+      
+      return linkedElements.length > 0;
+    } catch (error) {
+      console.warn('Error verificando elementos vinculados:', error);
+      return false;
+    }
+  }
+  
+  updateDiagramElement(ppi, elementType, newValue) {
+    if (!window.modeler || !ppi) return;
+    
+    try {
+      const elementRegistry = window.modeler.get('elementRegistry');
+      const modeling = window.modeler.get('modeling');
+      
+      // Buscar el elemento vinculado del tipo especificado
+      const linkedElement = elementRegistry.filter(element => {
+        if (element.type !== elementType) return false;
+        
+        const parentElement = element.parent;
+        if (!parentElement) return false;
+        
+        return parentElement.id === ppi.elementId ||
+               (parentElement.businessObject && parentElement.businessObject.name === ppi.title);
+      })[0];
+      
+      if (linkedElement) {
+        // Actualizar la etiqueta del elemento en el diagrama
+        modeling.updateProperties(linkedElement, { name: newValue });
+        
+        // También actualizar el businessObject directamente para asegurar persistencia
+        if (linkedElement.businessObject) {
+          linkedElement.businessObject.name = newValue;
+        }
+        
+        // Mensaje eliminado - sin notificación automática
+      }
+    } catch (error) {
+      console.warn('Error actualizando elemento del diagrama:', error);
     }
   }
 
@@ -1507,7 +1617,6 @@ if (typeof window.PPIUI === 'undefined') {
       }
 
       .ppi-modal-body {
-        padding: 30px;
         overflow-y: auto;
         flex: 1;
       }
