@@ -28,7 +28,6 @@ class PanelLoader {
       this.panelCache.set(panelType, panel.cloneNode(true));
       return panel;
     } catch (err) {
-      console.error(`❌ Error cargando ${panelType}:`, err);
       return this.createFallbackPanel(panelType);
     }
   }
@@ -65,7 +64,6 @@ class PanelLoader {
                          container.querySelector(`[data-panel-type="${panelType}"]`);
     
     if (existingPanel) {
-      // console.log(`⚠️ Panel ${panelType} ya existe, devolviendo el existente`);
       return existingPanel;
     }
 
@@ -518,13 +516,10 @@ class PanelLoader {
               // Guardar el estado en el panel manager
               if (window.panelManager) {
                 window.panelManager.preservedBpmnState = bpmnState;
-                // console.log('Estado BPMN preservado al ocultar panel:', bpmnState.xml.substring(0, 100) + '...');
               }
             } else {
-              console.warn('XML BPMN vacío, no se preserva estado');
             }
           } catch (error) {
-            console.error('Error preservando estado BPMN:', error);
           }
         }
         
@@ -532,7 +527,6 @@ class PanelLoader {
         if (window.panelManager) {
           if (panelType && window.panelManager.activePanels.includes(panelType)) {
             window.panelManager.activePanels = window.panelManager.activePanels.filter(p => p !== panelType);
-            // console.log(`Panel ${panelType} ocultado y removido de la lista activa`);
             
             // Actualizar el selector de paneles para mostrar el cambio
             if (window.panelManager.updatePanelSelector) {
@@ -621,7 +615,6 @@ class PanelLoader {
     // Inicializar el controlador PPI
     if (window.ppiManager) {
       // El PPI Manager ya está inicializado globalmente
-      console.log('PPI Manager encontrado, inicializando panel...');
       
       // Verificar que los métodos existan antes de llamarlos
       if (typeof window.ppiManager.setupFileUpload === 'function') {
@@ -644,7 +637,6 @@ class PanelLoader {
         }, 100);
       }
     } else {
-      console.warn('PPI Manager no encontrado');
     }
   }
 
@@ -751,7 +743,6 @@ class PanelLoader {
       targetIndex = panels.length - 1;
     }
 
-    // console.log(`Posición de destino calculada: ${targetIndex}`);
 
     // Reordenar el panel
     this.reorderPanel(draggedPanel, targetIndex);
@@ -789,8 +780,6 @@ class PanelLoader {
       activePanels.splice(targetIndex, 0, panelType);
     }
 
-    // console.log(`Panel ${panelType} reordenado de posición ${currentIndex} a ${targetIndex}`);
-    // console.log('Nuevo orden de paneles:', activePanels);
 
     // Reaplicar la configuración para reflejar el nuevo orden
     setTimeout(() => {

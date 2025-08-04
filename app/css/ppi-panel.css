@@ -1,6 +1,3 @@
-/* === PPI Panel Styles === */
-
-/* CSS Variables */
 :root {
   --primary-color: #4361ee;
   --primary-dark: #3a56d4;
@@ -24,7 +21,6 @@
   --border-radius-lg: 16px;
 }
 
-/* Estilos generales del panel PPI */
 #ppi-panel {
   display: flex;
   flex-direction: column;
@@ -41,7 +37,6 @@
   flex-direction: column;
 }
 
-/* Contenedor principal */
 .ppi-main-container {
   display: flex;
   flex-direction: column;
@@ -49,7 +44,6 @@
   padding: 10px;
 }
 
-/* Header de sección profesional */
 .ppi-section-header {
   padding: 10px 4px 10px 4px;
   position: relative;
@@ -103,7 +97,6 @@
   font-style: italic;
 }
 
-/* Dashboard Header - Simplificado */
 .ppi-dashboard-header {
   display: flex;
   justify-content: center;
@@ -136,7 +129,6 @@
   justify-content: center;
 }
 
-/* Lista de PPIs - Con scrollbar visible */
 .ppi-list-container {
   flex: 1;
   background: var(--card-bg);
@@ -158,12 +150,10 @@
   display: flex;
   flex-direction: column;
   gap: 5px;
-  /* Scrollbar siempre visible */
   scrollbar-width: thin;
   scrollbar-color: var(--border-color) var(--light-bg);
 }
 
-/* Caja de información sobre refresco manual */
 .ppi-info-container {
   margin-bottom: 16px;
 }
@@ -203,7 +193,6 @@
   margin: 0 4px;
 }
 
-/* Indicador de estado de sincronización */
 .ppi-sync-status {
   display: flex;
   align-items: center;
@@ -256,7 +245,6 @@
   to { transform: rotate(360deg); }
 }
 
-/* Notificaciones de sincronización */
 .ppi-sync-notification {
   position: fixed;
   top: 20px;
@@ -319,7 +307,6 @@
   color: var(--primary-color);
 }
 
-/* Estado vacío */
 .empty-state {
   text-align: center;
   padding: 60px 20px;
@@ -353,7 +340,6 @@
   color: var(--text-light);
 }
 
-/* Tarjetas de PPI - Compactas y eficientes */
 .ppi-card {
   background: var(--card-bg);
   border: 1px solid var(--border-color);
@@ -363,28 +349,25 @@
   box-shadow: var(--shadow-sm);
   position: relative;
   width: 100%;
-  height: 110px; /* Altura más compacta */
+  height: 110px;
   display: flex;
   flex-direction: column;
 }
-
-
 
 .ppi-card:hover::before {
   opacity: 1;
 }
 
-/* Header de la card - Ultra compacto */
 .ppi-card-header {
   display: flex;
   align-items: center;
-  padding: 8px 12px; /* Padding muy reducido */
+  padding: 8px 12px;
   background: linear-gradient(135deg, #f8f9ff 0%, #f1f3ff 100%);
   border-bottom: 1px solid var(--border-color);
   gap: 8px;
   position: relative;
   flex-shrink: 0;
-  height: 40px; /* Header muy compacto */
+  height: 40px;
 }
 
 .ppi-card-header::after {
@@ -398,17 +381,17 @@
 }
 
 .ppi-type-indicator {
-  width: 24px; /* Indicador más pequeño */
+  width: 24px;
   height: 24px;
-  border-radius: 4px; /* Menos redondeado */
+  border-radius: 4px;
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 0.8rem; /* Texto más pequeño */
+  font-size: 0.8rem;
   flex-shrink: 0;
-  box-shadow: 0 1px 3px rgba(67, 97, 238, 0.2); /* Sombra reducida */
+  box-shadow: 0 1px 3px rgba(67, 97, 238, 0.2);
   position: relative;
 }
 
@@ -423,7 +406,7 @@
   border-radius: 4px;
   z-index: -1;
   opacity: 0.2;
-  filter: blur(2px); /* Blur reducido */
+  filter: blur(2px);
 }
 
 .ppi-header-content {
@@ -434,15 +417,15 @@
 
 .ppi-title {
   margin: 0;
-  font-size: 0.9rem; /* Título más pequeño */
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-dark);
-  line-height: 1.2; /* Línea más compacta */
+  line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   letter-spacing: -0.01em;
-  cursor: help; /* Indicar que hay tooltip */
+  cursor: help;
   transition: color 0.2s ease;
 }
 
@@ -453,19 +436,19 @@
 .ppi-meta {
   display: flex;
   align-items: center;
-  gap: 6px; /* Gap reducido */
-  font-size: 0.7rem; /* Texto más pequeño */
+  gap: 6px;
+  font-size: 0.7rem;
   flex-wrap: wrap;
-  margin-top: 2px; /* Margen muy pequeño */
+  margin-top: 2px;
 }
 
 .ppi-type-badge {
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
   color: white;
-  padding: 2px 6px; /* Padding muy reducido */
-  border-radius: 8px; /* Más pequeño */
+  padding: 2px 6px;
+  border-radius: 8px;
   font-weight: 600;
-  font-size: 0.65rem; /* Texto muy pequeño */
+  font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   box-shadow: 0 1px 2px rgba(67, 97, 238, 0.2);
@@ -474,7 +457,7 @@
 
 .ppi-date {
   color: var(--text-muted);
-  font-size: 0.65rem; /* Fecha muy pequeña */
+  font-size: 0.65rem;
   font-weight: 500;
   white-space: nowrap;
 }
@@ -487,17 +470,17 @@
 }
 
 .action-btn {
-  width: 22px; /* Botones más pequeños */
+  width: 22px;
   height: 22px;
   border: none;
   background: #f8f9fa;
-  border-radius: 4px; /* Menos redondeado */
+  border-radius: 4px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: var(--transition);
-  font-size: 0.7rem; /* Iconos más pequeños */
+  font-size: 0.7rem;
   color: var(--text-light);
   border: 1px solid var(--border-color);
   position: relative;
@@ -540,10 +523,9 @@
   background: linear-gradient(135deg, var(--danger-color), #e74c3c);
 }
 
-/* Body de la card - Máximo contenido útil */
 .ppi-card-body {
   flex: 1;
-  padding: 8px 12px; /* Padding muy reducido */
+  padding: 8px 12px;
   background: var(--card-bg);
   display: flex;
   flex-direction: column;
@@ -551,21 +533,20 @@
   overflow: hidden;
 }
 
-/* Grid de información esencial - Más compacto */
 .ppi-essential-info {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px; /* Gap más pequeño */
+  gap: 6px;
   height: 100%;
 }
 
 .essential-item {
   display: flex;
   flex-direction: column;
-  gap: 2px; /* Gap muy pequeño */
-  padding: 4px 6px; /* Padding muy reducido */
+  gap: 2px;
+  padding: 4px 6px;
   background: var(--light-bg);
-  border-radius: 4px; /* Menos redondeado */
+  border-radius: 4px;
   border: 1px solid var(--border-color);
   transition: var(--transition);
   position: relative;
@@ -587,14 +568,14 @@
 .essential-item .label {
   font-weight: 700;
   color: var(--text-dark);
-  font-size: 0.65rem; /* Texto muy pequeño */
+  font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  margin-bottom: 1px; /* Margen mínimo */
+  margin-bottom: 1px;
   white-space: nowrap;
   display: flex;
   align-items: center;
-  gap: 2px; /* Gap muy pequeño */
+  gap: 2px;
 }
 
 .essential-item .label::before {
@@ -608,19 +589,19 @@
 
 .essential-item .value {
   color: var(--text-light);
-  font-size: 0.75rem; /* Texto más legible */
+  font-size: 0.75rem;
   font-weight: 500;
-  line-height: 1.2; /* Línea más compacta */
+  line-height: 1.2;
   word-wrap: break-word;
   overflow-wrap: break-word;
   hyphens: auto;
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 3; /* Más líneas para compensar el tamaño */
+  -webkit-line-clamp: 3;
   line-clamp: 3;
   -webkit-box-orient: vertical;
   flex: 1;
-  cursor: help; /* Indicar que hay tooltip */
+  cursor: help;
   transition: color 0.2s ease;
 }
 
@@ -640,7 +621,6 @@
   flex-shrink: 0;
 }
 
-/* Botones */
 .btn {
   padding: 8px 16px;
   border: none;
@@ -710,7 +690,6 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* Modal styles - Estilo compacto siguiendo el panel selector */
 .ppi-modal-overlay {
   position: fixed;
   top: 0;
@@ -735,12 +714,12 @@
   background: white;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-  width: 70vw; /* Tamaño más pequeño: 70% del ancho de la ventana */
-  height: 75vh; /* Tamaño más pequeño: 75% del alto de la ventana */
-  min-width: 600px; /* Mínimo reducido para pantallas pequeñas */
-  min-height: 500px; /* Mínimo reducido para pantallas pequeñas */
-  max-width: 900px; /* Máximo reducido para mejor visualización */
-  max-height: 700px; /* Máximo reducido para mejor visualización */
+  width: 70vw;
+  height: 75vh;
+  min-width: 600px;
+  min-height: 500px;
+  max-width: 900px;
+  max-height: 700px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -760,9 +739,6 @@
   }
 }
 
-
-
-/* Botón cerrar reposicionado sin título */
 .ppi-modal-close {
   position: absolute;
   top: 12px;
@@ -784,6 +760,7 @@
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(5px);
 }
+
 .fas.fa-times{
   color: var(--primary-color);
 }
@@ -794,11 +771,9 @@
   transform: scale(1.1);
 }
 
-
-
 .ppi-modal-body {
-  padding: 0; /* Sin padding interno */
-  overflow-y: auto; /* Scroll vertical en el modal body completo */
+  padding: 0;
+  overflow-y: auto;
   overflow-x: hidden;
   flex: 1;
   display: flex;
@@ -806,7 +781,6 @@
   min-height: 0;
 }
 
-/* Scrollbar del modal - Pegado a la derecha */
 .ppi-modal-body::-webkit-scrollbar {
   width: 12px;
 }
@@ -826,44 +800,40 @@
   background: #a8a8a8;
 }
 
-/* Firefox scrollbar */
 .ppi-modal-body {
   scrollbar-width: thin;
   scrollbar-color: #c1c1c1 #f1f1f1;
 }
 
-/* Asegurar que el scroll funcione correctamente en el contenido */
 .ppi-detail-container {
-  padding: 20px; /* Padding interno restaurado */
+  padding: 20px;
   flex: 1;
   background: white;
-  overflow: visible; /* Sin overflow interno */
+  overflow: visible;
 }
 
 .form-content {
   flex: 1;
-  padding: 20px; /* Padding interno restaurado */
-  overflow: visible; /* Sin overflow interno */
+  padding: 20px;
+  overflow: visible;
 }
 
 .ppi-modal-footer {
-  padding: 8px 16px; /* Footer más discreto */
+  padding: 8px 16px;
   border-top: 1px solid #e0e0e0;
   display: flex;
   justify-content: flex-end;
-  gap: 6px; /* Gap más pequeño */
+  gap: 6px;
   background: #f8f9fa;
-  min-height: 36px; /* Altura mínima */
+  min-height: 36px;
 }
 
-/* Form Header - También oculto para eliminar completamente headers */
 .ppi-form-header {
-  display: none; /* Ocultar también este header */
+  display: none;
 }
 
-/* Modal Title - Título ligero y discreto */
 .ppi-modal-title {
-  padding: 12px 50px 12px 20px; /* Espacio para botón cerrar */
+  padding: 12px 50px 12px 20px;
   border-bottom: 1px solid #e9ecef;
   background: #f8f9fa;
   position: relative;
@@ -880,17 +850,16 @@
   line-height: 1.4;
 }
 
-/* Versión para pantallas pequeñas - Tamaño más compacto */
 @media (max-width: 600px) {
   .ppi-modal {
-    width: 90vw; /* Menor que antes en móvil */
-    height: 85vh; /* Altura reducida en móvil */
-    min-width: 300px; /* Mínimo absoluto más pequeño para móviles */
-    min-height: 450px; /* Mínimo más pequeño */
+    width: 90vw;
+    height: 85vh;
+    min-width: 300px;
+    min-height: 450px;
   }
   
   .ppi-modal-body {
-    padding: 0; /* Sin padding adicional en móvil */
+    padding: 0;
   }
   
   .ppi-modal-close {
@@ -903,7 +872,7 @@
   
   .ppi-detail-container,
   .form-content {
-    padding: 12px; /* Padding más reducido en móvil */
+    padding: 12px;
   }
 }
 
@@ -914,29 +883,29 @@
 }
 
 .ppi-id-label {
-  font-weight: 400; /* Menos peso visual */
-  color: #777; /* Color más discreto */
-  font-size: 0.8rem; /* Más pequeño */
+  font-weight: 400;
+  color: #777;
+  font-size: 0.8rem;
 }
 
 .ppi-id-value {
-  font-weight: 500; /* Menos peso */
+  font-weight: 500;
   color: #4361ee;
-  font-size: 0.8rem; /* Más pequeño */
-  background: rgba(67, 97, 238, 0.08); /* Fondo más sutil */
-  padding: 1px 6px; /* Padding muy reducido */
-  border-radius: 8px; /* Más pequeño */
+  font-size: 0.8rem;
+  background: rgba(67, 97, 238, 0.08);
+  padding: 1px 6px;
+  border-radius: 8px;
 }
 
 .completion-indicator {
   display: flex;
   align-items: center;
-  gap: 6px; /* Gap más pequeño */
+  gap: 6px;
 }
 
 .completion-bar {
-  width: 60px; /* Barra más pequeña */
-  height: 4px; /* Más delgada */
+  width: 60px;
+  height: 4px;
   background: #e0e0e0;
   border-radius: 2px;
   overflow: hidden;
@@ -950,34 +919,33 @@
 }
 
 .completion-text {
-  font-size: 0.75rem; /* Texto más pequeño */
-  font-weight: 400; /* Menos peso */
-  color: #777; /* Color más discreto */
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #777;
 }
 
-/* Tab Navigation Ultra Discreto */
 .form-tabs {
   display: flex;
   background: #f8f9fa;
   border-bottom: 1px solid #e0e0e0;
   overflow-x: auto;
   flex-shrink: 0;
-  min-height: 38px; /* Altura muy reducida */
+  min-height: 38px;
 }
 
 .tab-button {
   background: none;
   border: none;
-  padding: 8px 12px; /* Padding muy reducido */
-  font-size: 0.8rem; /* Texto más pequeño */
-  font-weight: 400; /* Menos peso visual */
-  color: #777; /* Color más discreto */
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #777;
   cursor: pointer;
   border-bottom: 2px solid transparent;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 4px; /* Gap más pequeño */
+  gap: 4px;
   white-space: nowrap;
   min-width: fit-content;
 }
@@ -994,28 +962,27 @@
 }
 
 .tab-button i {
-  font-size: 0.75rem; /* Iconos más pequeños */
+  font-size: 0.75rem;
 }
 
-/* Tab Content - Ocupa todo el ancho disponible */
 .form-content {
   flex: 1;
   overflow-y: auto;
-  padding: 20px; /* Padding aumentado para aprovechar el espacio */
-  width: 100%; /* Ocupa todo el ancho */
-  max-width: none; /* Sin limitación de ancho */
+  padding: 20px;
+  width: 100%;
+  max-width: none;
 }
 
 .tab-content {
   display: none;
-  width: 100%; /* Ocupa todo el ancho */
-  max-width: none; /* Sin limitación de ancho */
+  width: 100%;
+  max-width: none;
 }
 
 .tab-content.active {
   display: block;
   animation: fadeInTab 0.2s ease-out;
-  width: 100%; /* Ocupa todo el ancho */
+  width: 100%;
 }
 
 @keyframes fadeInTab {
@@ -1029,29 +996,27 @@
   }
 }
 
-/* Form Section - Ocupa todo el ancho disponible */
 .form-section {
-  background: transparent; /* Sin fondo para ocupar todo el espacio */
-  margin-bottom: 20px; /* Margen normal */
-  padding: 0; /* Sin padding interno */
-  width: 100%; /* Ocupa todo el ancho */
-  max-width: none; /* Sin limitación de ancho máximo */
+  background: transparent;
+  margin-bottom: 20px;
+  padding: 0;
+  width: 100%;
+  max-width: none;
 }
 
 .form-section h4 {
-  margin: 0 0 12px 0; /* Margen normal */
-  color: #333; /* Color más visible */
-  font-size: 1rem; /* Título normal */
-  font-weight: 600; /* Peso normal */
+  margin: 0 0 12px 0;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 8px; /* Gap normal */
-  padding-bottom: 8px; /* Padding normal */
-  border-bottom: 2px solid #e0e0e0; /* Borde más grueso */
-  width: 100%; /* Ocupa todo el ancho */
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e0e0e0;
+  width: 100%;
 }
 
-/* Form Group - Estructura limpia y directa */
 .form-group {
   margin-bottom: 28px;
   width: 100%;
@@ -1064,7 +1029,6 @@
   margin-left: 3px;
 }
 
-/* Labels - Tipografía clara y profesional */
 .form-group label {
   display: block;
   margin-bottom: 8px;
@@ -1075,7 +1039,6 @@
   letter-spacing: 0.01em;
 }
 
-/* Inputs, selects y textareas - Diseño limpio con truncado */
 .form-group input,
 .form-group select,
 .form-group textarea {
@@ -1091,18 +1054,17 @@
   font-family: inherit;
   color: var(--text-dark);
   line-height: 1.5;
-  overflow: hidden; /* Evitar que el texto se salga */
-  text-overflow: ellipsis; /* Añadir ... cuando sea necesario */
-  white-space: nowrap; /* Una sola línea para inputs */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* Textareas permiten múltiples líneas pero con scroll interno */
 .form-group textarea {
-  white-space: normal; /* Permitir múltiples líneas */
-  resize: vertical; /* Solo redimensión vertical */
-  overflow-y: auto; /* Scroll interno si es necesario */
+  white-space: normal;
+  resize: vertical;
+  overflow-y: auto;
   min-height: 90px;
-  max-height: 150px; /* Límite de altura */
+  max-height: 150px;
 }
 
 .form-group input::placeholder,
@@ -1132,7 +1094,6 @@
   font-family: inherit;
 }
 
-/* Campos de solo lectura - Estilo diferenciado */
 .readonly-field {
   background: #f8f9fc !important;
   border-color: #d1d9e0 !important;
@@ -1152,7 +1113,6 @@
   background: #f5f6fa !important;
 }
 
-/* Helper text y información adicional */
 .field-help {
   font-size: 0.8rem;
   color: var(--text-light);
@@ -1161,7 +1121,6 @@
   line-height: 1.3;
 }
 
-/* Advertencia de validación para campos vinculados */
 .field-warning {
   background: rgba(220, 53, 69, 0.05);
   border: 1px solid rgba(220, 53, 69, 0.2);
@@ -1198,38 +1157,36 @@
   opacity: 0.8;
 }
 
-/* Detail View Ultra Compacto - Sin header, solo contenido */
 .ppi-detail-container {
-  padding: 16px; /* Padding normal, sin header */
-  max-height: 85vh; /* Más altura disponible sin header */
+  padding: 16px;
+  max-height: 85vh;
   overflow-y: auto;
-  background: white; /* Fondo blanco limpio */
+  background: white;
 }
 
-/* Header eliminado - No se muestra */
 .ppi-detail-header {
-  display: none; /* Ocultar completamente el header */
+  display: none;
 }
 
 .ppi-header-main {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 8px; /* Margen muy reducido */
+  margin-bottom: 8px;
 }
 
 .ppi-title-section h2 {
-  margin: 0 0 4px 0; /* Margen muy reducido */
-  font-size: 1.1rem; /* Título más pequeño */
+  margin: 0 0 4px 0;
+  font-size: 1.1rem;
   font-weight: 600;
 }
 
 .ppi-id-badge {
-  background: rgba(255, 255, 255, 0.15); /* Más discreto */
-  padding: 1px 6px; /* Padding muy reducido */
-  border-radius: 8px; /* Más pequeño */
-  font-size: 0.7rem; /* Texto más pequeño */
-  font-weight: 400; /* Menos peso */
+  background: rgba(255, 255, 255, 0.15);
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 400;
 }
 
 .ppi-status-section {
@@ -1273,25 +1230,24 @@
   opacity: 0.9;
 }
 
-/* Detail Grid - Cards directas sobre fondo blanco */
 .ppi-detail-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 16px; /* Gap normal entre cards */
-  margin-bottom: 0; /* Sin margen inferior */
+  gap: 16px;
+  margin-bottom: 0;
 }
 
 .detail-section {
-  background: white; /* Fondo blanco simple */
+  background: white;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); /* Sombra muy sutil */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .section-header {
   background: #f8f9fa;
-  padding: 12px 16px; /* Padding normal */
+  padding: 12px 16px;
   border-bottom: 1px solid #e0e0e0;
   display: flex;
   justify-content: space-between;
@@ -1300,12 +1256,12 @@
 
 .section-header h4 {
   margin: 0;
-  font-size: 1rem; /* Tamaño normal */
+  font-size: 1rem;
   font-weight: 600;
   color: #333;
   display: flex;
   align-items: center;
-  gap: 8px; /* Gap normal */
+  gap: 8px;
 }
 
 .section-status {
@@ -1329,14 +1285,14 @@
 }
 
 .detail-content {
-  padding: 16px; /* Padding normal */
+  padding: 16px;
 }
 
 .detail-item {
-  margin-bottom: 12px; /* Margen normal */
+  margin-bottom: 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px; /* Gap normal */
+  gap: 4px;
 }
 
 .detail-item:last-child {
@@ -1344,14 +1300,14 @@
 }
 
 .detail-item strong {
-  font-weight: 600; /* Peso normal */
+  font-weight: 600;
   color: #333;
-  font-size: 0.9rem; /* Tamaño normal */
+  font-size: 0.9rem;
 }
 
 .detail-item .value {
   color: #666;
-  font-size: 0.9rem; /* Tamaño normal */
+  font-size: 0.9rem;
   line-height: 1.4;
 }
 
@@ -1383,7 +1339,6 @@
   font-style: italic;
 }
 
-/* Completion Summary Compacto */
 .completion-summary {
   background: #f8f9fa;
   border: 1px solid #e0e0e0;
@@ -1427,7 +1382,6 @@
   font-size: 0.8rem;
 }
 
-/* Indicadores de pestañas */
 .tab-indicator {
   margin-left: 8px;
   font-size: 12px;
@@ -1459,7 +1413,6 @@
   border-radius: 3px;
 }
 
-/* Field Validation Styles - Limpios y directos */
 .field-valid {
   border-color: var(--success-color) !important;
   box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1) !important;
@@ -1495,25 +1448,23 @@
   flex-shrink: 0;
 }
 
-/* Tab Indicators */
 .tab-indicator {
   margin-left: 4px;
   font-size: 0.75rem;
 }
 
-/* Botones estilo panel selector - Más discretos */
 .btn {
-  padding: 4px 8px; /* Padding muy reducido */
+  padding: 4px 8px;
   border: none;
-  border-radius: 4px; /* Menos redondeado */
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 0.8rem; /* Texto más pequeño */
-  font-weight: 400; /* Menos peso visual */
+  font-size: 0.8rem;
+  font-weight: 400;
   transition: all 0.2s ease;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-  gap: 3px; /* Gap más pequeño */
+  gap: 3px;
 }
 
 .btn-primary {
@@ -1534,79 +1485,12 @@
   background: #5a6268;
 }
 
-/* Responsive Design Compacto */
 @media (max-width: 768px) {
   .ppi-modal {
-    width: 95vw;
-    max-height: 95vh;
-    margin: 10px;
-  }
-
-  .ppi-detail-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .form-tabs {
-    flex-wrap: wrap;
-  }
-
-  .tab-button {
-    flex: 1;
-    min-width: auto;
-  }
-
-  .ppi-header-main {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .completion-indicator {
-    width: 100%;
-  }
-
-  .completion-bar {
-    width: 100px;
-  }
-}
-
-/* Field Validation Styles */
-.field-valid {
-  border-color: var(--success-color) !important;
-  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1) !important;
-}
-
-.field-invalid {
-  border-color: var(--danger-color) !important;
-  box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.1) !important;
-}
-
-.field-error {
-  color: var(--danger-color);
-  font-size: 0.8rem;
-  margin-top: 4px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.field-error::before {
-  content: '⚠';
-  font-size: 0.9rem;
-}
-
-/* Tab Indicators */
-.tab-indicator {
-  margin-left: 4px;
-  font-size: 0.8rem;
-}
-
-/* Responsive Design - Tamaños más compactos */
-@media (max-width: 768px) {
-  .ppi-modal {
-    width: 85vw; /* Tamaño intermedio para tablets */
-    height: 80vh; /* Altura reducida para tablets */
-    min-width: 400px; /* Mínimo para tablets */
-    min-height: 475px; /* Mínimo reducido */
+    width: 85vw;
+    height: 80vh;
+    min-width: 400px;
+    min-height: 475px;
     margin: 10px;
   }
 
@@ -1632,8 +1516,6 @@
     width: 100%;
   }
 }
-
-/* End of enhanced modal styles */
 
 .form-section h4 {
   margin: 0 0 16px 0;
@@ -1689,7 +1571,6 @@
   line-height: 1.5;
 }
 
-/* Detail styles */
 .ppi-detail-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
@@ -1761,7 +1642,6 @@
   letter-spacing: 0.05em;
 }
 
-/* Responsive design - Tamaños compactos y escalables */
 @media (max-width: 768px) {
   .ppi-main-container {
     padding: 12px;
@@ -1777,16 +1657,16 @@
   }
   
   .ppi-card {
-    height: 100px; /* Altura aún más pequeña en móvil */
+    height: 100px;
   }
   
   .ppi-card-header {
-    height: 35px; /* Header ultra compacto en móvil */
+    height: 35px;
     padding: 6px 10px;
   }
   
   .ppi-card-body {
-    padding: 6px 10px; /* Padding mínimo en móvil */
+    padding: 6px 10px;
   }
   
   .ppi-essential-info {
@@ -1795,10 +1675,10 @@
   }
   
   .ppi-modal {
-    width: 85vw; /* Reducido para móvil */
-    height: 80vh; /* Altura más manejable */
-    min-width: 300px; /* Mínimo muy compacto */
-    min-height: 450px; /* Altura mínima reducida */
+    width: 85vw;
+    height: 80vh;
+    min-width: 300px;
+    min-height: 450px;
     margin: 10px;
     border-radius: var(--border-radius);
   }
@@ -1814,7 +1694,6 @@
   }
 }
 
-/* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -1841,10 +1720,6 @@
   animation: fadeIn 0.3s ease-out;
 }
 
-
-
-
-/* Posicionamiento específico para tooltips en tarjetas */
 .ppi-card {
   position: relative;
 }
@@ -1853,7 +1728,6 @@
   position: relative;
 }
 
-/* Asegurar que las clases de JavaScript tengan posicionamiento relativo para tooltips */
 .card-header,
 .card-body,
 .field-group,
@@ -1861,37 +1735,34 @@
   position: relative;
 }
 
-/* Mejorar overflow para títulos de tarjetas - JavaScript classes */
 .card-title {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: help;
   transition: color 0.2s ease;
-  max-width: 100%; /* Asegurar que no se salga */
-  display: block; /* Asegurar comportamiento de bloque */
+  max-width: 100%;
+  display: block;
 }
 
 .card-title:hover {
   color: var(--primary-color);
 }
 
-/* Mejorar overflow para valores de campos - JavaScript classes */
 .field-value {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: help;
   transition: color 0.2s ease;
-  max-width: 100%; /* Asegurar que no se salga */
-  display: inline-block; /* Asegurar comportamiento correcto */
+  max-width: 100%;
+  display: inline-block;
 }
 
 .field-value:hover {
   color: var(--text-dark);
 }
 
-/* Scrollbar styling - Siempre visible */
 .ppi-list::-webkit-scrollbar {
   width: 12px;
 }
@@ -1917,8 +1788,7 @@
   background: var(--light-bg);
 }
 
-/* Firefox scrollbar */
 .ppi-list {
   scrollbar-width: thin;
   scrollbar-color: var(--border-color) var(--light-bg);
-} 
+}

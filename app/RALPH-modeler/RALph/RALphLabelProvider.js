@@ -40,7 +40,6 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
   eventBus.on('element.dblclick', function(event) {
     const element = event.element;
     
-    console.log('Double-click event on element:', element.type);
     
     // NO manejar elementos con dos etiquetas aquí - dejar que el label editing provider los maneje
     if (dualLabelElements.includes(element.type) || 
@@ -55,7 +54,6 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
     
     // Solo manejar elementos RALPH que NO tienen dos etiquetas y NO son history instance
     if (canEditRALPHElement(element) && !dualLabelElements.includes(element.type)) {
-      console.log('Creating custom editor for element:', element.type);
       
       let targetElement = element;
       
@@ -287,13 +285,11 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
     
     // Explicitly allow editing for history instance elements
     if (element.type && editableHistoryElements.includes(element.type)) {
-      console.log('History instance element is editable:', element.type);
       return true;
     }
     
     // Check if it's a label of a history instance element
     if (element.type === 'label' && element.labelTarget && element.labelTarget.type && editableHistoryElements.includes(element.labelTarget.type)) {
-      console.log('History instance label is editable:', element.labelTarget.type);
       return true;
     }
     

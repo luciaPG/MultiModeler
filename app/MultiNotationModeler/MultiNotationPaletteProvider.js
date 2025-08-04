@@ -11,14 +11,12 @@ export default function MultiNotationPaletteProvider(palette, create, elementFac
   try {
     this.ppinotNotationPalette = new PPINOTPalette(create, elementFactory, translate);
   } catch (error) {
-    console.warn('Failed to create PPINOTPalette:', error.message);
     this.ppinotNotationPalette = null;
   }
   
   try {
     this.ralphNotationPalette = new RALphPalette(create, elementFactory, translate);
   } catch (error) {
-    console.warn('Failed to create RALphPalette:', error.message);
     this.ralphNotationPalette = null;
   }
 }
@@ -47,7 +45,6 @@ MultiNotationPaletteProvider.prototype.getPaletteEntries = function () {
     try {
       assign(allEntries, this.ppinotNotationPalette.getPaletteEntries());
     } catch (error) {
-      console.warn('Error getting PPINOT palette entries:', error);
     }
   }
 
@@ -56,7 +53,6 @@ MultiNotationPaletteProvider.prototype.getPaletteEntries = function () {
     try {
       assign(allEntries, this.ralphNotationPalette.getPaletteEntries());
     } catch (error) {
-      console.warn('Error getting RALPH palette entries:', error);
     }
   }
 

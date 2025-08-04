@@ -73,7 +73,6 @@ export default function MultiNotationConnect(eventBus, dragging, modeling, rules
                 context.hints.waypoints = validateAndSanitizeWaypoints(context.hints.waypoints);
             }
         } catch (error) {
-            console.warn('Error in connection event handler:', error);
         }
     });
 
@@ -87,12 +86,10 @@ export default function MultiNotationConnect(eventBus, dragging, modeling, rules
             
             // Validar que el source tiene las propiedades necesarias
             if (!event.source.x || !event.source.y || !event.source.width || !event.source.height) {
-                console.warn('Source element missing required properties for connection preview');
                 event.preventDefault();
                 return;
             }
         } catch (error) {
-            console.warn('Error in connection preview handler:', error);
             event.preventDefault();
         }
     });
@@ -107,12 +104,10 @@ export default function MultiNotationConnect(eventBus, dragging, modeling, rules
             
             // Validar que el source tiene las propiedades necesarias
             if (!event.source.x || !event.source.y || !event.source.width || !event.source.height) {
-                console.warn('Source element missing required properties for connection preview update');
                 event.preventDefault();
                 return;
             }
         } catch (error) {
-            console.warn('Error in connection preview update handler:', error);
             event.preventDefault();
         }
     });
@@ -215,7 +210,6 @@ export default function MultiNotationConnect(eventBus, dragging, modeling, rules
     this.start = function (event, source, sourcePosition, autoActivate) {
         // Validar que source existe
         if (!source) {
-            console.error('Source element is undefined');
             return;
         }
 

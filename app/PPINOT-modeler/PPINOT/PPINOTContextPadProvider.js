@@ -189,26 +189,20 @@ PPINOTContextPadProvider.prototype.getContextPadEntries = function (element) {
       title: this._translate('Remove'),
       action: {
         click: (event, element) => {
-          console.log(`🗑️ [ContextPad] Eliminando elemento: ${element.id} (tipo: ${element.type})`);
           
           // Check if it's a PPI element BEFORE removing it
           const isPPI = element && element.type && element.type.startsWith('PPINOT:');
-          console.log(`🔍 [ContextPad] ¿Es PPI?: ${isPPI}`);
           
           // Remove element from canvas
           this._modeling.removeElements([element]);
           
           // Sync with PPI list if it was a PPI element
           if (isPPI) {
-            console.log(`✅ [ContextPad] Elemento ${element.id} era PPI, removiendo de lista`);
             if (window.ppiManager) {
-              console.log(`🔄 [ContextPad] Llamando a removePPIFromList con elementId: ${element.id}`);
               window.ppiManager.removePPIFromList(element.id);
             } else {
-              console.warn('⚠️ [ContextPad] ppiManager no disponible');
             }
           } else {
-            console.log(`ℹ️ [ContextPad] Elemento ${element.id} no era PPI, no se sincroniza`);
           }
         }
       }

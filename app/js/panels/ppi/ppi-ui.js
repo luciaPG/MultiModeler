@@ -8,7 +8,6 @@ if (typeof window.PPIUI === 'undefined') {
       
       // Validar que el core está correctamente inicializado
       if (!this.core || !this.core.measureTypes) {
-        console.error('PPIUI: ppiCore no está correctamente inicializado');
         this.core = this.core || {};
         this.core.measureTypes = this.core.measureTypes || {
           derived: { name: 'Medida Derivada', icon: 'fas fa-calculator' }
@@ -875,7 +874,6 @@ if (typeof window.PPIUI === 'undefined') {
       
       return linkedElements.length > 0;
     } catch (error) {
-      console.warn('Error verificando elementos vinculados:', error);
       return false;
     }
   }
@@ -910,7 +908,6 @@ if (typeof window.PPIUI === 'undefined') {
         // Mensaje eliminado - sin notificación automática
       }
     } catch (error) {
-      console.warn('Error actualizando elemento del diagrama:', error);
     }
   }
 
@@ -1919,7 +1916,6 @@ if (typeof window.PPIUI === 'undefined') {
     // Marcar la card como activa
     this.markPPICardAsActive(ppi.id);
     
-    console.log(`🎯 PPI activo establecido: ${ppi.id} (elemento: ${elementId})`);
   }
   
   clearAllActivePPIs() {
@@ -1973,7 +1969,6 @@ if (typeof window.PPIUI === 'undefined') {
           }
         }
       } catch (error) {
-        console.warn('Error buscando PPI por elemento:', error);
       }
     }
     

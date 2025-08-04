@@ -93,22 +93,15 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
   eventBus.on('element.removed', function(event) {
     const element = event.element;
     
-    console.log(`🔍 [PPINOTUpdater] Elemento removido: ${element && element.id} (tipo: ${element && element.type})`);
-    console.log(`🔍 [PPINOTUpdater] Elemento completo:`, element);
     
     if (element && isPPINOT(element)) {
-      console.log(`🗑️ [PPINOTUpdater] PPI removido del canvas: ${element.id}`);
       
       // Try to remove from PPI list
       if (window.ppiManager) {
-        console.log(`🔄 [PPINOTUpdater] Llamando a removePPIFromList con elementId: ${element.id}`);
         window.ppiManager.removePPIFromList(element.id);
       } else {
-        console.warn('⚠️ [PPINOTUpdater] ppiManager no disponible');
       }
     } else {
-      console.log(`ℹ️ [PPINOTUpdater] Elemento removido no es PPI: ${element && element.id}`);
-      console.log(`ℹ️ [PPINOTUpdater] isPPINOT result:`, isPPINOT(element));
     }
   });
 
@@ -117,19 +110,14 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
     const context = event.context;
     const elements = context.elements || [context.shape];
     
-    console.log(`🔍 [PPINOTUpdater] Comando shape.delete ejecutado`);
-    console.log(`🔍 [PPINOTUpdater] Elementos a eliminar:`, elements);
     
     elements.forEach(element => {
       if (element && isPPINOT(element)) {
-        console.log(`🗑️ [PPINOTUpdater] PPI eliminado por comando: ${element.id}`);
         
         // Try to remove from PPI list
         if (window.ppiManager) {
-          console.log(`🔄 [PPINOTUpdater] Llamando a removePPIFromList con elementId: ${element.id}`);
           window.ppiManager.removePPIFromList(element.id);
         } else {
-          console.warn('⚠️ [PPINOTUpdater] ppiManager no disponible');
         }
       }
     });

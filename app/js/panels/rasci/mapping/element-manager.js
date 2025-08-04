@@ -61,7 +61,6 @@ function findNextTaskInOriginalFlow(modeler, currentTask) {
 }
 
 function createSpecialElement(modeler, sourceElement, roleName, elementType, eventType, results, sourceTaskName = null) {
-  console.log(`🔨 Creando elemento especial: ${eventType} ${roleName}${sourceTaskName ? ` para ${sourceTaskName}` : ''}`);
   
   const modeling = modeler.get('modeling');
   const canvas = modeler.get('canvas');
@@ -83,7 +82,6 @@ function createSpecialElement(modeler, sourceElement, roleName, elementType, eve
     elementName = `${eventType} ${roleName}`;
   }
   
-  console.log(`📝 Nombre del elemento: ${elementName}`);
   
   // Para tareas de aprobación con nombre específico, siempre crear nuevos elementos
   // Para otros tipos o tareas genéricas, verificar si existe uno reutilizable
@@ -94,7 +92,6 @@ function createSpecialElement(modeler, sourceElement, roleName, elementType, eve
     );
     
     if (existingElement) {
-      console.log(`♻️ Reutilizando elemento existente: ${elementName}`);
       elementRegistry.forEach(conn => {
         if (conn.type === 'bpmn:SequenceFlow' &&
             (conn.source && conn.source.id === existingElement.id || conn.target && conn.target.id === existingElement.id)) {
@@ -216,17 +213,13 @@ function createSpecialElement(modeler, sourceElement, roleName, elementType, eve
     else if (eventType === 'Consultar') results.messageFlows++;
     else results.infoEvents++;
     
-    console.log(`✅ Elemento creado exitosamente: ${elementName}, ID: ${element.id}`);
     return element;
   } catch (error) {
-    console.error(`❌ Error creando elemento ${elementName}:`, error);
     return null;
   }
 }
 
 function createSequentialSpecialElements(modeler, bpmnTask, consultRoles, approveRoles, informRoles, results) {
-  console.log(`🚀 Iniciando createSequentialSpecialElements para tarea: ${getElementName(bpmnTask)}`);
-  console.log(`Roles: C=${consultRoles}, A=${approveRoles}, I=${informRoles}`);
   
   const modeling = modeler.get('modeling');
   const elementRegistry = modeler.get('elementRegistry');
@@ -245,12 +238,10 @@ function createSequentialSpecialElements(modeler, bpmnTask, consultRoles, approv
   });
   
   if (existingSpecialElements.length > 0) {
-    console.log(`⚠️ Ya existen elementos especiales para ${taskName}, saltando creación`);
     return;
   }
   
   const nextRealTask = findNextTaskInOriginalFlow(modeler, bpmnTask);
-  console.log(`🎯 Próximo elemento encontrado:`, nextRealTask ? `${getElementName(nextRealTask)} (${nextRealTask.type})` : 'NINGUNO');
   
   // Eliminar conexión directa existente
   let targetForConnection = nextRealTask;
@@ -272,16 +263,13 @@ function createSequentialSpecialElements(modeler, bpmnTask, consultRoles, approv
     if (outgoingConnections.length > 0) {
       directConnection = outgoingConnections[0];
       targetForConnection = directConnection.target;
-      console.log(`🔍 Usando conexión existente hacia: ${getElementName(targetForConnection)} (${targetForConnection.type})`);
     }
   }
   
   if (directConnection) {
-    console.log(`🔌 Removiendo conexión directa existente`);
     try {
       modeling.removeConnection(directConnection);
     } catch (e) {
-      console.error(`❌ Error removiendo conexión:`, e);
     }
   }
   
@@ -294,7 +282,6 @@ function createSequentialSpecialElements(modeler, bpmnTask, consultRoles, approv
   consultRoles.forEach(roleName => {
     const element = createSpecialElement(modeler, currentSource, roleName, 'bpmn:IntermediateThrowEvent', 'Consultar', results, taskName);
     if (element) {
-      console.log(`🔗 Consulta: ${getElementName(currentSource)} -> ${getElementName(element)}`);
       flowElements.push(element);
       currentSource = element;
     }
@@ -304,7 +291,6 @@ function createSequentialSpecialElements(modeler, bpmnTask, consultRoles, approv
   if (approveRoles.length > 0) {
     const element = createSpecialElement(modeler, currentSource, approveRoles[0], 'bpmn:UserTask', 'Aprobar', results, taskName);
     if (element) {
-      console.log(`🔗 Aprobación: ${getElementName(currentSource)} -> ${getElementName(element)}`);
       flowElements.push(element);
       currentSource = element;
       results.approvalTasks++;
@@ -315,7 +301,6 @@ function createSequentialSpecialElements(modeler, bpmnTask, consultRoles, approv
   informRoles.forEach(roleName => {
     const element = createSpecialElement(modeler, currentSource, roleName, 'bpmn:IntermediateThrowEvent', 'Informar', results, taskName);
     if (element) {
-      console.log(`🔗 Información: ${getElementName(currentSource)} -> ${getElementName(element)}`);
       flowElements.push(element);
       currentSource = element;
     }
@@ -323,18 +308,13 @@ function createSequentialSpecialElements(modeler, bpmnTask, consultRoles, approv
   
   // 4. Conectar al siguiente elemento o mantener sin conexión si no hay nada
   if (targetForConnection) {
-    console.log(`🔄 Conectando último elemento ${getElementName(currentSource)} -> ${getElementName(targetForConnection)} (${targetForConnection.type})`);
     try {
       modeling.connect(currentSource, targetForConnection, { type: 'bpmn:SequenceFlow' });
-      console.log(`✅ Flujo conectado correctamente`);
     } catch (e) {
-      console.error(`❌ Error conectando flujo:`, e);
     }
   } else {
-    console.log(`ℹ️ No hay elemento siguiente - dejando ${getElementName(currentSource)} como elemento final`);
   }
   
-  console.log(`🏁 createSequentialSpecialElements completado para ${taskName}`);
 }
 
 function restoreFlowAfterApprovalRemoval(modeler) {
@@ -396,7 +376,6 @@ function restoreFlowAfterApprovalRemoval(modeler) {
 function restoreBpmnFlow(modeler) {
   const elementRegistry = modeler.get('elementRegistry');
   
-  console.log('🔄 Iniciando restauración de flujo BPMN');
   
   // Incluir más tipos de elementos BPMN para una restauración más completa
   const bpmnElements = elementRegistry.filter(element => 
@@ -414,7 +393,6 @@ function restoreBpmnFlow(modeler) {
     
     // Solo intentar restaurar conexiones para elementos que no tienen conexiones salientes
     if (outgoingConnections.length === 0) {
-      console.log(`🔍 Elemento sin conexiones salientes: ${elementName} (${element.type})`);
       
       if (elementName && elementName.startsWith('Aprobar ')) {
         // Para tareas de aprobación, buscar la tarea original y conectar a su siguiente elemento
@@ -426,7 +404,6 @@ function restoreBpmnFlow(modeler) {
     }
   });
   
-  console.log('✅ Restauración de flujo BPMN completada');
 }
 
 function handleApprovalTaskReconnection(modeler, approvalTask, approvalTaskName) {
@@ -447,7 +424,6 @@ function handleApprovalTaskReconnection(modeler, approvalTask, approvalTaskName)
     if (originalNextElements && originalNextElements.length > 0) {
       attemptReconnection(modeler, approvalTask, originalNextElements);
     } else {
-      console.log(`ℹ️ No hay elementos siguientes para la tarea de aprobación: ${approvalTaskName}`);
     }
   }
 }
@@ -459,7 +435,6 @@ function handleNormalElementReconnection(modeler, element, elementName) {
   if (originalNextElements && originalNextElements.length > 0) {
     attemptReconnection(modeler, element, originalNextElements);
   } else {
-    console.log(`ℹ️ No hay elementos siguientes registrados para: ${elementName}`);
   }
 }
 
@@ -485,13 +460,10 @@ function attemptReconnection(modeler, sourceElement, targetElements) {
       if (!existingConnection) {
         try {
           modeling.connect(sourceElement, currentTargetElement, { type: 'bpmn:SequenceFlow' });
-          console.log(`✅ Reconectado: ${getElementName(sourceElement)} -> ${getElementName(currentTargetElement)}`);
           break; // Solo conectar al primer elemento válido
         } catch (e) {
-          console.warn(`⚠️ Error reconectando ${getElementName(sourceElement)} -> ${getElementName(currentTargetElement)}:`, e);
         }
       } else {
-        console.log(`ℹ️ Ya existe conexión: ${getElementName(sourceElement)} -> ${getElementName(currentTargetElement)}`);
       }
     }
   }

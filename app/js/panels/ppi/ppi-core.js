@@ -345,7 +345,6 @@ class PPICore {
       this.savePPINOTRelationshipsToXML(ppinotData.parentChildRelationships);
       
     } catch (e) {
-      console.error('Error al guardar elementos PPINOT:', e);
     }
   }
 
@@ -410,7 +409,6 @@ class PPICore {
           
         }
       }).catch(err => {
-        console.warn('Error guardando relaciones PPINOT en XML:', err);
       });
       
     } catch (e) {
@@ -545,7 +543,6 @@ class PPICore {
           throw new Error('No se pudo obtener XML síncrono');
         }
       } catch (xmlError) {
-        console.warn('⚠️ Error obteniendo XML síncrono, intentando método asíncrono:', xmlError);
         
         // Fallback al método asíncrono
         window.modeler.saveXML({ format: true }).then(result => {
@@ -576,12 +573,10 @@ class PPICore {
             this.xmlRelationshipsCache = relationships;
             this.lastXmlCacheTime = now;
             
-            console.log('📂 Relaciones PPINOT cargadas desde XML (async):', relationships.length);
           }
           
           this.isLoadingRelationships = false;
         }).catch(err => {
-          console.warn('❌ Error cargando relaciones PPINOT desde XML:', err);
           this.isLoadingRelationships = false;
         });
       }
@@ -589,7 +584,6 @@ class PPICore {
       this.isLoadingRelationships = false;
       return relationships;
     } catch (e) {
-      console.error('Error cargando relaciones PPINOT desde XML:', e);
       this.isLoadingRelationships = false;
       return [];
     }
@@ -602,12 +596,10 @@ class PPICore {
       
       // Prevenir restauraciones duplicadas
       if (this.isRestoringRelationships) {
-        console.log('⏳ Restauración ya en progreso, saltando...');
         return;
       }
       
       this.isRestoringRelationships = true;
-      console.log('🔄 Restaurando relaciones PPINOT desde XML...');
       
       const elementRegistry = window.modeler.get('elementRegistry');
       const modeling = window.modeler.get('modeling');
@@ -629,17 +621,14 @@ class PPICore {
                 modeling.moveShape(childElement, { x: 0, y: 0 }, parentElement);
                 restoredCount++;
               } catch (error) {
-                console.warn(`❌ Error restaurando relación: ${rel.childId} -> ${rel.parentId}`, error);
               }
             } else {
               skippedCount++;
             }
           } else {
-            console.warn(`⚠️ Elementos no encontrados: ${rel.childId} -> ${rel.parentId}`);
           }
         });
         
-        console.log(`✅ Restauración completada: ${restoredCount} restauradas, ${skippedCount} saltadas`);
         this.isRestoringRelationships = false;
       };
       
@@ -647,7 +636,6 @@ class PPICore {
       restoreAllRelationships();
       
     } catch (e) {
-      console.error('Error restaurando relaciones PPINOT desde XML:', e);
       this.isRestoringRelationships = false;
     }
   }
@@ -660,19 +648,16 @@ class PPICore {
       
       // Prevenir restauraciones duplicadas
       if (this.isRestoringElements) {
-        console.log('⏳ Restauración de elementos ya en progreso, saltando...');
         return false;
       }
       
       this.isRestoringElements = true;
-      console.log('🔄 Restaurando elementos PPINOT...');
       
       const elementRegistry = window.modeler.get('elementRegistry');
       const modeling = window.modeler.get('modeling');
       
       // PRIMERO: Intentar cargar relaciones desde el XML BPMN (esto ya incluye la restauración)
       const xmlRelationships = this.loadPPINOTRelationshipsFromXML();
-      console.log(`📂 Relaciones cargadas desde XML: ${xmlRelationships.length}`);
       
       // SEGUNDO: Cargar datos de localStorage si están disponibles
       if (!this.pendingPPINOTRestore) {
@@ -680,13 +665,11 @@ class PPICore {
       }
       
       if (!this.pendingPPINOTRestore) {
-        console.log('📂 No hay datos PPINOT pendientes de localStorage');
         this.isRestoringElements = false;
         return true;
       }
       
       const ppinotData = this.pendingPPINOTRestore;
-      console.log(`📂 Datos PPINOT de localStorage: ${ppinotData.ppiElements.length} PPIs, ${ppinotData.ppiChildren.length} hijos`);
       
       // TERCERO: Restaurar todas las relaciones pendientes de una vez
       const allRelationshipsToRestore = [];
@@ -736,7 +719,6 @@ class PPICore {
       
       // Restaurar todas las relaciones de una vez
       if (allRelationshipsToRestore.length > 0) {
-        console.log(`🔄 Restaurando ${allRelationshipsToRestore.length} relaciones pendientes...`);
         
         // Debug: Count scope and target elements
         const scopeRelationships = allRelationshipsToRestore.filter(rel => 
@@ -751,7 +733,6 @@ class PPICore {
             rel.childData.childBusinessObjectType === 'PPINOT:Target'
           )
         );
-        console.log(`🔍 Debug: ${scopeRelationships.length} scope, ${targetRelationships.length} target relationships to restore`);
         
         let restoredCount = 0;
         let skippedCount = 0;
@@ -775,30 +756,23 @@ class PPICore {
                   rel.childData.childBusinessObjectType === 'PPINOT:Scope'
                 )) {
                   scopeRestored++;
-                  console.log(`✅ Restaurado SCOPE: ${rel.childId} -> ${rel.parentId} (${rel.source})`);
                 } else if (rel.childData && (
                   rel.childData.childType === 'PPINOT:Target' || 
                   rel.childData.childBusinessObjectType === 'PPINOT:Target'
                 )) {
                   targetRestored++;
-                  console.log(`✅ Restaurado TARGET: ${rel.childId} -> ${rel.parentId} (${rel.source})`);
                 } else {
-                  console.log(`✅ Restaurada relación: ${rel.childId} -> ${rel.parentId} (${rel.source})`);
                 }
               } else {
                 skippedCount++;
               }
             } catch (error) {
-              console.warn(`❌ Error restaurando relación: ${rel.childId} -> ${rel.parentId}`, error);
             }
           } else {
-            console.warn(`⚠️ Elementos no encontrados: ${rel.childId} -> ${rel.parentId}`);
           }
         });
         
-        console.log(`✅ Restauración completada: ${restoredCount} restauradas (${scopeRestored} scope, ${targetRestored} target), ${skippedCount} saltadas`);
       } else {
-        console.log('✅ No hay relaciones pendientes de restaurar');
       }
       
       // Actualizar PPIs con información de elementos hijos restaurados
@@ -815,12 +789,10 @@ class PPICore {
       // Limpiar datos pendientes
       this.pendingPPINOTRestore = null;
       
-      console.log('✅ Restauración de elementos PPINOT completada');
       this.isRestoringElements = false;
       return true;
       
     } catch (error) {
-      console.error('❌ Error restaurando elementos PPINOT:', error);
       this.isRestoringElements = false;
       return false;
     }
@@ -838,19 +810,16 @@ class PPICore {
       const parentElement = elementRegistry.get(parentId);
       
       if (!childElement || !parentElement) {
-        console.warn('❌ No se pueden restaurar elementos para relación:', childId, '->', parentId);
         return false;
       }
       
       // Verificar si la relación ya existe
       if (childElement.parent && childElement.parent.id === parentId) {
-        console.log(`✅ Relación ya existe: ${childId} -> ${parentId}`);
         return true;
       }
       
       // Intentar restaurar la relación padre-hijo usando el servicio de modelado
       try {
-        console.log(`🔄 Restaurando relación padre-hijo: ${childId} -> ${parentId}`);
         
         // Usar el servicio de modelado para mover el elemento hijo al padre correcto
         // Esto es la forma correcta de establecer relaciones padre-hijo en BPMN.js
@@ -860,24 +829,20 @@ class PPICore {
         setTimeout(() => {
           const updatedChildElement = elementRegistry.get(childId);
           if (updatedChildElement && updatedChildElement.parent && updatedChildElement.parent.id === parentId) {
-            console.log(`✅ Relación padre-hijo restaurada exitosamente: ${childId} -> ${parentId}`);
             
             // Si tenemos información detallada del elemento hijo, actualizar el PPI
             if (childData) {
               this.updatePPIWithChildInfo(parentId, childId);
             }
           } else {
-            console.warn(`⚠️ No se pudo verificar la restauración de la relación: ${childId} -> ${parentId}`);
           }
         }, 100);
         
         return true;
       } catch (error) {
-        console.warn('❌ Error restaurando relación padre-hijo con modeling service:', error);
         
         // Fallback: intentar usar el evento element.updateParent directamente
         try {
-          console.log(`🔄 Intentando fallback con element.updateParent: ${childId} -> ${parentId}`);
           
           // Disparar evento de actualización de padre
           eventBus.fire('element.updateParent', {
@@ -888,7 +853,6 @@ class PPICore {
           
           return true;
         } catch (fallbackError) {
-          console.warn('❌ Error en fallback de element.updateParent:', fallbackError);
           
           // Último recurso: marcar para reprocesamiento
           this.processedElements.delete(childId);
@@ -904,28 +868,23 @@ class PPICore {
         }
       }
     } catch (e) {
-      console.error('Error en restoreParentChildRelationship:', e);
       return false;
     }
   }
 
   updatePPIsWithRestoredChildren(restoredChildren) {
     try {
-      console.log('🔄 Actualizando PPIs con elementos hijos restaurados...');
       
       restoredChildren.forEach((childElement, childId) => {
         if (childElement.parent && childElement.parent.type === 'PPINOT:Ppi') {
           const parentPPIId = childElement.parent.id;
-          console.log(`🔄 Actualizando PPI ${parentPPIId} con elemento hijo ${childId}`);
           
           // Actualizar el PPI con la información del elemento hijo
           this.updatePPIWithChildInfo(parentPPIId, childId);
         }
       });
       
-      console.log('✅ PPIs actualizados con elementos hijos restaurados');
     } catch (e) {
-      console.error('Error actualizando PPIs con elementos hijos:', e);
     }
   }
 
@@ -937,13 +896,11 @@ class PPICore {
       const childElement = elementRegistry.get(childElementId);
       
       if (!childElement) {
-        console.warn('❌ Elemento hijo no encontrado:', childElementId);
         return;
       }
       
       const existingPPI = this.ppis.find(ppi => ppi.elementId === parentPPIId);
       if (!existingPPI) {
-        console.warn('❌ PPI padre no encontrado:', parentPPIId);
         return;
       }
       
@@ -953,31 +910,25 @@ class PPICore {
       if (childElement.type === 'PPINOT:Target') {
         const targetName = (childElement.businessObject && childElement.businessObject.name) || childElementId;
         updatedData.target = targetName;
-        console.log(`🎯 Actualizando TARGET del PPI ${parentPPIId}:`, targetName);
       } else if (childElement.type === 'PPINOT:Scope') {
         const scopeName = (childElement.businessObject && childElement.businessObject.name) || childElementId;
         updatedData.scope = scopeName;
-        console.log(`🎯 Actualizando SCOPE del PPI ${parentPPIId}:`, scopeName);
       } else if (childElement.type === 'PPINOT:Measure') {
         const measureName = (childElement.businessObject && childElement.businessObject.name) || childElementId;
         updatedData.measureDefinition = {
           type: this.detectMeasureType(childElementId, childElement.type),
           definition: measureName
         };
-        console.log(`📏 Actualizando MEASURE del PPI ${parentPPIId}:`, measureName);
       } else if (childElement.type === 'PPINOT:Condition') {
         const conditionName = (childElement.businessObject && childElement.businessObject.name) || childElementId;
         updatedData.businessObjective = conditionName;
-        console.log(`📋 Actualizando CONDITION del PPI ${parentPPIId}:`, conditionName);
       }
       
       if (this.updatePPI(existingPPI.id, updatedData)) {
-        console.log(`✅ PPI ${parentPPIId} actualizado exitosamente`);
         return true;
       }
       
     } catch (error) {
-      console.warn('❌ Error actualizando PPI con información del hijo:', error);
     }
     return false;
   }
@@ -997,20 +948,16 @@ class PPICore {
         
         if (elementType === 'PPINOT:Target') {
           updatedData.target = null;
-          console.log(`🎯 Limpiando TARGET del PPI ${ppi.elementId}`);
         } else if (elementType === 'PPINOT:Scope') {
           updatedData.scope = null;
-          console.log(`🎯 Limpiando SCOPE del PPI ${ppi.elementId}`);
         }
         
         this.updatePPI(ppi.id, updatedData);
       });
       
-      console.log(`✅ Limpiada información de ${elementType} de ${affectedPPIs.length} PPIs`);
       return affectedPPIs.length;
       
     } catch (error) {
-      console.warn('❌ Error limpiando información de hijo PPI:', error);
       return 0;
     }
   }
@@ -1021,10 +968,8 @@ class PPICore {
         return;
       }
       
-      console.log('🔄 Procesando elementos hijos pendientes...');
       
       this.pendingChildData.forEach((data, childId) => {
-        console.log(`🔄 Procesando elemento hijo pendiente: ${childId} -> ${data.parentId}`);
         
         // Intentar actualizar el PPI padre con la información del hijo
         this.updatePPIWithChildInfo(data.parentId, childId);
@@ -1035,9 +980,7 @@ class PPICore {
       
       // Limpiar datos pendientes
       this.pendingChildData.clear();
-      console.log('✅ Elementos hijos pendientes procesados');
     } catch (e) {
-      console.error('Error procesando elementos hijos pendientes:', e);
     }
   }
 
@@ -1180,7 +1123,6 @@ class PPICore {
       }
       
     } catch (error) {
-      console.warn('❌ Error extrayendo información del elemento hijo:', error);
     }
     
     return info;
@@ -1218,7 +1160,6 @@ class PPICore {
       
       return true;
     } catch (error) {
-      console.error('Error exportando PPIs:', error);
       return false;
     }
   }

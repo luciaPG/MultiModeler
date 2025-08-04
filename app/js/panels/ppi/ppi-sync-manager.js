@@ -138,7 +138,6 @@ class PPISyncManager {
     const element = event.element;
     
     if (!element) {
-      console.log('🔄 Cambio de elemento sin elemento específico');
       return;
     }
     
@@ -153,7 +152,6 @@ class PPISyncManager {
     const element = event.element;
     
     if (!element) {
-      console.log('🔄 Eliminación de elemento sin elemento específico');
       return;
     }
     
@@ -168,7 +166,6 @@ class PPISyncManager {
     const element = event.element;
     
     if (!element) {
-      console.log('🔄 Adición de elemento sin elemento específico');
       return;
     }
     
@@ -183,7 +180,6 @@ class PPISyncManager {
     const element = event.element;
     
     if (!element) {
-      console.log('🔄 Movimiento de forma sin elemento específico');
       return;
     }
     
@@ -194,7 +190,6 @@ class PPISyncManager {
 
   handleElementsMove(event) {
     if (!event.elements || !Array.isArray(event.elements)) {
-      console.log('🔄 Movimiento de elementos sin elementos específicos');
       return;
     }
     
@@ -211,12 +206,10 @@ class PPISyncManager {
     const oldParent = event.oldParent;
     
     if (!element) {
-      console.log('🔄 Movimiento de modelado sin elemento específico');
       return;
     }
     
     if (this.isPPIChildElement(element)) {
-      console.log(`🔄 Movimiento detectado: ${element.id} de ${oldParent ? oldParent.id : 'root'} a ${newParent ? newParent.id : 'root'}`);
       this.queueSync('parent_change', {
         elementId: element.id,
         oldParentId: oldParent ? oldParent.id : null,
@@ -232,12 +225,10 @@ class PPISyncManager {
     const newParent = event.newParent;
     
     if (!element) {
-      console.log('🔄 Actualización de padre sin elemento específico');
       return;
     }
     
     if (this.isPPIChildElement(element)) {
-      console.log(`🔄 Actualización de padre detectada: ${element.id}`);
       this.queueSync('parent_change', {
         elementId: element.id,
         oldParentId: oldParent ? oldParent.id : null,
@@ -250,51 +241,41 @@ class PPISyncManager {
     const element = event.element;
     
     if (!element) {
-      console.log('🔄 Actualización de propiedades sin elemento específico');
       return;
     }
     
     if (this.isPPIChildElement(element)) {
-      console.log(`🔄 Actualización de propiedades detectada: ${element.id}`);
       this.queueSync('child_change', element.id);
     }
   }
 
            handleDragEnd(event) {
-      console.log('🔄 [DEBUG] handleDragEnd ejecutado');
       const element = event.element;
       
       if (!element) {
-        console.log('🔄 [DEBUG] Drag terminado sin elemento específico');
         return;
       }
       
-      console.log(`🔄 [DEBUG] Drag terminado para elemento: ${element.id} (tipo: ${element.type})`);
       
       // NUEVO: Siempre verificar cambios de padre después de un drag, no solo para hijos PPI
       // porque el elemento podría haber dejado de ser hijo PPI durante el drag
       setTimeout(() => {
-        console.log(`🔄 [DEBUG] Ejecutando verificaciones post-drag para ${element.id}`);
         // Usar checkAllParentChanges que maneja tanto elementos actuales como huérfanos
         this.checkAllParentChanges();
       }, 100); // Aumentar delay para asegurar que el DOM se actualice
     }
 
            handleDropEnd(event) {
-      console.log('🔄 [DEBUG] handleDropEnd ejecutado');
       const element = event.element;
       
       if (!element) {
-        console.log('🔄 [DEBUG] Drop terminado sin elemento específico');
         return;
       }
       
-      console.log(`🔄 [DEBUG] Drop terminado para elemento: ${element.id} (tipo: ${element.type})`);
       
       // NUEVO: Siempre verificar cambios de padre después de un drop, no solo para hijos PPI
       // porque el elemento podría haber dejado de ser hijo PPI durante el drop
       setTimeout(() => {
-        console.log(`🔄 [DEBUG] Ejecutando verificaciones post-drop para ${element.id}`);
         // Usar checkAllParentChanges que maneja tanto elementos actuales como huérfanos
         this.checkAllParentChanges();
       }, 100); // Aumentar delay para asegurar que el DOM se actualice
@@ -307,7 +288,6 @@ class PPISyncManager {
     const ppiElements = selection.filter(element => this.isPPIElement(element));
     
     if (ppiChildren.length > 0) {
-      console.log(`🎯 Elementos hijo PPI seleccionados: ${ppiChildren.map(el => el.id).join(', ')}`);
       
       // Notificar al UI que hay un elemento PPI activo
       if (window.ppiManager && window.ppiManager.ui && window.ppiManager.ui.setActivePPI) {
@@ -315,7 +295,6 @@ class PPISyncManager {
         window.ppiManager.ui.setActivePPI(ppiChildren[0].id);
       }
     } else if (ppiElements.length > 0) {
-      console.log(`🎯 Elementos PPI principales seleccionados: ${ppiElements.map(el => el.id).join(', ')}`);
       
       // Notificar al UI que hay un elemento PPI principal activo
       if (window.ppiManager && window.ppiManager.ui && window.ppiManager.ui.setActivePPI) {
@@ -339,7 +318,6 @@ class PPISyncManager {
 
      isPPIChildElement(element) {
      if (!element) {
-       console.log(`🔍 [DEBUG] isPPIChildElement: elemento es null/undefined`);
        return false;
      }
      
@@ -354,7 +332,6 @@ class PPISyncManager {
               element.businessObject.$type === 'PPINOT:Condition'
             ));
      
-     console.log(`🔍 [DEBUG] isPPIChildElement(${element.id}): tipo=${element.type}, businessObject.$type=${element.businessObject && element.businessObject.$type}, es hijo=${isChild}`);
      
      return isChild;
    }
@@ -389,7 +366,6 @@ class PPISyncManager {
     }
 
     this.syncState.isSyncing = true;
-    console.log('🔄 Iniciando sincronización PPINOT...');
 
     try {
       // Procesar cambios pendientes
@@ -405,10 +381,8 @@ class PPISyncManager {
       this.syncUI();
       
       this.syncState.lastSyncTime = Date.now();
-      console.log('✅ Sincronización PPINOT completada');
       
     } catch (error) {
-      console.error('❌ Error en sincronización PPINOT:', error);
     } finally {
       this.syncState.isSyncing = false;
       
@@ -438,7 +412,6 @@ class PPISyncManager {
         
         await this.processChange(type, data);
       } catch (error) {
-        console.warn('⚠️ Error procesando cambio:', change, error);
       }
     }
   }
@@ -451,7 +424,6 @@ class PPISyncManager {
       try {
         await this.processChange(item.type, item.data);
       } catch (error) {
-        console.warn('⚠️ Error procesando item de cola:', item, error);
       }
     }
   }
@@ -483,14 +455,12 @@ class PPISyncManager {
         await this.handleParentChange(data);
         break;
       default:
-        console.warn('⚠️ Tipo de cambio desconocido:', type);
     }
   }
 
   // === MANEJADORES DE CAMBIOS ===
 
   async handlePPIChange(ppiId) {
-    console.log(`🔄 Procesando cambio de PPI: ${ppiId}`);
     
     const element = this.getElementFromRegistry(ppiId);
     if (!element) return;
@@ -508,7 +478,6 @@ class PPISyncManager {
   }
 
   async handlePPIRemoval(ppiId) {
-    console.log(`🗑️ Procesando eliminación de PPI: ${ppiId}`);
     
     const existingPPI = this.core.ppis.find(ppi => ppi.elementId === ppiId);
     if (existingPPI) {
@@ -517,7 +486,6 @@ class PPISyncManager {
   }
 
   async handlePPIAddition(ppiId) {
-    console.log(`➕ Procesando adición de PPI: ${ppiId}`);
     
     const existingPPI = this.core.ppis.find(ppi => ppi.elementId === ppiId);
     if (existingPPI) return;
@@ -526,7 +494,6 @@ class PPISyncManager {
   }
 
   async handleChildChange(childId) {
-    console.log(`🔄 Procesando cambio de elemento hijo: ${childId}`);
     
     const element = this.getElementFromRegistry(childId);
     if (!element) return;
@@ -540,14 +507,12 @@ class PPISyncManager {
   }
 
   async handleChildRemoval(childId) {
-    console.log(`🗑️ Procesando eliminación de elemento hijo: ${childId}`);
     
     // Limpiar información del hijo de todos los PPIs
     this.clearChildInfoFromAllPPIs(childId);
   }
 
   async handleChildAddition(childId) {
-    console.log(`➕ Procesando adición de elemento hijo: ${childId}`);
     
     const element = this.getElementFromRegistry(childId);
     if (!element) return;
@@ -561,7 +526,6 @@ class PPISyncManager {
   }
 
   async handleChildMove(childId) {
-    console.log(`🔄 Procesando movimiento de elemento hijo: ${childId}`);
     
     const element = this.getElementFromRegistry(childId);
     if (!element) return;
@@ -575,7 +539,6 @@ class PPISyncManager {
   }
 
      async handleParentChange(data) {
-     console.log(`🔄 Procesando cambio de padre: ${data.elementId}`);
      
      const { elementId, oldParentId, newParentId } = data;
      
@@ -625,15 +588,12 @@ class PPISyncManager {
    // NUEVO: Verificar si un elemento tiene un padre PPI
    hasPPIParent(element) {
      if (!element.parent) {
-       console.log(`🔍 [DEBUG] hasPPIParent(${element.id}): no tiene padre`);
        return false;
      }
      
-     console.log(`🔍 [DEBUG] hasPPIParent(${element.id}): verificando jerarquía...`);
      
      // Verificar padre directo
      if (this.isPPIElement(element.parent)) {
-       console.log(`🔍 [DEBUG] hasPPIParent(${element.id}): padre directo es PPI (${element.parent.id})`);
        return true;
      }
      
@@ -641,16 +601,13 @@ class PPISyncManager {
      let currentParent = element.parent;
      let level = 1;
      while (currentParent) {
-       console.log(`🔍 [DEBUG] hasPPIParent(${element.id}): nivel ${level} - padre: ${currentParent.id} (tipo: ${currentParent.type})`);
        if (this.isPPIElement(currentParent)) {
-         console.log(`🔍 [DEBUG] hasPPIParent(${element.id}): ¡PPI encontrado en nivel ${level}! (${currentParent.id})`);
          return true;
        }
        currentParent = currentParent.parent;
        level++;
      }
      
-     console.log(`🔍 [DEBUG] hasPPIParent(${element.id}): no se encontró PPI en la jerarquía`);
      return false;
    }
 
@@ -666,45 +623,34 @@ class PPISyncManager {
     if (element.type === 'PPINOT:Target') {
       const targetName = (element.businessObject && element.businessObject.name) || childElementId;
       updatedData.target = targetName;
-      console.log(`🎯 Actualizando TARGET del PPI ${parentPPIId}:`, targetName);
     } else if (element.type === 'PPINOT:Scope') {
       const scopeName = (element.businessObject && element.businessObject.name) || childElementId;
       updatedData.scope = scopeName;
-      console.log(`🎯 Actualizando SCOPE del PPI ${parentPPIId}:`, scopeName);
     } else if (element.type === 'PPINOT:Measure') {
       const measureName = (element.businessObject && element.businessObject.name) || childElementId;
       updatedData.measureDefinition = {
         type: this.detectMeasureType(childElementId, element.type),
         definition: measureName
       };
-      console.log(`📏 Actualizando MEASURE del PPI ${parentPPIId}:`, measureName);
     } else if (element.type === 'PPINOT:Condition') {
       const conditionName = (element.businessObject && element.businessObject.name) || childElementId;
       updatedData.businessObjective = conditionName;
-      console.log(`📋 Actualizando CONDITION del PPI ${parentPPIId}:`, conditionName);
     }
     
     this.core.updatePPI(existingPPI.id, updatedData);
   }
 
      clearChildInfoFromAllPPIs(childElementId) {
-       console.log(`🔍 [DEBUG] clearChildInfoFromAllPPIs(${childElementId}) iniciado`);
        
        const element = this.getElementFromRegistry(childElementId);
        if (!element) {
-         console.log(`🔍 [DEBUG] Elemento ${childElementId} no encontrado`);
          return;
        }
 
        const elementType = element.type;
-       console.log(`🔍 [DEBUG] Tipo de elemento: ${elementType}`);
-       console.log(`🔍 [DEBUG] PPIs disponibles: ${this.core.ppis.length}`);
        
        // CORREGIDO: Verificar directamente en todos los PPIs sin depender del cache
        this.core.ppis.forEach(ppi => {
-         console.log(`🔍 [DEBUG] Verificando PPI ${ppi.elementId}:`);
-         console.log(`  - Target actual: ${ppi.target}`);
-         console.log(`  - Scope actual: ${ppi.scope}`);
          
          let updatedData = { updatedAt: new Date().toISOString() };
          let hasChanges = false;
@@ -714,31 +660,25 @@ class PPISyncManager {
            // El target puede contener el nombre del elemento, no el ID
            const targetName = (element.businessObject && element.businessObject.name) || childElementId;
            
-           console.log(`🔍 [DEBUG] Comparando target: PPI tiene "${ppi.target}", elemento es "${targetName}"`);
            
            if (ppi.target === targetName || ppi.target === childElementId) {
              updatedData.target = null;
              hasChanges = true;
-             console.log(`🎯 [DEBUG] ¡Limpiando TARGET del PPI ${ppi.elementId}: No definido (era ${ppi.target})`);
            }
          } else if (elementType === 'PPINOT:Scope' && ppi.scope) {
            // CORREGIDO: Verificar si el scope actual coincide con este elemento
            const scopeName = (element.businessObject && element.businessObject.name) || childElementId;
            
-           console.log(`🔍 [DEBUG] Comparando scope: PPI tiene "${ppi.scope}", elemento es "${scopeName}"`);
            
            if (ppi.scope === scopeName || ppi.scope === childElementId) {
              updatedData.scope = null;
              hasChanges = true;
-             console.log(`🎯 [DEBUG] ¡Limpiando SCOPE del PPI ${ppi.elementId}: No definido (era ${ppi.scope})`);
            }
          }
          
          if (hasChanges) {
-           console.log(`🔍 [DEBUG] Actualizando PPI ${ppi.elementId} con cambios`);
            this.core.updatePPI(ppi.id, updatedData);
          } else {
-           console.log(`🔍 [DEBUG] PPI ${ppi.elementId} no necesita cambios`);
          }
        });
      }
@@ -756,11 +696,9 @@ class PPISyncManager {
      if (element.type === 'PPINOT:Target') {
        updatedData.target = null;
        hasChanges = true;
-       console.log(`🎯 Limpiando TARGET del PPI ${parentPPIId}: No definido`);
      } else if (element.type === 'PPINOT:Scope') {
        updatedData.scope = null;
        hasChanges = true;
-       console.log(`🎯 Limpiando SCOPE del PPI ${parentPPIId}: No definido`);
      }
      
      if (hasChanges) {
@@ -789,11 +727,9 @@ class PPISyncManager {
      // NUEVO: Verificar cambios de padre para un elemento específico
    checkElementParentChange(elementId) {
      try {
-       console.log(`🔍 [DEBUG] Iniciando checkElementParentChange para ${elementId}`);
        
        const element = this.getElementFromRegistry(elementId);
        if (!element) {
-         console.log(`🔍 [DEBUG] Elemento ${elementId} no encontrado en registry`);
          return;
        }
 
@@ -804,24 +740,15 @@ class PPISyncManager {
        const currentParentPPI = this.findParentPPI(element);
        const currentParentId = element.parent ? element.parent.id : null;
 
-       console.log(`🔍 [DEBUG] ${elementId} - Detalles completos:`);
-       console.log(`  - Elemento actual: ${element.id} (tipo: ${element.type})`);
-       console.log(`  - Padre actual: ${currentParentId} (tipo: ${element.parent ? element.parent.type : 'null'})`);
-       console.log(`  - Padre en cache: ${cachedParentId} (tipo: ${cachedParentElement ? cachedParentElement.type : 'null'})`);
-       console.log(`  - Padre cache es PPI: ${cachedParentIsPPI}`);
-       console.log(`  - Tiene padre PPI actual: ${currentHasPPIParent}`);
-       console.log(`  - PPI padre encontrado: ${currentParentPPI ? currentParentPPI.elementId : 'null'}`);
 
        // Solo procesar si hay un cambio real en la relación PPI
        if (cachedParentIsPPI !== currentHasPPIParent) {
-         console.log(`🔄 [DEBUG] ¡CAMBIO DETECTADO! ${elementId}: tenía PPI=${cachedParentIsPPI}, ahora tiene PPI=${currentHasPPIParent}`);
          
          // Actualizar cache
          this.updateElementInCache(element);
          
          // Si el elemento tenía un padre PPI pero ahora no tiene, limpiar de todos los PPIs
          if (cachedParentIsPPI && !currentHasPPIParent) {
-           console.log(`🔄 [DEBUG] ¡ELEMENTO PERDIÓ PADRE PPI! Limpiando de todos los PPIs...`);
            this.clearChildInfoFromAllPPIs(elementId);
          }
          
@@ -832,10 +759,8 @@ class PPISyncManager {
            newParentId: currentHasPPIParent ? (currentParentPPI ? currentParentPPI.elementId : null) : null
          });
        } else {
-         console.log(`🔍 [DEBUG] No hay cambio para ${elementId}`);
        }
      } catch (error) {
-       console.warn('⚠️ Error verificando cambio de padre:', error);
      }
    }
 
@@ -844,23 +769,19 @@ class PPISyncManager {
       try {
         if (!window.modeler) return;
 
-        console.log('🔍 [DEBUG] Iniciando checkAllParentChanges...');
 
         const elementRegistry = window.modeler.get('elementRegistry');
         const allElements = elementRegistry.getAll();
         
         // Buscar todos los elementos que pueden ser hijos de PPI
         const ppiChildElements = allElements.filter(element => this.isPPIChildElement(element));
-        console.log(`🔍 [DEBUG] Encontrados ${ppiChildElements.length} elementos que pueden ser hijos PPI`);
 
         // Para cada elemento hijo, verificar si tiene padre PPI
         ppiChildElements.forEach(element => {
           const hasPPIParent = this.hasPPIParent(element);
-          console.log(`🔍 [DEBUG] Elemento ${element.id}: tiene padre PPI = ${hasPPIParent}`);
           
           if (!hasPPIParent) {
             // Si no tiene padre PPI, limpiar de todos los PPIs
-            console.log(`🔄 [DEBUG] Elemento ${element.id} no tiene padre PPI, limpiando de todos los PPIs...`);
             this.clearChildInfoFromAllPPIs(element.id);
           }
         });
@@ -868,10 +789,8 @@ class PPISyncManager {
         // Actualizar la UI inmediatamente
         this.syncUI();
         
-        console.log('✅ checkAllParentChanges completado');
 
       } catch (error) {
-        console.warn('⚠️ Error verificando cambios de padre:', error);
       }
     }
 
@@ -898,7 +817,6 @@ class PPISyncManager {
       if (!this.elementCache.has(elementId) && oldInfo.parentId) {
         const oldParentElement = this.getElementFromRegistry(oldInfo.parentId);
         if (oldParentElement && this.isPPIElement(oldParentElement)) {
-          console.log(`🔍 [DEBUG] Preservando información histórica para ${elementId} (era hijo de PPI ${oldInfo.parentId})`);
           this.elementCache.set(elementId, {
             ...oldInfo,
             // Marcar como elemento que ya no existe
@@ -950,25 +868,20 @@ class PPISyncManager {
            // === SINCRONIZACIÓN DE UI ===
 
     syncUI() {
-      console.log('🔄 [DEBUG] Sincronizando UI...');
       
       try {
         // Forzar actualización completa de la lista de PPIs
         if (this.ui && this.ui.refreshPPIList) {
           this.ui.refreshPPIList();
-          console.log('🔄 [DEBUG] UI actualizada con refreshPPIList');
         } else {
-          console.log('⚠️ [DEBUG] UI no disponible para actualización');
         }
         
         // Guardar estado inmediatamente
         if (this.core && this.core.savePPINOTElements) {
           this.core.savePPINOTElements();
-          console.log('🔄 [DEBUG] Estado guardado');
         }
         
       } catch (error) {
-        console.warn('⚠️ Error sincronizando UI:', error);
       }
     }
 
@@ -992,7 +905,6 @@ class PPISyncManager {
   }
 
   async performFullSync() {
-    console.log('🔄 Realizando sincronización completa...');
     
     if (!window.modeler) return;
     
@@ -1026,31 +938,26 @@ class PPISyncManager {
     // Actualizar UI
     this.syncUI();
     
-    console.log('✅ Sincronización completa completada');
   }
 
   // === MÉTODOS PÚBLICOS ===
 
   forceSync() {
-    console.log('🔄 Forzando sincronización...');
     this.performFullSync();
   }
 
      // NUEVO: Forzar verificación de cambios de padre
    forceCheckParentChanges() {
-     console.log('🔍 Forzando verificación de cambios de padre...');
      this.checkAllParentChanges();
    }
 
    // NUEVO: Forzar sincronización rápida de padres
    forceQuickParentSync() {
-     console.log('⚡ Forzando sincronización rápida de padres...');
      this.performQuickParentSync();
    }
 
      // NUEVO: Sincronización inteligente que verifica cambios de padre
    async performSmartSync() {
-     console.log('🧠 Realizando sincronización inteligente...');
      
      if (!window.modeler) return;
      
@@ -1060,12 +967,10 @@ class PPISyncManager {
      // Luego realizar sincronización normal
      await this.performFullSync();
      
-     console.log('✅ Sincronización inteligente completada');
    }
 
    // NUEVO: Sincronización rápida solo para cambios de padre
    performQuickParentSync() {
-     console.log('⚡ Realizando sincronización rápida de padres...');
      
      if (!window.modeler) return;
      
@@ -1073,27 +978,22 @@ class PPISyncManager {
      this.checkAllParentChanges();
      this.syncUI();
      
-     console.log('✅ Sincronización rápida de padres completada');
    }
 
    // NUEVO: Método más robusto para detectar elementos que dejaron de ser hijos
    checkOrphanedElements() {
-     console.log('🔍 [DEBUG] Iniciando checkOrphanedElements...');
      
      if (!window.modeler) {
-       console.log('🔍 [DEBUG] Modeler no disponible');
        return;
      }
      
      // NUEVO: Iterar sobre el cache en lugar de elementos actuales
      // Esto nos permite encontrar elementos que WERE PPI children pero ya no lo son
-     console.log(`🔍 [DEBUG] Verificando ${this.elementCache.size} elementos en cache...`);
      
      let orphanedCount = 0;
      
      // Iterar sobre todos los elementos en el cache
      this.elementCache.forEach((cachedInfo, elementId) => {
-       console.log(`🔍 [DEBUG] Verificando elemento del cache: ${elementId}`);
        
        // Verificar si el elemento aún existe en el canvas
        const currentElement = this.getElementFromRegistry(elementId);
@@ -1102,18 +1002,15 @@ class PPISyncManager {
          if (cachedInfo.parentId) {
            const oldParentElement = this.getElementFromRegistry(cachedInfo.parentId);
            if (oldParentElement && this.isPPIElement(oldParentElement)) {
-             console.log(`🔄 [DEBUG] ¡ELEMENTO ELIMINADO CON PADRE PPI! ${elementId} (era hijo de PPI ${cachedInfo.parentId}, ahora eliminado)`);
              this.clearChildInfoFromAllPPIs(elementId);
              orphanedCount++;
            }
          }
-         console.log(`🔍 [DEBUG] Elemento ${elementId} ya no existe en el canvas, procesado si tenía padre PPI`);
          return; // Skip elements that no longer exist
        }
        
        // Verificar si el elemento es del tipo que puede ser hijo de PPI
        if (!this.isPPIChildElement(currentElement)) {
-         console.log(`🔍 [DEBUG] Elemento ${elementId} no es del tipo que puede ser hijo PPI, ignorando`);
          return; // Skip elements that can't be PPI children
        }
        
@@ -1122,13 +1019,9 @@ class PPISyncManager {
        const cachedParentIsPPI = cachedParentElement ? this.isPPIElement(cachedParentElement) : false;
        const currentHasPPIParent = this.hasPPIParent(currentElement);
        
-       console.log(`🔍 [DEBUG] ${elementId}:`);
-       console.log(`  - Padre en cache: ${cachedParentId} (es PPI: ${cachedParentIsPPI})`);
-       console.log(`  - Tiene padre PPI actual: ${currentHasPPIParent}`);
        
        // Si el elemento tenía un padre PPI en el cache pero ahora no tiene padre PPI
        if (cachedParentIsPPI && !currentHasPPIParent) {
-         console.log(`🔄 [DEBUG] ¡ELEMENTO HUÉRFANO DETECTADO! ${elementId} (era hijo de PPI ${cachedParentId}, ahora no tiene padre PPI)`);
          
          // Limpiar de todos los PPIs
          this.clearChildInfoFromAllPPIs(elementId);
@@ -1138,16 +1031,13 @@ class PPISyncManager {
          
          orphanedCount++;
        } else {
-         console.log(`🔍 [DEBUG] ${elementId} no es huérfano`);
        }
      });
      
      if (orphanedCount > 0) {
-       console.log(`🔄 [DEBUG] Se procesaron ${orphanedCount} elementos huérfanos`);
        // Forzar actualización de UI
        this.syncUI();
      } else {
-       console.log(`🔍 [DEBUG] No se encontraron elementos huérfanos`);
      }
    }
 
@@ -1186,7 +1076,6 @@ class PPISyncManager {
     this.elementCache.clear();
     this.relationshipCache.clear();
     
-    console.log('🗑️ PPISyncManager destruido');
   }
 }
 

@@ -928,10 +928,8 @@ export default function RALphLabelEditingProvider(
     // Helper para saber si un elemento es no editable
     function isNonEditable(element) {
         if (!element) {
-            console.log('Comprobando editable: elemento nulo/undefined');
             return true;
         }
-        console.log('Comprobando editable:', element.type, element);
         const nonEditableElements = [
             'RALph:history',
             'RALph:historyStart',
@@ -1159,8 +1157,6 @@ RALphLabelEditingProvider.prototype.getEditingBBox = function(element) {
     var target = element.label || element;
 
     var bbox = canvas.getAbsoluteBBox(target);
-    //console.log(element)
-    //console.log(bbox)
     var mid = {
         x: bbox.x + bbox.width / 2,
         y: bbox.y + bbox.height / 2
@@ -1257,11 +1253,8 @@ RALphLabelEditingProvider.prototype.getEditingBBox = function(element) {
                 paddingBottom: (4 * zoom) + 'px'
             });
         } 
-        // Si es el elemento principal, usar posición interna apropiada
         else if (dualLabelElements.includes(element.type)) {
-            console.log('Configuring internal label bounds');
-            console.log('Original bbox:', bbox);
-            console.log('Calculated bounds:', {
+            assign(bounds, {
                 width: bbox.width * 0.8,
                 height: bbox.height * 0.6,
                 x: mid.x - (bbox.width * 0.8) / 2,
@@ -1429,11 +1422,7 @@ RALphLabelEditingProvider.prototype.update = function(element, text) {
     else if (dualLabelElements.includes(element.type)) {
         // Actualizar el campo text del businessObject del elemento principal
         if (element.businessObject) {
-            console.log('Updating internal label for element:', element.type);
-            console.log('Old text:', element.businessObject.text);
-            console.log('New text:', text);
             element.businessObject.text = text;
-            console.log('Updated text:', element.businessObject.text);
         }
     }
     // Para otros elementos, usar el comportamiento por defecto

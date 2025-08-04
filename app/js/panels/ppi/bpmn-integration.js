@@ -154,7 +154,6 @@ class BpmnIntegration {
     
     if (isPPIElement && window.ppiManager && window.ppiManager.ui && window.ppiManager.ui.setActivePPI) {
       window.ppiManager.ui.setActivePPI(element.id);
-      console.log(`🎯 Elemento PPI clickeado: ${element.id} (tipo: ${element.type})`);
     }
   }
 
