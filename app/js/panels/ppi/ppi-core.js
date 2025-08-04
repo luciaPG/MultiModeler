@@ -86,31 +86,61 @@ class PPICore {
     const index = this.ppis.findIndex(ppi => ppi.id === ppiId);
     if (index !== -1) {
       const deletedPPI = this.ppis[index];
+      
+      // Store the PPI data before removing it from the list
+      const ppiData = { ...deletedPPI };
+      
       this.ppis.splice(index, 1);
       this.savePPIs();
       
       // Also remove the PPI element and its children from the canvas
-      this.deletePPIFromCanvas(ppiId);
+      this.deletePPIFromCanvas(ppiId, ppiData);
       
       return true;
     }
     return false;
   }
 
-  deletePPIFromCanvas(ppiId) {
+  deletePPIFromCanvas(ppiId, ppiData = null) {
     try {
-      if (!window.modeler) return;
+      console.log(`🔄 Intentando eliminar PPI del canvas: ${ppiId}`);
+      
+      if (!window.modeler) {
+        console.warn('⚠️ Modeler no disponible para eliminar PPI del canvas');
+        return;
+      }
+      
+      // Use provided PPI data or find it in the list
+      let ppi = ppiData;
+      if (!ppi) {
+        ppi = this.ppis.find(p => p.id === ppiId);
+      }
+      
+      if (!ppi) {
+        console.log(`ℹ️ PPI no encontrado en la lista: ${ppiId}`);
+        return;
+      }
+      
+      const elementId = ppi.elementId;
+      if (!elementId) {
+        console.log(`ℹ️ PPI ${ppiId} no tiene elementId asociado`);
+        return;
+      }
+      
+      console.log(`🔍 Buscando elemento en canvas con elementId: ${elementId}`);
       
       const elementRegistry = window.modeler.get('elementRegistry');
       const modeling = window.modeler.get('modeling');
       
-      // Find the PPI element on the canvas
-      const ppiElement = elementRegistry.get(ppiId);
+      // Find the PPI element on the canvas using elementId
+      const ppiElement = elementRegistry.get(elementId);
       if (ppiElement) {
+        console.log(`🗑️ PPI encontrado en canvas: ${elementId} (tipo: ${ppiElement.type})`);
+        
         // Find all child elements (scope, target, measure, condition)
         const allElements = elementRegistry.getAll();
         const childElements = allElements.filter(el => 
-          el.parent && el.parent.id === ppiId && (
+          el.parent && el.parent.id === elementId && (
             el.type === 'PPINOT:Scope' || 
             el.type === 'PPINOT:Target' || 
             el.type === 'PPINOT:Measure' || 
@@ -124,24 +154,49 @@ class PPICore {
           )
         );
         
+        console.log(`🎯 Elementos hijo encontrados: ${childElements.length}`);
+        
         // Remove child elements first
         childElements.forEach(child => {
           try {
+            console.log(`🗑️ Eliminando elemento hijo: ${child.id} (${child.type})`);
             modeling.removeElements([child]);
           } catch (error) {
-            console.warn(`Error eliminando hijo ${child.id}:`, error);
+            console.warn(`⚠️ Error eliminando hijo ${child.id}:`, error);
           }
         });
         
         // Remove the PPI element
         try {
+          console.log(`🗑️ Eliminando elemento PPI principal: ${elementId}`);
           modeling.removeElements([ppiElement]);
+          console.log(`✅ PPI eliminado exitosamente del canvas: ${elementId}`);
         } catch (error) {
-          console.warn(`Error eliminando PPI ${ppiId}:`, error);
+          console.warn(`⚠️ Error eliminando PPI ${elementId}:`, error);
+        }
+      } else {
+        console.log(`ℹ️ PPI no encontrado en canvas con elementId: ${elementId}`);
+        
+        // Try to find by searching all elements for PPINOT types
+        const allElements = elementRegistry.getAll();
+        const ppiElements = allElements.filter(el => 
+          el.type && el.type.startsWith('PPINOT:') && 
+          el.id !== elementId && 
+          (el.businessObject && el.businessObject.name === ppi.title)
+        );
+        
+        if (ppiElements.length > 0) {
+          console.log(`🔍 Encontrados ${ppiElements.length} elementos PPINOT alternativos, intentando eliminar el primero`);
+          try {
+            modeling.removeElements([ppiElements[0]]);
+            console.log(`✅ PPI alternativo eliminado del canvas: ${ppiElements[0].id}`);
+          } catch (error) {
+            console.warn(`⚠️ Error eliminando PPI alternativo ${ppiElements[0].id}:`, error);
+          }
         }
       }
     } catch (error) {
-      console.error('Error eliminando PPI del canvas:', error);
+      console.error('❌ Error eliminando PPI del canvas:', error);
     }
   }
 

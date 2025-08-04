@@ -13,7 +13,7 @@ import {
 } from 'diagram-js/lib/util/Collections';
 
 import { is } from 'bpmn-js/lib/util/ModelUtil';
-import { isExternalLabel, isPPINOTConnection } from './Types';
+import { isExternalLabel } from './Types';
 
 /**
  * A handler responsible for updating the PPINOT element's businessObject
@@ -87,6 +87,52 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
         oldShape.label.labelTarget = newShape;
       }
     }
+  });
+
+  // Listen for element removal to sync with PPI list
+  eventBus.on('element.removed', function(event) {
+    const element = event.element;
+    
+    console.log(`🔍 [PPINOTUpdater] Elemento removido: ${element && element.id} (tipo: ${element && element.type})`);
+    console.log(`🔍 [PPINOTUpdater] Elemento completo:`, element);
+    
+    if (element && isPPINOT(element)) {
+      console.log(`🗑️ [PPINOTUpdater] PPI removido del canvas: ${element.id}`);
+      
+      // Try to remove from PPI list
+      if (window.ppiManager) {
+        console.log(`🔄 [PPINOTUpdater] Llamando a removePPIFromList con elementId: ${element.id}`);
+        window.ppiManager.removePPIFromList(element.id);
+      } else {
+        console.warn('⚠️ [PPINOTUpdater] ppiManager no disponible');
+      }
+    } else {
+      console.log(`ℹ️ [PPINOTUpdater] Elemento removido no es PPI: ${element && element.id}`);
+      console.log(`ℹ️ [PPINOTUpdater] isPPINOT result:`, isPPINOT(element));
+    }
+  });
+
+  // Also listen for shape.delete command execution to catch keyboard deletions
+  this.executed('shape.delete', function(event) {
+    const context = event.context;
+    const elements = context.elements || [context.shape];
+    
+    console.log(`🔍 [PPINOTUpdater] Comando shape.delete ejecutado`);
+    console.log(`🔍 [PPINOTUpdater] Elementos a eliminar:`, elements);
+    
+    elements.forEach(element => {
+      if (element && isPPINOT(element)) {
+        console.log(`🗑️ [PPINOTUpdater] PPI eliminado por comando: ${element.id}`);
+        
+        // Try to remove from PPI list
+        if (window.ppiManager) {
+          console.log(`🔄 [PPINOTUpdater] Llamando a removePPIFromList con elementId: ${element.id}`);
+          window.ppiManager.removePPIFromList(element.id);
+        } else {
+          console.warn('⚠️ [PPINOTUpdater] ppiManager no disponible');
+        }
+      }
+    });
   });
 
   function updatePPINOTElement(e) {
@@ -320,7 +366,19 @@ PPINOTUpdater.$inject = [ 'eventBus', 'modeling', 'bpmnjs' ];
 /////// helpers ///////////////////////////////////
 
 function isPPINOT(element) {
-  return element && /PPINOT:/.test(element.type);
+  if (!element) return false;
+  
+  // Check element.type
+  if (element.type && /PPINOT:/.test(element.type)) {
+    return true;
+  }
+  
+  // Check businessObject.$type
+  if (element.businessObject && element.businessObject.$type && /PPINOT:/.test(element.businessObject.$type)) {
+    return true;
+  }
+  
+  return false;
 }
 
 function ifPPINOTElement(fn) {

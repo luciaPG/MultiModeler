@@ -176,16 +176,55 @@ class PPIManager {
     try {
       const eventBus = window.modeler.get('eventBus');
       
-      // Solo mantener listeners esenciales para eliminación de PPIs
+      console.log('🔧 Configurando listeners BPMN para sincronización bidireccional...');
+      
+      // Listener para eliminación de PPIs del canvas
       eventBus.on('element.removed', (event) => {
+        console.log(`🔍 Evento element.removed detectado:`, {
+          elementId: event.element && event.element.id,
+          elementType: event.element && event.element.type,
+          businessObjectType: event.element && event.element.businessObject && event.element.businessObject.$type
+        });
+        
         // Check if the removed element is a PPI and remove it from the list
         if (event.element && this.core.isPPIElement(event.element)) {
           console.log(`🗑️ PPI eliminado del canvas: ${event.element.id}`);
           this.removePPIFromList(event.element.id);
+        } else {
+          console.log(`ℹ️ Elemento eliminado no es PPI:`, {
+            isPPI: event.element ? this.core.isPPIElement(event.element) : false
+          });
         }
       });
 
-      console.log('✅ Listeners BPMN simplificados configurados (refresco manual)');
+      // Listener para adición de PPIs al canvas
+      eventBus.on('element.added', (event) => {
+        console.log(`🔍 Evento element.added detectado:`, {
+          elementId: event.element && event.element.id,
+          elementType: event.element && event.element.type,
+          businessObjectType: event.element && event.element.businessObject && event.element.businessObject.$type
+        });
+        
+        const element = event.element;
+        if (element && this.core.isPPIElement(element)) {
+          console.log(`📊 PPI agregado al canvas: ${element.id}`);
+          
+          // Verificar si ya existe un PPI para este elemento
+          const existingPPI = this.core.ppis.find(ppi => ppi.elementId === element.id);
+          if (!existingPPI) {
+            console.log(`🔄 Creando PPI desde elemento agregado: ${element.id}`);
+            setTimeout(() => this.createPPIFromElement(element.id), 100);
+          } else {
+            console.log(`ℹ️ PPI ya existe para elemento: ${element.id}`);
+          }
+        } else {
+          console.log(`ℹ️ Elemento agregado no es PPI:`, {
+            isPPI: element ? this.core.isPPIElement(element) : false
+          });
+        }
+      });
+
+      console.log('✅ Listeners BPMN configurados para sincronización bidireccional');
     } catch (error) {
       console.error('❌ Error configurando listeners BPMN:', error);
     }
@@ -575,15 +614,45 @@ class PPIManager {
 
   removePPIFromList(ppiId) {
     try {
-      // Remove from core PPIs list
-      const index = this.core.ppis.findIndex(ppi => ppi.elementId === ppiId);
-      if (index !== -1) {
-        this.core.ppis.splice(index, 1);
-        this.core.savePPIs();
-        console.log(`🗑️ PPI removido de la lista: ${ppiId}`);
+      console.log(`🔄 Intentando remover PPI de la lista: ${ppiId}`);
+      console.log(`📊 PPIs actuales en la lista:`, this.core.ppis.map(ppi => ({ id: ppi.id, elementId: ppi.elementId, title: ppi.title })));
+      
+      // Buscar el PPI por elementId
+      const ppi = this.core.ppis.find(ppi => ppi.elementId === ppiId);
+      if (ppi) {
+        console.log(`🗑️ PPI encontrado en la lista, eliminando: ${ppi.id} (elementId: ${ppi.elementId})`);
         
-        // Refresh the UI
-        this.ui.refreshPPIList();
+        // Usar la función deletePPI del core que también elimina del canvas
+        if (this.core.deletePPI(ppi.id)) {
+          console.log(`✅ PPI eliminado exitosamente de la lista y canvas: ${ppiId}`);
+          
+          // Refresh the UI
+          this.ui.refreshPPIList();
+          this.ui.showSuccessMessage(`PPI eliminado: ${ppi.title || ppiId}`);
+        } else {
+          console.error(`❌ Error eliminando PPI del core: ${ppiId}`);
+        }
+      } else {
+        console.log(`ℹ️ PPI no encontrado en la lista con elementId: ${ppiId}`);
+        
+        // Buscar por ID directo como fallback
+        const ppiById = this.core.ppis.find(ppi => ppi.id === ppiId);
+        if (ppiById) {
+          console.log(`🗑️ PPI encontrado por ID directo, eliminando: ${ppiById.id}`);
+          if (this.core.deletePPI(ppiById.id)) {
+            console.log(`✅ PPI eliminado exitosamente: ${ppiId}`);
+            this.ui.refreshPPIList();
+            this.ui.showSuccessMessage(`PPI eliminado: ${ppiById.title || ppiId}`);
+          }
+        } else {
+          console.warn(`⚠️ PPI no encontrado en la lista: ${ppiId}`);
+          console.log(`🔍 Buscando PPIs que contengan "${ppiId}" en cualquier campo:`);
+          this.core.ppis.forEach((p, index) => {
+            if (p.id.includes(ppiId) || (p.elementId && p.elementId.includes(ppiId)) || (p.title && p.title.includes(ppiId))) {
+              console.log(`  ${index}: id="${p.id}", elementId="${p.elementId}", title="${p.title}"`);
+            }
+          });
+        }
       }
     } catch (error) {
       console.error('❌ Error removiendo PPI de la lista:', error);
@@ -1372,4 +1441,94 @@ window.testPPINOTSave = function() {
   } else {
     console.error('❌ ppiManager no disponible');
   }
-}; 
+};
+
+window.testBidirectionalSync = function() {
+  if (window.ppiManager) {
+    console.log('🧪 Probando sincronización bidireccional...');
+    
+    // Mostrar estado actual
+    console.log('📊 PPIs en la lista:', window.ppiManager.core.ppis.length);
+    window.ppiManager.core.ppis.forEach((ppi, index) => {
+      console.log(`  ${index + 1}. ${ppi.title} (ID: ${ppi.id}, elementId: ${ppi.elementId})`);
+    });
+    
+    // Verificar elementos en canvas
+    if (window.modeler) {
+      const elementRegistry = window.modeler.get('elementRegistry');
+      const allElements = elementRegistry.getAll();
+      const ppiElements = allElements.filter(el => window.ppiManager.core.isPPIElement(el));
+      
+      console.log('🎨 PPIs en canvas:', ppiElements.length);
+      ppiElements.forEach((element, index) => {
+        console.log(`  ${index + 1}. ${element.id} (tipo: ${element.type})`);
+      });
+    }
+  } else {
+    console.error('❌ ppiManager no disponible');
+  }
+};
+
+window.createPPITabs = function() {
+  if (window.ppiManager) {
+    console.log('🧪 Creando tabs de PPIs manualmente...');
+    window.ppiManager.forceAnalyzePPIChildren();
+  } else {
+    console.error('❌ ppiManager no disponible');
+  }
+};
+
+window.debugPPI = function() {
+  if (window.ppiManager) {
+    console.log('🔍 Debugging PPIs...');
+    window.ppiManager.debugSearchPPIElements();
+  } else {
+    console.error('❌ ppiManager no disponible');
+  }
+};
+
+  window.testDeleteFromList = function(ppiId) {
+    if (window.ppiManager) {
+      console.log(`🧪 Probando eliminación desde lista: ${ppiId}`);
+      if (window.ppiManager.core.deletePPI(ppiId)) {
+        console.log('✅ Eliminación exitosa');
+      } else {
+        console.log('❌ Eliminación fallida');
+      }
+    } else {
+      console.error('❌ ppiManager no disponible');
+    }
+  };
+
+  window.testDeleteFromCanvas = function(elementId) {
+    if (window.ppiManager) {
+      console.log(`🧪 Probando eliminación desde canvas: ${elementId}`);
+      window.ppiManager.removePPIFromList(elementId);
+    } else {
+      console.error('❌ ppiManager no disponible');
+    }
+  };
+
+  window.testCanvasDeleteEvent = function(elementId) {
+    if (window.modeler) {
+      console.log(`🧪 Simulando evento de eliminación del canvas: ${elementId}`);
+      const elementRegistry = window.modeler.get('elementRegistry');
+      const element = elementRegistry.get(elementId);
+      
+      if (element) {
+        console.log(`🔍 Elemento encontrado:`, element);
+        
+        // Simular el evento element.removed
+        const event = { element: element };
+        console.log(`🔄 Disparando evento element.removed manualmente`);
+        
+        // Trigger the event manually
+        const eventBus = window.modeler.get('eventBus');
+        eventBus.fire('element.removed', event);
+      } else {
+        console.error(`❌ Elemento no encontrado: ${elementId}`);
+      }
+    } else {
+      console.error('❌ Modeler no disponible');
+    }
+  }; 
