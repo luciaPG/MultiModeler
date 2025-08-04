@@ -757,6 +757,87 @@ class PPIManager {
     console.log('📁 setupFileUpload llamado (función de compatibilidad)');
   }
 
+  setupEventListeners() {
+    // Setup event listeners for the PPI panel
+    try {
+      // Add event listeners for search functionality
+      const searchInput = document.getElementById('ppi-search');
+      if (searchInput) {
+        searchInput.addEventListener('input', () => this.filterPPIs());
+      }
+      
+      // Add event listeners for filter dropdowns
+      const typeFilter = document.getElementById('type-filter');
+      if (typeFilter) {
+        typeFilter.addEventListener('change', () => this.filterPPIs());
+      }
+      
+      const statusFilter = document.getElementById('status-filter');
+      if (statusFilter) {
+        statusFilter.addEventListener('change', () => this.filterPPIs());
+      }
+      
+      console.log('PPI event listeners setup completed');
+    } catch (error) {
+      console.warn('Error setting up PPI event listeners:', error);
+    }
+  }
+
+  createSamplePPIs() {
+    // Create some sample PPIs for testing if none exist
+    if (this.core.ppis.length === 0) {
+      console.log('Creating sample PPIs for testing...');
+      
+      const samplePPIs = [
+        {
+          id: 'sample_ppi_1',
+          title: 'Tiempo de Procesamiento',
+          process: 'Proceso de Pedidos',
+          businessObjective: 'Reducir el tiempo de procesamiento de pedidos',
+          measureDefinition: {
+            type: 'time',
+            definition: 'Tiempo desde la recepción hasta la confirmación'
+          },
+          target: '24 horas',
+          scope: 'Todos los pedidos estándar',
+          source: 'Sistema de gestión de pedidos',
+          responsible: 'Equipo de logística',
+          informed: ['Gerente de operaciones'],
+          comments: 'PPI crítico para la satisfacción del cliente',
+          elementId: 'sample_element_1',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: 'sample_ppi_2',
+          title: 'Tasa de Completitud',
+          process: 'Proceso de Facturación',
+          businessObjective: 'Asegurar que todos los pedidos sean facturados correctamente',
+          measureDefinition: {
+            type: 'count',
+            definition: 'Número de facturas generadas vs pedidos procesados'
+          },
+          target: '95%',
+          scope: 'Pedidos completados',
+          source: 'Sistema de facturación',
+          responsible: 'Equipo de contabilidad',
+          informed: ['Director financiero'],
+          comments: 'Indicador de calidad del proceso',
+          elementId: 'sample_element_2',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ];
+      
+      samplePPIs.forEach(ppi => {
+        this.core.addPPI(ppi);
+      });
+      
+      console.log('Sample PPIs created:', this.core.ppis.length);
+      this.refreshPPIList();
+    }
+  }
+
   // === PPINOT RESTORATION ===
   
   restorePPINOTElements() {

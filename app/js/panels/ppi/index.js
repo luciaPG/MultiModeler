@@ -26,6 +26,7 @@ async function loadPPIComponents() {
         window.debugPPI = () => window.ppiManagerInstance.debugSearchPPIElements();
         window.forceAnalyzePPIChildren = () => window.ppiManagerInstance.forceAnalyzePPIChildren();
         window.forceRestorePPINOT = () => window.ppiManagerInstance.forceRestorePPINOTElements();
+        window.createSamplePPIs = () => window.ppiManagerInstance.createSamplePPIs();
         
         console.log('✅ PPIManager inicializado correctamente');
       } else {
@@ -141,6 +142,14 @@ function createPPIManagerFallback() {
       setTimeout(() => {
         if (window.ppiManagerInstance && window.ppiManagerInstance.saveEditedPPI) {
           window.ppiManagerInstance.saveEditedPPI(id);
+        }
+      }, 500);
+    },
+    createSamplePPIs: () => {
+      console.warn('Esperando inicialización de ppiManager...');
+      setTimeout(() => {
+        if (window.ppiManagerInstance && window.ppiManagerInstance.createSamplePPIs) {
+          window.ppiManagerInstance.createSamplePPIs();
         }
       }, 500);
     }

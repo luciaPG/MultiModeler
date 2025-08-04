@@ -632,6 +632,11 @@ class PanelLoader {
         window.ppiManager.setupEventListeners();
       }
       
+      // Create sample PPIs if none exist
+      if (typeof window.ppiManager.createSamplePPIs === 'function') {
+        window.ppiManager.createSamplePPIs();
+      }
+      
       // Forzar actualización de la lista de PPIs
       if (typeof window.ppiManager.refreshPPIList === 'function') {
         setTimeout(() => {
