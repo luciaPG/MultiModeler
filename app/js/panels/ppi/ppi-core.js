@@ -1231,6 +1231,15 @@ class PPICore {
       data[key] = value.trim();
     }
     
+    // Procesar measureDefinition correctamente
+    if (data.measureType && data.measureDefinition) {
+      data.measureDefinition = {
+        type: data.measureType,
+        definition: data.measureDefinition
+      };
+      delete data.measureType; // Remover el campo temporal
+    }
+    
     if (data.informed) {
       data.informed = data.informed.split(',').map(item => item.trim());
     }

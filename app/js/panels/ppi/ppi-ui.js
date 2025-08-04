@@ -5,6 +5,15 @@ if (typeof window.PPIUI === 'undefined') {
   window.PPIUI = class PPIUI {
     constructor(ppiCore) {
       this.core = ppiCore;
+      
+      // Validar que el core está correctamente inicializado
+      if (!this.core || !this.core.measureTypes) {
+        console.error('PPIUI: ppiCore no está correctamente inicializado');
+        this.core = this.core || {};
+        this.core.measureTypes = this.core.measureTypes || {
+          derived: { name: 'Medida Derivada', icon: 'fas fa-calculator' }
+        };
+      }
     }
 
   // === UI INITIALIZATION ===
@@ -32,7 +41,10 @@ if (typeof window.PPIUI === 'undefined') {
     
     // Asegurar que tenemos un tipo de medida válido
     const measureTypeKey = (ppi.measureDefinition && ppi.measureDefinition.type) || 'derived';
-    const measureType = this.core.measureTypes[measureTypeKey] || this.core.measureTypes.derived;
+    const measureType = this.core.measureTypes[measureTypeKey] || this.core.measureTypes.derived || {
+      name: 'Tipo Desconocido',
+      icon: 'fas fa-question-circle'
+    };
     const cardTitle = ppi.title || ppi.id;
     
     // Determinar color del tipo
@@ -45,20 +57,10 @@ if (typeof window.PPIUI === 'undefined') {
       aggregated: '#a8edea'
     };
     
-    // Calcular progreso/completitud
+    // Calcular progreso/completitud - solo para clase de tarjeta
     const completedFields = [ppi.title, ppi.target, ppi.scope, ppi.responsible].filter(Boolean).length;
-
     const totalFields = 4;
-    const completionPercentage = Math.round((completedFields / totalFields) * 100);
-    const isComplete = completionPercentage === 100;
-    
-    // Determinar badges - solo estado de completitud
-    const badges = [];
-    if (isComplete) {
-      badges.push('<span class="status-badge complete"><i class="fas fa-check-circle"></i> Completo</span>');
-    } else {
-      badges.push('<span class="status-badge incomplete"><i class="fas fa-exclamation-triangle"></i> Incompleto</span>');
-    }
+    const isComplete = completedFields === totalFields;
     
     div.className = `ppi-card ${!isComplete ? 'needs-attention' : ''}`;
     
@@ -71,7 +73,7 @@ if (typeof window.PPIUI === 'undefined') {
           <h3 class="card-title" title="${cardTitle}">${this.core.truncateText(cardTitle, 50)}</h3>
           <div class="meta-info">
             <div class="badges-container">
-              ${badges.join('')}
+              <!-- Sin badges de completitud -->
             </div>
           </div>
         </div>
@@ -140,8 +142,7 @@ if (typeof window.PPIUI === 'undefined') {
     // Calcular datos actualizados
     const completedFields = [ppi.title, ppi.target, ppi.scope, ppi.responsible].filter(Boolean).length;
     const totalFields = 4;
-    const completionPercentage = Math.round((completedFields / totalFields) * 100);
-    const isComplete = completionPercentage === 100;
+    const isComplete = completedFields === totalFields;
     
     // Actualizar clase del elemento
     element.className = `ppi-card ${!isComplete ? 'needs-attention' : ''}`;
@@ -152,19 +153,6 @@ if (typeof window.PPIUI === 'undefined') {
       const cardTitle = ppi.title || ppi.id;
       titleElement.textContent = this.core.truncateText(cardTitle, 50);
       titleElement.setAttribute('title', cardTitle);
-
-    }
-    
-    // Actualizar badges
-    const badgesContainer = element.querySelector('.badges-container');
-    if (badgesContainer) {
-      const badges = [];
-      if (isComplete) {
-        badges.push('<span class="status-badge complete"><i class="fas fa-check-circle"></i> Completo</span>');
-      } else {
-        badges.push('<span class="status-badge incomplete"><i class="fas fa-exclamation-triangle"></i> Incompleto</span>');
-      }
-      badgesContainer.innerHTML = badges.join('');
     }
     
     // Actualizar target - MEJORADO
@@ -407,12 +395,14 @@ if (typeof window.PPIUI === 'undefined') {
     modal.className = 'ppi-modal-overlay';
     modal.innerHTML = `
       <div class="ppi-modal">
-        <div class="ppi-modal-header">
-          <h3>${title}</h3>
-          <button class="ppi-modal-close" onclick="this.closest('.ppi-modal-overlay').remove()">
+      <button class="ppi-modal-close" onclick="this.closest('.ppi-modal-overlay').remove()">
             <i class="fas fa-times"></i>
           </button>
+
+          <div class="ppi-modal-title">
+        <h2>${title}</h2> 
         </div>
+      
         <div class="ppi-modal-body">
           ${content}
         </div>
@@ -431,12 +421,27 @@ if (typeof window.PPIUI === 'undefined') {
 
     document.body.appendChild(modal);
     this.addModalStyles();
+
+    // Configurar funcionalidad de pestañas para modales de edición y visualización
+    if (isEdit) {
+      this.setupTabNavigation();
+      this.setupFormValidation();
+    } else {
+      // También configurar pestañas para el modal de visualización
+      this.setupTabNavigation();
+    }
   }
 
   // === FORM GENERATION ===
   
   generateDetailContent(ppi) {
-    const measureType = this.core.measureTypes[ppi.measureDefinition.type];
+    // Validar que existe el tipo de medida
+    const measureTypeKey = (ppi.measureDefinition && ppi.measureDefinition.type) || 'derived';
+    const measureType = this.core.measureTypes[measureTypeKey] || this.core.measureTypes.derived || {
+      name: 'Tipo Desconocido',
+      icon: 'fas fa-question-circle'
+    };
+    
     const createdAt = new Date(ppi.createdAt).toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'long',
@@ -453,164 +458,429 @@ if (typeof window.PPIUI === 'undefined') {
     });
 
     return `
-      <div class="ppi-detail-grid">
-        <div class="detail-section">
-          <h4><i class="fas fa-info-circle"></i> Información General</h4>
-          <div class="detail-item">
-            <strong>Título:</strong> ${ppi.title || 'Sin título'}
-          </div>
-          <div class="detail-item">
-            <strong>Proceso:</strong> ${ppi.process || 'No especificado'}
-          </div>
-          <div class="detail-item">
-            <strong>Objetivo de Negocio:</strong> ${ppi.businessObjective || 'No definido'}
+      <div class="ppi-detail-container">
+        <div class="ppi-form-header">
+          <div class="ppi-id-info">
+            <span class="ppi-id-label">PPI ID:</span>
+            <span class="ppi-id-value">${ppi.id}</span>
           </div>
         </div>
 
-        <div class="detail-section">
-          <h4><i class="${measureType.icon}"></i> Medición</h4>
-          <div class="detail-item">
-            <strong>Tipo de Medida:</strong> ${measureType.name}
-          </div>
-          <div class="detail-item">
-            <strong>Definición:</strong> ${ppi.measureDefinition.definition || 'No definida'}
-          </div>
+        <div class="form-tabs">
+          <button type="button" class="tab-button active" data-tab="general">
+            <i class="fas fa-info-circle"></i> General
+          </button>
+          <button type="button" class="tab-button" data-tab="measurement">
+            <i class="fas fa-chart-bar"></i> Medición
+          </button>
+          <button type="button" class="tab-button" data-tab="targets">
+            <i class="fas fa-bullseye"></i> Objetivos
+          </button>
+          <button type="button" class="tab-button" data-tab="responsibilities">
+            <i class="fas fa-users"></i> Responsabilidades
+          </button>
+          <button type="button" class="tab-button" data-tab="system">
+            <i class="fas fa-clock"></i> Sistema
+          </button>
         </div>
 
-        <div class="detail-section">
-          <h4><i class="fas fa-bullseye"></i> Objetivos y Alcance</h4>
-          <div class="detail-item">
-            <strong>Target:</strong> ${ppi.target || 'No definido'}
+        <div class="form-content">
+          <!-- Tab: General -->
+          <div class="tab-content active" data-tab="general">
+              <div class="form-group">
+                <label for="view-title">Título del PPI</label>
+                <input type="text" id="view-title" value="${ppi.title || ''}" readonly class="readonly-field">
+                <div class="field-help">Nombre descriptivo del indicador</div>
+              </div>
+
+              <div class="form-group">
+                <label for="view-process">Proceso</label>
+                <input type="text" id="view-process" value="${ppi.process || ''}" readonly class="readonly-field">
+                <div class="field-help">Proceso de negocio asociado</div>
+              </div>
+
+              <div class="form-group">
+                <label for="view-business-objective">Process Goals</label>
+                <textarea id="view-business-objective" rows="3" readonly class="readonly-field">${ppi.businessObjective || ''}</textarea>
+                <div class="field-help">Objetivos que busca cumplir</div>
+              </div>
           </div>
-          <div class="detail-item">
-            <strong>Scope:</strong> ${ppi.scope || 'Sin scope definido'}
+
+          <!-- Tab: Measurement -->
+          <div class="tab-content" data-tab="measurement">
+              <div class="form-group">
+                <label for="view-measure-type">Tipo de Medida</label>
+                <input type="text" id="view-measure-type" value="${measureType.name}" readonly class="readonly-field">
+              </div>
+
+              <div class="form-group">
+                <label for="view-measure-definition">Measure (Definición)</label>
+                <textarea id="view-measure-definition" rows="4" readonly class="readonly-field">${ppi.measureDefinition.definition || ''}</textarea>
+                <div class="field-help">Descripción técnica del cálculo</div>
+              </div>
+
+              <div class="form-group">
+                <label for="view-source">Source (Fuente)</label>
+                <input type="text" id="view-source" value="${ppi.source || ''}" readonly class="readonly-field">
+                <div class="field-help">Origen de los datos</div>
+              </div>
           </div>
-          <div class="detail-item">
-            <strong>Fuente de Datos:</strong> ${ppi.source || 'No especificada'}
+
+          <!-- Tab: Targets -->
+          <div class="tab-content" data-tab="targets">
+              <div class="form-group">
+                <label for="view-target">Target (Objetivo)</label>
+                <input type="text" id="view-target" value="${ppi.target || ''}" readonly class="readonly-field">
+                <div class="field-help">Valor objetivo del indicador</div>
+                ${ppi.target ? `<div class="bpmn-info"><i class="fas fa-link"></i> Del canvas: ${ppi.target}</div>` : ''}
+              </div>
+
+              <div class="form-group">
+                <label for="view-scope">Scope (Alcance)</label>
+                <input type="text" id="view-scope" value="${ppi.scope || ''}" readonly class="readonly-field">
+                <div class="field-help">Qué instancias se consideran</div>
+                ${ppi.scope ? `<div class="bpmn-info"><i class="fas fa-link"></i> Del canvas: ${ppi.scope}</div>` : ''}
+              </div>
+          </div>
+
+          <!-- Tab: Responsibilities -->
+          <div class="tab-content" data-tab="responsibilities">
+              <div class="form-group">
+                <label for="view-responsible">Responsible (Responsable)</label>
+                <input type="text" id="view-responsible" value="${ppi.responsible || ''}" readonly class="readonly-field">
+                <div class="field-help">Persona responsable del PPI</div>
+              </div>
+
+              <div class="form-group">
+                <label for="view-informed">Informed (Informados)</label>
+                <input type="text" id="view-informed" value="${Array.isArray(ppi.informed) && ppi.informed.length > 0 ? ppi.informed.join(', ') : ''}" readonly class="readonly-field">
+                <div class="field-help">Personas que reciben información</div>
+              </div>
+
+              <div class="form-group">
+                <label for="view-comments">Comments (Comentarios)</label>
+                <textarea id="view-comments" rows="3" readonly class="readonly-field">${ppi.comments || ''}</textarea>
+                <div class="field-help">Información adicional</div>
+              </div>
+          </div>
+
+          <!-- Tab: System -->
+          <div class="tab-content" data-tab="system">
+              <div class="form-group">
+                <label for="view-created">Fecha de Creación</label>
+                <input type="text" id="view-created" value="${createdAt}" readonly class="readonly-field">
+                <div class="field-help">Cuándo se creó este PPI</div>
+              </div>
+
+              <div class="form-group">
+                <label for="view-updated">Última Actualización</label>
+                <input type="text" id="view-updated" value="${updatedAt}" readonly class="readonly-field">
+                <div class="field-help">Última vez que se modificó</div>
+              </div>
+
+              <div class="form-group">
+                <label for="view-element">Elemento BPMN</label>
+                <input type="text" id="view-element" value="${ppi.elementId || 'No vinculado'}" readonly class="readonly-field">
+                <div class="field-help">Elemento del modelo al que está asociado</div>
+              </div>
           </div>
         </div>
-
-        <div class="detail-section">
-          <h4><i class="fas fa-users"></i> Responsabilidades</h4>
-          <div class="detail-item">
-            <strong>Responsable:</strong> ${ppi.responsible || 'No asignado'}
-          </div>
-          <div class="detail-item">
-            <strong>Informados:</strong> ${Array.isArray(ppi.informed) && ppi.informed.length > 0 ? ppi.informed.join(', ') : 'Ninguno'}
-          </div>
-        </div>
-
-        <div class="detail-section">
-          <h4><i class="fas fa-clock"></i> Información Temporal</h4>
-          <div class="detail-item">
-            <strong>Creado:</strong> ${createdAt}
-          </div>
-          <div class="detail-item">
-            <strong>Última Actualización:</strong> ${updatedAt}
-          </div>
-          <div class="detail-item">
-            <strong>Elemento BPMN:</strong> ${ppi.elementId || 'No vinculado'}
-          </div>
-        </div>
-
-        ${ppi.comments ? `
-          <div class="detail-section">
-            <h4><i class="fas fa-comment"></i> Comentarios</h4>
-            <div class="detail-item">
-              ${ppi.comments}
-            </div>
-          </div>
-        ` : ''}
       </div>
     `;
   }
 
   generateEditForm(ppi) {
-    const measureTypes = Object.entries(this.core.measureTypes).map(([key, type]) => 
+    // Validar que measureTypes existe
+    const measureTypesObj = this.core.measureTypes || {};
+    const measureTypes = Object.entries(measureTypesObj).map(([key, type]) => 
       `<option value="${key}" ${ppi.measureDefinition.type === key ? 'selected' : ''}>${type.name}</option>`
     ).join('');
 
     return `
       <form id="edit-ppi-form" class="ppi-edit-form">
-        <div class="form-grid">
-          <div class="form-section">
-            <h4><i class="fas fa-info-circle"></i> Información General</h4>
+        <div class="ppi-form-header">
+          <div class="ppi-id-info">
+            <span class="ppi-id-label">PPI ID:</span>
+            <span class="ppi-id-value">${ppi.id || 'Nuevo PPI'}</span>
+          </div>
+        </div>
+
+        <div class="form-tabs">
+          <button type="button" class="tab-button active" data-tab="general">
+            <i class="fas fa-info-circle"></i> General
+          </button>
+          <button type="button" class="tab-button" data-tab="measurement">
+            <i class="fas fa-chart-bar"></i> Medición
+          </button>
+          <button type="button" class="tab-button" data-tab="targets">
+            <i class="fas fa-bullseye"></i> Objetivos
+          </button>
+          <button type="button" class="tab-button" data-tab="responsibilities">
+            <i class="fas fa-users"></i> Responsabilidades
+          </button>
+        </div>
+
+        <div class="form-content">
+          <!-- Tab: General -->
+          <div class="tab-content active" data-tab="general">
+              <div class="form-group required">
+                <label for="edit-title">Título del PPI</label>
+                <input type="text" id="edit-title" name="title" value="${ppi.title || ''}" required 
+                       placeholder="Ej: Percentage of RFCs cancelled during holidays">
+                <div class="field-help">Nombre descriptivo del indicador</div>
+              </div>
+
+              <div class="form-group">
+                <label for="edit-process">Proceso</label>
+                <input type="text" id="edit-process" name="process" value="${ppi.process || ''}"
+                       placeholder="Ej: RFC-002: Improve customer satisfaction">
+                <div class="field-help">Proceso de negocio asociado</div>
+              </div>
+
+              <div class="form-group">
+                <label for="edit-business-objective">Process Goals</label>
+                <textarea id="edit-business-objective" name="businessObjective" rows="2" 
+                          placeholder="Objetivos del proceso...">${ppi.businessObjective || ''}</textarea>
+                <div class="field-help">Objetivos que busca cumplir</div>
+              </div>
             
-            <div class="form-group">
-              <label for="edit-title">Título del PPI:</label>
-              <input type="text" id="edit-title" name="title" value="${ppi.title || ''}" required>
-            </div>
-
-            <div class="form-group">
-              <label for="edit-process">Proceso:</label>
-              <input type="text" id="edit-process" name="process" value="${ppi.process || ''}">
-            </div>
-
-            <div class="form-group">
-              <label for="edit-business-objective">Objetivo de Negocio:</label>
-              <textarea id="edit-business-objective" name="businessObjective" rows="3">${ppi.businessObjective || ''}</textarea>
-            </div>
           </div>
 
-          <div class="form-section">
-            <h4><i class="fas fa-chart-bar"></i> Definición de Medida</h4>
-            
-            <div class="form-group">
-              <label for="edit-measure-type">Tipo de Medida:</label>
-              <select id="edit-measure-type" name="measureType" required>
-                ${measureTypes}
-              </select>
-            </div>
+          <!-- Tab: Measurement -->
+          <div class="tab-content" data-tab="measurement">
+  
+              <div class="form-group required">
+                <label for="edit-measure-type">Tipo de Medida</label>
+                <select id="edit-measure-type" name="measureType" required>
+                  <option value="">Seleccionar...</option>
+                  ${measureTypes}
+                </select>
+              </div>
 
-            <div class="form-group">
-              <label for="edit-measure-definition">Definición de la Medida:</label>
-              <textarea id="edit-measure-definition" name="measureDefinition" rows="3">${ppi.measureDefinition.definition || ''}</textarea>
-            </div>
+              <div class="form-group required">
+                <label for="edit-measure-definition">Measure (Definición)</label>
+                <textarea id="edit-measure-definition" name="measureDefinition" rows="3" required
+                          placeholder="Ej: Calculado como ξ * 100, donde c = RFCs cancelados y r = RFCs registrados">${ppi.measureDefinition.definition || ''}</textarea>
+                <div class="field-help">Descripción técnica del cálculo</div>
+              </div>
+
+              <div class="form-group">
+                <label for="edit-source">Source (Fuente)</label>
+                <input type="text" id="edit-source" name="source" value="${ppi.source || ''}"
+                       placeholder="Ej: Event logs, Sistema ERP...">
+                <div class="field-help">Origen de los datos</div>
+              </div>
           </div>
 
-          <div class="form-section">
-            <h4><i class="fas fa-bullseye"></i> Objetivos y Alcance</h4>
-            
-            <div class="form-group">
-              <label for="edit-target">Target:</label>
-              <input type="text" id="edit-target" name="target" value="${ppi.target || ''}" placeholder="Información del canvas: ${ppi.target || 'No definido desde BPMN'}">
-            </div>
+          <!-- Tab: Targets -->
+          <div class="tab-content" data-tab="targets">
+              <div class="form-group">
+                <label for="edit-target">Target (Objetivo)</label>
+                <input type="text" id="edit-target" name="target" value="${ppi.target || ''}" 
+                       placeholder="Ej: Must be ≥ 90%">
+                <div class="field-help">Valor objetivo del indicador</div>
+                ${ppi.target ? `<div class="bpmn-info"><i class="fas fa-link"></i> Del canvas: ${ppi.target}</div>` : ''}
+              </div>
 
-            <div class="form-group">
-              <label for="edit-scope">Scope:</label>
-              <input type="text" id="edit-scope" name="scope" value="${ppi.scope || ''}" placeholder="Información del canvas: ${ppi.scope || 'No definido desde BPMN'}">
-            </div>
-
-            <div class="form-group">
-              <label for="edit-source">Fuente de Datos:</label>
-              <input type="text" id="edit-source" name="source" value="${ppi.source || ''}">
-            </div>
+              <div class="form-group">
+                <label for="edit-scope">Scope (Alcance)</label>
+                <input type="text" id="edit-scope" name="scope" value="${ppi.scope || ''}"
+                       placeholder="Ej: Instancias en periodo de vacaciones">
+                <div class="field-help">Qué instancias se consideran</div>
+                ${ppi.scope ? `<div class="bpmn-info"><i class="fas fa-link"></i> Del canvas: ${ppi.scope}</div>` : ''}
+              </div>
+          
           </div>
 
-          <div class="form-section">
-            <h4><i class="fas fa-users"></i> Responsabilidades</h4>
+          <!-- Tab: Responsibilities -->
+          <div class="tab-content" data-tab="responsibilities">
+              <div class="form-group">
+                <label for="edit-responsible">Responsible (Responsable)</label>
+                <input type="text" id="edit-responsible" name="responsible" value="${ppi.responsible || ''}"
+                       placeholder="Ej: Planning and quality manager">
+                <div class="field-help">Persona responsable del PPI</div>
+              </div>
+
+              <div class="form-group">
+                <label for="edit-informed">Informed (Informados)</label>
+                <input type="text" id="edit-informed" name="informed" 
+                       value="${Array.isArray(ppi.informed) ? ppi.informed.join(', ') : ''}"
+                       placeholder="Ej: CIO, Quality Manager (separados por comas)">
+                <div class="field-help">Personas que reciben información</div>
+              </div>
+
+              <div class="form-group">
+                <label for="edit-comments">Comments (Comentarios)</label>
+                <textarea id="edit-comments" name="comments" rows="2"
+                          placeholder="Observaciones adicionales...">${ppi.comments || ''}</textarea>
+                <div class="field-help">Información adicional</div>
+              </div>
             
-            <div class="form-group">
-              <label for="edit-responsible">Responsable:</label>
-              <input type="text" id="edit-responsible" name="responsible" value="${ppi.responsible || ''}">
-            </div>
-
-            <div class="form-group">
-              <label for="edit-informed">Personas Informadas (separadas por comas):</label>
-              <input type="text" id="edit-informed" name="informed" value="${Array.isArray(ppi.informed) ? ppi.informed.join(', ') : ''}">
-            </div>
-
-            <div class="form-group">
-              <label for="edit-comments">Comentarios:</label>
-              <textarea id="edit-comments" name="comments" rows="3">${ppi.comments || ''}</textarea>
-            </div>
           </div>
         </div>
       </form>
     `;
   }
 
-  // === STYLES MANAGEMENT ===
+  // === TAB NAVIGATION ===
+  
+  setupTabNavigation() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const targetTab = button.getAttribute('data-tab');
+        
+        // Remover clase active de todos los botones y contenidos
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        tabContents.forEach(content => content.classList.remove('active'));
+        
+        // Añadir clase active al botón y contenido seleccionado
+        button.classList.add('active');
+        const targetContent = document.querySelector(`[data-tab="${targetTab}"].tab-content`);
+        if (targetContent) {
+          targetContent.classList.add('active');
+        }
+      });
+    });
+  }
+
+  // === FORM VALIDATION ===
+  
+  setupFormValidation() {
+    const form = document.getElementById('edit-ppi-form');
+    if (!form) return;
+
+    const inputs = form.querySelectorAll('input, textarea, select');
+    inputs.forEach(input => {
+      input.addEventListener('input', () => {
+        this.validateField(input);
+      });
+
+      input.addEventListener('blur', () => {
+        this.validateField(input);
+      });
+    });
+  }
+
+  validateField(field) {
+    const isRequired = field.hasAttribute('required');
+    const value = field.value.trim();
+    
+    // Remover clases de validación anteriores
+    field.classList.remove('field-valid', 'field-invalid');
+    
+    if (isRequired && !value) {
+      field.classList.add('field-invalid');
+      this.showFieldError(field, 'Este campo es obligatorio');
+    } else if (value) {
+      field.classList.add('field-valid');
+      this.hideFieldError(field);
+    } else {
+      this.hideFieldError(field);
+    }
+  }
+
+  showFieldError(field, message) {
+    this.hideFieldError(field); // Remover error existente
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'field-error';
+    errorDiv.textContent = message;
+    
+    field.parentNode.appendChild(errorDiv);
+  }
+
+  hideFieldError(field) {
+    const existingError = field.parentNode.querySelector('.field-error');
+    if (existingError) {
+      existingError.remove();
+    }
+  }
+
+  updateTabIndicators() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    
+    // Definir campos por pestaña
+    const tabFields = {
+      general: {
+        required: ['edit-title'],
+        optional: ['edit-process', 'edit-business-objective']
+      },
+      measurement: {
+        required: ['edit-measure-type', 'edit-measure-definition'],
+        optional: ['edit-source']
+      },
+      targets: {
+        required: [],
+        optional: ['edit-target', 'edit-scope']
+      },
+      responsibilities: {
+        required: [],
+        optional: ['edit-responsible', 'edit-informed', 'edit-comments']
+      }
+    };
+    
+    tabButtons.forEach(button => {
+      const tabName = button.getAttribute('data-tab');
+      const tabData = tabFields[tabName];
+      
+      if (tabData) {
+        let completedRequired = 0;
+        let completedOptional = 0;
+
+        // Contar campos requeridos completados
+        tabData.required.forEach(fieldId => {
+          const field = document.getElementById(fieldId);
+          if (field && field.value.trim()) {
+            completedRequired++;
+          }
+        });
+
+        // Contar campos opcionales completados
+        tabData.optional.forEach(fieldId => {
+          const field = document.getElementById(fieldId);
+          if (field && field.value.trim()) {
+            completedOptional++;
+          }
+        });
+
+        // Remover indicadores existentes
+        const existingIndicator = button.querySelector('.tab-indicator');
+        if (existingIndicator) {
+          existingIndicator.remove();
+        }
+
+        // Añadir nuevo indicador
+        const indicator = document.createElement('span');
+        indicator.className = 'tab-indicator';
+        
+        const totalRequired = tabData.required.length;
+        const hasRequiredFields = totalRequired > 0;
+        
+        if (hasRequiredFields && completedRequired === totalRequired) {
+          // Todos los campos requeridos completados
+          indicator.innerHTML = '<i class="fas fa-check-circle"></i>';
+          indicator.style.color = 'var(--success-color, #28a745)';
+        } else if (!hasRequiredFields && completedOptional > 0) {
+          // No hay campos requeridos pero hay opcionales completados
+          indicator.innerHTML = '<i class="fas fa-check-circle"></i>';
+          indicator.style.color = 'var(--success-color, #28a745)';
+        } else if (completedOptional > 0 || completedRequired > 0) {
+          // Algunos campos completados pero no todos los requeridos
+          indicator.innerHTML = '<i class="fas fa-clock"></i>';
+          indicator.style.color = 'var(--warning-color, #ffc107)';
+        } else {
+          // Ningún campo completado
+          indicator.innerHTML = '<i class="fas fa-circle"></i>';
+          indicator.style.color = 'var(--text-muted, #6c757d)';
+        }
+        
+        button.appendChild(indicator);
+      }
+    });
+  }
   
   addImprovedStyles() {
     // Remover estilos existentes para forzar actualización
@@ -709,7 +979,6 @@ if (typeof window.PPIUI === 'undefined') {
       /* Card principal con diseño profesional */
       .ppi-card {
         background: var(--bg-white);
-        border: 1px solid var(--bg-muted);
         border-radius: var(--border-radius);
         box-shadow: var(--shadow-sm);
         transition: all var(--transition-normal);
@@ -725,11 +994,6 @@ if (typeof window.PPIUI === 'undefined') {
         flex-direction: column;
       }
 
-      .ppi-card:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-lg);
-        border-color: var(--ppi-primary);
-      }
 
       /* Estados especiales de card */
       .ppi-card.has-bpmn-data {
@@ -1464,7 +1728,6 @@ if (typeof window.PPIUI === 'undefined') {
     if (!container) return;
     
     const cards = container.querySelectorAll('.ppi-card[data-ppi-id]');
-    let updatedCount = 0;
     
     cards.forEach(card => {
       const ppiId = card.getAttribute('data-ppi-id');
@@ -1484,7 +1747,6 @@ if (typeof window.PPIUI === 'undefined') {
         if (storedData !== currentData) {
           this.updatePPIElement(card, ppi);
           card.setAttribute('data-ppi-data', currentData);
-          updatedCount++;
         }
       }
     });
