@@ -150,6 +150,43 @@ function saveBpmnState() {
             console.log('👨‍👦 Relaciones padre-hijo guardadas:', Object.keys(parentChildRelations).length);
           }
           
+          // NUEVO: Guardar elementos RALPH por separado como en el sistema original
+          const ralphElements = allElements.filter(el => 
+            el.type && el.type.includes('RALph')
+          );
+          
+          if (ralphElements.length > 0) {
+            // Convertir elementos RALPH a formato JSON para guardar por separado (OPTIMIZADO)
+            const ralphData = ralphElements.map(el => {
+              const data = {
+                id: el.id,
+                type: el.type,
+                x: el.x,
+                y: el.y
+              };
+              
+              // Solo agregar propiedades si existen para reducir tamaño
+              if (el.width) data.width = el.width;
+              if (el.height) data.height = el.height;
+              if (el.businessObject && el.businessObject.$type) data.businessObjectType = el.businessObject.$type;
+              if (el.businessObject && el.businessObject.name) data.name = el.businessObject.name;
+              
+              // Solo para conexiones
+              if (el.source && el.target) {
+                data.source = el.source.id;
+                data.target = el.target.id;
+                if (el.waypoints && el.waypoints.length > 0) {
+                  data.waypoints = el.waypoints.map(wp => ({ x: wp.x, y: wp.y }));
+                }
+              }
+              
+              return data;
+            });
+            
+            localStorage.setItem('RALphElements', JSON.stringify(ralphData));
+            console.log('🎯 RALPH guardados:', ralphData.length);
+          }
+          
           // GUARDAR TAMBIÉN LAS RELACIONES PPINOT EN EL XML (si está disponible)
           if (window.ppiManager && window.ppiManager.core) {
             // Filtrar elementos hijos de PPINOT
@@ -312,6 +349,127 @@ function loadBpmnState() {
         console.log('  - Scope:', ppinotElements.filter(el => el.type.includes('Scope')).length);
         console.log('  - Ppi:', ppinotElements.filter(el => el.type.includes('Ppi')).length);
         console.log('  - RALph:', ppinotElements.filter(el => el.type.includes('RALph')).length);
+        
+        // NUEVO: Restaurar elementos RALPH desde almacenamiento separado
+        const savedRALphElements = localStorage.getItem('RALphElements');
+        if (savedRALphElements) {
+          try {
+            const ralphData = JSON.parse(savedRALphElements);
+            console.log('🔄 Restaurando elementos RALPH:', ralphData.length);
+            
+            if (ralphData.length > 0) {
+              // VERSIÓN OPTIMIZADA: Restaurar elementos RALPH con mejor rendimiento
+              const restoreRALphElementsOptimized = () => {
+                try {
+                  const elementFactory = modeler.get('elementFactory');
+                  const modeling = modeler.get('modeling');
+                  const canvas = modeler.get('canvas');
+                  const elementRegistry = modeler.get('elementRegistry');
+                  const rootElement = canvas.getRootElement();
+                  
+                  if (!elementFactory || !modeling || !canvas) {
+                    console.warn('⚠️ Modeler no listo, reintentando en 100ms...');
+                    setTimeout(restoreRALphElementsOptimized, 100);
+                    return;
+                  }
+                  
+                  // Separar elementos y conexiones para procesamiento optimizado
+                  const shapes = ralphData.filter(el => !el.source || !el.target);
+                  const connections = ralphData.filter(el => el.source && el.target);
+                  
+                  let successCount = 0;
+                  let errorCount = 0;
+                  
+                  // Función para procesar elementos en chunks para mejor rendimiento
+                  const processElementsInChunks = (elements, isConnection = false) => {
+                    const chunkSize = 10; // Procesar 10 elementos por frame
+                    let currentIndex = 0;
+                    
+                    const processChunk = () => {
+                      const chunk = elements.slice(currentIndex, currentIndex + chunkSize);
+                      
+                      chunk.forEach(ralphElement => {
+                        try {
+                          const existingElement = elementRegistry.get(ralphElement.id);
+                          if (existingElement) {
+                            successCount++;
+                            return;
+                          }
+                          
+                          if (isConnection) {
+                            // Procesar conexión
+                            const sourceElement = elementRegistry.get(ralphElement.source);
+                            const targetElement = elementRegistry.get(ralphElement.target);
+                            
+                            if (sourceElement && targetElement) {
+                              const connection = elementFactory.createConnection({
+                                type: ralphElement.type,
+                                source: sourceElement,
+                                target: targetElement,
+                                id: ralphElement.id,
+                                waypoints: ralphElement.waypoints || [
+                                  { x: sourceElement.x + sourceElement.width / 2, y: sourceElement.y + sourceElement.height / 2 },
+                                  { x: targetElement.x + targetElement.width / 2, y: targetElement.y + targetElement.height / 2 }
+                                ]
+                              });
+                              
+                              modeling.createConnection(sourceElement, targetElement, connection, rootElement);
+                              successCount++;
+                            } else {
+                              errorCount++;
+                            }
+                          } else {
+                            // Procesar shape
+                            const element = elementFactory.createShape({
+                              type: ralphElement.type,
+                              id: ralphElement.id
+                            });
+                            
+                            modeling.createShape(element, { 
+                              x: ralphElement.x || 100, 
+                              y: ralphElement.y || 100 
+                            }, rootElement);
+                            
+                            successCount++;
+                          }
+                        } catch (e) {
+                          errorCount++;
+                        }
+                      });
+                      
+                      currentIndex += chunkSize;
+                      
+                      if (currentIndex < elements.length) {
+                        // Continuar con el siguiente chunk en el siguiente frame
+                        requestAnimationFrame(processChunk);
+                      } else {
+                        // Todos los elementos procesados
+                        console.log(`🎯 RALPH restaurado: ${successCount} éxitos, ${errorCount} errores`);
+                      }
+                    };
+                    
+                    // Iniciar procesamiento
+                    if (elements.length > 0) {
+                      requestAnimationFrame(processChunk);
+                    }
+                  };
+                  
+                  // Procesar shapes primero, luego conexiones
+                  processElementsInChunks(shapes, false);
+                  processElementsInChunks(connections, true);
+                  
+                } catch (e) {
+                  console.error('❌ Error en restauración RALPH:', e);
+                }
+              };
+              
+              // Iniciar restauración optimizada con delay mínimo
+              setTimeout(restoreRALphElementsOptimized, 50);
+            }
+          } catch (e) {
+            console.error('❌ Error parseando elementos RALPH guardados:', e);
+          }
+        }
         
         // Verificar si hay elementos faltantes en el XML guardado vs importados
         const targetInXML = savedDiagram.includes('Target');
