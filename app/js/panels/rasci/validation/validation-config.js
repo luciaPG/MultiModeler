@@ -198,14 +198,12 @@ export class ValidationConfigManager {
   // Actualizar configuración
   updateConfig(newConfig) {
     this.config = { ...this.config, ...newConfig };
-    console.log(`${this.config.logging.prefix} Configuración actualizada`);
   }
   
   // Habilitar/deshabilitar regla específica
   toggleRule(ruleName, enabled) {
     if (this.config.rules[ruleName]) {
       this.config.rules[ruleName].enabled = enabled;
-      console.log(`${this.config.logging.prefix} Regla '${ruleName}' ${enabled ? 'habilitada' : 'deshabilitada'}`);
     }
   }
   
@@ -213,7 +211,6 @@ export class ValidationConfigManager {
   addGenericRole(role) {
     if (!this.config.genericRoles.includes(role.toLowerCase())) {
       this.config.genericRoles.push(role.toLowerCase());
-      console.log(`${this.config.logging.prefix} Rol genérico agregado: '${role}'`);
     }
   }
   
@@ -222,7 +219,6 @@ export class ValidationConfigManager {
     const index = this.config.genericRoles.indexOf(role.toLowerCase());
     if (index > -1) {
       this.config.genericRoles.splice(index, 1);
-      console.log(`${this.config.logging.prefix} Rol genérico removido: '${role}'`);
     }
   }
   
@@ -230,7 +226,6 @@ export class ValidationConfigManager {
   addValidLetter(letter) {
     if (!this.config.validRasciLetters.includes(letter.toUpperCase())) {
       this.config.validRasciLetters.push(letter.toUpperCase());
-      console.log(`${this.config.logging.prefix} Letra válida agregada: '${letter.toUpperCase()}'`);
     }
   }
   
@@ -239,7 +234,6 @@ export class ValidationConfigManager {
     const index = this.config.validRasciLetters.indexOf(letter.toUpperCase());
     if (index > -1) {
       this.config.validRasciLetters.splice(index, 1);
-      console.log(`${this.config.logging.prefix} Letra válida removida: '${letter.toUpperCase()}'`);
     }
   }
   
@@ -247,9 +241,7 @@ export class ValidationConfigManager {
   saveToStorage() {
     try {
       localStorage.setItem('rasciValidationConfig', JSON.stringify(this.config));
-      console.log(`${this.config.logging.prefix} Configuración guardada en localStorage`);
     } catch (error) {
-      console.error(`${this.config.logging.prefix} Error guardando configuración:`, error);
     }
   }
   
@@ -259,10 +251,8 @@ export class ValidationConfigManager {
       const savedConfig = localStorage.getItem('rasciValidationConfig');
       if (savedConfig) {
         this.config = { ...this.config, ...JSON.parse(savedConfig) };
-        console.log(`${this.config.logging.prefix} Configuración cargada desde localStorage`);
       }
     } catch (error) {
-      console.error(`${this.config.logging.prefix} Error cargando configuración:`, error);
     }
   }
   
@@ -270,7 +260,6 @@ export class ValidationConfigManager {
   resetToDefault() {
     this.config = { ...ValidationConfig };
     localStorage.removeItem('rasciValidationConfig');
-    console.log(`${this.config.logging.prefix} Configuración restaurada a valores por defecto`);
   }
 }
 
@@ -283,5 +272,4 @@ validationConfigManager.loadFromStorage();
 // Función global para acceso desde la consola
 if (typeof window !== 'undefined') {
   window.rasciValidationConfig = validationConfigManager;
-  console.log('🔧 Configuración de validación RASCI disponible como window.rasciValidationConfig');
 } 

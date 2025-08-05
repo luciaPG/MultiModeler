@@ -57,9 +57,7 @@ export function initRasciPanel(panel) {
       // Mostrar indicador de guardado
       showSaveIndicator();
       
-      // console.log('✅ Estado RASCI guardado automáticamente');
     } catch (e) {
-      console.warn('❌ No se pudo guardar el estado RASCI:', e);
     }
   }
 
@@ -127,7 +125,6 @@ export function initRasciPanel(panel) {
 
       }
     } catch (e) {
-      console.warn('❌ No se pudo cargar el estado RASCI:', e);
     }
   }
 
@@ -258,9 +255,7 @@ export function initRasciPanel(panel) {
     
     
     if (typeof window.executeRasciToRalphMapping === 'function') {
-      // console.log('✅ Función executeRasciToRalphMapping disponible');
     } else {
-      console.warn('⚠️ Función executeRasciToRalphMapping no disponible');
 
       
       // Intentar definir la función manualmente si no está disponible
@@ -269,14 +264,10 @@ export function initRasciPanel(panel) {
     
           
           if (!window.bpmnModeler) {
-            console.error('❌ BPMN Modeler no disponible');
-            console.warn('⚠️ BPMN Modeler no disponible. Asegúrate de tener un diagrama BPMN abierto.');
             return;
           }
 
           if (!window.rasciMatrixData || Object.keys(window.rasciMatrixData).length === 0) {
-            console.error('❌ No hay datos en la matriz RASCI');
-            console.warn('⚠️ No hay datos en la matriz RASCI para mapear. Primero agrega algunos roles en la matriz.');
             return;
           }
 
@@ -284,7 +275,6 @@ export function initRasciPanel(panel) {
           if (window.rasciUIValidator) {
             const validation = window.rasciUIValidator.getValidationState();
             if (validation && validation.hasCriticalErrors) {
-              console.error('❌ No se puede ejecutar el mapeo. Hay errores críticos en la matriz RASCI.');
               alert('❌ No se puede ejecutar el mapeo. Hay errores críticos en la matriz RASCI que deben corregirse primero.');
               return;
             }
@@ -293,15 +283,10 @@ export function initRasciPanel(panel) {
           try {
       
             const results = executeSimpleRasciMapping(window.bpmnModeler, window.rasciMatrixData);
-            // console.log('✅ Mapeo completado con resultados:', results);
           } catch (error) {
-            console.error('❌ Error en el mapeo:', error);
-            console.error(`❌ Error en el mapeo: ${error.message}`);
           }
         };
-        // console.log('✅ Función executeRasciToRalphMapping definida manualmente');
       } else {
-        console.error('❌ executeSimpleRasciMapping no está disponible');
       }
     }
   }, 1000);
@@ -400,12 +385,10 @@ export function initRasciPanel(panel) {
 
   // Función para forzar recarga inmediata
   window.forceImmediateReload = () => {
-    console.log('🚀 Forzando recarga inmediata...');
     showReloadIndicator();
     if (typeof window.updateMatrixFromDiagram === 'function') {
       window.updateMatrixFromDiagram();
     } else {
-      console.warn('⚠️ updateMatrixFromDiagram no disponible, usando recarga manual');
       const rasciPanel = document.querySelector('#rasci-panel');
       if (rasciPanel) {
         renderMatrix(rasciPanel, roles, autoSaveRasciState);
@@ -421,32 +404,19 @@ export function initRasciPanel(panel) {
 
   // Función para debug de eventos BPMN
   window.debugBpmnEvents = () => {
-    console.log('🔍 Debug de eventos BPMN:');
-    console.log('- window.bpmnModeler:', typeof window.bpmnModeler);
     if (window.bpmnModeler && window.bpmnModeler.get) {
       const eventBus = window.bpmnModeler.get('eventBus');
-      console.log('- eventBus disponible:', !!eventBus);
       if (eventBus) {
-        console.log('- Eventos registrados:', eventBus._listeners ? Object.keys(eventBus._listeners) : 'No disponible');
       }
     }
   };
 
   // Función de test temporal
   window.testRasciMapping = () => {
-    console.log('🧪 testRasciMapping: Función de test ejecutándose...');
-    console.log('📊 Estado actual:');
-    console.log('  - window.executeRasciToRalphMapping:', typeof window.executeRasciToRalphMapping);
-    console.log('  - window.bpmnModeler:', typeof window.bpmnModeler);
-    console.log('  - window.rasciMatrixData:', window.rasciMatrixData);
-    console.log('  - executeSimpleRasciMapping:', typeof executeSimpleRasciMapping);
     
     if (typeof window.executeRasciToRalphMapping === 'function') {
-      // console.log('✅ Ejecutando función de mapeo...');
       window.executeRasciToRalphMapping();
     } else {
-      console.error('❌ Función de mapeo no disponible');
-      console.warn('⚠️ Función de mapeo no disponible. Revisa la consola para más detalles.');
     }
   };
 
@@ -507,7 +477,6 @@ export function initRasciPanel(panel) {
       }
     }, 1000); // 1 segundo
 
-    console.log('🔄 Recarga automática de matriz RASCI iniciada');
   }
 
   function showReloadIndicator() {
@@ -528,7 +497,6 @@ export function initRasciPanel(panel) {
     if (autoReloadInterval) {
       clearInterval(autoReloadInterval);
       autoReloadInterval = null;
-      // console.log('⏹️ Recarga automática de matriz RASCI detenida');
     }
   }
 
@@ -578,7 +546,6 @@ export function initRasciPanel(panel) {
 
         changeEvents.forEach(event => {
           eventBus.on(event, (e) => {
-            console.log(`🔄 Evento BPMN detectado: ${event}`, e);
             
             // Cancelar timeout anterior si existe
             if (reloadTimeout) {
@@ -587,7 +554,6 @@ export function initRasciPanel(panel) {
 
                          // Recargar matriz inmediatamente después de cambios en BPMN
              reloadTimeout = setTimeout(() => {
-               console.log('🔄 Ejecutando recarga de matriz desde evento BPMN...');
                
                // Mostrar indicador de recarga
                showReloadIndicator();
@@ -601,7 +567,6 @@ export function initRasciPanel(panel) {
                if (typeof window.updateMatrixFromDiagram === 'function') {
                  window.updateMatrixFromDiagram();
                } else {
-                 console.warn('⚠️ window.updateMatrixFromDiagram no está disponible');
                  // Intentar recarga manual
                  const rasciPanel = document.querySelector('#rasci-panel');
                  if (rasciPanel) {
@@ -629,10 +594,8 @@ export function initRasciPanel(panel) {
 
 
       } else {
-        console.warn('⚠️ EventBus no disponible en bpmnModeler');
       }
     } else {
-      console.warn('⚠️ bpmnModeler no disponible para detección de cambios');
     }
   }
 
@@ -677,21 +640,13 @@ export function initRasciPanel(panel) {
 
   // Funciones globales para debugging y control manual
   window.forceRasciReload = function() {
-    console.log('🔧 Forzando recarga manual de RASCI...');
     checkAndForceReload();
   };
 
   window.debugRasciState = function() {
-    console.log('🔍 === DEBUG ESTADO RASCI ===');
-    console.log('📊 window.rasciMatrixData:', window.rasciMatrixData);
-    console.log('📊 window.rasciRoles:', window.rasciRoles);
-    console.log('📊 roles locales:', roles);
-    console.log('📊 Tareas del diagrama:', getBpmnTasks());
-    console.log('🔍 === FIN DEBUG ===');
   };
 
   window.forceDetectAndValidate = function() {
-    console.log('🔧 Forzando detección y validación...');
     if (typeof window.forceDetectNewTasks === 'function') {
       window.forceDetectNewTasks();
     }
@@ -704,21 +659,13 @@ export function initRasciPanel(panel) {
 
   // Funciones globales para debugging y control manual
   window.forceRasciReload = function() {
-    console.log('🔧 Forzando recarga manual de RASCI...');
     checkAndForceReload();
   };
 
   window.debugRasciState = function() {
-    console.log('🔍 === DEBUG ESTADO RASCI ===');
-    console.log('📊 window.rasciMatrixData:', window.rasciMatrixData);
-    console.log('📊 window.rasciRoles:', window.rasciRoles);
-    console.log('📊 roles locales:', roles);
-    console.log('📊 Tareas del diagrama:', getBpmnTasks());
-    console.log('🔍 === FIN DEBUG ===');
   };
 
   window.forceDetectAndValidate = function() {
-    console.log('🔧 Forzando detección y validación...');
     if (typeof window.forceDetectNewTasks === 'function') {
       window.forceDetectNewTasks();
     }
@@ -783,7 +730,6 @@ window.toggleAutoMapping = function() {
       if (manualBtn) manualBtn.style.display = 'none';
       
       // Show notification
-      // console.log('✅ Mapeo automático RALph activado');
       
       // Trigger initial mapping if matrix exists
       if (window.rasciMatrixData && Object.keys(window.rasciMatrixData).length > 0) {
@@ -795,7 +741,6 @@ window.toggleAutoMapping = function() {
       window.rasciAutoMapping.disable();
       if (manualBtn) manualBtn.style.display = 'block';
       
-      // console.log('❌ Mapeo automático RALph desactivado');
     }
   }
   
@@ -817,13 +762,11 @@ window.initializeAutoMapping = function() {
       if (manualBtn) manualBtn.style.display = 'none';
     }
     
-    console.log('🔄 Mapeo automático RALph inicializado (activado por defecto)');
   }
 };
 
 // Funciones globales de debug para RASCI
 window.forceRasciReload = function() {
-  console.log('🔄 Forzando recarga completa de RASCI...');
   if (typeof window.updateMatrixFromDiagram === 'function') {
     window.updateMatrixFromDiagram();
   }
@@ -838,21 +781,12 @@ window.forceRasciReload = function() {
 };
 
 window.debugRasciState = function() {
-  console.log('🔍 === DEBUG ESTADO RASCI COMPLETO ===');
-  console.log('1. window.rasciMatrixData:', window.rasciMatrixData);
-  console.log('2. localStorage.rasciMatrixData:', localStorage.getItem('rasciMatrixData'));
-  console.log('3. localStorage.rasciRoles:', localStorage.getItem('rasciRoles'));
-  console.log('4. window.bpmnModeler disponible:', !!window.bpmnModeler);
-  console.log('5. window.rasciUIValidator disponible:', !!window.rasciUIValidator);
   
   if (window.bpmnModeler) {
     const tasks = getBpmnTasks();
-    console.log('6. Tareas BPMN detectadas:', tasks);
   }
   
   if (window.rasciUIValidator) {
-    console.log('7. Estado del validador:', window.rasciUIValidator.getValidationState());
   }
   
-  console.log('🔍 === FIN DEBUG ===');
 };

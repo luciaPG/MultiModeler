@@ -58,7 +58,6 @@ function isConnectedToTask(modeler, sourceElement, targetTask, visited = new Set
 
 // Función para hacer una limpieza completa de todos los elementos RALph y especiales
 function performCompleteCleanup(modeler) {
-  console.log('🧹 Iniciando limpieza completa de elementos RALph y especiales');
   
   const elementRegistry = modeler.get('elementRegistry');
   const modeling = modeler.get('modeling');
@@ -74,9 +73,7 @@ function performCompleteCleanup(modeler) {
     try {
       modeling.removeElements(allRalphConnections);
       elementsRemoved += allRalphConnections.length;
-      console.log(`🔗 Eliminadas ${allRalphConnections.length} conexiones RALph`);
     } catch (e) {
-      console.warn('Error eliminando conexiones RALph:', e);
     }
   }
   
@@ -92,9 +89,7 @@ function performCompleteCleanup(modeler) {
     try {
       modeling.removeElements(allSpecialElements);
       elementsRemoved += allSpecialElements.length;
-      console.log(`🎯 Eliminados ${allSpecialElements.length} elementos especiales`);
     } catch (e) {
-      console.warn('Error eliminando elementos especiales:', e);
     }
   }
   
@@ -107,9 +102,7 @@ function performCompleteCleanup(modeler) {
     try {
       modeling.removeElements(allRalphRoles);
       elementsRemoved += allRalphRoles.length;
-      console.log(`👥 Eliminados ${allRalphRoles.length} roles RALph`);
     } catch (e) {
-      console.warn('Error eliminando roles RALph:', e);
     }
   }
   
@@ -122,19 +115,15 @@ function performCompleteCleanup(modeler) {
     try {
       modeling.removeElements(allAndGates);
       elementsRemoved += allAndGates.length;
-      console.log(`🏗️ Eliminados ${allAndGates.length} AND Gates`);
     } catch (e) {
-      console.warn('Error eliminando AND Gates:', e);
     }
   }
   
-  console.log(`✅ Limpieza completa terminada. Total elementos eliminados: ${elementsRemoved}`);
   return elementsRemoved;
 }
 
 // Función para hacer una limpieza selectiva según la nueva matriz
 function performSelectiveCleanup(modeler, matrix) {
-  console.log('🎯 Iniciando limpieza selectiva basada en la nueva matriz');
   
   const elementRegistry = modeler.get('elementRegistry');
   const modeling = modeler.get('modeling');
@@ -179,9 +168,7 @@ function performSelectiveCleanup(modeler, matrix) {
     try {
       modeling.removeElements(rolesToRemove);
       elementsRemoved += rolesToRemove.length;
-      console.log(`👥 Eliminados ${rolesToRemove.length} roles obsoletos`);
     } catch (e) {
-      console.warn('Error eliminando roles obsoletos:', e);
     }
   }
   
@@ -202,9 +189,7 @@ function performSelectiveCleanup(modeler, matrix) {
     try {
       modeling.removeElements(specialElementsToRemove);
       elementsRemoved += specialElementsToRemove.length;
-      console.log(`🎯 Eliminados ${specialElementsToRemove.length} elementos especiales obsoletos`);
     } catch (e) {
-      console.warn('Error eliminando elementos especiales obsoletos:', e);
     }
   }
   
@@ -220,18 +205,14 @@ function performSelectiveCleanup(modeler, matrix) {
     try {
       modeling.removeElements(orphanedConnections);
       elementsRemoved += orphanedConnections.length;
-      console.log(`🔗 Eliminadas ${orphanedConnections.length} conexiones huérfanas`);
     } catch (e) {
-      console.warn('Error eliminando conexiones huérfanas:', e);
     }
   }
   
-  console.log(`✅ Limpieza selectiva terminada. Total elementos eliminados: ${elementsRemoved}`);
   return elementsRemoved;
 }
 
 function handleRolesAndAssignments(modeler, matrix, results) {
-  console.log(`🔧 Iniciando handleRolesAndAssignments con limpieza previa`);
   
   const elementRegistry = modeler.get('elementRegistry');
   const modeling = modeler.get('modeling');
@@ -244,9 +225,7 @@ function handleRolesAndAssignments(modeler, matrix, results) {
   if (existingRalphConnections.length > 0) {
     try {
       modeling.removeElements(existingRalphConnections);
-      console.log(`🔗 Eliminadas ${existingRalphConnections.length} conexiones RALph existentes`);
     } catch (e) {
-      console.warn('Error eliminando conexiones RALph existentes:', e);
     }
   }
   
@@ -257,7 +236,6 @@ function handleRolesAndAssignments(modeler, matrix, results) {
     
     if (!bpmnTask) return;
     
-    console.log(`📋 Procesando tarea: ${taskName}`);
     
     const responsibleRoles = [];
     const supportRoles = [];
@@ -283,33 +261,27 @@ function handleRolesAndAssignments(modeler, matrix, results) {
       }
     });
     
-    console.log(`  Roles: R=${responsibleRoles}, S=${supportRoles}, A=${approveRoles}`);
     
     // Limpiar AND Gates existentes para esta tarea
     const existingAndGate = findExistingAndGate(modeler, bpmnTask);
     if (existingAndGate) {
       try {
         modeling.removeElements([existingAndGate]);
-        console.log(`🏗️ Eliminado AND Gate existente para ${taskName}`);
       } catch (error) {
-        console.warn('Error eliminando AND Gate existente:', error);
       }
     }
     
     // Manejar roles R y S
     if (responsibleRoles.length === 0 && supportRoles.length === 0) {
-      console.log(`  ❌ No hay roles R o S para ${taskName}`);
     } else if (responsibleRoles.length === 1 && supportRoles.length === 0) {
       // Caso simple: un solo rol responsable
       const roleName = responsibleRoles[0];
-      console.log(`  👤 Asignación directa: ${taskName} -> ${roleName}`);
       
       createRalphRole(modeler, roleName, results);
       createSimpleAssignment(modeler, bpmnTask, roleName, results);
     } else {
       // Caso complejo: múltiples roles (crear AND Gate)
       const allRoles = [...responsibleRoles, ...supportRoles];
-      console.log(`  🏗️ Creando AND Gate para ${taskName} con roles: ${allRoles}`);
       
       allRoles.forEach(roleName => {
         createRalphRole(modeler, roleName, results);
@@ -320,7 +292,6 @@ function handleRolesAndAssignments(modeler, matrix, results) {
     
     // Manejar roles A - crear asignaciones para tareas de aprobación existentes
     if (approveRoles.length > 0) {
-      console.log(`🔍 Procesando roles de aprobación para ${taskName}: ${approveRoles}`);
       
       for (const roleName of approveRoles) {
         createRalphRole(modeler, roleName, results);
@@ -338,19 +309,16 @@ function handleRolesAndAssignments(modeler, matrix, results) {
            element.businessObject.name === genericApprovalTaskName)
         );
         
-        console.log(`  📋 Tareas de aprobación encontradas para ${roleName}:`, 
-          approvalTasksForRole.map(t => t.businessObject.name));
+        const approvalTaskNames = approvalTasksForRole.map(t => t.businessObject.name);
         
         // Crear asignaciones para todas las tareas de aprobación encontradas
         approvalTasksForRole.forEach(approvalTask => {
-          console.log(`  🔗 Creando asignación: ${approvalTask.businessObject.name} -> ${roleName}`);
           createSimpleAssignment(modeler, approvalTask, roleName, results);
         });
       }
     }
   });
   
-  console.log(`✅ handleRolesAndAssignments completado`);
 }
 
 export function executeSimpleRasciMapping(modeler, matrix) {
@@ -359,11 +327,9 @@ export function executeSimpleRasciMapping(modeler, matrix) {
   const elementRegistry = modeler.get('elementRegistry');
   if (!elementRegistry) return { error: 'elementRegistry no disponible' };
   
-  console.log('🚀 Iniciando executeSimpleRasciMapping');
   
   // 🧹 LIMPIEZA COMPLETA: Eliminar TODOS los elementos RALph y especiales existentes
   const completeCleanupCount = performCompleteCleanup(modeler);
-  console.log(`🗑️ Elementos eliminados en limpieza completa: ${completeCleanupCount}`);
   
   originalFlowMap.clear();
   saveOriginalFlow(modeler);
@@ -417,7 +383,6 @@ export function executeSimpleRasciMapping(modeler, matrix) {
     });
     
     if (consultRoles.length > 0 || approveRoles.length > 0 || informRoles.length > 0) {
-      console.log(`Creando elementos especiales para tarea: ${taskName}`, { consultRoles, approveRoles, informRoles });
       createSequentialSpecialElements(modeler, bpmnTask, consultRoles, approveRoles, informRoles, results);
     }
   });
@@ -462,11 +427,9 @@ export function executeSmartRasciMapping(modeler, matrix) {
   const elementRegistry = modeler.get('elementRegistry');
   if (!elementRegistry) return { error: 'elementRegistry no disponible' };
   
-  console.log('🚀 Iniciando executeSmartRasciMapping');
   
   // 🧹 LIMPIEZA SELECTIVA: Eliminar elementos obsoletos según la nueva matriz
   const cleanupCount = performSelectiveCleanup(modeler, matrix);
-  console.log(`🗑️ Elementos eliminados en limpieza selectiva: ${cleanupCount}`);
   
   const results = {
     rolesCreated: 0,

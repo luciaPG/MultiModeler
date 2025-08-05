@@ -13,7 +13,7 @@ import {
 } from 'diagram-js/lib/util/Collections';
 
 import { is } from 'bpmn-js/lib/util/ModelUtil';
-import { isExternalLabel, isPPINOTConnection } from './Types';
+import { isExternalLabel } from './Types';
 
 /**
  * A handler responsible for updating the PPINOT element's businessObject
@@ -87,6 +87,40 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
         oldShape.label.labelTarget = newShape;
       }
     }
+  });
+
+  // Listen for element removal to sync with PPI list
+  eventBus.on('element.removed', function(event) {
+    const element = event.element;
+    
+    
+    if (element && isPPINOT(element)) {
+      
+      // Try to remove from PPI list
+      if (window.ppiManager) {
+        window.ppiManager.removePPIFromList(element.id);
+      } else {
+      }
+    } else {
+    }
+  });
+
+  // Also listen for shape.delete command execution to catch keyboard deletions
+  this.executed('shape.delete', function(event) {
+    const context = event.context;
+    const elements = context.elements || [context.shape];
+    
+    
+    elements.forEach(element => {
+      if (element && isPPINOT(element)) {
+        
+        // Try to remove from PPI list
+        if (window.ppiManager) {
+          window.ppiManager.removePPIFromList(element.id);
+        } else {
+        }
+      }
+    });
   });
 
   function updatePPINOTElement(e) {
@@ -320,7 +354,19 @@ PPINOTUpdater.$inject = [ 'eventBus', 'modeling', 'bpmnjs' ];
 /////// helpers ///////////////////////////////////
 
 function isPPINOT(element) {
-  return element && /PPINOT:/.test(element.type);
+  if (!element) return false;
+  
+  // Check element.type
+  if (element.type && /PPINOT:/.test(element.type)) {
+    return true;
+  }
+  
+  // Check businessObject.$type
+  if (element.businessObject && element.businessObject.$type && /PPINOT:/.test(element.businessObject.$type)) {
+    return true;
+  }
+  
+  return false;
 }
 
 function ifPPINOTElement(fn) {

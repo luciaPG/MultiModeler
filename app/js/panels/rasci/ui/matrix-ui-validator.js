@@ -23,7 +23,6 @@ export class RasciMatrixUIValidator {
     // Buscar el contenedor principal de la matriz
     const mainTab = this.panel.querySelector('#main-tab');
     if (!mainTab) {
-      console.warn('No se encontró el tab principal para el validador de UI');
       return;
     }
 
@@ -138,7 +137,6 @@ export class RasciMatrixUIValidator {
       
       this.lastValidation = validation;
     } catch (error) {
-      console.error('❌ Error durante la validación:', error);
     }
   }
 
@@ -159,7 +157,6 @@ export class RasciMatrixUIValidator {
               break;
             }
           } catch (parseError) {
-            console.warn(`Error al parsear roles desde ${key}:`, parseError);
           }
         }
       }
@@ -189,7 +186,6 @@ export class RasciMatrixUIValidator {
       
       return roles;
     } catch (error) {
-      console.warn('Error al obtener roles:', error);
       return [];
     }
   }
@@ -219,7 +215,6 @@ export class RasciMatrixUIValidator {
             }
           }
         } catch (parseError) {
-          console.warn('Error al parsear matriz desde localStorage:', parseError);
         }
       }
       
@@ -236,13 +231,11 @@ export class RasciMatrixUIValidator {
             }
           }
         } catch (parseError) {
-          console.warn('Error al parsear matriz anterior:', parseError);
         }
       }
       
       return {};
     } catch (error) {
-      console.warn('Error al obtener datos de matriz:', error);
       return {};
     }
   }
@@ -273,7 +266,6 @@ export class RasciMatrixUIValidator {
             }
           }
         } catch (error) {
-          console.warn('Error al obtener roles desde RALph modeler:', error);
         }
       }
       
@@ -287,11 +279,9 @@ export class RasciMatrixUIValidator {
               const parsedRoles = JSON.parse(savedRoles);
               if (Array.isArray(parsedRoles) && parsedRoles.length > 0) {
                 roles = parsedRoles;
-                // console.log(`✅ Roles obtenidos desde localStorage.${key}:`, roles);
                 break;
               }
             } catch (parseError) {
-              console.warn(`❌ Error al parsear roles desde ${key}:`, parseError);
             }
           }
         }
@@ -304,7 +294,6 @@ export class RasciMatrixUIValidator {
           const domRoles = Array.from(ralphElements).map(el => el.getAttribute('data-element-name') || el.textContent.trim());
           if (domRoles.length > 0) {
             roles = domRoles.filter(role => role && role.length > 0);
-            // console.log('✅ Roles obtenidos desde DOM:', roles);
           }
         }
       }
@@ -321,11 +310,9 @@ export class RasciMatrixUIValidator {
             const bpmnRoles = bpmnElements.map(element => element.businessObject.name || element.id);
             if (bpmnRoles.length > 0) {
               roles = bpmnRoles;
-              // console.log('✅ Roles obtenidos desde BPMN modeler:', roles);
             }
           }
         } catch (error) {
-          console.warn('❌ Error al obtener roles desde BPMN modeler:', error);
         }
       }
       
@@ -346,7 +333,6 @@ export class RasciMatrixUIValidator {
       }
       return roles;
     } catch (error) {
-      console.warn('❌ Error al obtener roles organizativos:', error);
       return [];
     }
   }
@@ -354,7 +340,6 @@ export class RasciMatrixUIValidator {
   // Mostrar resultados de validación
   displayValidationResults(validation) {
     if (!this.validationContainer) {
-      // console.log('❌ No hay contenedor de validación disponible');
       return;
     }
 
@@ -832,15 +817,13 @@ export class RasciMatrixUIValidator {
 
   // Función global para diagnóstico completo del validador
   diagnoseValidator() {
-    console.log('=== DIAGNÓSTICO COMPLETO DEL VALIDADOR ===');
     
-    // 1. Estado del validador
-    console.log('1. Estado del validador:', {
+    const validatorState = {
       panel: !!this.panel,
       validationContainer: !!this.validationContainer,
       isVisible: this.isVisible,
       lastValidation: this.lastValidation
-    });
+    };
     
     // 2. Datos actuales
     const currentRoles = this.getCurrentRoles();
@@ -867,7 +850,6 @@ export class RasciMatrixUIValidator {
     
 
     
-    // console.log('✅ === FIN DIAGNÓSTICO DEL VALIDADOR ===');
   }
 
   // Limpiar validación
@@ -889,7 +871,6 @@ export class RasciMatrixUIValidator {
   // Mostrar mensaje cuando no hay datos
   showNoDataMessage(message) {
     if (!this.validationContainer) {
-      // console.log('❌ No hay contenedor de validación disponible');
       return;
     }
 
@@ -915,42 +896,34 @@ window.debugRasciValidator = () => {
   if (window.rasciUIValidator) {
     window.rasciUIValidator.diagnoseValidator();
   } else {
-    console.warn('⚠️ window.rasciUIValidator no disponible');
   }
 };
 
 window.forceRasciValidation = () => {
   if (window.rasciUIValidator) {
-    console.log('🔄 Forzando validación RASCI...');
     window.rasciUIValidator.validateCurrentMatrix();
   } else {
-    console.warn('⚠️ window.rasciUIValidator no disponible');
   }
 };
 
 window.autoValidateRasci = () => {
   if (window.rasciUIValidator) {
-    console.log('🔄 Ejecutando validación automática RASCI...');
     window.rasciUIValidator.validateEmptyTasks();
     setTimeout(() => {
       window.rasciUIValidator.validateCurrentMatrix();
     }, 100);
   } else {
-    console.warn('⚠️ window.rasciUIValidator no disponible');
   }
 };
 
 window.validateEmptyRasciTasks = () => {
   if (window.rasciUIValidator) {
-    console.log('🔄 Validando tareas vacías RASCI...');
     window.rasciUIValidator.validateEmptyTasks();
   } else {
-    console.warn('⚠️ window.rasciUIValidator no disponible');
   }
 };
 
 window.analyzeRasciState = () => {
-  console.log('🔍 === ANÁLISIS COMPLETO DEL ESTADO RASCI ===');
   
   // Ejecutar diagnóstico del validador
   if (window.rasciUIValidator) {
@@ -967,7 +940,6 @@ window.analyzeRasciState = () => {
     window.forceFullSync();
   }
   
-  // console.log('✅ === ANÁLISIS COMPLETO FINALIZADO ===');
 };
 
 // Instancia global del validador de UI
@@ -975,93 +947,60 @@ export const rasciUIValidator = new RasciMatrixUIValidator();
 
 // Exponer función de debug globalmente
 window.debugRasciValidator = () => {
-  console.log('🔍 === DEBUG VALIDADOR RASCI ===');
-  console.log('Contenedor:', rasciUIValidator.validationContainer);
-  console.log('Roles:', rasciUIValidator.getCurrentRoles());
-  console.log('Matriz:', rasciUIValidator.getCurrentMatrixData());
-  console.log('Roles organizativos:', rasciUIValidator.getOrganizationalRoles());
-  console.log('Estado de validación:', rasciUIValidator.getValidationState());
-  console.log('🔍 === FIN DEBUG ===');
 };
 
 // Función global para forzar validación
 window.forceRasciValidation = () => {
-  console.log('🔄 Forzando validación RASCI...');
   rasciUIValidator.forceValidation();
 };
 
 // Función global para validación automática
 window.autoValidateRasci = () => {
-  console.log('🔄 Ejecutando validación automática RASCI...');
   rasciUIValidator.validateCurrentMatrix();
 };
 
 // Función global para validar tareas vacías
 window.validateEmptyRasciTasks = () => {
-  console.log('🔄 Validando tareas vacías RASCI...');
   rasciUIValidator.validateEmptyTasks();
 };
 
 // Función global para analizar estado completo
 window.analyzeRasciState = () => {
-  console.log('🔍 === ANÁLISIS COMPLETO DEL ESTADO RASCI ===');
-  console.log('1. Roles actuales:', rasciUIValidator.getCurrentRoles());
-  console.log('2. Datos de matriz:', rasciUIValidator.getCurrentMatrixData());
-  console.log('3. window.rasciMatrixData:', window.rasciMatrixData);
-  console.log('4. localStorage.rasciMatrixData:', localStorage.getItem('rasciMatrixData'));
-  console.log('5. localStorage.rasciRoles:', localStorage.getItem('rasciRoles'));
   
   const matrixData = rasciUIValidator.getCurrentMatrixData();
   if (matrixData && Object.keys(matrixData).length > 0) {
-    console.log('6. Análisis de tareas:');
     Object.keys(matrixData).forEach(taskName => {
       const taskData = matrixData[taskName];
       const hasStructure = taskData && typeof taskData === 'object' && Object.keys(taskData).length > 0;
       const hasRoles = hasStructure && Object.values(taskData).some(value => value && value.trim() !== '');
-      console.log(`   - ${taskName}: estructura=${hasStructure}, roles=${hasRoles}, datos=${JSON.stringify(taskData)}`);
     });
   }
   
-  console.log('7. Estado de validación:', rasciUIValidator.getValidationState());
-  console.log('🔍 === FIN ANÁLISIS ===');
 };
 
 // Función para forzar validación manual
 window.forceRasciValidation = () => {
-  console.log('🔧 Forzando validación manual...');
   rasciUIValidator.forceValidation();
 };
 
 // Función para validación automática
 window.autoValidateRasci = () => {
-  console.log('🔄 Ejecutando validación automática...');
   rasciUIValidator.autoValidateAfterMatrixUpdate();
 };
 
 // Función para validar tareas vacías específicamente
 window.validateEmptyRasciTasks = () => {
-  console.log('🔍 Validando tareas vacías específicamente...');
   rasciUIValidator.validateEmptyTasks();
 };
 
 // Función para análisis completo del estado
 window.analyzeRasciState = () => {
-  console.log('🔍 === ANÁLISIS COMPLETO DEL ESTADO RASCI ===');
-  console.log('📊 Tareas del diagrama BPMN:', window.getBpmnTasks ? window.getBpmnTasks() : 'Función no disponible');
-  console.log('📊 window.rasciMatrixData:', window.rasciMatrixData);
-  console.log('📊 localStorage.rasciMatrixData:', localStorage.getItem('rasciMatrixData'));
-  console.log('📊 Roles actuales:', rasciUIValidator.getCurrentRoles());
-  console.log('📊 Datos de matriz del validador:', rasciUIValidator.getCurrentMatrixData());
-  console.log('📊 Estado de validación:', rasciUIValidator.getValidationState());
-  console.log('🔍 === FIN ANÁLISIS ===');
 };
 
 // Función para análisis completo del estado
 window.analyzeRasciState = () => {
-  console.log('🔍 === ANÁLISIS COMPLETO DEL ESTADO RASCI ===');
   rasciUIValidator.debugDataState();
   if (window.analyzeMatrixState) {
     window.analyzeMatrixState();
   }
-  // console.log('✅ === FIN ANÁLISIS ===');
 };

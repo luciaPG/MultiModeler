@@ -60,15 +60,11 @@ RALphRules.$inject = [ 'eventBus',
 
 //
 function simpleConnection(source, target, connection) { //function to connect elements
-  //console.log(target);
-  //console.log(source.outgoing);
 
   //The outgoing connections of the source are saved to check that the target does not have another connection from the source.
   //This is important for history connector in order to avoid more than one connection between him and the task, or to avoid the possibility of
   //connecting an element with a negated and a resource connection.
   var sourceOutgoingConnections=source.outgoing;
-  //console.log(sourceOutgoingConnections)
-  //console.log(connection)
  
   let cond=true;//cond will be the variable to check that
 
@@ -229,7 +225,6 @@ RALphRules.prototype.init = function() {
   }
 
   /*function connectHierarchyConnectors(source,target,type) {
-    //console.log(source);
     
     if(is(source,'bpmn:Task') && type === "RALph:ReportsDirectlyAssignment"){
       return {type9:'RALph:ResourceArc'}
@@ -290,7 +285,6 @@ RALphRules.prototype.init = function() {
       if (type !== isRALph(s) || result === false) {
         return false;
       }
-      //console.log(target)
       return canCreate(s, target);
     }, undefined);
 
@@ -303,8 +297,6 @@ RALphRules.prototype.init = function() {
     var target = context.target,
         shape = context.shape,
         elementFactory = context.elementFactory;
-    //console.log(target);
-    //console.log(shape);
 
   var newElement = null;
 
@@ -337,11 +329,9 @@ RALphRules.prototype.init = function() {
   });
 
   this.addRule('connection.create', HIGH_PRIORITY, function(context) {//it allows to create connections
-    //console.log(context);
     var source = context.source,
         target = context.target,
         type = context.type;
-        //console.log(type);
 
     //if it is one of these connections, it should be called another function (not the simple function to connect), because they require to automatically define some elements.
     if(type === 'RALph:Delegate' || type==='RALph:Report' || type==='RALph:dataFieldConnection'){

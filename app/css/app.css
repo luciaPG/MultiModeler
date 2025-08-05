@@ -9,7 +9,6 @@ body {
   flex-direction: column;
 }
 
-/* Header styles */
 .app-header {
   height: 64px;
   background: white;
@@ -19,12 +18,10 @@ body {
   padding: 0 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   z-index: 1001;
-  /* Mayor que los paneles maximizados */
   flex-shrink: 0;
   position: relative;
 }
 
-/* Status bar styles */
 .status-bar {
   height: 24px;
   background: #2b2d42;
@@ -35,7 +32,6 @@ body {
   font-size: 0.75rem;
   flex-shrink: 0;
   z-index: 1001;
-  /* Mayor que los paneles maximizados */
   position: relative;
 }
 
@@ -160,9 +156,6 @@ body {
 
 
 
-/* ======================================
-   === CUSTOM PALETTE STYLES ===
-   ====================================== */
 
 .djs-palette {
   background: rgb(255, 255, 255);
@@ -209,7 +202,6 @@ body {
   border-color: #ccc;
 }
 
-/* Centering for palette icons */
 .djs-palette .entry:before {
   display: flex;
   justify-content: center;
@@ -220,7 +212,6 @@ body {
 
 
 
-/* Specific PPINOT icon styles */
 .djs-palette .entry.icon-PPINOT-baseMeasure,
 .djs-palette .entry.icon-PPINOT-aggregatedMeasure,
 .djs-palette .entry.icon-PPINOT-ppi,
@@ -236,7 +227,6 @@ body {
   background-size: contain !important;
 }
 
-/* Specific RALPH icon styles */
 .djs-palette .entry.icon-RALph2-person,
 .djs-palette .entry.icon-RALph2-role,
 .djs-palette .entry.icon-RALph2-capability,
@@ -273,9 +263,6 @@ body {
 
 
 
-/* ======================================
-   === CUSTOM CONTEXT PAD GRID STYLES ===
-   ====================================== */
 
 .djs-context-pad {
   display: grid !important;
@@ -322,24 +309,7 @@ body {
 
 
 
-/* New PPINOT icons are added in this document 
-       To add a new icon you have to put:
-      
-      .icon-(name){
-        background-image: url("svg to css"); 
-      }
 
-      To convert svg to css, you can use this tool https://yoksel.github.io/url-encoder/
-
-      Moreover in some cases, icons in the palette are wrong due to their dimensions. So you should add 
-      viewBox parameter in the url to see the icon in the palette correctly. You should put 
-      viewBox='0 0 (a number greater than icon width) (a number greater than icon height)'
-    
-    */
-
-/* ======================================
-   ====     CUSTOM PPINOT ICONS      ====
-   ====================================== */
 .icon-PPINOT-ppi {
   background-image: url("data:image/svg+xml,%3Csvg width='40' height='30' viewBox='0 0 43.5 36' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='none' d='M-0.5 -0.5h401v301H-0.5z'/%3E%3Cpath d='M5.4 2.4v3.36m2.4 -2.4 -2.4 2.4m3.42 0H5.4m0 0 -2.46 -2.4m-0.96 2.4H5.4' stroke='%23000' fill='none' stroke-linejoin='round' stroke-linecap='round' stroke-width='0.5'/%3E%3Cpath fill-rule='evenodd' fill='%23fff' d='M2.94 5.76c0 -1.38 1.08 -2.46 2.46 -2.46 1.32 0 2.46 1.08 2.46 2.46S6.72 8.22 5.4 8.22a2.433 2.433 0 0 1 -2.46 -2.46'/%3E%3Cpath fill-rule='evenodd' fill='%23fff' d='m6.12 7.38 -1.5 -3 0.78 3.24z'/%3E%3Cpath d='m6 6.651 -1.5 -3 0.78 3.24z' stroke='%23000' fill='none' stroke-linejoin='round' stroke-linecap='round' stroke-width='0.5'/%3E%3Cpath d='M1.98 5.76c0 -1.86 1.5 -3.36 3.42 -3.36 1.86 0 3.42 1.5 3.42 3.36A3.419 3.419 0 0 1 5.4 9.18a3.382 3.382 0 0 1 -3.42 -3.42' stroke='%23000' fill='none' stroke-linejoin='round' stroke-linecap='round' stroke-width='0.5'/%3E%3Cpath fill-rule='evenodd' fill='%23fff' d='M3.48 8.04c0 -0.48 0.84 -0.84 1.92 -0.84 1.02 0 1.86 0.36 1.86 0.84s-0.84 0.84 -1.86 0.84c-1.08 0 -1.92 -0.36 -1.92 -0.84'/%3E%3Cpath d='M7.8 8.22a2.86 2.86 0 0 0 -4.02 -0.84c-0.3 0.24 -0.6 0.48 -0.84 0.84' stroke='%23000' fill='none' stroke-linejoin='round' stroke-linecap='round' stroke-width='0.5'/%3E%3Cpath d='M0.84 27.12h41.34V1.38H0.84z' stroke='%23000' fill='none' stroke-miterlimit='2' stroke-width='0.5'/%3E%3Cpath fill-rule='evenodd' fill='%23d1d1d1' d='M0.84 35.22h41.34v-8.28H0.84z'/%3E%3CclipPath id='a'%3E%3Cpath d='M0.06 26.16h43.02V36H0.06'/%3E%3C/clipPath%3E%3Cg clip-path='url(%23a)'%3E%3Cpath d='M0.84 35.22h41.34v-8.28H0.84z' stroke='%23000' fill='none' stroke-miterlimit='2' stroke-width='0.5'/%3E%3C/g%3E%3C/svg%3E") !important;
   background-repeat: no-repeat !important;
@@ -391,9 +361,6 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg width='67' height='62' xmlns='http://www.w3.org/2000/svg'%3E%3Cg%3E%3Ctitle%3Ebackground%3C/title%3E%3Crect fill='none' id='canvas_background' height='64' width='69' y='-1' x='-1'/%3E%3C/g%3E%3Cg%3E%3Ctitle%3ELayer 1%3C/title%3E%3Cg id='svg_1'%3E%3Cg id='timeAggregatedMeasure'%3E%3Crect id='svg_2' fill='white' stroke='black' height='32' width='48' y='26.99999' x='4.66662'/%3E%3Cpath id='svg_3' d='m7.66662,53.99999l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5m3,-10l0,10m3,-5l0,5m3,-5l0,5m3,-5l0,5' stroke='black' fill='none'/%3E%3Cpath id='svg_4' d='m10.66662,26.99999l0,-4l48,0l0,32l-6,0m3,-5l0,5' stroke='black' fill='none'/%3E%3Cpath id='svg_5' d='m16.66662,22.99999l0,-4l48,0l0,32l-6,0m3,-5l0,5' stroke='black' fill='none'/%3E%3C!-- time icon --%3E%3Cpath id='svg_6' d='m6.66662,19.99999l8,0l0,-4l-8,0l0,4' stroke='black' fill='%23666666'/%3E%3Cpath id='svg_7' d='m6.66662,15.99999l4,-4l4,4' stroke='black' fill='none'/%3E%3Cpath id='svg_8' d='m6.66662,7.99999l4,4l4,-4l-8,0' stroke='black' fill='%23666666'/%3E%3Cpath id='svg_9' d='m6.66662,7.99999l0,-4l8,0l0,4' stroke='black' fill='none'/%3E%3C/g%3E%3Cg id='cyclic'/%3E%3Ctext stroke='black' y='60.33333' x='29.66667' id='text' font-size='11'/%3E%3C!-- %3Ctext font-size='10' id='unitOfMeasure' x='35' y='38' oryx:align='middle center' stroke='black' oryx:fittoelem='baseMeasure'%3E%3C/text%3E --%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 
-/* ======================================
-   ===     PPINOT PALETTE ICONS       ===
-   ====================================== */
 
 .icon-PPINOT-baseMeasure {
   background-image: url("data:image/svg+xml,%3Csvg width='80' height='71' viewBox='-1 -1 82 73' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='none' d='M-1-1h82v73H-1z'/%3E%3Cg stroke='%23000'%3E%3Cpath fill='%23fff' d='M10.5 15.667h60v40h-60z'/%3E%3Cpath d='M13.5 50.333v5m3-5v5m3-5v5m3-10v10m3-5v5m3-5v5m3-5v5m3-10v10m3-5v5m3-5v5m3-5v5m3-10v10m3-5v5m3-5v5m3-5v5m3-10v10m3-5v5m3-5v5m3-5v5' fill='none'/%3E%3C/g%3E%3C/svg%3E") !important;
@@ -431,11 +398,7 @@ body {
   background-position: center !important;
 }
 
-/* ======================================
-   ===     MINI VERSIONS FOR PALETTE    ===
-   ====================================== */
 
-/* Target mini icon for palette */
 .icon-PPINOT-target-mini {
   background-image: url("data:image/svg+xml,%3Csvg width='64' height='64' viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='32' cy='32' r='30' stroke='black' stroke-width='4' fill='white'/%3E%3Ccircle cx='32' cy='32' r='15.5' fill='black'/%3E%3C/svg%3E%0A") !important;
   background-size: 22px 22px !important;
@@ -443,7 +406,6 @@ body {
   background-position: center !important;
 }
 
-/* Scope mini icon for palette */
 .icon-PPINOT-scope-mini {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='100' zoomAndPan='magnify' viewBox='0 0 375 374.999991' height='100' preserveAspectRatio='xMidYMid meet' version='1.2'%3E%3Cdefs%3E%3CclipPath id='7b3a2c2c20'%3E%3Cpath d='M 29.351562 53.523438 L 345.648438 53.523438 L 345.648438 321.476562 L 29.351562 321.476562 Z M 29.351562 53.523438 '/%3E%3C/clipPath%3E%3CclipPath id='1cdb1decf9'%3E%3Cpath d='M 40.414062 138.003906 L 91.984375 138.003906 L 91.984375 188.882812 L 40.414062 188.882812 Z M 40.414062 138.003906 '/%3E%3C/clipPath%3E%3CclipPath id='7e21297d81'%3E%3Cpath d='M 101.597656 138.003906 L 153.167969 138.003906 L 153.167969 188.882812 L 101.597656 188.882812 Z M 101.597656 138.003906 '/%3E%3C/clipPath%3E%3CclipPath id='284c3abc07'%3E%3Cpath d='M 162.460938 138.003906 L 214 138.003906 L 214 188.882812 L 162.460938 188.882812 Z M 162.460938 138.003906 '/%3E%3C/clipPath%3E%3CclipPath id='5e751a259e'%3E%3Cpath d='M 223.324219 138.003906 L 274.894531 138.003906 L 274.894531 188.882812 L 223.324219 188.882812 Z M 223.324219 138.003906 '/%3E%3C/clipPath%3E%3CclipPath id='213ffba041'%3E%3Cpath d='M 284.1875 138.003906 L 335.757812 138.003906 L 335.757812 188.882812 L 284.1875 188.882812 Z M 284.1875 138.003906 '/%3E%3C/clipPath%3E%3CclipPath id='be9f5cc8a0'%3E%3Cpath d='M 40.414062 198.496094 L 91.984375 198.496094 L 91.984375 249.375 L 40.414062 249.375 Z M 40.414062 198.496094 '/%3E%3C/clipPath%3E%3CclipPath id='47b88d8372'%3E%3Cpath d='M 101.597656 198.496094 L 153.167969 198.496094 L 153.167969 249.375 L 101.597656 249.375 Z M 101.597656 198.496094 '/%3E%3C/clipPath%3E%3CclipPath id='a772ca10a5'%3E%3Cpath d='M 162.460938 198.496094 L 214 198.496094 L 214 249.375 L 162.460938 249.375 Z M 162.460938 198.496094 '/%3E%3C/clipPath%3E%3CclipPath id='25b2da5418'%3E%3Cpath d='M 223.324219 198.496094 L 274.894531 198.496094 L 274.894531 249.375 L 223.324219 249.375 Z M 223.324219 198.496094 '/%3E%3C/clipPath%3E%3CclipPath id='0f895bb083'%3E%3Cpath d='M 284.1875 198.496094 L 335.757812 198.496094 L 335.757812 249.375 L 284.1875 249.375 Z M 284.1875 198.496094 '/%3E%3C/clipPath%3E%3CclipPath id='c9b5100eca'%3E%3Cpath d='M 40.414062 258.667969 L 91.984375 258.667969 L 91.984375 309.546875 L 40.414062 309.546875 Z M 40.414062 258.667969 '/%3E%3C/clipPath%3E%3CclipPath id='6416ead042'%3E%3Cpath d='M 101.597656 258.667969 L 153.167969 258.667969 L 153.167969 309.546875 L 101.597656 309.546875 Z M 101.597656 258.667969 '/%3E%3C/clipPath%3E%3CclipPath id='239783714c'%3E%3Cpath d='M 162.460938 258.667969 L 214 258.667969 L 214 309.546875 L 162.460938 309.546875 Z M 162.460938 258.667969 '/%3E%3C/clipPath%3E%3CclipPath id='a6d2a5ece1'%3E%3Cpath d='M 223.324219 258.667969 L 274.894531 258.667969 L 274.894531 309.546875 L 223.324219 309.546875 Z M 223.324219 258.667969 '/%3E%3C/clipPath%3E%3CclipPath id='e05a0b226c'%3E%3Cpath d='M 284.1875 258.667969 L 335.757812 258.667969 L 335.757812 309.546875 L 284.1875 309.546875 Z M 284.1875 258.667969 '/%3E%3C/clipPath%3E%3C/defs%3E%3Cg id='bafcc91a2f'%3E%3Cg clip-rule='nonzero' clip-path='url(%237b3a2c2c20)'%3E%3Cpath style='stroke:none;fill-rule:nonzero;fill:%23000000;fill-opacity:1;' d='M 29.351562 53.523438 L 345.453125 53.523438 L 345.453125 321.476562 L 29.351562 321.476562 Z M 29.351562 53.523438 '/%3E%3C/g%3E%3Cg clip-rule='nonzero' clip-path='url(%231cdb1decf9)'%3E%3Cpath style='stroke:none;fill:%23ffffff;' d='M 40.414062 138.003906 L 91.890625 138.003906 L 91.890625 188.882812 L 40.414062 188.882812 Z'/%3E%3C/g%3E%3Cg clip-rule='nonzero' clip-path='url(%237e21297d81)'%3E%3Cpath style='stroke:none;fill:%23ffffff;' d='M 101.597656 138.003906 L 153.074219 138.003906 L 153.074219 188.882812 L 101.597656 188.882812 Z'/%3E%3C/g%3E%3Cg clip-rule='nonzero' clip-path='url(%23284c3abc07)'%3E%3Cpath style='stroke:none;fill:%23ffffff;' d='M 162.460938 138.003906 L 213.9375 138.003906 L 213.9375 188.882812 L 162.460938 188.882812 Z'/%3E%3C/g%3E%3Cg clip-rule='nonzero' clip-path='url(%235e751a259e)'%3E%3Cpath style='stroke:none;fill:%23ffffff;' d='M 223.324219 138.003906 L 274.800781 138.003906 L 274.800781 188.882812 L 223.324219 188.882812 Z'/%3E%3C/g%3E%3Cg clip-rule='nonzero' clip-path='url(%23213ffba041)'%3E%3Cpath style='stroke:none;fill:%23ffffff;' d='M 284.1875 138.003906 L 335.664062 138.003906 L 335.664062 188.882812 L 284.1875 188.882812 Z'/%3E%3C/g%3E%3Cg clip-rule='nonzero' clip-path='url(%23be9f5cc8a0)'%3E%3Cpath style='stroke:none;fill:%23ffffff;' d='M 40.414062 198.496094 L 91.890625 198.496094 L 91.890625 249.375 L 40.414062 249.375 Z'/%3E%3C/g%3E%3Cg clip-rule='nonzero' clip-path='url(%2347b88d8372)'%3E%3Cpath style='stroke:none;fill:%23ffffff;' d='M 101.597656 198.496094 L 153.074219 198.496094 L 153.074219 249.375 L 101.597656 249.375 Z'/%3E%3C/g%3E%3Cg clip-rule='nonzero' clip-path='url(%23a772ca10a5)'%3E%3Cpath style='stroke:none;fill:%23ffffff;' d='M 162.460938 198.496094 L 213.9375 198.496094 L 213.9375 249.375 L 162.460938 249.375 Z'/%3E%3C/g%3E%3Cg clip-rule='nonzero' clip-path='url(%2325b2da5418)'%3E%3Cpath style='stroke:none;fill:%23ffffff;' d='M 223.324219 198.496094 L 274.800781 198.496094 L 274.800781 249.375 L 223.324219 249.375 Z'/%3E%3C/g%3E%3Cg clip-rule='nonzero' clip-path='url(%230f895bb083)'%3E%3Cpath style='stroke:none;fill:%23ffffff;' d='M 284.1875 198.496094 L 335.664062 198.496094 L 335.664062 249.375 L 284.1875 249.375 Z'/%3E%3C/g%3E%3Cg clip-rule='nonzero' clip-path='url(%23c9b5100eca)'%3E%3Cpath style='stroke:none;fill:%23ffffff;' d='M 40.414062 258.667969 L 91.890625 258.667969 L 91.890625 309.546875 L 40.414062 309.546875 Z'/%3E%3C/g%3E%3Cg clip-rule='nonzero' clip-path='url(%236416ead042)'%3E%3Cpath style='stroke:none;fill:%23ffffff;' d='M 101.597656 258.667969 L 153.074219 258.667969 L 153.074219 309.546875 L 101.597656 309.546875 Z'/%3E%3C/g%3E%3Cg clip-rule='nonzero' clip-path='url(%23239783714c)'%3E%3Cpath style='stroke:none;fill:%23ffffff;' d='M 162.460938 258.667969 L 213.9375 258.667969 L 213.9375 309.546875 L 162.460938 309.546875 Z'/%3E%3C/g%3E%3Cg clip-rule='nonzero' clip-path='url(%23a6d2a5ece1)'%3E%3Cpath style='stroke:none;fill:%23ffffff;' d='M 223.324219 258.667969 L 274.800781 258.667969 L 274.800781 309.546875 L 223.324219 309.546875 Z'/%3E%3C/g%3E%3Cg clip-rule='nonzero' clip-path='url(%23e05a0b226c)'%3E%3Cpath style='stroke:none;fill:%23ffffff;' d='M 284.1875 258.667969 L 335.664062 258.667969 L 335.664062 309.546875 L 284.1875 309.546875 Z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E%0A") !important;
   background-size: 22px 22px !important;
@@ -535,15 +497,11 @@ body {
 }
 
 
-/* ======================================
-   ===     MINI VERSIONS FOR REPLACE MENU    ===
-   ====================================== */
 
 
 
 [class*="icon-PPINOT-"][class*="-menu"] {
   background-repeat: no-repeat !important;
-  /* ajusta según tu tipografía */
 }
 
 
@@ -623,7 +581,6 @@ body {
   background-position: left center !important;
 }
 
-/* Target mini icon for palette */
 .icon-PPINOT-target-menu {
   background-image: url("data:image/svg+xml,%3Csvg width='64' height='64' viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='32' cy='32' r='30' stroke='black' stroke-width='4' fill='white'/%3E%3Ccircle cx='32' cy='32' r='15.5' fill='black'/%3E%3C/svg%3E%0A") !important;
   background-size: 15px 15px !important;
@@ -633,9 +590,6 @@ body {
 }
 
 
-/* ======================================
-   ===          RALPH ICONS           ===
-   ====================================== */
 
 
 
@@ -855,7 +809,6 @@ body {
 }
 
 
-/* Panel styles - Actualizados para coincidir con RASCI */
 .panel {
   background: #ffffff !important;
   border: 1px solid #ddd !important;
@@ -948,9 +901,7 @@ body {
   height: calc(100vh - 64px - 24px) !important;
 }
 
-/* Estilos de dragging removidos - funcionalidad deshabilitada */
 
-/* Workspace styles */
 .workspace {
   flex: 1;
   display: flex;
@@ -958,9 +909,7 @@ body {
   position: relative;
   background: #f1f3f5;
   height: calc(100vh - 64px - 24px);
-  /* Restar header y status bar */
   min-height: 0;
-  /* Importante para que flex funcione correctamente */
 }
 
 #panel-container {
@@ -988,15 +937,7 @@ body {
 
 
 
-/* ======================================
-   === DRAG & DROP STYLES - DESHABILITADOS ===
-   ====================================== */
-/* La funcionalidad de arrastre y redimensionamiento ha sido deshabilitada */
 
-/* ======================================
-   === RASCI PANEL - ESTILOS REMOVIDOS ===
-   ====================================== */
-/* Los estilos específicos de RASCI están manejados en rasci.js */
 
 
 .recharge-button {
@@ -1016,23 +957,16 @@ body {
   border: 1px solid #3a56d4;
 }
 
-/* RASCI Panel Styles - REMOVIDOS ESTILOS DUPLICADOS */
-/* Los estilos de RASCI ahora están manejados completamente en rasci.js */
 
 .hidden {
   display: none !important;
 }
 
-/* ======================================
-   === ELIMINAR OUTLINE/BORDER DE SELECCIÓN BPMN ===
-   ====================================== */
 
-/* Oculta el reborde de selección de los elementos BPMN */
 .djs-outline {
   display: none !important;
 }
 
-/* Quitar outline del SVG principal del canvas */
 .bjs-container svg:focus,
 .bjs-container svg:active,
 #bpmn-panel svg:focus,
@@ -1041,7 +975,6 @@ body {
   box-shadow: none !important;
 }
 
-/* Quitar outline de todos los elementos dentro del canvas BPMN */
 #bpmn-panel *:focus,
 #bpmn-panel *:active,
 .bjs-container *:focus,
@@ -1050,7 +983,6 @@ body {
   box-shadow: none !important;
 }
 
-/* Quitar outline específicamente de elementos SVG */
 svg:focus,
 svg:active,
 svg *:focus,
@@ -1059,21 +991,18 @@ svg *:active {
   box-shadow: none !important;
 }
 
-/* Quitar outline de elementos con tabindex */
 [tabindex]:focus,
 [tabindex]:active {
   outline: none !important;
   box-shadow: none !important;
 }
 
-/* Quitar outline de elementos draggable */
 [draggable]:focus,
 [draggable]:active {
   outline: none !important;
   box-shadow: none !important;
 }
 
-/* Quitar outline de elementos djs (diagram-js) */
 .djs-element:focus,
 .djs-element:active,
 .djs-shape:focus,
@@ -1084,9 +1013,6 @@ svg *:active {
   box-shadow: none !important;
 }
 
-/* ======================================
-   === FLOW-BASED POSITIONING SYSTEM ===
-   ====================================== */
 
 .positioning-info {
   background: #f8f9fa;
@@ -1145,7 +1071,6 @@ svg *:active {
   box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.1);
 }
 
-/* Estilos para el log de mapeo con información de posicionamiento */
 #mapping-log {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 11px;
@@ -1176,7 +1101,6 @@ svg *:active {
   border-radius: 0 4px 4px 0;
 }
 
-/* Indicador de configuración aplicada */
 #config-applied-indicator {
   animation: slideIn 0.3s ease-out;
 }
@@ -1192,7 +1116,6 @@ svg *:active {
   }
 }
 
-/* Estilos para elementos RALph posicionados */
 .ralph-role-instance {
   transition: all 0.3s ease;
 }
@@ -1202,7 +1125,6 @@ svg *:active {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Indicadores visuales de posicionamiento */
 .position-indicator {
   position: absolute;
   width: 8px;
@@ -1229,7 +1151,6 @@ svg *:active {
   }
 }
 
-/* Estilos para las notas de mapeo */
 .mapping-note {
   background: #f8f9fa;
   border: 1px solid #e9ecef;
@@ -1266,9 +1187,6 @@ svg *:active {
   font-weight: 600;
 }
 
-/* ======================================
-   === RASCI AUTO-MAPPING SWITCH ===
-   ====================================== */
 
 .rasci-controls {
   display: flex;
@@ -1309,7 +1227,6 @@ svg *:active {
   margin-right: 5px;
 }
 
-/* Switch component styles */
 .switch {
   position: relative;
   display: inline-block;
@@ -1359,7 +1276,6 @@ input:checked + .slider:before {
   transform: translateX(26px);
 }
 
-/* Button styles for manual mapping */
 .btn-secondary {
   background: #6c757d;
   border: 1px solid #6c757d;

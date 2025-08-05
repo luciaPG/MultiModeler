@@ -189,7 +189,21 @@ PPINOTContextPadProvider.prototype.getContextPadEntries = function (element) {
       title: this._translate('Remove'),
       action: {
         click: (event, element) => {
+          
+          // Check if it's a PPI element BEFORE removing it
+          const isPPI = element && element.type && element.type.startsWith('PPINOT:');
+          
+          // Remove element from canvas
           this._modeling.removeElements([element]);
+          
+          // Sync with PPI list if it was a PPI element
+          if (isPPI) {
+            if (window.ppiManager) {
+              window.ppiManager.removePPIFromList(element.id);
+            } else {
+            }
+          } else {
+          }
         }
       }
     }
@@ -202,6 +216,8 @@ PPINOTContextPadProvider.prototype.getContextPadEntries = function (element) {
 
   return actions;
 };
+
+
 PPINOTContextPadProvider.$inject = [
   'config',
   'injector',

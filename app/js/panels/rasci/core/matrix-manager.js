@@ -876,65 +876,57 @@ window.forceDetectAndValidate = () => {
 
 // Función global para diagnóstico completo del estado
 window.diagnoseRasciState = () => {
-  // 1. Verificar bpmnModeler
-  console.log('1. Estado de bpmnModeler:', {
+  const bpmnModelerInfo = {
     available: !!window.bpmnModeler,
     type: typeof window.bpmnModeler
-  });
+  };
   
   // 2. Obtener tareas del BPMN
   const bpmnTasks = getBpmnTasks();
-  console.log('2. Tareas del BPMN:', bpmnTasks);
-  console.log('   Número de tareas BPMN:', bpmnTasks.length);
   
-  // 3. Verificar window.rasciMatrixData
-  console.log('3. Estado de window.rasciMatrixData:', {
+  const rasciMatrixDataInfo = {
     exists: !!window.rasciMatrixData,
     type: typeof window.rasciMatrixData,
     keys: window.rasciMatrixData ? Object.keys(window.rasciMatrixData) : [],
     data: window.rasciMatrixData
-  });
+  };
   
-  // 4. Verificar roles
-  console.log('4. Estado de roles:', {
+  const roles = getRasciRoles();
+  const rolesInfo = {
     roles: roles,
     count: roles ? roles.length : 0
-  });
+  };
   
-  // 5. Verificar validador de UI
-  console.log('5. Estado del validador de UI:', {
+  const uiValidatorInfo = {
     exists: !!window.rasciUIValidator,
     type: typeof window.rasciUIValidator,
     hasValidateEmptyTasks: window.rasciUIValidator ? typeof window.rasciUIValidator.validateEmptyTasks === 'function' : false,
     hasForceValidation: window.rasciUIValidator ? typeof window.rasciUIValidator.forceValidation === 'function' : false
-  });
+  };
   
-  // 6. Verificar localStorage
-  console.log('6. Estado de localStorage:', {
+  const localStorageInfo = {
     rasciMatrixData: localStorage.getItem('rasciMatrixData'),
     rasciRoles: localStorage.getItem('rasciRoles')
-  });
+  };
   
-  // 7. Verificar panel RASCI
   const rasciPanel = document.querySelector('#rasci-panel');
-  console.log('7. Estado del panel RASCI:', {
+  const panelInfo = {
     exists: !!rasciPanel,
     id: rasciPanel ? rasciPanel.id : null
-  });
+  };
   
-  // 8. Análisis de sincronización
   if (window.rasciMatrixData && bpmnTasks.length > 0) {
     const matrixTasks = Object.keys(window.rasciMatrixData);
     const missingInMatrix = bpmnTasks.filter(task => !matrixTasks.includes(task));
     const extraInMatrix = matrixTasks.filter(task => !bpmnTasks.includes(task));
     
-    console.log('8. Análisis de sincronización:', {
+    const syncInfo = {
       tareasEnBPMN: bpmnTasks,
       tareasEnMatriz: matrixTasks,
       faltantesEnMatriz: missingInMatrix,
       extraEnMatriz: extraInMatrix,
       sincronizado: missingInMatrix.length === 0 && extraInMatrix.length === 0
-    });
+    };
   }
   
 };
@@ -991,15 +983,12 @@ window.forceFullSync = () => {
 // Función para forzar la recarga completa de la matriz
 export function forceReloadMatrix() {
   if (!window.bpmnModeler) {
-    console.log('❌ No hay modelador BPMN disponible');
     return;
   }
 
-  console.log('🔄 Forzando recarga de matriz...');
   
   // Obtener las tareas actuales del diagrama
   const currentTasks = getBpmnTasks();
-  console.log('📋 Tareas encontradas:', currentTasks);
   
   // Asegurar que window.rasciMatrixData existe
   if (!window.rasciMatrixData) {
@@ -1020,22 +1009,18 @@ export function forceReloadMatrix() {
     window.rasciMatrixData[taskName] = taskRoles;
   });
   
-  console.log('📊 Datos de matriz actualizados:', window.rasciMatrixData);
   
   // Forzar recarga visual
   const rasciPanel = document.querySelector('#rasci-panel');
   if (rasciPanel) {
     renderMatrix(rasciPanel, roles, autoSaveRasciState);
-    console.log('✅ Matriz recargada visualmente');
   } else {
-    console.log('❌ No se encontró el panel RASCI');
   }
   
   // Validación después de recargar
   setTimeout(() => {
     if (window.rasciUIValidator && typeof window.rasciUIValidator.forceValidation === 'function') {
       window.rasciUIValidator.forceValidation();
-      console.log('✅ Validación ejecutada');
     }
   }, 300);
 }

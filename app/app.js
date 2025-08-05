@@ -1,7 +1,6 @@
 // === app.js limpio ===
 // TODO: A TERMINAR EL DESARROLLO - Sistema de guardado automático implementado
 
-console.log('🚀 app.js: Archivo cargado correctamente');
 
 import $ from 'jquery';
 import MultiNotationModeler from './MultiNotationModeler/index.js';
@@ -37,17 +36,56 @@ function saveBpmnState() {
         if (result && result.xml && result.xml.trim().length > 0) {
           localStorage.setItem('bpmnDiagram', result.xml);
           showBpmnSaveIndicator();
+          
+          // GUARDAR TAMBIÉN LAS RELACIONES PPINOT EN EL XML
+          if (window.ppiManager && window.ppiManager.core) {
+            // Obtener las relaciones actuales y guardarlas en el XML
+            const elementRegistry = modeler.get('elementRegistry');
+            const allElements = elementRegistry.getAll();
+            
+            // Filtrar elementos hijos de PPINOT
+            const ppiChildren = allElements.filter(element => {
+              const isChildOfPPI = element.parent && 
+                (element.parent.type === 'PPINOT:Ppi' || 
+                 (element.parent.businessObject && element.parent.businessObject.$type === 'PPINOT:Ppi'));
+              
+              const isValidChildType = element.type === 'PPINOT:Scope' || 
+                element.type === 'PPINOT:Target' ||
+                element.type === 'PPINOT:Measure' ||
+                element.type === 'PPINOT:Condition' ||
+                (element.businessObject && (
+                  element.businessObject.$type === 'PPINOT:Scope' ||
+                  element.businessObject.$type === 'PPINOT:Target' ||
+                  element.businessObject.$type === 'PPINOT:Measure' ||
+                  element.businessObject.$type === 'PPINOT:Condition'
+                ));
+              
+              return isChildOfPPI && isValidChildType;
+            });
+            
+            // Crear relaciones para guardar
+            const relationships = ppiChildren.map(el => ({
+              childId: el.id,
+              parentId: el.parent ? el.parent.id : null,
+              childType: el.type,
+              parentType: el.parent ? el.parent.type : null,
+              childBusinessObjectType: el.businessObject ? el.businessObject.$type : null,
+              parentBusinessObjectType: el.parent && el.parent.businessObject ? el.parent.businessObject.$type : null,
+              childName: el.businessObject ? el.businessObject.name : '',
+              parentName: el.parent && el.parent.businessObject ? el.parent.businessObject.name : '',
+              timestamp: Date.now()
+            }));
+            
+            // Guardar relaciones en el XML
+            window.ppiManager.core.savePPINOTRelationshipsToXML(relationships);
+          }
         } else {
-          console.warn('⚠️ XML BPMN vacío, no se guardó');
         }
       }).catch(err => {
-        console.warn('❌ Error al guardar estado BPMN:', err);
       });
     } else {
-      console.warn('⚠️ Modeler BPMN no está disponible para guardar');
     }
   } catch (e) {
-    console.warn('❌ No se pudo guardar el estado BPMN:', e);
   }
 }
 
@@ -122,28 +160,24 @@ function loadBpmnState() {
     const savedDiagram = localStorage.getItem('bpmnDiagram');
     
     if (!modeler) {
-      console.log('📂 Modeler no está listo, esperando...');
       setTimeout(loadBpmnState, 500);
       return;
     }
     
     if (savedDiagram && savedDiagram.trim().length > 0) {
-      console.log('📂 Intentando cargar diagrama BPMN guardado...');
       modeler.importXML(savedDiagram).then(() => {
-        console.log('✅ Estado BPMN cargado automáticamente');
         updateUI('Diagrama BPMN restaurado.');
+        
+        // La restauración de relaciones PPINOT se maneja automáticamente en PPIManager
+        // No es necesario llamar aquí ya que se ejecuta cuando el modeler está listo
+        
       }).catch(err => {
-        console.warn('❌ Error al cargar estado BPMN:', err);
-        console.log('📂 Creando nuevo diagrama BPMN...');
         createNewDiagram();
       });
     } else {
-      console.log('📂 No hay diagrama BPMN guardado, creando nuevo');
       createNewDiagram();
     }
   } catch (e) {
-    console.warn('❌ No se pudo cargar el estado BPMN:', e);
-    console.log('📂 Creando nuevo diagrama BPMN...');
     createNewDiagram();
   }
 }
@@ -194,9 +228,12 @@ function initializeModeler() {
     }
     
     // El estado se cargará desde el gestor de paneles
-    console.log('✅ Modeler BPMN inicializado correctamente');
+    
+    // Inicializar integración con PPI si está disponible
+    if (window.ppiManager && window.BpmnIntegration) {
+      window.bpmnIntegration = new BpmnIntegration(window.ppiManager, modeler);
+    }
   } catch (error) {
-    console.error('❌ Error initializing modeler:', error);
   }
 }
 
@@ -226,22 +263,14 @@ async function createNewDiagram() {
 
 // Función de debug para verificar el estado del localStorage
 function debugBpmnState() {
-  console.log('🔍 === DEBUG ESTADO BPMN ===');
   const savedDiagram = localStorage.getItem('bpmnDiagram');
   if (savedDiagram) {
-    console.log('✅ Diagrama BPMN encontrado en localStorage');
-    console.log('📊 Tamaño:', savedDiagram.length, 'caracteres');
-    console.log('📄 Primeros 200 caracteres:', savedDiagram.substring(0, 200));
   } else {
-    console.log('❌ No hay diagrama BPMN en localStorage');
   }
   
   if (modeler) {
-    console.log('✅ Modeler BPMN disponible');
   } else {
-    console.log('❌ Modeler BPMN no disponible');
   }
-  console.log('🔍 === FIN DEBUG ===');
 }
 
 // Hacer las funciones globales para que el gestor de paneles pueda acceder a ellas
@@ -282,6 +311,5 @@ $(function () {
 
   setTimeout(() => {
     // El modeler se inicializará automáticamente cuando se aplique la configuración
-    console.log('Aplicación inicializada con gestor de paneles');
   }, 300);
 });

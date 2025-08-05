@@ -17,6 +17,12 @@ class PanelManager {
         description: 'Gestión de responsabilidades',
         enabled: true
       },
+      'ppi': {
+        name: 'PPI Indicators',
+        icon: 'fas fa-chart-line',
+        description: 'Indicadores de Rendimiento de Procesos',
+        enabled: true
+      },
       'test': {
         name: 'Panel de Prueba',
         icon: 'fas fa-flask',
@@ -87,7 +93,6 @@ class PanelManager {
         return validPanels;
       }
     } catch (e) {
-      console.warn('Error al cargar paneles activos:', e);
     }
     
     return ['bpmn'];
@@ -98,7 +103,6 @@ class PanelManager {
       localStorage.setItem('activePanels', JSON.stringify(this.activePanels));
       localStorage.setItem('panelLayout', this.currentLayout);
     } catch (e) {
-      console.warn('Error al guardar configuración de paneles:', e);
     }
   }
 
@@ -1202,11 +1206,9 @@ class PanelManager {
 
     // El selector se elimina junto con el overlay ya que está dentro
     if (selector && selector.parentNode !== overlay) {
-      console.log('� Eliminando selector órfano...');
       selector.remove();
     }
     
-    console.log('✅ Modal eliminado correctamente');
   }
 
   async applyConfiguration() {
@@ -1268,7 +1270,6 @@ class PanelManager {
           panel.setAttribute('data-position', (index + 1).toString());
         }
       } catch (error) {
-        console.error(`Error creating panel ${panelKey}:`, error);
       }
     }
 
@@ -1316,7 +1317,6 @@ class PanelManager {
     this.closeSelector();
     
     } catch (error) {
-      console.error('❌ Error en applyConfiguration:', error);
     } finally {
       this.isApplyingConfiguration = false;
     }
@@ -1342,7 +1342,6 @@ class PanelManager {
       }
     });
     
-    console.log(`Paneles visibles: ${visibleCount}`);
     
     // Ajustar layout automáticamente
     let newLayout;
@@ -1357,7 +1356,6 @@ class PanelManager {
     }
     
     if (newLayout && newLayout !== this.currentLayout) {
-      console.log(`Ajustando layout automáticamente de ${this.currentLayout} a ${newLayout}`);
       this.currentLayout = newLayout;
       window.snapSystem.changeLayout(newLayout);
     }

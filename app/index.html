@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="vendor/diagram-js/diagram-js.css">
   <link rel="stylesheet" href="vendor/bpmn-js/bpmn-js.css">
   <link rel="stylesheet" href="vendor/bpmn-js/bpmn-font/css/bpmn.css">
+  <link rel="stylesheet" href="css/ppi-panel.css">
   
   <style>
     :root {
@@ -528,6 +529,9 @@
         <button class="restore-btn hidden" id="restore-rasci" data-panel="rasci">
           <i class="fas fa-table"></i> Restaurar RASCI
         </button>
+        <button class="restore-btn hidden" id="restore-ppi" data-panel="ppi">
+          <i class="fas fa-chart-line"></i> Restaurar PPI
+        </button>
       </div>
     </div>
   </header>
@@ -552,10 +556,14 @@
   <script src="bundle.js"></script>
   <script src="js/panel-manager-debug.js"></script>
   <script src="js/panel-manager-debug2.js"></script>
+  <script src="js/panels/ppi/index.js"></script>
+  <script src="js/panels/ppi/bpmn-integration.js"></script>
+  <script src="js/panels/ppi/natural-language-processor.js"></script>
+  <script src="js/panels/ppi/example-usage.js"></script>
+
   
   <script>
     // Application initialization is now handled in app.js
-    console.log('HTML loaded, waiting for app.js...');
   </script>
 </body>
 </html>

@@ -163,9 +163,6 @@ export class RasciMatrixValidator {
       .filter(([, value]) => value.includes('S'))
       .map(([role]) => role);
 
-    // Debug: mostrar información sobre roles válidos
-    
-
     supportRoles.forEach(role => {
       if (this.validRoles.size > 0 && !this.validRoles.has(role)) {
         this.addWarning(`El rol '${role}' marcado como Soporte no está definido en el modelo organizativo. Roles disponibles: ${Array.from(this.validRoles).join(', ')}`);
@@ -348,100 +345,4 @@ export class RasciMatrixValidator {
   }
 }
 
-// Instancia global del validador
 export const rasciValidator = new RasciMatrixValidator();
-
-// Función de debug para inspeccionar datos
-window.debugRasciValidatorData = () => {
-  console.log('🔍 === DEBUG DATOS DEL VALIDADOR ===');
-  
-  // Verificar datos en localStorage
-  console.log('📦 localStorage:');
-  const rasciKeys = Object.keys(localStorage).filter(key => key.toLowerCase().includes('rasci'));
-  rasciKeys.forEach(key => {
-    const value = localStorage.getItem(key);
-    console.log(`- ${key}:`, value);
-    try {
-      const parsed = JSON.parse(value);
-      console.log(`  Parseado:`, parsed);
-      console.log(`  Tipo:`, typeof parsed);
-      if (typeof parsed === 'object') {
-        console.log(`  Claves:`, Object.keys(parsed));
-      }
-    } catch (e) {
-      console.log(`  Error al parsear:`, e.message);
-    }
-  });
-  
-  // Verificar window variables
-  console.log('🌐 window variables:');
-  console.log('- window.rasciMatrixData:', window.rasciMatrixData);
-  console.log('- window.rasciRoles:', window.rasciRoles);
-  
-  // Verificar estado del validador
-  console.log('🔧 Estado del validador:');
-  console.log('- Errores críticos:', rasciValidator.criticalErrors);
-  console.log('- Advertencias:', rasciValidator.warnings);
-  console.log('- Roles válidos:', Array.from(rasciValidator.validRoles));
-  
-  console.log('🔍 === FIN DEBUG ===');
-};
-
-// Función para forzar validación con datos específicos
-window.forceRasciValidationWithData = (roles, matrixData, organizationalRoles = []) => {
-  console.log('🚀 === FORZANDO VALIDACIÓN CON DATOS ESPECÍFICOS ===');
-  console.log('📊 Roles:', roles);
-  console.log('📊 Matriz:', matrixData);
-  console.log('📊 Roles organizativos:', organizationalRoles);
-  
-  const result = rasciValidator.validateRealTime(roles, matrixData, organizationalRoles);
-  
-  console.log('📋 Resultado:', result);
-  // console.log('✅ === FIN VALIDACIÓN FORZADA ===');
-  
-  return result;
-};
-
-// Función para analizar el estado de la matriz en detalle
-window.analyzeMatrixState = () => {
-  console.log('🔍 === ANÁLISIS DETALLADO DEL ESTADO DE LA MATRIZ ===');
-  
-  // Obtener datos actuales
-  const roles = window.rasciRoles || [];
-  const matrixData = window.rasciMatrixData || {};
-  
-  console.log('📊 Roles disponibles:', roles);
-  console.log('📊 Datos de matriz:', matrixData);
-  
-  if (Object.keys(matrixData).length === 0) {
-    // console.log('❌ No hay datos de matriz');
-    return;
-  }
-  
-  const allTasks = Object.keys(matrixData);
-  console.log(`📋 Total de tareas: ${allTasks.length}`);
-  
-  allTasks.forEach((taskName, index) => {
-    const taskData = matrixData[taskName] || {};
-    console.log(`\n🔍 Tarea ${index + 1}: '${taskName}'`);
-    console.log(`   📊 Datos:`, taskData);
-    console.log(`   📊 Tipo:`, typeof taskData);
-    console.log(`   📊 Es objeto:`, taskData !== null && typeof taskData === 'object');
-    console.log(`   📊 Claves:`, Object.keys(taskData));
-    console.log(`   📊 Número de claves:`, Object.keys(taskData).length);
-    
-    if (Object.keys(taskData).length > 0) {
-      console.log(`   📊 Valores:`, Object.values(taskData));
-      const hasNonEmptyValues = Object.values(taskData).some(value => value && value.trim() !== '');
-      console.log(`   📊 Tiene valores no vacíos:`, hasNonEmptyValues);
-      
-      Object.entries(taskData).forEach(([role, value]) => {
-        console.log(`      - ${role}: '${value}' (tipo: ${typeof value}, vacío: ${!value || value.trim() === ''})`);
-      });
-    } else {
-      // console.log(`   ❌ No tiene estructura de roles`);
-    }
-  });
-  
-  // console.log('\n✅ === FIN ANÁLISIS ===');
-};

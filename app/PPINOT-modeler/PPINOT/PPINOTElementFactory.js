@@ -65,7 +65,51 @@ export class PPINOTNotation {
       const prefix = elementType.replace('PPINOT:', '') + '_';
       businessObject.id = moddle.ids.nextPrefixed(prefix, businessObject);
     }
+    
+    // Asignar texto por defecto basado en el tipo de elemento
+    if (!businessObject.name) {
+      businessObject.name = this.getDefaultText(elementType, businessObject.id);
+    }
+    
     // No agregamos dimensiones al business object, eso se maneja en el factory
     return businessObject;
+  }
+
+  /**
+   * Obtiene el texto por defecto para un tipo de elemento PPINOT
+   */
+  static getDefaultText(elementType, elementId = '') {
+    const defaultTexts = {
+      'PPINOT:Target': 'Target',
+      'PPINOT:Scope': 'Scope',
+      'PPINOT:BaseMeasure': 'Measure',
+      'PPINOT:CountMeasure': 'Count',
+      'PPINOT:TimeMeasure': 'Time',
+      'PPINOT:DataMeasure': 'Data',
+      'PPINOT:DerivedSingleInstanceMeasure': 'Derived',
+      'PPINOT:DerivedMultiInstanceMeasure': 'Derived Multi',
+      'PPINOT:StateConditionMeasure': 'State Condition',
+      'PPINOT:AggregatedMeasure': 'Aggregated',
+      'PPINOT:CountAggregatedMeasure': 'Count Aggregated',
+      'PPINOT:TimeAggregatedMeasure': 'Time Aggregated',
+      'PPINOT:DataAggregatedMeasure': 'Data Aggregated',
+      'PPINOT:StateConditionAggregatedMeasure': 'State Aggregated',
+      'PPINOT:DataPropertyConditionMeasure': 'Data Property',
+      'PPINOT:DataPropertyConditionAggregatedMeasure': 'Data Property Aggregated',
+      'PPINOT:CyclicTimeMeasure': 'Cyclic Time',
+      'PPINOT:CyclicTimeAggregatedMeasure': 'Cyclic Time Aggregated'
+    };
+
+    // Para PPI, usar el ID del elemento en lugar de "PPI"
+    if (elementType === 'PPINOT:Ppi') {
+      return elementId || elementType.replace('PPINOT:', '');
+    }
+
+    // Para scope y target, usar el ID como fallback si no hay texto por defecto
+    if (elementType === 'PPINOT:Scope' || elementType === 'PPINOT:Target') {
+      return defaultTexts[elementType] || elementId || elementType.replace('PPINOT:', '');
+    }
+
+    return defaultTexts[elementType] || '';
   }
 }
