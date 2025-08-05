@@ -93,6 +93,7 @@ class PanelManager {
         return validPanels;
       }
     } catch (e) {
+      console.error('Error loading active panels:', e);
     }
     
     return ['bpmn'];
@@ -102,7 +103,8 @@ class PanelManager {
     try {
       localStorage.setItem('activePanels', JSON.stringify(this.activePanels));
       localStorage.setItem('panelLayout', this.currentLayout);
-    } catch (e) {
+    } catch (e) {   
+      console.error('Error saving panel configuration:', e);
     }
   }
 
@@ -1270,6 +1272,7 @@ class PanelManager {
           panel.setAttribute('data-position', (index + 1).toString());
         }
       } catch (error) {
+        console.error('Error creating panel:', error);
       }
     }
 
@@ -1278,12 +1281,7 @@ class PanelManager {
       container.classList.add(`layout-${this.currentLayout}`);
     }
     
-    // Resizers removidos - No se necesita redimensionamiento de paneles
-    // setTimeout(() => {
-    //   if (window.panelResizer) {
-    //     window.panelResizer.makeAllPanelsResizable();
-    //   }
-    // }, 200);
+    
 
     // Reinicializar el modeler si es necesario y restaurar estado
     if (this.activePanels.includes('bpmn')) {
@@ -1317,6 +1315,7 @@ class PanelManager {
     this.closeSelector();
     
     } catch (error) {
+      console.error('Error applying configuration:', error);
     } finally {
       this.isApplyingConfiguration = false;
     }
