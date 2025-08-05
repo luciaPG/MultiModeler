@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="vendor/bpmn-js/bpmn-js.css">
   <link rel="stylesheet" href="vendor/bpmn-js/bpmn-font/css/bpmn.css">
   <link rel="stylesheet" href="css/ppi-panel.css">
+  <link rel="stylesheet" href="css/welcome-screen.css">
   
   <style>
     :root {
@@ -52,6 +53,8 @@
       background-color: var(--light-bg);
     }
     
+
+    
     /* Header */
     .app-header {
       height: var(--header-height);
@@ -62,7 +65,7 @@
       padding: 0 24px;
       border-bottom: 1px solid var(--border-color);
       box-shadow: var(--shadow-sm);
-      z-index: 1001; /* Mayor que los paneles maximizados */
+      z-index: 1001;
       position: relative;
     }
     
@@ -150,18 +153,16 @@
     
     .panel.maximized {
       position: fixed !important;
-      top: 64px !important; /* Respetar el header */
+      top: 64px !important;
       left: 0 !important;
       right: 0 !important;
-      bottom: 24px !important; /* Respetar la status bar */
+      bottom: 24px !important;
       width: 100vw !important;
-      height: calc(100vh - 64px - 24px) !important; /* Respetar header y status bar */
+      height: calc(100vh - 64px - 24px) !important;
       z-index: 1000 !important;
       margin: 0 !important;
       border-radius: 0 !important;
     }
-    
-
     
     /* Botones de restaurar en header */
     .restore-buttons {
@@ -228,8 +229,6 @@
       margin: 8px;
       transition: transform 0.2s ease;
     }
-    
-
     
     .panel-header {
       height: var(--panel-header-height);
@@ -385,7 +384,7 @@
       align-items: center;
       padding: 0 12px;
       gap: 16px;
-      z-index: 1001; /* Mayor que los paneles maximizados */
+      z-index: 1001;
       position: relative;
     }
     
@@ -486,72 +485,87 @@
   </style>
 </head>
 <body>
-  <!-- Header con herramientas -->
-  <header class="app-header">
-    <div class="logo">
-      <i class="fas fa-project-diagram"></i>
-      <span>MultiModeler</span>
-    </div>
-    
-    <div class="toolbar">
-      <div class="tool-group">
-        <button class="tool-btn primary">
-          <i class="fas fa-file"></i> Nuevo
-        </button>
-        <button class="tool-btn">
-          <i class="fas fa-folder-open"></i> Abrir
-        </button>
-        <button class="tool-btn">
-          <i class="fas fa-save"></i> Guardar
-        </button>
+  <!-- Pantalla de bienvenida -->
+  <div class="welcome-screen" id="welcome-screen">
+    <div class="welcome-content">
+      <div class="welcome-logo">
+        <i class="fas fa-project-diagram"></i>
       </div>
-      
-     
-      
-   
-      
-      <div class="tool-group">
-        <button class="tool-btn header-panel-btn" onclick="panelManager.showSelector()">
-          <i class="fas fa-th-large"></i> Paneles
+      <h1 class="welcome-title">MultiModeler</h1>
+      <p class="welcome-subtitle">Herramienta híbrida para modelado de procesos BPMN, PPINOT y RASCI</p>
+      <div class="welcome-buttons">
+        <button class="welcome-btn primary" id="new-diagram-btn">
+          <i class="fas fa-plus"></i>
+          Crear Nuevo Diagrama
         </button>
-      </div>
-      
-      
-      
-      <!-- Botones de restaurar paneles -->
-      <div class="restore-buttons">
-        <button class="restore-btn hidden" id="restore-bpmn" data-panel="bpmn">
-          <i class="fas fa-diagram-project"></i> Restaurar BPMN
-        </button>
-        <button class="restore-btn hidden" id="restore-ppinot" data-panel="ppinot">
-          <i class="fas fa-sliders"></i> Restaurar PPINOT
-        </button>
-        <button class="restore-btn hidden" id="restore-rasci" data-panel="rasci">
-          <i class="fas fa-table"></i> Restaurar RASCI
-        </button>
-        <button class="restore-btn hidden" id="restore-ppi" data-panel="ppi">
-          <i class="fas fa-chart-line"></i> Restaurar PPI
+        <button class="welcome-btn secondary" id="open-diagram-btn">
+          <i class="fas fa-folder-open"></i>
+          Abrir Diagrama
         </button>
       </div>
     </div>
-  </header>
-  
-  <!-- Área de trabajo con paneles -->
-  <div class="workspace">
-    <div class="panel-container" id="panel-container">
-
-      <!-- Los paneles se cargarán dinámicamente aquí -->
-    </div>
-    
-   
-    
   </div>
-  
-  
+
+  <!-- Contenedor del modelador -->
+  <div class="modeler-container" id="modeler-container">
+    <!-- Header con herramientas -->
+    <header class="app-header">
+      <div class="logo">
+        <i class="fas fa-project-diagram"></i>
+        <span>MultiModeler</span>
+      </div>
+      
+      <div class="toolbar">
+        <div class="tool-group">
+          <button class="tool-btn primary" id="new-btn">
+            <i class="fas fa-file"></i> Nuevo
+          </button>
+          <button class="tool-btn" id="open-btn">
+            <i class="fas fa-folder-open"></i> Abrir
+          </button>
+          <button class="tool-btn" id="save-btn">
+            <i class="fas fa-save"></i> Guardar
+          </button>
+        </div>
+        
+        <div class="tool-group">
+          <button class="tool-btn header-panel-btn" onclick="panelManager.showSelector()">
+            <i class="fas fa-th-large"></i> Paneles
+          </button>
+          <button class="tool-btn" id="back-to-welcome-btn" title="Volver a la pantalla de bienvenida">
+            <i class="fas fa-home"></i> Inicio
+          </button>
+        </div>
+        
+        <!-- Botones de restaurar paneles -->
+        <div class="restore-buttons">
+          <button class="restore-btn hidden" id="restore-bpmn" data-panel="bpmn">
+            <i class="fas fa-diagram-project"></i> Restaurar BPMN
+          </button>
+          <button class="restore-btn hidden" id="restore-ppinot" data-panel="ppinot">
+            <i class="fas fa-sliders"></i> Restaurar PPINOT
+          </button>
+          <button class="restore-btn hidden" id="restore-rasci" data-panel="rasci">
+            <i class="fas fa-table"></i> Restaurar RASCI
+          </button>
+          <button class="restore-btn hidden" id="restore-ppi" data-panel="ppi">
+            <i class="fas fa-chart-line"></i> Restaurar PPI
+          </button>
+        </div>
+      </div>
+    </header>
+    
+    <!-- Área de trabajo con paneles -->
+    <div class="workspace">
+      <div class="panel-container" id="panel-container">
+        <!-- Los paneles se cargarán dinámicamente aquí -->
+      </div>
+    </div>
+  </div>
   
   <input type="file" id="file-input" accept=".bpmn,.xml,.cbpmn" style="display:none" />
   
-    <!-- Scripts -->
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
   <script src="bundle.js"></script>
   <script src="js/panel-manager-debug.js"></script>
@@ -561,7 +575,6 @@
   <script src="js/panels/ppi/natural-language-processor.js"></script>
   <script src="js/panels/ppi/example-usage.js"></script>
 
-  
   <script>
     // Application initialization is now handled in app.js
   </script>

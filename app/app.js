@@ -27,6 +27,59 @@ window.initRasciPanel = initRasciPanel;
 let bpmnSaveTimeout = null;
 let lastBpmnSaveTime = 0;
 
+// Variables para la navegación entre pantallas
+let welcomeScreen = null;
+let modelerContainer = null;
+let isModelerInitialized = false;
+
+// Funciones de navegación entre pantallas
+function showWelcomeScreen() {
+  if (welcomeScreen) {
+    welcomeScreen.classList.remove('hidden');
+  }
+  if (modelerContainer) {
+    modelerContainer.classList.remove('show');
+  }
+}
+
+function showModeler() {
+  if (welcomeScreen) {
+    welcomeScreen.classList.add('hidden');
+  }
+  if (modelerContainer) {
+    modelerContainer.classList.add('show');
+  }
+  
+  // Inicializar el modelador si no se ha hecho antes
+  if (!isModelerInitialized) {
+    initializeModelerSystem();
+    isModelerInitialized = true;
+  }
+}
+
+function initializeModelerSystem() {
+  const panelContainer = document.getElementById('panel-container');
+  if (!panelContainer) return;
+
+  const panelLoader = new PanelLoader();
+  window.panelLoader = panelLoader;
+
+  // Inicializar gestor de paneles
+  const panelManager = new PanelManager();
+  window.panelManager = panelManager;
+  panelManager.setPanelLoader(panelLoader);
+
+  // Crear paneles iniciales usando el gestor
+  panelManager.applyConfiguration();
+
+  // Configurar layout inicial
+  panelContainer.classList.add('layout-4');
+
+  setTimeout(() => {
+    // El modeler se inicializará automáticamente cuando se aplique la configuración
+  }, 300);
+}
+
 // Funciones de persistencia para el estado del BPMN
 function saveBpmnState() {
   try {
@@ -286,30 +339,86 @@ function updateUI(message = '') {
   $('.status-item:nth-child(2) span').text('Modo: Edición');
 }
 
+// Funciones para manejo de archivos
+function handleNewDiagram() {
+  showModeler();
+  // Limpiar cualquier diagrama existente
+  localStorage.removeItem('bpmnDiagram');
+  // El modeler se inicializará automáticamente
+}
+
+function handleOpenDiagram() {
+  const fileInput = document.getElementById('file-input');
+  if (fileInput) {
+    fileInput.click();
+  }
+}
+
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const content = e.target.result;
+      localStorage.setItem('bpmnDiagram', content);
+      showModeler();
+      // El diagrama se cargará automáticamente cuando se inicialice el modeler
+    };
+    reader.readAsText(file);
+  }
+}
+
 // Panel y modeler init principal
 $(function () {
-  const panelContainer = document.getElementById('panel-container');
-  if (!panelContainer) return;
-
-  const panelLoader = new PanelLoader();
-  window.panelLoader = panelLoader;
-
-  // Sistema de layout removido - No se necesita desplazamiento de ventanas
-  // const snapSystem = new PanelSnapSystem();
-  // window.snapSystem = snapSystem;
-
-  // Inicializar gestor de paneles
-  const panelManager = new PanelManager();
-  window.panelManager = panelManager;
-  panelManager.setPanelLoader(panelLoader);
-
-  // Crear paneles iniciales usando el gestor
-  panelManager.applyConfiguration();
-
-  // Configurar layout inicial
-  panelContainer.classList.add('layout-4');
-
-  setTimeout(() => {
-    // El modeler se inicializará automáticamente cuando se aplique la configuración
-  }, 300);
+  // Obtener referencias a los elementos de navegación
+  welcomeScreen = document.getElementById('welcome-screen');
+  modelerContainer = document.getElementById('modeler-container');
+  
+  // Configurar event listeners para la pantalla de bienvenida
+  const newDiagramBtn = document.getElementById('new-diagram-btn');
+  const openDiagramBtn = document.getElementById('open-diagram-btn');
+  
+  if (newDiagramBtn) {
+    newDiagramBtn.addEventListener('click', handleNewDiagram);
+  }
+  
+  if (openDiagramBtn) {
+    openDiagramBtn.addEventListener('click', handleOpenDiagram);
+  }
+  
+  // Configurar event listeners para el modelador
+  const newBtn = document.getElementById('new-btn');
+  const openBtn = document.getElementById('open-btn');
+  const saveBtn = document.getElementById('save-btn');
+  const backToWelcomeBtn = document.getElementById('back-to-welcome-btn');
+  const fileInput = document.getElementById('file-input');
+  
+  if (newBtn) {
+    newBtn.addEventListener('click', handleNewDiagram);
+  }
+  
+  if (openBtn) {
+    openBtn.addEventListener('click', handleOpenDiagram);
+  }
+  
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+      if (modeler) {
+        saveBpmnState();
+      }
+    });
+  }
+  
+  if (backToWelcomeBtn) {
+    backToWelcomeBtn.addEventListener('click', () => {
+      showWelcomeScreen();
+    });
+  }
+  
+  if (fileInput) {
+    fileInput.addEventListener('change', handleFileSelect);
+  }
+  
+  // Mostrar pantalla de bienvenida por defecto
+  showWelcomeScreen();
 });
