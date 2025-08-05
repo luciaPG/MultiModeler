@@ -86,6 +86,20 @@ function initializeModelerSystem() {
 function saveBpmnState() {
   try {
     if (modeler) {
+      // GUARDAR POSICIÓN Y ZOOM DEL CANVAS
+      const canvas = modeler.get('canvas');
+      if (canvas) {
+        const viewbox = canvas.viewbox();
+        const canvasState = {
+          x: viewbox.x,
+          y: viewbox.y,
+          width: viewbox.width,
+          height: viewbox.height,
+          scale: viewbox.scale
+        };
+        localStorage.setItem('bpmnCanvasState', JSON.stringify(canvasState));
+      }
+      
       const xml = modeler.saveXML({ format: true });
       xml.then(result => {
         if (result && result.xml && result.xml.trim().length > 0) {
@@ -283,8 +297,8 @@ function showBpmnSaveIndicator() {
 function autoSaveBpmnState() {
   const now = Date.now();
   
-  // Evitar guardados muy frecuentes (mínimo 2 segundos entre guardados)
-  if (now - lastBpmnSaveTime < 2000) {
+  // Evitar guardados muy frecuentes (mínimo 1 segundo entre guardados)
+  if (now - lastBpmnSaveTime < 1000) {
     // Cancelar timeout anterior y programar uno nuevo
     if (bpmnSaveTimeout) {
       clearTimeout(bpmnSaveTimeout);
@@ -292,13 +306,22 @@ function autoSaveBpmnState() {
     bpmnSaveTimeout = setTimeout(() => {
       saveBpmnState();
       lastBpmnSaveTime = Date.now();
-    }, 2000);
+    }, 1000);
     return;
   }
   
   // Guardar inmediatamente si ha pasado suficiente tiempo
   saveBpmnState();
   lastBpmnSaveTime = now;
+}
+
+// Función para forzar guardado inmediato (sin debounce)
+function forceSaveBpmnState() {
+  if (bpmnSaveTimeout) {
+    clearTimeout(bpmnSaveTimeout);
+  }
+  saveBpmnState();
+  lastBpmnSaveTime = Date.now();
 }
 
 function loadBpmnState() {
@@ -350,6 +373,29 @@ function loadBpmnState() {
         console.log('  - Ppi:', ppinotElements.filter(el => el.type.includes('Ppi')).length);
         console.log('  - RALph:', ppinotElements.filter(el => el.type.includes('RALph')).length);
         
+        // RESTAURAR POSICIÓN Y ZOOM DEL CANVAS
+        const savedCanvasState = localStorage.getItem('bpmnCanvasState');
+        if (savedCanvasState) {
+          try {
+            const canvasState = JSON.parse(savedCanvasState);
+            const canvas = modeler.get('canvas');
+            if (canvas && canvasState) {
+              // Restaurar viewbox con un pequeño delay para asegurar que el diagrama esté listo
+              setTimeout(() => {
+                canvas.viewbox({
+                  x: canvasState.x,
+                  y: canvasState.y,
+                  width: canvasState.width,
+                  height: canvasState.height
+                });
+                console.log('🎯 Posición del canvas restaurada');
+              }, 100);
+            }
+          } catch (e) {
+            console.warn('⚠️ Error restaurando posición del canvas:', e);
+          }
+        }
+        
         // NUEVO: Restaurar elementos RALPH desde almacenamiento separado
         const savedRALphElements = localStorage.getItem('RALphElements');
         if (savedRALphElements) {
@@ -373,9 +419,53 @@ function loadBpmnState() {
                     return;
                   }
                   
+                  // Obtener todos los elementos RALPH que ya están en el diagrama
+                  const existingRALphElements = elementRegistry.getAll().filter(el => 
+                    el.type && el.type.includes('RALph')
+                  );
+                  
+                  // Filtrar elementos que NO están ya en el diagrama (por tipo, no por ID)
+                  const elementsToRestore = ralphData.filter(savedElement => {
+                    // Verificar si ya existe un elemento con el mismo ID
+                    const existingById = elementRegistry.get(savedElement.id);
+                    if (existingById) {
+                      return false; // Ya existe con ese ID
+                    }
+                    
+                    // Para conexiones, verificar si ya existe una conexión entre los mismos elementos
+                    if (savedElement.source && savedElement.target) {
+                      const sourceElement = elementRegistry.get(savedElement.source);
+                      const targetElement = elementRegistry.get(savedElement.target);
+                      
+                      if (sourceElement && targetElement) {
+                        const existingConnection = elementRegistry.getAll().find(el => 
+                          el.type === savedElement.type && 
+                          el.source && el.target &&
+                          el.source.id === savedElement.source && 
+                          el.target.id === savedElement.target
+                        );
+                        
+                        if (existingConnection) {
+                          return false; // Ya existe una conexión entre estos elementos
+                        }
+                      }
+                    }
+                    
+                    return true; // No existe, restaurar
+                  });
+                  
+                  console.log(`🎯 Elementos RALPH a restaurar: ${elementsToRestore.length} de ${ralphData.length}`);
+                  console.log('📋 Tipos de elementos existentes:', existingRALphElements.map(el => el.type));
+                  console.log('📋 Tipos de elementos a restaurar:', elementsToRestore.map(el => el.type));
+                  
+                  if (elementsToRestore.length === 0) {
+                    console.log('✅ Todos los elementos RALPH ya están en el diagrama');
+                    return;
+                  }
+                  
                   // Separar elementos y conexiones para procesamiento optimizado
-                  const shapes = ralphData.filter(el => !el.source || !el.target);
-                  const connections = ralphData.filter(el => el.source && el.target);
+                  const shapes = elementsToRestore.filter(el => !el.source || !el.target);
+                  const connections = elementsToRestore.filter(el => el.source && el.target);
                   
                   let successCount = 0;
                   let errorCount = 0;
@@ -464,7 +554,7 @@ function loadBpmnState() {
               };
               
               // Iniciar restauración optimizada con delay mínimo
-              setTimeout(restoreRALphElementsOptimized, 50);
+              setTimeout(restoreRALphElementsOptimized, 10);
             }
           } catch (e) {
             console.error('❌ Error parseando elementos RALPH guardados:', e);
@@ -694,6 +784,13 @@ function initializeModeler() {
       ], () => {
         autoSaveBpmnState(); // Usar sistema de guardado automático con debounce
       });
+      
+      // Guardar antes de que el usuario abandone la página
+      window.addEventListener('beforeunload', () => {
+        if (modeler) {
+          forceSaveBpmnState(); // Guardado inmediato antes de recargar
+        }
+      });
     }
     
     // El modeler está listo
@@ -768,6 +865,7 @@ window.initializeModeler = initializeModeler;
 window.createNewDiagram = createNewDiagram;
 window.isModelerHealthy = isModelerHealthy;
 window.saveBpmnState = saveBpmnState;
+window.forceSaveBpmnState = forceSaveBpmnState;
 window.loadBpmnState = loadBpmnState;
 window.autoSaveBpmnState = autoSaveBpmnState;
 window.debugBpmnState = debugBpmnState;
@@ -1364,6 +1462,9 @@ function handleNewDiagram() {
   // Limpiar cualquier diagrama existente
   localStorage.removeItem('bpmnDiagram');
   localStorage.removeItem('bpmnDiagramTimestamp');
+  localStorage.removeItem('bpmnCanvasState');
+  localStorage.removeItem('RALphElements');
+  localStorage.removeItem('bpmnParentChildRelations');
   // Actualizar la UI si se regresa a la pantalla de bienvenida
   checkSavedDiagram();
   // El modeler se inicializará automáticamente

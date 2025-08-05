@@ -227,16 +227,16 @@ RALphRules.prototype.init = function() {
   function connectHierarchyConnectors(source,target,type) {
     
     if(is(source,'bpmn:Task') && type === "RALph:ReportsDirectlyAssignment"){
-      return {type9:'RALph:ResourceArc'}
+      return {type:'RALph:ResourceArc'}
 
     }else if(is(source,'bpmn:Task') && type === "RALph:ReportsTransitivelyAssignment"){
-      return {type10:'RALph:ResourceArc'}
+      return {type:'RALph:ResourceArc'}
       
     }else if(is(source,'bpmn:Task') && type === "RALph:delegatesTransitivelyAssignment"){
-      return {type11:'RALph:ResourceArc'}
+      return {type:'RALph:ResourceArc'}
 
     }else if(is(source,'bpmn:Task') && type==="RALph:delegatesDirectlyAssignment"){
-      return {type12:'RALph:ResourceArc'}
+      return {type:'RALph:ResourceArc'}
     }
   }
 
