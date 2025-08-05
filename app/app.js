@@ -23,6 +23,33 @@ window.rasciTasks = [];
 window.rasciMatrixData = {};
 window.initRasciPanel = initRasciPanel;
 
+// Sistema de bloqueo para evitar condiciones de carrera
+window.rasciStateLock = {
+  isLocked: false,
+  lockTimeout: null,
+  lock: function(timeoutMs = 5000) {
+    if (this.isLocked) {
+      console.log('🔒 Estado RASCI bloqueado, esperando...');
+      return false;
+    }
+    this.isLocked = true;
+    this.lockTimeout = setTimeout(() => {
+      console.log('⏰ Timeout del bloqueo RASCI, liberando...');
+      this.unlock();
+    }, timeoutMs);
+    console.log('🔒 Estado RASCI bloqueado');
+    return true;
+  },
+  unlock: function() {
+    this.isLocked = false;
+    if (this.lockTimeout) {
+      clearTimeout(this.lockTimeout);
+      this.lockTimeout = null;
+    }
+    console.log('🔓 Estado RASCI desbloqueado');
+  }
+};
+
 // Variables para el sistema de guardado automático BPMN
 let bpmnSaveTimeout = null;
 let lastBpmnSaveTime = 0;
@@ -708,6 +735,13 @@ function loadBpmnState() {
         
         updateUI('Diagrama BPMN restaurado.');
         
+        // Recargar estado RASCI después de cargar el diagrama BPMN
+        setTimeout(() => {
+          if (typeof window.reloadRasciState === 'function') {
+            window.reloadRasciState();
+          }
+        }, 1000);
+        
         // La restauración de relaciones PPINOT se maneja automáticamente en PPIManager
         // No es necesario llamar aquí ya que se ejecuta cuando el modeler está listo
         
@@ -813,6 +847,13 @@ async function createNewDiagram() {
     if (typeof modeler.clear === 'function') await modeler.clear();
     await modeler.createDiagram();
     console.log('Nuevo diagrama creado con éxito');
+
+    // Recargar estado RASCI después de crear nuevo diagrama
+    setTimeout(() => {
+      if (typeof window.reloadRasciState === 'function') {
+        window.reloadRasciState();
+      }
+    }, 1000);
 
     const elementRegistry = modeler.get('elementRegistry');
     const modeling = modeler.get('modeling');
@@ -1465,6 +1506,9 @@ function handleNewDiagram() {
   localStorage.removeItem('bpmnCanvasState');
   localStorage.removeItem('RALphElements');
   localStorage.removeItem('bpmnParentChildRelations');
+  // Limpiar estado RASCI
+  localStorage.removeItem('rasciRoles');
+  localStorage.removeItem('rasciMatrixData');
   // Actualizar la UI si se regresa a la pantalla de bienvenida
   checkSavedDiagram();
   // El modeler se inicializará automáticamente
