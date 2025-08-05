@@ -149,8 +149,49 @@
   transition: transform 0.3s ease;
 }
 
+.welcome-btn.hidden {
+  display: none;
+}
+
 .welcome-btn:hover i {
   transform: scale(1.1);
+}
+
+/* Estilo especial para el botón de continuar diagrama */
+.welcome-btn#continue-diagram-btn {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  border: none;
+  box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+}
+
+.welcome-btn#continue-diagram-btn:hover {
+  background: linear-gradient(135deg, #218838, #1ea97c);
+  box-shadow: 0 12px 35px rgba(40, 167, 69, 0.4);
+}
+
+/* Información del diagrama guardado */
+.saved-diagram-info {
+  text-align: center;
+  margin-bottom: 15px;
+  padding: 15px;
+  background: rgba(40, 167, 69, 0.1);
+  border-radius: 8px;
+  border-left: 4px solid #28a745;
+}
+
+.saved-diagram-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #28a745;
+  margin: 0 0 5px 0;
+}
+
+.saved-diagram-date {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0;
+  font-style: italic;
 }
 
 /* Efectos de partículas de fondo */

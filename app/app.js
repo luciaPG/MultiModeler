@@ -40,6 +40,8 @@ function showWelcomeScreen() {
   if (modelerContainer) {
     modelerContainer.classList.remove('show');
   }
+  // Verificar estado del diagrama guardado cuando se muestra la pantalla de bienvenida
+  checkSavedDiagram();
 }
 
 function showModeler() {
@@ -88,6 +90,7 @@ function saveBpmnState() {
       xml.then(result => {
         if (result && result.xml && result.xml.trim().length > 0) {
           localStorage.setItem('bpmnDiagram', result.xml);
+          localStorage.setItem('bpmnDiagramTimestamp', Date.now().toString());
           showBpmnSaveIndicator();
           
           // GUARDAR TAMBIÉN LAS RELACIONES PPINOT EN EL XML
@@ -210,27 +213,34 @@ function autoSaveBpmnState() {
 
 function loadBpmnState() {
   try {
+    console.log('loadBpmnState ejecutándose...');
     const savedDiagram = localStorage.getItem('bpmnDiagram');
     
     if (!modeler) {
+      console.log('Modeler no disponible, reintentando en 500ms');
       setTimeout(loadBpmnState, 500);
       return;
     }
     
     if (savedDiagram && savedDiagram.trim().length > 0) {
+      console.log('Cargando diagrama guardado...');
       modeler.importXML(savedDiagram).then(() => {
+        console.log('Diagrama BPMN restaurado correctamente');
         updateUI('Diagrama BPMN restaurado.');
         
         // La restauración de relaciones PPINOT se maneja automáticamente en PPIManager
         // No es necesario llamar aquí ya que se ejecuta cuando el modeler está listo
         
       }).catch(err => {
+        console.warn('Error al cargar diagrama guardado, creando nuevo:', err);
         createNewDiagram();
       });
     } else {
+      console.log('No hay diagrama guardado, creando nuevo...');
       createNewDiagram();
     }
   } catch (e) {
+    console.error('Error en loadBpmnState:', e);
     createNewDiagram();
   }
 }
@@ -249,6 +259,22 @@ const body = $('body');
 
 function initializeModeler() {
   try {
+    // Verificar que el elemento canvas existe antes de inicializar
+    const canvasElement = document.getElementById('js-canvas');
+    if (!canvasElement) {
+      console.error('Canvas element #js-canvas not found, cannot initialize modeler');
+      return;
+    }
+    
+    // Limpiar modeler anterior si existe
+    if (window.modeler && typeof window.modeler.destroy === 'function') {
+      try {
+        window.modeler.destroy();
+      } catch (e) {
+        console.warn('Error al destruir modeler anterior:', e);
+      }
+    }
+    
     modeler = new MultiNotationModeler({
       container: '#js-canvas',
       moddleExtensions: {
@@ -261,7 +287,7 @@ function initializeModeler() {
     const eventBus = modeler.get('eventBus');
     if (eventBus) {
       eventBus.on(['connection.create', 'bendpoint.move.end'], event => {
-        const wp = event?.context?.connection?.waypoints;
+        const wp = event && event.context && event.context.connection && event.context.connection.waypoints;
         if (wp) event.context.connection.waypoints = validateAndSanitizeWaypoints(wp);
       });
       
@@ -280,20 +306,26 @@ function initializeModeler() {
       });
     }
     
-    // El estado se cargará desde el gestor de paneles
+    // El modeler está listo
+    window.modeler = modeler;
+    
+    console.log('Modeler inicializado correctamente');
     
     // Inicializar integración con PPI si está disponible
     if (window.ppiManager && window.BpmnIntegration) {
       window.bpmnIntegration = new BpmnIntegration(window.ppiManager, modeler);
     }
   } catch (error) {
+    console.error('Error en initializeModeler:', error);
   }
 }
 
 async function createNewDiagram() {
   try {
+    console.log('createNewDiagram ejecutándose...');
     if (typeof modeler.clear === 'function') await modeler.clear();
     await modeler.createDiagram();
+    console.log('Nuevo diagrama creado con éxito');
 
     const elementRegistry = modeler.get('elementRegistry');
     const modeling = modeler.get('modeling');
@@ -314,6 +346,21 @@ async function createNewDiagram() {
   }
 }
 
+// Función para verificar si el modeler está en buen estado
+function isModelerHealthy() {
+  if (!window.modeler) return false;
+  
+  try {
+    const canvas = window.modeler.get('canvas');
+    const canvasElement = document.getElementById('js-canvas');
+    
+    // Verificar que existe el elemento canvas y que el modeler puede acceder a él
+    return canvas && canvasElement && canvasElement.parentNode;
+  } catch (e) {
+    return false;
+  }
+}
+
 // Función de debug para verificar el estado del localStorage
 function debugBpmnState() {
   const savedDiagram = localStorage.getItem('bpmnDiagram');
@@ -329,6 +376,7 @@ function debugBpmnState() {
 // Hacer las funciones globales para que el gestor de paneles pueda acceder a ellas
 window.initializeModeler = initializeModeler;
 window.createNewDiagram = createNewDiagram;
+window.isModelerHealthy = isModelerHealthy;
 window.saveBpmnState = saveBpmnState;
 window.loadBpmnState = loadBpmnState;
 window.autoSaveBpmnState = autoSaveBpmnState;
@@ -344,7 +392,15 @@ function handleNewDiagram() {
   showModeler();
   // Limpiar cualquier diagrama existente
   localStorage.removeItem('bpmnDiagram');
+  localStorage.removeItem('bpmnDiagramTimestamp');
+  // Actualizar la UI si se regresa a la pantalla de bienvenida
+  checkSavedDiagram();
   // El modeler se inicializará automáticamente
+}
+
+function handleContinueDiagram() {
+  showModeler();
+  // El diagrama guardado se cargará automáticamente cuando se inicialice el modeler
 }
 
 function handleOpenDiagram() {
@@ -361,10 +417,83 @@ function handleFileSelect(event) {
     reader.onload = function(e) {
       const content = e.target.result;
       localStorage.setItem('bpmnDiagram', content);
+      localStorage.setItem('bpmnDiagramTimestamp', Date.now().toString());
       showModeler();
+      // Actualizar la UI para reflejar que ahora hay un diagrama guardado
+      checkSavedDiagram();
       // El diagrama se cargará automáticamente cuando se inicialice el modeler
     };
     reader.readAsText(file);
+  }
+}
+
+// Función para verificar si hay un diagrama guardado y actualizar la UI
+function checkSavedDiagram() {
+  const savedDiagram = localStorage.getItem('bpmnDiagram');
+  const savedTimestamp = localStorage.getItem('bpmnDiagramTimestamp');
+  const continueBtn = document.getElementById('continue-diagram-btn');
+  const newBtn = document.getElementById('new-diagram-btn');
+  const savedInfo = document.getElementById('saved-diagram-info');
+  const savedDate = document.getElementById('saved-diagram-date');
+  
+  if (savedDiagram && savedDiagram.trim().length > 0) {
+    // Hay un diagrama guardado, mostrar botón de continuar e información
+    if (continueBtn) {
+      continueBtn.classList.remove('hidden');
+    }
+    if (savedInfo) {
+      savedInfo.classList.remove('hidden');
+    }
+    
+    // Mostrar fecha de última modificación si está disponible
+    if (savedDate && savedTimestamp) {
+      const date = new Date(parseInt(savedTimestamp));
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / (1000 * 60));
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      
+      let timeText = '';
+      if (diffMins < 1) {
+        timeText = 'Hace menos de un minuto';
+      } else if (diffMins < 60) {
+        timeText = `Hace ${diffMins} minuto${diffMins > 1 ? 's' : ''}`;
+      } else if (diffHours < 24) {
+        timeText = `Hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+      } else if (diffDays < 7) {
+        timeText = `Hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
+      } else {
+        timeText = date.toLocaleDateString('es-ES', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+      }
+      
+      savedDate.textContent = `Última modificación: ${timeText}`;
+    } else if (savedDate) {
+      savedDate.textContent = 'Diagrama disponible';
+    }
+    
+    // Cambiar el botón "Nuevo" a secundario
+    if (newBtn) {
+      newBtn.classList.remove('primary');
+      newBtn.classList.add('secondary');
+    }
+  } else {
+    // No hay diagrama guardado, ocultar botón de continuar e información
+    if (continueBtn) {
+      continueBtn.classList.add('hidden');
+    }
+    if (savedInfo) {
+      savedInfo.classList.add('hidden');
+    }
+    // Mantener el botón "Nuevo" como primario
+    if (newBtn) {
+      newBtn.classList.add('primary');
+      newBtn.classList.remove('secondary');
+    }
   }
 }
 
@@ -374,9 +503,13 @@ $(function () {
   welcomeScreen = document.getElementById('welcome-screen');
   modelerContainer = document.getElementById('modeler-container');
   
+  // Verificar si hay un diagrama guardado y actualizar la UI
+  checkSavedDiagram();
+  
   // Configurar event listeners para la pantalla de bienvenida
   const newDiagramBtn = document.getElementById('new-diagram-btn');
   const openDiagramBtn = document.getElementById('open-diagram-btn');
+  const continueDiagramBtn = document.getElementById('continue-diagram-btn');
   
   if (newDiagramBtn) {
     newDiagramBtn.addEventListener('click', handleNewDiagram);
@@ -384,6 +517,10 @@ $(function () {
   
   if (openDiagramBtn) {
     openDiagramBtn.addEventListener('click', handleOpenDiagram);
+  }
+  
+  if (continueDiagramBtn) {
+    continueDiagramBtn.addEventListener('click', handleContinueDiagram);
   }
   
   // Configurar event listeners para el modelador

@@ -41,13 +41,28 @@ class PanelManager {
     this.currentLayout = localStorage.getItem('panelLayout') || '2v';
     this.activePanels = this.loadActivePanels();
     this.panelLoader = null;
-    this.preservedBpmnState = null; // Para preservar el estado BPMN cuando se oculta
+    // Variable eliminada - usamos solo localStorage
     this.isApplyingConfiguration = false; // Bandera para prevenir ejecuciones múltiples
     
     // Limpiar cualquier modal remanente al inicializar
     this.cleanupExistingModals();
     
     this.init();
+    
+    // Agregar listener para redimensionamiento de ventana
+    this.setupWindowResizeListener();
+  }
+  
+  setupWindowResizeListener() {
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      // Debounce para evitar muchas llamadas
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        // En el commit anterior no se hacía resize manual del canvas
+        // El canvas se redimensiona automáticamente
+      }, 250);
+    });
   }
 
   cleanupExistingModals() {
@@ -958,13 +973,15 @@ class PanelManager {
     const panelItems = selector.querySelectorAll('.panel-item');
     
     panelItems.forEach(item => {
-      item.addEventListener('click', (e) => {
+      item.addEventListener('click', async (e) => {
         e.preventDefault();
         e.stopPropagation();
         
         const panelKey = item.getAttribute('data-panel');
         
         if (this.activePanels.includes(panelKey)) {
+          // El localStorage se maneja automáticamente, no necesitamos preservar
+          
           this.activePanels = this.activePanels.filter(p => p !== panelKey);
           item.classList.remove('active');
           const checkbox = item.querySelector('.panel-item-checkbox');
@@ -977,7 +994,7 @@ class PanelManager {
         }
         
         this.savePanelConfiguration();
-        this.updateLayoutOptions();
+        await this.updateLayoutOptions();
         this.updatePanelSelector();
       });
     });
@@ -1043,20 +1060,25 @@ class PanelManager {
     }).join('');
   }
 
-  updateLayoutOptions() {
+  async updateLayoutOptions() {
     const orderSection = document.getElementById('panel-order-section');
     const orderContainer = document.getElementById('panel-order');
     
     const panelCount = this.activePanels.length;
+    let newLayout;
     if (panelCount === 1) {
-      this.currentLayout = '1';
+      newLayout = '1';
     } else if (panelCount === 2) {
-      this.currentLayout = '2v';
+      newLayout = '2v';
     } else if (panelCount === 3) {
-      this.currentLayout = '3v';
+      newLayout = '3v';
     } else if (panelCount >= 4) {
-      this.currentLayout = '4v';
+      newLayout = '4v';
     }
+    
+    // El localStorage se maneja automáticamente
+    
+    this.currentLayout = newLayout;
     
     if (orderSection && orderContainer) {
       if (this.activePanels.length > 1) {
@@ -1094,11 +1116,13 @@ class PanelManager {
       
       item.setAttribute('data-listener-configured', 'true');
       
-      item.addEventListener('click', (e) => {
+      item.addEventListener('click', async (e) => {
         e.preventDefault();
         e.stopPropagation();
         
         if (this.activePanels.includes(panelKey)) {
+          // El localStorage se maneja automáticamente
+          
           this.activePanels = this.activePanels.filter(p => p !== panelKey);
           item.classList.remove('active');
           const checkbox = item.querySelector('.panel-item-checkbox');
@@ -1111,7 +1135,7 @@ class PanelManager {
         }
         
         this.savePanelConfiguration();
-        this.updateLayoutOptions();
+        await this.updateLayoutOptions();
         
         setTimeout(() => {
           this.refreshPanelList();
@@ -1133,7 +1157,7 @@ class PanelManager {
     }
   }
 
-  showSelector() {
+  async showSelector() {
     let overlay = document.getElementById('panel-selector-overlay');
     let selector = document.getElementById('panel-selector');
     
@@ -1152,7 +1176,7 @@ class PanelManager {
     }
 
     this.updatePanelSelector();
-    this.updateLayoutOptions();
+    await this.updateLayoutOptions();
 
     overlay.classList.add('show');
     overlay.style.display = 'flex';
@@ -1227,6 +1251,8 @@ class PanelManager {
         return;
       }
 
+    // NOTA: Eliminamos preservación - usamos solo localStorage como antes
+
     const existingPanels = container.querySelectorAll('.panel');
     existingPanels.forEach(panel => {
       this.restorePanel(panel);
@@ -1279,13 +1305,14 @@ class PanelManager {
     if (container) {
       container.className = 'panel-container';
       container.classList.add(`layout-${this.currentLayout}`);
+      this.adjustLayoutForVisiblePanels();
     }
-    
-    
 
-    // Reinicializar el modeler si es necesario y restaurar estado
+    // Reinicializar el modeler siempre que se active el panel BPMN (enfoque simple y robusto)
     if (this.activePanels.includes('bpmn')) {
-      setTimeout(async () => {
+      setTimeout(() => {
+        console.log('Activando panel BPMN, inicializando modeler');
+        
         if (typeof window.initializeModeler === 'function') {
           window.initializeModeler();
           
@@ -1299,7 +1326,7 @@ class PanelManager {
             }
           }, 200);
         }
-      }, 500);
+      }, 500); // Dar más tiempo para que se cree el DOM
     }
 
     // Recargar automáticamente el panel RASCI si está activo
@@ -1313,7 +1340,7 @@ class PanelManager {
     }
 
     this.closeSelector();
-    
+
     } catch (error) {
       console.error('Error applying configuration:', error);
     } finally {
@@ -1321,7 +1348,7 @@ class PanelManager {
     }
   }
 
-  adjustLayoutForVisiblePanels() {
+  async adjustLayoutForVisiblePanels() {
     if (!window.snapSystem) return;
     
     // Contar paneles visibles correctamente
@@ -1355,6 +1382,7 @@ class PanelManager {
     }
     
     if (newLayout && newLayout !== this.currentLayout) {
+      console.log(`Ajustando layout automáticamente de ${this.currentLayout} a ${newLayout}`);
       this.currentLayout = newLayout;
       window.snapSystem.changeLayout(newLayout);
     }
@@ -1363,6 +1391,9 @@ class PanelManager {
   setPanelLoader(loader) {
     this.panelLoader = loader;
   }
+  
+  // Método para preservar el estado del BPMN antes de operaciones que pueden destruir el modeler
+  // Método eliminado - usamos solo localStorage como antes
 
   restorePanel(panel) {
     if (panel) {
@@ -1387,6 +1418,16 @@ class PanelManager {
       if (wasHidden && panelType === 'rasci' && typeof window.reloadRasciMatrix === 'function') {
         setTimeout(() => {
           window.reloadRasciMatrix();
+        }, 100);
+      }
+      
+      // Manejar restauración específica para panel BPMN
+      if (wasHidden && panelType === 'bpmn' && window.modeler) {
+        setTimeout(() => {
+          // Usar el método simple como en el commit anterior
+          if (typeof window.loadBpmnState === 'function') {
+            window.loadBpmnState();
+          }
         }, 100);
       }
     }
@@ -1450,20 +1491,20 @@ class PanelManager {
         }
       });
 
-      item.addEventListener('drop', (e) => {
+      item.addEventListener('drop', async (e) => {
         e.preventDefault();
         item.classList.remove('drag-over');
         const draggedPanel = e.dataTransfer.getData('text/plain');
         const targetPanel = item.getAttribute('data-panel');
         
         if (draggedPanel !== targetPanel) {
-          this.reorderPanels(draggedPanel, targetPanel);
+          await this.reorderPanels(draggedPanel, targetPanel);
         }
       });
     });
   }
 
-  reorderPanels(draggedPanel, targetPanel) {
+  async reorderPanels(draggedPanel, targetPanel) {
     const draggedIndex = this.activePanels.indexOf(draggedPanel);
     const targetIndex = this.activePanels.indexOf(targetPanel);
     
@@ -1473,11 +1514,13 @@ class PanelManager {
     this.activePanels.splice(targetIndex, 0, draggedPanel);
     
     this.savePanelConfiguration();
-    this.updateLayoutOptions();
+    await this.updateLayoutOptions();
   }
 }
 
 window.PanelManager = PanelManager;
+
+// Función eliminada - el canvas se redimensiona automáticamente
 
 window.closePanelSelector = function() {
   if (window.panelManager && typeof window.panelManager.closeSelector === 'function') {
