@@ -93,12 +93,65 @@ function saveBpmnState() {
           localStorage.setItem('bpmnDiagramTimestamp', Date.now().toString());
           showBpmnSaveIndicator();
           
-          // GUARDAR TAMBIÉN LAS RELACIONES PPINOT EN EL XML
+          // GUARDAR RELACIONES PADRE-HIJO
+          const elementRegistry = modeler.get('elementRegistry');
+          const allElements = elementRegistry.getAll();
+          
+          // Filtrar elementos PPINOT y RALph (shapes y conexiones)
+          const ppinotElements = allElements.filter(el => {
+            if (el.type && (el.type.includes('PPINOT') || el.type.includes('RALph'))) return true;
+            if (el.businessObject && el.businessObject.$type) {
+              const type = el.businessObject.$type;
+              const ppinotTypes = ['PPINOT', 'Target', 'Scope', 'Ppi', 'Resource', 'Measure', 'Condition'];
+              const ralphTypes = [
+                'RALph', 'Person', 'RoleRALph', 'Personcap', 'Orgunit', 'Position', 
+                'DelegateTo', 'History-Same', 'History-Any', 'History-Any-Red', 
+                'History-Any-Green', 'History-Same-Green', 'History-Same-Red', 
+                'History-AnyInstanceInTime-Green', 'History-AnyInstanceInTime-Red',
+                'Complex-Assignment-AND', 'Complex-Assignment-OR', 
+                'HistoryConnectorActivityInstance', 'dataField', 'ResourceArc',
+                'negatedAssignment', 'solidLine', 'solidLineWithCircle', 
+                'dashedLine', 'dashedLineWithCircle', 'simpleArrow', 'doubleArrow',
+                'reportsTo', 'reportsDirectly', 'reportsTransitively', 
+                'delegatesDirectly', 'delegatesTransitively'
+              ];
+              return ppinotTypes.some(t => type.includes(t)) || ralphTypes.some(t => type.includes(t));
+            }
+            return false;
+          });
+          
+          console.log('💾 Guardando elementos PPINOT/RALph:', ppinotElements.length);
+          console.log('  - Target:', ppinotElements.filter(el => el.type.includes('Target')).length);
+          console.log('  - Scope:', ppinotElements.filter(el => el.type.includes('Scope')).length);
+          console.log('  - Ppi:', ppinotElements.filter(el => el.type.includes('Ppi')).length);
+          console.log('  - RALph:', ppinotElements.filter(el => el.type.includes('RALph')).length);
+          
+          // Guardar relaciones padre-hijo
+          const parentChildRelations = {};
+          ppinotElements.forEach(el => {
+            if (el.parent && el.parent.id) {
+              parentChildRelations[el.id] = {
+                parentId: el.parent.id,
+                parentType: el.parent.type,
+                childType: el.type,
+                childBusinessObjectType: el.businessObject ? el.businessObject.$type : null,
+                parentBusinessObjectType: el.parent.businessObject ? el.parent.businessObject.$type : null,
+                // Guardar posición relativa
+                x: el.x,
+                y: el.y,
+                width: el.width,
+                height: el.height
+              };
+            }
+          });
+          
+          if (Object.keys(parentChildRelations).length > 0) {
+            localStorage.setItem('bpmnParentChildRelations', JSON.stringify(parentChildRelations));
+            console.log('👨‍👦 Relaciones padre-hijo guardadas:', Object.keys(parentChildRelations).length);
+          }
+          
+          // GUARDAR TAMBIÉN LAS RELACIONES PPINOT EN EL XML (si está disponible)
           if (window.ppiManager && window.ppiManager.core) {
-            // Obtener las relaciones actuales y guardarlas en el XML
-            const elementRegistry = modeler.get('elementRegistry');
-            const allElements = elementRegistry.getAll();
-            
             // Filtrar elementos hijos de PPINOT
             const ppiChildren = allElements.filter(element => {
               const isChildOfPPI = element.parent && 
@@ -135,13 +188,13 @@ function saveBpmnState() {
             // Guardar relaciones en el XML
             window.ppiManager.core.savePPINOTRelationshipsToXML(relationships);
           }
-        } else {
         }
       }).catch(err => {
+        console.error('Error al guardar XML:', err);
       });
-    } else {
     }
   } catch (e) {
+    console.error('Error en saveBpmnState:', e);
   }
 }
 
@@ -223,9 +276,188 @@ function loadBpmnState() {
     }
     
     if (savedDiagram && savedDiagram.trim().length > 0) {
-      console.log('Cargando diagrama guardado...');
+      console.log('🔄 Cargando diagrama guardado...');
+      console.log('📄 XML contiene Scope:', savedDiagram.includes('Scope'));
+      console.log('🎯 XML contiene Target:', savedDiagram.includes('Target'));
+      console.log('📄 Tamaño del XML:', savedDiagram.length, 'caracteres');
+      
+      // DIAGNÓSTICO: Verificar moddle antes de importar
+      try {
+        const moddle = modeler.get('moddle');
+        console.log('🔧 Moddle packages disponibles:', Object.keys(moddle.registry.packages));
+        console.log('🔧 ¿PPINOT registrado?', !!moddle.registry.packages.PPINOT);
+        console.log('🔧 ¿RALph registrado?', !!moddle.registry.packages.RALph);
+      } catch (e) {
+        console.warn('🚨 Error verificando moddle:', e);
+      }
+      
       modeler.importXML(savedDiagram).then(() => {
-        console.log('Diagrama BPMN restaurado correctamente');
+        console.log('✅ Diagrama BPMN restaurado correctamente');
+        
+        // DIAGNÓSTICO POST-IMPORTACIÓN
+        const elementRegistry = modeler.get('elementRegistry');
+        const allElements = elementRegistry.getAll();
+        
+        console.log('📊 Total elementos importados:', allElements.length);
+        
+        // Buscar elementos PPINOT/RALph con el mismo filtro que en testElementXML (incluyendo conexiones)
+        const ppinotElements = allElements.filter(el => {
+          return (el.type && (el.type.includes('PPINOT') || el.type.includes('RALph'))) ||
+                 (el.businessObject && el.businessObject.$type && 
+                  (el.businessObject.$type.includes('PPINOT') || el.businessObject.$type.includes('RALph')));
+        });
+        
+        console.log('📊 Elementos PPINOT/RALph restaurados:', ppinotElements.length);
+        console.log('  - Target:', ppinotElements.filter(el => el.type.includes('Target')).length);
+        console.log('  - Scope:', ppinotElements.filter(el => el.type.includes('Scope')).length);
+        console.log('  - Ppi:', ppinotElements.filter(el => el.type.includes('Ppi')).length);
+        console.log('  - RALph:', ppinotElements.filter(el => el.type.includes('RALph')).length);
+        
+        // Verificar si hay elementos faltantes en el XML guardado vs importados
+        const targetInXML = savedDiagram.includes('Target');
+        const scopeInXML = savedDiagram.includes('Scope');
+        const targetImported = ppinotElements.some(el => el.type.includes('Target'));
+        const scopeImported = ppinotElements.some(el => el.type.includes('Scope'));
+        
+        if (targetInXML && !targetImported) {
+          console.error('❌ PROBLEMA: Target está en XML pero no se importó');
+        }
+        if (scopeInXML && !scopeImported) {
+          console.error('❌ PROBLEMA: Scope está en XML pero no se importó');
+        }
+        
+        // RESTAURAR RELACIONES PADRE-HIJO
+        const savedRelations = localStorage.getItem('bpmnParentChildRelations');
+        if (savedRelations) {
+          try {
+            const relations = JSON.parse(savedRelations);
+            console.log('🔄 Restaurando relaciones padre-hijo:', Object.keys(relations).length);
+            
+            const elementRegistry = modeler.get('elementRegistry');
+            
+            // Verificar qué elementos existen antes de restaurar relaciones
+            const existingElements = elementRegistry.getAll();
+            const existingIds = existingElements.map(el => el.id);
+            console.log('📋 Elementos disponibles para restaurar relaciones:', existingIds);
+            
+            // Filtrar relaciones donde tanto padre como hijo existen
+            const validRelations = Object.entries(relations).filter(([childId, relation]) => {
+              const childExists = existingIds.includes(childId);
+              const parentExists = existingIds.includes(relation.parentId);
+              
+              if (!childExists) {
+                console.warn(`⚠️ Elemento hijo ${childId} (${relation.childType}) no encontrado en el diagrama importado`);
+              }
+              if (!parentExists) {
+                console.warn(`⚠️ Elemento padre ${relation.parentId} (${relation.parentType}) no encontrado en el diagrama importado`);
+              }
+              
+              return childExists && parentExists;
+            });
+            
+            console.log(`✅ Relaciones válidas para restaurar: ${validRelations.length} de ${Object.keys(relations).length}`);
+            
+            if (validRelations.length > 0) {
+              // Restaurar relaciones con múltiples intentos hasta que el modeler esté listo
+              const restoreRelationsWithRetry = (attempts = 0, maxAttempts = 10) => {
+                setTimeout(() => {
+                  try {
+                    const currentElementRegistry = modeler.get('elementRegistry');
+                    const currentModeling = modeler.get('modeling');
+                    const canvas = modeler.get('canvas');
+                    
+                    // Verificar que el modeler está completamente listo
+                    if (!currentElementRegistry || !currentModeling || !canvas) {
+                      if (attempts < maxAttempts) {
+                        console.log(`⏳ Modeler no listo, reintentando (${attempts + 1}/${maxAttempts})...`);
+                        restoreRelationsWithRetry(attempts + 1, maxAttempts);
+                      } else {
+                        console.error('❌ Timeout: Modeler no se inicializó completamente');
+                      }
+                      return;
+                    }
+                    
+                    let successCount = 0;
+                    let errorCount = 0;
+                    
+                    validRelations.forEach(([childId, relation]) => {
+                      const childElement = currentElementRegistry.get(childId);
+                      const parentElement = currentElementRegistry.get(relation.parentId);
+                      
+                      if (childElement && parentElement) {
+                        console.log('👨‍👦 Restaurando relación:', childId, '->', relation.parentId);
+                        try {
+                          // Verificar si la relación ya está establecida
+                          if (childElement.parent && childElement.parent.id === relation.parentId) {
+                            console.log('ℹ️ Relación ya establecida:', childId, '->', relation.parentId);
+                            successCount++;
+                            return;
+                          }
+                          
+                          // Mover el elemento hijo al padre manteniendo posición relativa
+                          currentModeling.moveElements([childElement], { x: 0, y: 0 }, parentElement);
+                          console.log('✅ Relación restaurada correctamente');
+                          successCount++;
+                        } catch (e) {
+                          console.warn('⚠️ Error restaurando relación:', e);
+                          errorCount++;
+                        }
+                      } else {
+                        console.warn(`⚠️ Elementos no encontrados para relación ${childId} -> ${relation.parentId}`);
+                        errorCount++;
+                      }
+                    });
+                    
+                    console.log(`🎯 Restauración completada: ${successCount} éxitos, ${errorCount} errores`);
+                    
+                    // Forzar actualización visual múltiple para asegurar que se muestren las relaciones
+                    setTimeout(() => {
+                      console.log('🎨 Actualizando visualización...');
+                      try {
+                        const canvas = modeler.get('canvas');
+                        if (canvas && canvas.zoom) {
+                          // Hacer zoom ligeramente para forzar re-render
+                          const currentZoom = canvas.zoom();
+                          canvas.zoom(currentZoom * 1.001);
+                          setTimeout(() => {
+                            canvas.zoom(currentZoom);
+                          }, 100);
+                        }
+                        
+                        // También forzar actualización del registro de elementos
+                        const eventBus = modeler.get('eventBus');
+                        if (eventBus) {
+                          eventBus.fire('canvas.viewbox.changed');
+                        }
+                      } catch (e) {
+                        console.warn('⚠️ Error actualizando visualización:', e);
+                      }
+                    }, 300);
+                    
+                  } catch (e) {
+                    if (attempts < maxAttempts) {
+                      console.log(`⏳ Error en intento ${attempts + 1}, reintentando...`, e);
+                      restoreRelationsWithRetry(attempts + 1, maxAttempts);
+                    } else {
+                      console.error('❌ Error final restaurando relaciones:', e);
+                    }
+                  }
+                }, 500 + (attempts * 300)); // Incrementar delay con cada intento
+              };
+              
+              // Iniciar proceso de restauración
+              restoreRelationsWithRetry();
+            } else {
+              console.log('ℹ️ No hay relaciones válidas para restaurar');
+            }
+            
+          } catch (e) {
+            console.error('❌ Error parseando relaciones padre-hijo:', e);
+          }
+        } else {
+          console.log('ℹ️ No hay relaciones padre-hijo guardadas');
+        }
+        
         updateUI('Diagrama BPMN restaurado.');
         
         // La restauración de relaciones PPINOT se maneja automáticamente en PPIManager
@@ -381,6 +613,587 @@ window.saveBpmnState = saveBpmnState;
 window.loadBpmnState = loadBpmnState;
 window.autoSaveBpmnState = autoSaveBpmnState;
 window.debugBpmnState = debugBpmnState;
+
+// Función de prueba XML para cualquier tipo de elemento
+window.testElementXML = function(elementType) {
+  if (!modeler) {
+    console.error('Modeler no disponible');
+    return;
+  }
+  
+  console.log(`🔍 PRUEBA COMPLETA XML ${elementType}`);
+  
+  return new Promise((resolve, reject) => {
+    try {
+      // 1. Limpiar diagrama
+      modeler.createDiagram().then(() => {
+        console.log('✅ Diagrama limpio creado');
+        
+        // 2. Crear elemento
+        const elementFactory = modeler.get('elementFactory');
+        const modeling = modeler.get('modeling');
+        const canvas = modeler.get('canvas');
+        const rootElement = canvas.getRootElement();
+        
+        const element = elementFactory.createShape({
+          type: elementType
+        });
+        
+        modeling.createShape(element, { x: 100, y: 100 }, rootElement);
+        console.log(`✅ ${elementType} creado y agregado:`, element.id);
+        
+        // 3. Exportar XML
+        modeler.saveXML({ format: true }).then(result => {
+          console.log('✅ XML exportado');
+          const elementName = elementType.split(':')[1] || elementType;
+          console.log(`🔍 XML contiene ${elementName}:`, result.xml.includes(elementName));
+          console.log(`🔍 XML contiene ${elementType}:`, result.xml.includes(elementType));
+          
+          // Mostrar fragmento del XML con el elemento
+          const elementMatch = result.xml.match(new RegExp(`<.*${elementName}.*>`, 'g'));
+          if (elementMatch) {
+            console.log(`🎯 Elementos ${elementName} en XML:`, elementMatch);
+          }
+          
+          // 4. Importar XML de nuevo
+          modeler.importXML(result.xml).then(() => {
+            console.log('✅ XML reimportado');
+            
+            // 5. Verificar si el elemento existe después de importar
+            const elementRegistry = modeler.get('elementRegistry');
+            const allElements = elementRegistry.getAll();
+            
+            const elementsAfterImport = allElements.filter(el => 
+              el.id.includes(elementName) || 
+              (el.type && el.type.includes(elementName)) ||
+              (el.businessObject && el.businessObject.$type && el.businessObject.$type.includes(elementName))
+            );
+            
+            console.log(`🔍 Elementos ${elementName} después de importar:`, elementsAfterImport.length);
+            elementsAfterImport.forEach(el => {
+              console.log(`  ${elementName} found:`, {
+                id: el.id,
+                type: el.type,
+                businessObjectType: el.businessObject ? el.businessObject.$type : 'N/A'
+              });
+            });
+            
+            if (elementsAfterImport.length === 0) {
+              console.error(`❌ PROBLEMA: ${elementName} se perdió durante importación XML`);
+            } else {
+              console.log(`✅ SUCCESS: ${elementName} sobrevivió el ciclo XML`);
+            }
+            
+            resolve({
+              elementType: elementType,
+              created: element,
+              xml: result.xml,
+              afterImport: elementsAfterImport
+            });
+          }).catch(err => {
+            console.error('❌ Error en importación XML:', err);
+            reject(err);
+          });
+        }).catch(err => {
+          console.error('❌ Error en exportación XML:', err);
+          reject(err);
+        });
+      });
+    } catch (e) {
+      console.error(`❌ Error en test${elementType}XML:`, e);
+      reject(e);
+    }
+  });
+};
+
+// Funciones específicas de prueba
+window.testTargetXML = () => window.testElementXML('PPINOT:Target');
+window.testScopeXML = () => window.testElementXML('PPINOT:Scope');
+window.testPpiXML = () => window.testElementXML('PPINOT:Ppi');
+
+// Funciones de prueba para elementos RALph (shapes)
+window.testPersonXML = () => window.testElementXML('RALph:Person');
+window.testRoleRALphXML = () => window.testElementXML('RALph:RoleRALph');
+window.testOrgunitXML = () => window.testElementXML('RALph:Orgunit');
+window.testPositionXML = () => window.testElementXML('RALph:Position');
+
+// Función de prueba XML para conexiones (connections en lugar de shapes)
+window.testConnectionXML = function(connectionType) {
+  if (!modeler) {
+    console.error('Modeler no disponible');
+    return;
+  }
+  
+  console.log(`🔍 PRUEBA COMPLETA XML CONEXIÓN ${connectionType}`);
+  
+  return new Promise((resolve, reject) => {
+    try {
+      // 1. Limpiar diagrama
+      modeler.createDiagram().then(() => {
+        console.log('✅ Diagrama limpio creado');
+        
+        // 2. Crear dos elementos para conectar
+        const elementFactory = modeler.get('elementFactory');
+        const modeling = modeler.get('modeling');
+        const canvas = modeler.get('canvas');
+        const rootElement = canvas.getRootElement();
+        
+        // Crear elemento fuente
+        const sourceElement = elementFactory.createShape({
+          type: 'RALph:Person'
+        });
+        modeling.createShape(sourceElement, { x: 100, y: 100 }, rootElement);
+        
+        // Crear elemento destino
+        const targetElement = elementFactory.createShape({
+          type: 'RALph:Person'
+        });
+        modeling.createShape(targetElement, { x: 300, y: 100 }, rootElement);
+        
+        console.log('✅ Elementos fuente y destino creados');
+        
+        // 3. Crear la conexión
+        const connection = elementFactory.createConnection({
+          type: connectionType,
+          source: sourceElement,
+          target: targetElement,
+          waypoints: [
+            { x: sourceElement.x + sourceElement.width / 2, y: sourceElement.y + sourceElement.height / 2 },
+            { x: targetElement.x + targetElement.width / 2, y: targetElement.y + targetElement.height / 2 }
+          ]
+        });
+        
+        modeling.createConnection(sourceElement, targetElement, connection, rootElement);
+        console.log(`✅ ${connectionType} creado:`, connection.id);
+        
+        // 4. Exportar XML
+        modeler.saveXML({ format: true }).then(result => {
+          console.log('✅ XML exportado');
+          const connectionName = connectionType.split(':')[1] || connectionType;
+          console.log(`🔍 XML contiene ${connectionName}:`, result.xml.includes(connectionName));
+          console.log(`🔍 XML contiene ${connectionType}:`, result.xml.includes(connectionType));
+          
+          // Mostrar fragmento del XML con la conexión
+          const connectionMatch = result.xml.match(new RegExp(`<.*${connectionName}.*>`, 'g'));
+          if (connectionMatch) {
+            console.log(`🎯 Conexiones ${connectionName} en XML:`, connectionMatch);
+          }
+          
+          // 5. Importar XML de nuevo
+          modeler.importXML(result.xml).then(() => {
+            console.log('✅ XML reimportado');
+            
+            // 6. Verificar si la conexión existe después de importar
+            const elementRegistry = modeler.get('elementRegistry');
+            const allElements = elementRegistry.getAll();
+            
+            const connectionsAfterImport = allElements.filter(el => 
+              el.id.includes(connectionName) || 
+              (el.type && el.type.includes(connectionName)) ||
+              (el.businessObject && el.businessObject.$type && el.businessObject.$type.includes(connectionName))
+            );
+            
+            console.log(`🔍 Conexiones ${connectionName} después de importar:`, connectionsAfterImport.length);
+            connectionsAfterImport.forEach(el => {
+              console.log(`  ${connectionName} encontrada:`, {
+                id: el.id,
+                type: el.type,
+                businessObjectType: el.businessObject ? el.businessObject.$type : 'N/A',
+                source: el.source ? el.source.id : 'N/A',
+                target: el.target ? el.target.id : 'N/A'
+              });
+            });
+            
+            if (connectionsAfterImport.length === 0) {
+              console.error(`❌ PROBLEMA: ${connectionName} se perdió durante importación XML`);
+            } else {
+              console.log(`✅ SUCCESS: ${connectionName} sobrevivió el ciclo XML`);
+            }
+            
+            resolve({
+              connectionType: connectionType,
+              created: connection,
+              xml: result.xml,
+              afterImport: connectionsAfterImport
+            });
+          }).catch(err => {
+            console.error('❌ Error en importación XML:', err);
+            reject(err);
+          });
+        }).catch(err => {
+          console.error('❌ Error en exportación XML:', err);
+          reject(err);
+        });
+      });
+    } catch (e) {
+      console.error(`❌ Error en test${connectionType}XML:`, e);
+      reject(e);
+    }
+  });
+};
+
+// Funciones de prueba para conexiones RALph
+window.testReportsDirectlyXML = () => window.testConnectionXML('RALph:reportsDirectly');
+window.testReportsTransitivelyXML = () => window.testConnectionXML('RALph:reportsTransitively');
+window.testDelegatesDirectlyXML = () => window.testConnectionXML('RALph:delegatesDirectly');
+window.testDelegatesTransitivelyXML = () => window.testConnectionXML('RALph:delegatesTransitively');
+window.testReportsToXML = () => window.testConnectionXML('RALph:reportsTo');
+
+// Función para crear elementos SIN borrar el diagrama existente
+window.addElementToCurrentDiagram = function(elementType) {
+  if (!modeler) {
+    console.error('Modeler no disponible');
+    return;
+  }
+  
+  console.log(`➕ AÑADIENDO ${elementType} al diagrama actual`);
+  
+  try {
+    const elementFactory = modeler.get('elementFactory');
+    const modeling = modeler.get('modeling');
+    const canvas = modeler.get('canvas');
+    const rootElement = canvas.getRootElement();
+    
+    // Crear elemento sin limpiar el diagrama
+    const element = elementFactory.createShape({
+      type: elementType
+    });
+    
+    // Posicionar en diferentes ubicaciones para evitar solapamiento
+    const elementRegistry = modeler.get('elementRegistry');
+    const existingElements = elementRegistry.getAll().filter(el => el.parent === rootElement);
+    const yPosition = 100 + (existingElements.length * 80);
+    
+    modeling.createShape(element, { x: 100, y: yPosition }, rootElement);
+    console.log(`✅ ${elementType} añadido:`, element.id);
+    
+    // Guardar automáticamente
+    setTimeout(() => {
+      saveBpmnState();
+      console.log(`💾 Diagrama guardado con ${elementType}`);
+    }, 500);
+    
+    return element;
+  } catch (e) {
+    console.error(`❌ Error añadiendo ${elementType}:`, e);
+    return null;
+  }
+};
+
+// Funciones específicas para añadir elementos
+window.addTarget = () => window.addElementToCurrentDiagram('PPINOT:Target');
+window.addScope = () => window.addElementToCurrentDiagram('PPINOT:Scope');
+window.addPpi = () => window.addElementToCurrentDiagram('PPINOT:Ppi');
+
+// Función para crear un diagrama completo con Target, Scope y Ppi
+window.createCompleteDiagram = function() {
+  console.log('🎯 Creando diagrama completo con Target, Scope y Ppi');
+  
+  // Crear un nuevo diagrama limpio
+  modeler.createDiagram().then(() => {
+    console.log('✅ Diagrama limpio creado');
+    
+    // Añadir elementos uno por uno
+    setTimeout(() => {
+      const target = window.addElementToCurrentDiagram('PPINOT:Target');
+      console.log('Target añadido:', target ? target.id : 'error');
+      
+      setTimeout(() => {
+        const scope = window.addElementToCurrentDiagram('PPINOT:Scope');
+        console.log('Scope añadido:', scope ? scope.id : 'error');
+        
+        setTimeout(() => {
+          const ppi = window.addElementToCurrentDiagram('PPINOT:Ppi');
+          console.log('Ppi añadido:', ppi ? ppi.id : 'error');
+          
+          setTimeout(() => {
+            saveBpmnState();
+            console.log('🎉 ¡Diagrama completo creado y guardado!');
+          }, 500);
+        }, 300);
+      }, 300);
+    }, 300);
+  });
+};
+
+// Función para crear diagrama con relaciones padre-hijo
+window.createDiagramWithParentChild = function() {
+  console.log('👨‍👦 Creando diagrama con relaciones padre-hijo');
+  
+  modeler.createDiagram().then(() => {
+    console.log('✅ Diagrama limpio creado');
+    
+    const elementFactory = modeler.get('elementFactory');
+    const modeling = modeler.get('modeling');
+    const canvas = modeler.get('canvas');
+    const rootElement = canvas.getRootElement();
+    
+    // 1. Crear PPI primero (padre)
+    const ppiElement = elementFactory.createShape({
+      type: 'PPINOT:Ppi'
+    });
+    
+    modeling.createShape(ppiElement, { x: 200, y: 200 }, rootElement);
+    console.log('✅ PPI creado:', ppiElement.id);
+    
+    setTimeout(() => {
+      // 2. Crear Target como hijo de PPI
+      const targetElement = elementFactory.createShape({
+        type: 'PPINOT:Target'
+      });
+      
+      modeling.createShape(targetElement, { x: 50, y: 50 }, ppiElement);
+      console.log('✅ Target creado como hijo de PPI:', targetElement.id);
+      
+      setTimeout(() => {
+        // 3. Crear Scope como hijo de PPI
+        const scopeElement = elementFactory.createShape({
+          type: 'PPINOT:Scope'
+        });
+        
+        modeling.createShape(scopeElement, { x: 150, y: 50 }, ppiElement);
+        console.log('✅ Scope creado como hijo de PPI:', scopeElement.id);
+        
+        setTimeout(() => {
+          saveBpmnState();
+          console.log('🎉 ¡Diagrama con relaciones padre-hijo creado y guardado!');
+          
+          // Mostrar estado actual
+          setTimeout(() => {
+            const elementRegistry = modeler.get('elementRegistry');
+            const allElements = elementRegistry.getAll();
+            console.log('📊 Verificación de relaciones:');
+            allElements.forEach(el => {
+              if (el.parent && el.parent.id !== '__implicitroot') {
+                console.log(`  - ${el.id} (${el.type}) -> padre: ${el.parent.id} (${el.parent.type})`);
+              }
+            });
+          }, 500);
+        }, 500);
+      }, 300);
+    }, 300);
+  });
+};
+
+// Función para probar restauración automática
+window.testAutoRestore = function() {
+  console.log('🧪 PRUEBA DE RESTAURACIÓN AUTOMÁTICA');
+  
+  // 1. Crear diagrama con relaciones
+  window.createDiagramWithParentChild();
+  
+  // 2. Esperar un momento y luego simular recarga
+  setTimeout(() => {
+    console.log('⏳ Esperando 3 segundos antes de simular recarga...');
+    
+    setTimeout(() => {
+      console.log('🔄 Simulando recarga del diagrama...');
+      
+      // Simular recarga cargando el estado guardado
+      window.loadBpmnState();
+      
+      // Verificar resultado después de un momento
+      setTimeout(() => {
+        console.log('🔍 Verificando resultado de restauración automática...');
+        
+        const elementRegistry = modeler.get('elementRegistry');
+        const allElements = elementRegistry.getAll();
+        
+        console.log('📊 Estado después de restauración automática:');
+        allElements.forEach(el => {
+          if (el.parent && el.parent.id !== '__implicitroot') {
+            console.log(`✅ Relación encontrada: ${el.id} (${el.type}) -> padre: ${el.parent.id} (${el.parent.type})`);
+          }
+        });
+        
+        // Contar relaciones exitosas
+        const successfulRelations = allElements.filter(el => 
+          el.parent && 
+          el.parent.id !== '__implicitroot' && 
+          (el.type.includes('PPINOT') || el.type.includes('RALph'))
+        );
+        
+        if (successfulRelations.length > 0) {
+          console.log('🎉 ¡Restauración automática EXITOSA!');
+        } else {
+          console.log('❌ Restauración automática FALLÓ');
+        }
+      }, 5000);
+    }, 3000);
+  }, 2000);
+};
+
+// Función para limpiar relaciones huérfanas (donde faltan elementos)
+window.cleanOrphanedRelations = function() {
+  console.log('🧹 Limpiando relaciones huérfanas...');
+  
+  const savedRelations = localStorage.getItem('bpmnParentChildRelations');
+  if (!savedRelations) {
+    console.log('ℹ️ No hay relaciones guardadas');
+    return;
+  }
+  
+  if (!modeler) {
+    console.log('❌ Modeler no disponible');
+    return;
+  }
+  
+  try {
+    const relations = JSON.parse(savedRelations);
+    const elementRegistry = modeler.get('elementRegistry');
+    const allElements = elementRegistry.getAll();
+    const existingIds = allElements.map(el => el.id);
+    
+    console.log('📋 Relaciones originales:', Object.keys(relations).length);
+    console.log('📋 Elementos existentes:', existingIds.length);
+    
+    // Filtrar solo relaciones válidas
+    const validRelations = {};
+    const orphanedRelations = {};
+    
+    Object.entries(relations).forEach(([childId, relation]) => {
+      const childExists = existingIds.includes(childId);
+      const parentExists = existingIds.includes(relation.parentId);
+      
+      if (childExists && parentExists) {
+        validRelations[childId] = relation;
+      } else {
+        orphanedRelations[childId] = relation;
+        console.log(`🗑️ Relación huérfana: ${childId} -> ${relation.parentId} (child: ${childExists}, parent: ${parentExists})`);
+      }
+    });
+    
+    console.log('✅ Relaciones válidas:', Object.keys(validRelations).length);
+    console.log('🗑️ Relaciones huérfanas:', Object.keys(orphanedRelations).length);
+    
+    // Guardar solo las relaciones válidas
+    if (Object.keys(validRelations).length > 0) {
+      localStorage.setItem('bpmnParentChildRelations', JSON.stringify(validRelations));
+      console.log('💾 Relaciones limpias guardadas');
+    } else {
+      localStorage.removeItem('bpmnParentChildRelations');
+      console.log('🧹 Todas las relaciones eran huérfanas, storage limpiado');
+    }
+    
+    return {
+      original: Object.keys(relations).length,
+      valid: Object.keys(validRelations).length,
+      orphaned: Object.keys(orphanedRelations).length,
+      validRelations,
+      orphanedRelations
+    };
+  } catch (e) {
+    console.error('❌ Error limpiando relaciones:', e);
+    return null;
+  }
+};
+
+// Función para diagnosticar diferencia entre loadBpmnState y testElementXML
+window.debugLoadVsTest = function() {
+  console.log('🔍 DIAGNÓSTICO: Comparando loadBpmnState vs testElementXML');
+  
+  // 1. Guardar estado actual
+  const currentXML = localStorage.getItem('bpmnDiagram');
+  const currentRelations = localStorage.getItem('bpmnParentChildRelations');
+  
+  if (!currentXML) {
+    console.log('❌ No hay XML guardado en localStorage');
+    return;
+  }
+  
+  console.log('📄 XML guardado contiene:');
+  console.log('  - Target:', currentXML.includes('Target'));
+  console.log('  - Scope:', currentXML.includes('Scope'));
+  console.log('  - Ppi:', currentXML.includes('Ppi'));
+  console.log('  - PPINOT namespace:', currentXML.includes('xmlns:PPINOT=') || currentXML.includes('xmlns:ppinot='));
+  console.log('  - RALph namespace:', currentXML.includes('xmlns:RALph=') || currentXML.includes('xmlns:ralph='));
+  
+  // Mostrar relaciones guardadas
+  if (currentRelations) {
+    try {
+      const relations = JSON.parse(currentRelations);
+      console.log('\n👨‍👦 Relaciones padre-hijo guardadas:', Object.keys(relations).length);
+      Object.entries(relations).forEach(([childId, relation]) => {
+        console.log(`  - ${childId} (${relation.childType}) -> ${relation.parentId} (${relation.parentType})`);
+      });
+    } catch (e) {
+      console.error('❌ Error parseando relaciones:', e);
+    }
+  }
+  
+  // Mostrar fragmento del XML para ver la estructura
+  console.log('\n📋 FRAGMENTO XML guardado:');
+  const lines = currentXML.split('\n');
+  lines.forEach((line, i) => {
+    if (line.includes('Scope') || line.includes('Target') || line.includes('Ppi') || line.includes('PPINOT') || line.includes('xmlns')) {
+      console.log(`${i+1}: ${line.trim()}`);
+    }
+  });
+  
+  // 2. Probar importación directa (como en loadBpmnState)
+  console.log('\n🧪 PRUEBA 1: Importación directa (método loadBpmnState)');
+  modeler.importXML(currentXML).then(() => {
+    const elementRegistry = modeler.get('elementRegistry');
+    const allElements = elementRegistry.getAll();
+    
+    console.log('📊 RESULTADO importación directa:');
+    console.log('  - Total elementos:', allElements.length);
+    
+    // Mostrar TODOS los elementos para diagnóstico
+    console.log('\n🔍 TODOS los elementos importados:');
+    allElements.forEach(el => {
+      console.log(`  - ${el.id}: ${el.type} (businessObject: ${el.businessObject ? el.businessObject.$type : 'N/A'})`);
+    });
+    
+    const ppinotElements = allElements.filter(el => {
+      return (el.type && (el.type.includes('PPINOT') || el.type.includes('RALph'))) ||
+             (el.businessObject && el.businessObject.$type && 
+              (el.businessObject.$type.includes('PPINOT') || el.businessObject.$type.includes('RALph')));
+    });
+    
+    console.log('\n📊 Elementos PPINOT/RALph encontrados:', ppinotElements.length);
+    console.log('  - Target:', ppinotElements.filter(el => el.type && el.type.includes('Target')).length);
+    console.log('  - Scope:', ppinotElements.filter(el => el.type && el.type.includes('Scope')).length);
+    console.log('  - Ppi:', ppinotElements.filter(el => el.type && el.type.includes('Ppi')).length);
+    
+    // Diagnóstico detallado de elementos específicos
+    ppinotElements.forEach(el => {
+      console.log(`🔍 Elemento PPINOT/RALph: ${el.id}`);
+      console.log(`  - Tipo: ${el.type}`);
+      console.log(`  - BusinessObject tipo: ${el.businessObject ? el.businessObject.$type : 'N/A'}`);
+      console.log(`  - Padre: ${el.parent ? el.parent.id : 'N/A'} (${el.parent ? el.parent.type : 'N/A'})`);
+      console.log(`  - Posición: x=${el.x}, y=${el.y}`);
+    });
+    
+    // Verificar qué relaciones se pueden restaurar
+    if (currentRelations) {
+      try {
+        const relations = JSON.parse(currentRelations);
+        const existingIds = allElements.map(el => el.id);
+        
+        console.log('\n🔍 ANÁLISIS DE RELACIONES:');
+        Object.entries(relations).forEach(([childId, relation]) => {
+          const childExists = existingIds.includes(childId);
+          const parentExists = existingIds.includes(relation.parentId);
+          const status = childExists && parentExists ? '✅' : '❌';
+          
+          console.log(`${status} ${childId} -> ${relation.parentId}`);
+          console.log(`    Hijo existe: ${childExists ? '✅' : '❌'}`);
+          console.log(`    Padre existe: ${parentExists ? '✅' : '❌'}`);
+        });
+      } catch (e) {
+        console.error('❌ Error analizando relaciones:', e);
+      }
+    }
+    
+    // 3. Ahora hacer la prueba testElementXML para comparar
+    console.log('\n🧪 PRUEBA 2: Creación + exportación + importación (método testElementXML)');
+    console.log('Ejecuta manualmente: testTargetXML() y testScopeXML() para comparar');
+    
+  }).catch(err => {
+    console.error('❌ Error en importación directa:', err);
+  });
+};
 
 function updateUI(message = '') {
   if (message) $('.status-item:first-child span').text(message);
