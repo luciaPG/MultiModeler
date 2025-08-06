@@ -161,11 +161,7 @@ function saveBpmnState() {
             return false;
           });
           
-          console.log('💾 Guardando elementos PPINOT/RALph:', ppinotElements.length);
-          console.log('  - Target:', ppinotElements.filter(el => el.type.includes('Target')).length);
-          console.log('  - Scope:', ppinotElements.filter(el => el.type.includes('Scope')).length);
-          console.log('  - Ppi:', ppinotElements.filter(el => el.type.includes('Ppi')).length);
-          console.log('  - RALph:', ppinotElements.filter(el => el.type.includes('RALph')).length);
+
           
           // Guardar relaciones padre-hijo
           const parentChildRelations = {};
@@ -188,7 +184,6 @@ function saveBpmnState() {
           
           if (Object.keys(parentChildRelations).length > 0) {
             localStorage.setItem('bpmnParentChildRelations', JSON.stringify(parentChildRelations));
-            console.log('👨‍👦 Relaciones padre-hijo guardadas:', Object.keys(parentChildRelations).length);
           }
           
           // NUEVO: Guardar elementos RALPH por separado como en el sistema original
@@ -225,7 +220,6 @@ function saveBpmnState() {
             });
             
             localStorage.setItem('RALphElements', JSON.stringify(ralphData));
-            console.log('🎯 RALPH guardados:', ralphData.length);
           }
           
           // GUARDAR TAMBIÉN LAS RELACIONES PPINOT EN EL XML (si está disponible)
@@ -363,42 +357,21 @@ function loadBpmnState() {
     }
     
     if (savedDiagram && savedDiagram.trim().length > 0) {
-      console.log('🔄 Cargando diagrama guardado...');
-      console.log('📄 XML contiene Scope:', savedDiagram.includes('Scope'));
-      console.log('🎯 XML contiene Target:', savedDiagram.includes('Target'));
-      console.log('📄 Tamaño del XML:', savedDiagram.length, 'caracteres');
+
       
-      // DIAGNÓSTICO: Verificar moddle antes de importar
-      try {
-        const moddle = modeler.get('moddle');
-        console.log('🔧 Moddle packages disponibles:', Object.keys(moddle.registry.packages));
-        console.log('🔧 ¿PPINOT registrado?', !!moddle.registry.packages.PPINOT);
-        console.log('🔧 ¿RALph registrado?', !!moddle.registry.packages.RALph);
-      } catch (e) {
-        console.warn('🚨 Error verificando moddle:', e);
-      }
       
-      modeler.importXML(savedDiagram).then(() => {
-        console.log('✅ Diagrama BPMN restaurado correctamente');
-        
-        // DIAGNÓSTICO POST-IMPORTACIÓN
-        const elementRegistry = modeler.get('elementRegistry');
-        const allElements = elementRegistry.getAll();
-        
-        console.log('📊 Total elementos importados:', allElements.length);
-        
-        // Buscar elementos PPINOT/RALph con el mismo filtro que en testElementXML (incluyendo conexiones)
-        const ppinotElements = allElements.filter(el => {
-          return (el.type && (el.type.includes('PPINOT') || el.type.includes('RALph'))) ||
-                 (el.businessObject && el.businessObject.$type && 
-                  (el.businessObject.$type.includes('PPINOT') || el.businessObject.$type.includes('RALph')));
-        });
-        
-        console.log('📊 Elementos PPINOT/RALph restaurados:', ppinotElements.length);
-        console.log('  - Target:', ppinotElements.filter(el => el.type.includes('Target')).length);
-        console.log('  - Scope:', ppinotElements.filter(el => el.type.includes('Scope')).length);
-        console.log('  - Ppi:', ppinotElements.filter(el => el.type.includes('Ppi')).length);
-        console.log('  - RALph:', ppinotElements.filter(el => el.type.includes('RALph')).length);
+      
+              modeler.importXML(savedDiagram).then(() => {
+          // DIAGNÓSTICO POST-IMPORTACIÓN
+          const elementRegistry = modeler.get('elementRegistry');
+          const allElements = elementRegistry.getAll();
+          
+          // Buscar elementos PPINOT/RALph con el mismo filtro que en testElementXML (incluyendo conexiones)
+          const ppinotElements = allElements.filter(el => {
+            return (el.type && (el.type.includes('PPINOT') || el.type.includes('RALph'))) ||
+                   (el.businessObject && el.businessObject.$type && 
+                    (el.businessObject.$type.includes('PPINOT') || el.businessObject.$type.includes('RALph')));
+          });
         
         // RESTAURAR POSICIÓN Y ZOOM DEL CANVAS
         const savedCanvasState = localStorage.getItem('bpmnCanvasState');
@@ -415,7 +388,7 @@ function loadBpmnState() {
                   width: canvasState.width,
                   height: canvasState.height
                 });
-                console.log('🎯 Posición del canvas restaurada');
+
               }, 100);
             }
           } catch (e) {
@@ -428,7 +401,7 @@ function loadBpmnState() {
         if (savedRALphElements) {
           try {
             const ralphData = JSON.parse(savedRALphElements);
-            console.log('🔄 Restaurando elementos RALPH:', ralphData.length);
+
             
             if (ralphData.length > 0) {
               // VERSIÓN OPTIMIZADA: Restaurar elementos RALPH con mejor rendimiento
@@ -606,7 +579,7 @@ function loadBpmnState() {
         if (savedRelations) {
           try {
             const relations = JSON.parse(savedRelations);
-            console.log('🔄 Restaurando relaciones padre-hijo:', Object.keys(relations).length);
+    
             
             const elementRegistry = modeler.get('elementRegistry');
             
@@ -683,11 +656,11 @@ function loadBpmnState() {
                       }
                     });
                     
-                    console.log(`🎯 Restauración completada: ${successCount} éxitos, ${errorCount} errores`);
+            
                     
                     // Forzar actualización visual múltiple para asegurar que se muestren las relaciones
                     setTimeout(() => {
-                      console.log('🎨 Actualizando visualización...');
+              
                       try {
                         const canvas = modeler.get('canvas');
                         if (canvas && canvas.zoom) {
@@ -1215,7 +1188,7 @@ window.createCompleteDiagram = function() {
 
 // Función para crear diagrama con relaciones padre-hijo
 window.createDiagramWithParentChild = function() {
-  console.log('👨‍👦 Creando diagrama con relaciones padre-hijo');
+  
   
   modeler.createDiagram().then(() => {
     console.log('✅ Diagrama limpio creado');
@@ -1409,7 +1382,7 @@ window.debugLoadVsTest = function() {
   if (currentRelations) {
     try {
       const relations = JSON.parse(currentRelations);
-      console.log('\n👨‍👦 Relaciones padre-hijo guardadas:', Object.keys(relations).length);
+      
       Object.entries(relations).forEach(([childId, relation]) => {
         console.log(`  - ${childId} (${relation.childType}) -> ${relation.parentId} (${relation.parentType})`);
       });

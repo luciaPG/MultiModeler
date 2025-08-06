@@ -128,24 +128,12 @@ export function initRasciPanel(panel) {
         const parsedRoles = JSON.parse(savedRoles);
         window.rasciRoles = parsedRoles;
         roles = parsedRoles; // Mantener compatibilidad
-        console.log('📋 Roles cargados desde localStorage:', parsedRoles);
       }
       
       const savedMatrixData = localStorage.getItem('rasciMatrixData');
       if (savedMatrixData) {
         const parsedMatrixData = JSON.parse(savedMatrixData);
         window.rasciMatrixData = parsedMatrixData;
-        console.log('📋 Matriz cargada desde localStorage:', Object.keys(parsedMatrixData).length, 'tareas');
-        
-        // Verificar valores en la matriz
-        Object.keys(parsedMatrixData).forEach(taskName => {
-          Object.keys(parsedMatrixData[taskName]).forEach(roleName => {
-            const value = parsedMatrixData[taskName][roleName];
-            if (value && value !== '' && value !== undefined) {
-              console.log(`📋 Valor preservado: ${taskName}.${roleName} = "${value}"`);
-            }
-          });
-        });
       }
     } catch (e) {
       console.warn('Error cargando estado RASCI:', e);
@@ -278,8 +266,7 @@ export function initRasciPanel(panel) {
   setupVisibilityObserver();
 
   // Renderizar matriz inicial con roles cargados
-  console.log('🎯 Renderizando matriz inicial con roles:', window.rasciRoles || roles);
-  console.log('🎯 Matriz actual:', window.rasciMatrixData);
+      // Renderizar matriz inicial
   renderMatrix(panel, window.rasciRoles || roles, autoSaveRasciState);
 
   // Sincronizar nombres de roles desde RASCI hacia canvas al cargar
@@ -708,8 +695,6 @@ export function initRasciPanel(panel) {
 
   // Función global para prevenir sobrescritura de valores (SIN RECURSIÓN)
   window.preventOverwriteExistingValues = function() {
-    console.log('🛡️ Preveniendo sobrescritura de valores existentes...');
-    
     if (window.rasciMatrixData) {
       Object.keys(window.rasciMatrixData).forEach(taskName => {
         Object.keys(window.rasciMatrixData[taskName]).forEach(roleName => {
@@ -717,7 +702,6 @@ export function initRasciPanel(panel) {
           
           // Si el valor es un string vacío y no debería serlo, restaurarlo
           if (currentValue === '' && currentValue !== undefined) {
-            console.log(`⚠️ Detectado valor vacío en ${taskName}.${roleName}, restaurando...`);
             // No establecer valor vacío, dejar que el usuario lo asigne
             window.rasciMatrixData[taskName][roleName] = undefined;
           }
@@ -732,75 +716,45 @@ export function initRasciPanel(panel) {
   
     // Función para forzar guardado inmediato
   window.forceSaveRasciState = function() {
-    console.log('💾 Forzando guardado inmediato de estado RASCI...');
     saveRasciState();
   };
   
   // Función para verificar estado de guardado automático
   window.checkAutoSaveStatus = function() {
-    console.log('🔍 Estado del guardado automático:');
-    console.log('📋 Último guardado:', new Date(lastSaveTime).toLocaleTimeString());
-    console.log('📋 Tiempo desde último guardado:', Date.now() - lastSaveTime, 'ms');
-    console.log('📋 Guardado automático activo: INMEDIATO (sin debounce)');
-    console.log('📋 Indicador visual: cada 500ms');
+    console.log('Estado del guardado automático:');
+    console.log('Último guardado:', new Date(lastSaveTime).toLocaleTimeString());
+    console.log('Tiempo desde último guardado:', Date.now() - lastSaveTime, 'ms');
+    console.log('Guardado automático activo: INMEDIATO (sin debounce)');
+    console.log('Indicador visual: cada 500ms');
   };
   
   // Función para verificar estado actual de roles
   window.checkRolesState = function() {
-    console.log('🔍 VERIFICANDO ESTADO ACTUAL DE ROLES:');
-    console.log('📋 window.rasciRoles:', window.rasciRoles);
-    console.log('📋 roles:', roles);
-    console.log('📋 localStorage rasciRoles:', localStorage.getItem('rasciRoles'));
-    
-    if (window.rasciRoles) {
-      console.log('📋 window.rasciRoles.length:', window.rasciRoles.length);
-      window.rasciRoles.forEach((role, index) => {
-        console.log(`  ${index}: "${role}" (tipo: ${typeof role})`);
-      });
-    }
-    
-    if (roles) {
-      console.log('📋 roles.length:', roles.length);
-      roles.forEach((role, index) => {
-        console.log(`  ${index}: "${role}" (tipo: ${typeof role})`);
-      });
-    }
+    console.log('Estado actual de roles:');
+    console.log('window.rasciRoles:', window.rasciRoles);
+    console.log('roles:', roles);
+    console.log('localStorage rasciRoles:', localStorage.getItem('rasciRoles'));
   };
   
   // Función para limpiar y reinicializar roles RASCI
   window.resetRasciRoles = function() {
-    console.log('🔄 Reinicializando roles RASCI...');
     window.rasciRoles = [];
     roles = [];
     localStorage.removeItem('rasciRoles');
-    console.log('✅ Roles RASCI reinicializados');
   };
   
   // Función para forzar detección y guardado inmediato
   window.forceDetectAndSaveRoles = function() {
-    console.log('🔄 Forzando detección y guardado inmediato de roles...');
     if (typeof window.detectRalphRolesFromCanvas === 'function') {
       const detectedRoles = window.detectRalphRolesFromCanvas();
       if (detectedRoles.length > 0) {
-        console.log(`✅ ${detectedRoles.length} roles RALPH detectados:`, detectedRoles);
-        
         // Establecer roles inmediatamente
         window.rasciRoles = [...detectedRoles];
         roles = [...detectedRoles];
         
-        console.log('🔍 Roles establecidos en window.rasciRoles:', window.rasciRoles);
-        console.log('🔍 Roles establecidos en roles:', roles);
-        
         // Guardar inmediatamente en localStorage
         try {
           localStorage.setItem('rasciRoles', JSON.stringify(window.rasciRoles));
-          console.log('💾 Roles guardados inmediatamente en localStorage:', window.rasciRoles);
-          
-          // Verificar que se guardó correctamente
-          const savedRoles = localStorage.getItem('rasciRoles');
-          console.log('🔍 Roles leídos de localStorage:', savedRoles);
-          const parsedRoles = JSON.parse(savedRoles);
-          console.log('🔍 Roles parseados de localStorage:', parsedRoles);
         } catch (e) {
           console.warn('Error guardando roles en localStorage:', e);
         }
@@ -948,7 +902,7 @@ export function initRasciPanel(panel) {
         if (savedRoles) {
           window.rasciRoles = JSON.parse(savedRoles);
           roles = window.rasciRoles; // Actualizar también la variable local
-          console.log('✅ Roles cargados desde localStorage:', window.rasciRoles);
+  
         }
         
         const savedMatrixData = localStorage.getItem('rasciMatrixData');
@@ -1060,7 +1014,7 @@ window.forceRasciReload = function() {
 
 // Función global para recargar estado RASCI desde localStorage
 window.reloadRasciState = function() {
-  console.log('🔄 Recargando estado RASCI desde localStorage...');
+  
   
   // Cargar estado desde localStorage
   try {
@@ -1081,42 +1035,27 @@ window.reloadRasciState = function() {
   
   const rasciPanel = document.querySelector('#rasci-panel');
   if (rasciPanel) {
-    console.log('🎯 Renderizando matriz RASCI...');
+    // Renderizar matriz RASCI
     renderMatrix(rasciPanel, window.rasciRoles || [], null);
   } else {
     console.warn('⚠️ Panel RASCI no encontrado');
   }
 };
 
-// Función global para debug del estado RASCI
-window.debugRasciState = function() {
-  console.log('🔍 DEBUG: Estado actual de RASCI');
-  console.log('Roles:', window.rasciRoles);
-  console.log('Matriz:', window.rasciMatrixData);
-  
-  const savedRoles = localStorage.getItem('rasciRoles');
-  const savedMatrixData = localStorage.getItem('rasciMatrixData');
-  
-  console.log('localStorage roles:', savedRoles);
-  console.log('localStorage matriz:', savedMatrixData);
-};
+
 
 // Función global para forzar recarga del estado RASCI
 window.forceReloadRasciState = function() {
-  console.log('🔄 Forzando recarga del estado RASCI...');
-  
   // Cargar estado desde localStorage
   try {
     const savedRoles = localStorage.getItem('rasciRoles');
     if (savedRoles) {
       window.rasciRoles = JSON.parse(savedRoles);
-      console.log('✅ Roles cargados:', window.rasciRoles);
     }
     
     const savedMatrixData = localStorage.getItem('rasciMatrixData');
     if (savedMatrixData) {
       window.rasciMatrixData = JSON.parse(savedMatrixData);
-      console.log('✅ Matriz cargada:', Object.keys(window.rasciMatrixData).length, 'tareas');
     }
   } catch (e) {
     console.warn('Error cargando estado RASCI:', e);
@@ -1125,63 +1064,8 @@ window.forceReloadRasciState = function() {
   // Forzar re-renderizado de la matriz
   const rasciPanel = document.querySelector('#rasci-panel');
   if (rasciPanel) {
-    console.log('🎯 Forzando re-renderizado de la matriz...');
     renderMatrix(rasciPanel, window.rasciRoles || [], null);
   } else {
     console.warn('⚠️ Panel RASCI no encontrado');
   }
-};
-
-// Función global para simular el problema y debuggear
-window.debugRasciIssue = function() {
-  console.log('🔍 DEBUG: Simulando el problema de sobrescritura...');
-  
-  // 1. Cargar estado original
-  const originalMatrixData = localStorage.getItem('rasciMatrixData');
-  console.log('📋 Estado original en localStorage:', originalMatrixData);
-  
-  // 2. Ver estado actual en memoria
-  console.log('📋 Estado actual en window.rasciMatrixData:', window.rasciMatrixData);
-  
-  // 3. Simular llamada a updateMatrixFromDiagram
-  console.log('🔄 Simulando llamada a updateMatrixFromDiagram...');
-  if (typeof window.updateMatrixFromDiagram === 'function') {
-    window.updateMatrixFromDiagram();
-  }
-  
-  // 4. Verificar si cambió algo
-  setTimeout(() => {
-    console.log('📋 Estado después de updateMatrixFromDiagram:', window.rasciMatrixData);
-    
-    // 5. Comparar con el original
-    if (originalMatrixData) {
-      const original = JSON.parse(originalMatrixData);
-      console.log('🔍 Comparación:');
-      console.log('  Original:', original);
-      console.log('  Actual:', window.rasciMatrixData);
-      
-      // Verificar si se perdieron valores
-      Object.keys(original).forEach(taskName => {
-        Object.keys(original[taskName]).forEach(roleName => {
-          const originalValue = original[taskName][roleName];
-          const currentValue = window.rasciMatrixData[taskName]?.[roleName];
-          
-          if (originalValue && originalValue !== '' && currentValue === '') {
-            console.error(`❌ VALOR PERDIDO: ${taskName}.${roleName} = "${originalValue}" -> "${currentValue}"`);
-          }
-        });
-      });
-    }
-  }, 1000);
-};
-
-window.debugRasciState = function() {
-  
-  if (window.bpmnModeler) {
-    const tasks = getBpmnTasks();
-  }
-  
-  if (window.rasciUIValidator) {
-  }
-  
 };
