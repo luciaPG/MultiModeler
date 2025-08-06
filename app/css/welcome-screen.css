@@ -120,26 +120,28 @@
 }
 
 .welcome-btn.primary {
-  background: #4361ee;
-  color: white;
+  background: #ffffff;
+  color: #ffffff;
   box-shadow: 0 8px 25px rgba(67, 97, 238, 0.3);
 }
 
 .welcome-btn.primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 35px rgba(67, 97, 238, 0.4);
-  background: #3a56d4;
+  background: #ffffff;
+
 }
 
 .welcome-btn.secondary {
-  background: white;
-  color: #4361ee;
-  border: 2px solid #4361ee;
+  background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: 2px solid #667eea;
 }
 
 .welcome-btn.secondary:hover {
-  background: #4361ee;
-  color: white;
+  color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-color: white;
   border-color: #4361ee;
   transform: translateY(-2px);
 }
@@ -159,14 +161,14 @@
 
 /* Estilo especial para el botón de continuar diagrama */
 .welcome-btn#continue-diagram-btn {
-  background: linear-gradient(135deg, #28a745, #20c997);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
   box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
 }
 
 .welcome-btn#continue-diagram-btn:hover {
-  background: linear-gradient(135deg, #218838, #1ea97c);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 80%);
   box-shadow: 0 12px 35px rgba(40, 167, 69, 0.4);
 }
 

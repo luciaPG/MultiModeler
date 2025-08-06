@@ -381,9 +381,13 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
         I: '#6c757d'
       };
 
-      if (window.rasciMatrixData && window.rasciMatrixData[task] && window.rasciMatrixData[task][role]) {
-        const existingValue = window.rasciMatrixData[task][role];
-        console.log(`🎯 Renderizando letra ${existingValue} para tarea ${task}, rol ${role}`);
+      // Verificar si hay un valor válido para renderizar
+      const existingValue = window.rasciMatrixData && window.rasciMatrixData[task] ? 
+                           window.rasciMatrixData[task][role] : undefined;
+      
+      if (existingValue && existingValue !== undefined && existingValue !== '' && 
+          ['R', 'A', 'S', 'C', 'I'].includes(existingValue)) {
+        console.log(`🎯 Renderizando valor: ${task}.${role} = "${existingValue}"`);
         const circle = document.createElement('span');
         circle.className = 'rasci-circle';
         circle.textContent = existingValue;
@@ -391,6 +395,8 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
         display.appendChild(circle);
         cell.setAttribute('data-value', existingValue);
         cell.classList.add('cell-with-content');
+      } else {
+        console.log(`🔍 Sin valor para renderizar: ${task}.${role} = "${existingValue}"`);
       }
 
       container.addEventListener('keydown', e => {
@@ -447,8 +453,16 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
           cell.setAttribute('data-value', key);
           cell.classList.add('cell-with-content');
           
+          // Guardado inmediato al cambiar valor en la matriz
           if (autoSaveRasciState) {
             autoSaveRasciState();
+          }
+          
+          // Guardado adicional para asegurar persistencia
+          if (typeof window.forceSaveRasciState === 'function') {
+            setTimeout(() => {
+              window.forceSaveRasciState();
+            }, 50);
           }
           
           if (typeof window.onRasciMatrixUpdated === 'function') {
@@ -474,8 +488,16 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
           }
           cell.removeAttribute('data-value');
           
+          // Guardado inmediato al borrar valor en la matriz
           if (autoSaveRasciState) {
             autoSaveRasciState();
+          }
+          
+          // Guardado adicional para asegurar persistencia
+          if (typeof window.forceSaveRasciState === 'function') {
+            setTimeout(() => {
+              window.forceSaveRasciState();
+            }, 50);
           }
           
           if (typeof window.onRasciMatrixUpdated === 'function') {
@@ -590,7 +612,7 @@ export function getBpmnTasks() {
       // Añadir nuevas tareas al window.rasciMatrixData si no existen
   let hasNewTasks = false;
   
-  // Use global roles if local roles are not available
+  // Use global roles if local roles are not available (NO DETECTAR ROLES RALPH AUTOMÁTICAMENTE)
   const currentRoles = roles || window.rasciRoles || [];
   
   currentTasks.forEach(taskName => {
@@ -629,24 +651,30 @@ export function getBpmnTasks() {
     }
       });
     
-      // RESTAURAR VALORES QUE SE HAYAN SOBRESCRITO
-  console.log('🔄 Restaurando valores sobrescritos...');
-  let restoredCount = 0;
-  Object.keys(existingDataBackup).forEach(taskName => {
-    if (window.rasciMatrixData[taskName]) {
-      Object.keys(existingDataBackup[taskName]).forEach(roleName => {
-        const backupValue = existingDataBackup[taskName][roleName];
-        const currentValue = window.rasciMatrixData[taskName][roleName];
-        
-        // Si el valor de backup no está vacío y el valor actual está vacío, restaurar
-        if (backupValue && backupValue !== '' && currentValue === '') {
-          console.log(`🔄 Restaurando valor: ${taskName}.${roleName} = "${backupValue}"`);
-          window.rasciMatrixData[taskName][roleName] = backupValue;
-          restoredCount++;
-        }
-      });
+      // PREVENIR SOBRESCRITURA DE VALORES EXISTENTES
+    console.log('🛡️ Preveniendo sobrescritura de valores existentes...');
+    if (typeof window.preventOverwriteExistingValues === 'function') {
+      window.preventOverwriteExistingValues();
     }
-  });
+    
+    // RESTAURAR VALORES QUE SE HAYAN SOBRESCRITO
+    console.log('🔄 Restaurando valores sobrescritos...');
+    let restoredCount = 0;
+    Object.keys(existingDataBackup).forEach(taskName => {
+      if (window.rasciMatrixData[taskName]) {
+        Object.keys(existingDataBackup[taskName]).forEach(roleName => {
+          const backupValue = existingDataBackup[taskName][roleName];
+          const currentValue = window.rasciMatrixData[taskName][roleName];
+          
+          // Si el valor de backup no está vacío y el valor actual está vacío, restaurar
+          if (backupValue && backupValue !== '' && currentValue === '') {
+            console.log(`🔄 Restaurando valor: ${taskName}.${roleName} = "${backupValue}"`);
+            window.rasciMatrixData[taskName][roleName] = backupValue;
+            restoredCount++;
+          }
+        });
+      }
+    });
   
   if (restoredCount > 0) {
     console.log(`✅ Restaurados ${restoredCount} valores sobrescritos`);
@@ -794,7 +822,15 @@ function makeRoleEditable(roleHeader, roleIndex) {
       roles[roleIndex] = newName;
       roleNameSpan.textContent = newName;
       
+      // Guardado inmediato al editar rol
       if (autoSaveRasciState) autoSaveRasciState();
+      
+      // Guardado adicional para asegurar persistencia
+      if (typeof window.forceSaveRasciState === 'function') {
+        setTimeout(() => {
+          window.forceSaveRasciState();
+        }, 10);
+      }
 
       // Validar matriz después de editar rol (más lento)
       setTimeout(() => {
@@ -925,7 +961,15 @@ export function showDeleteConfirmModal(roleIndex, panel) {
 export function deleteRole(roleIndex, panel) {
   roles.splice(roleIndex, 1);
   
+  // Guardado inmediato al eliminar rol
   if (autoSaveRasciState) autoSaveRasciState();
+  
+  // Guardado adicional para asegurar persistencia
+  if (typeof window.forceSaveRasciState === 'function') {
+    setTimeout(() => {
+      window.forceSaveRasciState();
+    }, 10);
+  }
   
   renderMatrix(panel, roles, autoSaveRasciState);
 
@@ -936,7 +980,9 @@ export function deleteRole(roleIndex, panel) {
 }
 
 // Configurar función global para actualizar matriz
-window.updateMatrixFromDiagram = updateMatrixFromDiagram;
+  window.updateMatrixFromDiagram = updateMatrixFromDiagram;
+  window.detectRalphRolesFromCanvas = detectRalphRolesFromCanvas;
+  window.forceDetectRalphRoles = forceDetectRalphRoles;
 
 // Función global para recargar la matriz RASCI (preserva datos)
 window.reloadRasciMatrix = function() {
@@ -1240,6 +1286,126 @@ export function forceReloadMatrix() {
       window.rasciUIValidator.forceValidation();
     }
   }, 300);
+}
+
+// Función para detectar roles RALPH del canvas SOLO PARA LECTURA (NO INVASIVA)
+export function detectRalphRolesFromCanvas() {
+  console.log('🔍 Detectando roles RALPH del canvas (solo lectura)...');
+  
+  if (!window.bpmnModeler) {
+    console.warn('⚠️ Modeler no disponible');
+    return [];
+  }
+  
+  const elementRegistry = window.bpmnModeler.get('elementRegistry');
+  if (!elementRegistry) {
+    console.warn('⚠️ ElementRegistry no disponible');
+    return [];
+  }
+  
+  // Detectar roles RALPH del canvas SOLO PARA LECTURA
+  const ralphRoles = [];
+  
+  elementRegistry.forEach(element => {
+    // Buscar elementos RALPH con diferentes variaciones de tipo
+    if (element.type === 'RALph:RoleRALph' || 
+        element.type === 'ralph:Role' ||
+        element.type === 'RALph:Role' ||
+        element.type === 'ralph:RoleRALph' ||
+        (element.type && element.type.includes('RALph') && element.type.includes('Role'))) {
+      
+      const roleName = element.businessObject && element.businessObject.name ? 
+                      element.businessObject.name : 
+                      (element.name || element.id || 'Rol sin nombre');
+      
+      if (roleName && !ralphRoles.includes(roleName)) {
+        ralphRoles.push(roleName);
+        console.log(`✅ Rol RALPH detectado: ${roleName}`);
+      }
+    }
+  });
+  
+  console.log(`📋 Roles RALPH detectados: ${ralphRoles.length}`, ralphRoles);
+  
+  // NO MODIFICAR NADA DEL CANVAS - SOLO DETECTAR PARA INFORMACIÓN
+  // Los roles detectados se pueden usar para sugerencias pero no se modifican automáticamente
+  
+  return ralphRoles;
+}
+
+
+
+// Función para forzar detección de roles RALPH (SOLO CUANDO SE SOLICITA MANUALMENTE)
+export function forceDetectRalphRoles() {
+  console.log('🔄 Forzando detección de roles RALPH (manual)...');
+  const detectedRoles = detectRalphRolesFromCanvas();
+  
+  if (detectedRoles.length > 0) {
+    console.log(`📋 Roles RALPH detectados: ${detectedRoles.length}`, detectedRoles);
+    
+    // SOLO AGREGAR ROLES NUEVOS A LA MATRIZ RASCI (NO MODIFICAR CANVAS)
+    if (!window.rasciRoles) {
+      window.rasciRoles = [];
+    }
+    
+    let addedNewRoles = false;
+    detectedRoles.forEach(roleName => {
+      if (!window.rasciRoles.includes(roleName)) {
+        window.rasciRoles.push(roleName);
+        addedNewRoles = true;
+        console.log(`➕ Rol nuevo agregado a matriz RASCI: ${roleName}`);
+      }
+    });
+    
+    // SIEMPRE actualizar la matriz de datos con los roles detectados (aunque ya existan)
+    if (window.rasciMatrixData) {
+      Object.keys(window.rasciMatrixData).forEach(taskName => {
+        detectedRoles.forEach(roleName => {
+                      if (!(roleName in window.rasciMatrixData[taskName])) {
+              // NO ESTABLECER VALOR VACÍO - DEJAR QUE EL USUARIO LO ASIGNE
+              window.rasciMatrixData[taskName][roleName] = undefined;
+              console.log(`➕ Rol ${roleName} agregado a tarea ${taskName} (sin valor asignado)`);
+              addedNewRoles = true; // Marcar que se agregó algo
+              
+              // Guardado inmediato al agregar nuevo rol
+              if (typeof window.forceSaveRasciState === 'function') {
+                setTimeout(() => {
+                  window.forceSaveRasciState();
+                }, 10);
+              }
+            }
+        });
+      });
+    }
+    
+    if (addedNewRoles) {
+      // PREVENIR SOBRESCRITURA DE VALORES EXISTENTES
+      if (typeof window.preventOverwriteExistingValues === 'function') {
+        window.preventOverwriteExistingValues();
+      }
+      
+      // Guardar en localStorage
+      try {
+        localStorage.setItem('rasciRoles', JSON.stringify(window.rasciRoles));
+        console.log('💾 Roles guardados en localStorage');
+      } catch (e) {
+        console.warn('Error guardando roles en localStorage:', e);
+      }
+      
+      // Re-renderizar matriz con roles actualizados
+      const rasciPanel = document.querySelector('#rasci-panel');
+      if (rasciPanel) {
+        renderMatrix(rasciPanel, window.rasciRoles, null);
+        console.log('✅ Matriz re-renderizada con roles detectados');
+      }
+    } else {
+      console.log('ℹ️ No se agregaron roles nuevos, manteniendo matriz actual');
+    }
+  } else {
+    console.log('ℹ️ No se detectaron roles RALPH en el canvas');
+  }
+  
+  return detectedRoles;
 }
 
 
