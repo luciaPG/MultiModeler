@@ -1,6 +1,5 @@
 // === panel-manager.js ===
 // Gestor de paneles con selector de paneles y distribución
-// TODO: A TERMINAR EL DESARROLLO - Sistema de guardado automático implementado
 
 class PanelManager {
   constructor() {

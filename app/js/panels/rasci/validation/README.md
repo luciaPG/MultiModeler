@@ -1,8 +1,8 @@
-# RASCI Matrix Validator - Sistema de Validación Inteligente
+# RASCI Matrix Validator
 
-## 📋 Descripción
+## Descripción
 
-El **RASCI Matrix Validator** es un sistema de validación inteligente en tiempo real que asegura que las matrices RASCI cumplan con todas las restricciones organizativas y semánticas antes de convertirlas a BPMN + RALph.
+El RASCI Matrix Validator es un sistema de validación en tiempo real que asegura que las matrices RASCI cumplan con todas las restricciones organizativas y semánticas.
 
 ## 🎯 Funcionalidades Principales
 

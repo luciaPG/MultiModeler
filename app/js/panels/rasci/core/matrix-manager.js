@@ -1,17 +1,13 @@
-// RASCI Matrix Manager - Matrix rendering and role management
+// RASCI Matrix Manager
 import { rasciUIValidator } from '../ui/matrix-ui-validator.js';
 
 let roles = [];
 let autoSaveRasciState = null;
 
 export function renderMatrix(panel, rolesArray, autoSaveFunction) {
-  // Use provided roles or fall back to global roles
   roles = rolesArray || window.rasciRoles || [];
   autoSaveRasciState = autoSaveFunction;
   
-
-  
-  // Asegurar que window.rasciMatrixData esté cargado desde localStorage
   if (!window.rasciMatrixData) {
     const savedMatrixData = localStorage.getItem('rasciMatrixData');
     if (savedMatrixData) {
@@ -25,7 +21,6 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
     }
   }
   
-  // Crear una copia de seguridad antes de cualquier modificación
   const matrixBackup = JSON.parse(JSON.stringify(window.rasciMatrixData));
   
   const mainTab = panel.querySelector('#main-tab');

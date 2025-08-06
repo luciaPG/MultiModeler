@@ -1,5 +1,4 @@
-// RASCI Matrix UI Validator - Componente de interfaz para mostrar validaciones en tiempo real
-// Muestra feedback inmediato debajo de la matriz sin usar ventanas emergentes
+// RASCI Matrix UI Validator
 
 import { rasciValidator } from '../validation/matrix-validator.js';
 

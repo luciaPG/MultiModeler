@@ -1,6 +1,4 @@
-# RASCI System Structure
-
-Esta carpeta contiene el sistema RASCI reorganizado en una estructura modular clara.
+# RASCI System
 
 ## Estructura de Archivos
 

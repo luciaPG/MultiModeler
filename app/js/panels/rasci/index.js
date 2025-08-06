@@ -1,5 +1,4 @@
-// RASCI Panel - Main entry point
-// Exporta todas las funcionalidades del sistema RASCI incluyendo el validador inteligente
+// RASCI Panel
 
 // Core functionality
 export { initRasciPanel } from './core/main.js';

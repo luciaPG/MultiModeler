@@ -1,5 +1,4 @@
 // RASCI Validation Configuration
-// Configuración personalizable para las reglas de validación
 
 export const ValidationConfig = {
   // ============================================================================

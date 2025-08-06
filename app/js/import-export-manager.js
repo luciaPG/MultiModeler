@@ -15,19 +15,12 @@ class ImportExportManager {
   }
 
   setupEventListeners() {
-    console.log('🔧 Configurando event listeners para importación/exportación...');
-    
-    // Botón de prueba (este no tiene conflictos)
     const testBtn = document.getElementById('test-export-btn');
     if (testBtn) {
       testBtn.addEventListener('click', (e) => {
-        console.log('🎯 Botón Probar clickeado');
         e.preventDefault();
         this.exportProject();
       });
-      console.log('✅ Event listener añadido al botón Probar');
-    } else {
-      console.error('❌ Botón Probar no encontrado');
     }
   }
 
@@ -54,8 +47,6 @@ class ImportExportManager {
 
   async exportProject() {
     try {
-      console.log('🔄 Iniciando exportación del proyecto...');
-      
       const projectData = await this.collectAllProjectData();
       
       if (!projectData) {
@@ -67,10 +58,8 @@ class ImportExportManager {
       this.downloadFile(projectData, fileName);
       
       this.showMessage('Proyecto exportado correctamente', 'success');
-      console.log('✅ Exportación completada');
       
     } catch (error) {
-      console.error('❌ Error en exportación:', error);
       this.showMessage('Error al exportar el proyecto: ' + error.message, 'error');
     }
   }

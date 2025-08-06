@@ -1,14 +1,12 @@
-// === app.js limpio ===
-// TODO: A TERMINAR EL DESARROLLO - Sistema de guardado automático implementado
+// === app.js ===
+// MultiModeler - Aplicación principal
 
 import $ from 'jquery';
 import MultiNotationModeler from './MultiNotationModeler/index.js';
-import BpmnModdle from 'bpmn-moddle';
 import PPINOTModdle from './PPINOT-modeler/PPINOT/PPINOTModdle.json';
 import RALphModdle from './RALPH-modeler/RALph/RALphModdle.json';
 import { PanelLoader } from './js/panel-loader.js';
 import { initRasciPanel } from './js/panels/rasci/core/main.js';
-// import './js/panel-snap-system.js'; // REMOVIDO - No se necesita desplazamiento de ventanas
 import './js/panel-manager.js';
 import './js/import-export-manager.js';
 import './js/storage-manager.js';
@@ -24,29 +22,18 @@ window.rasciTasks = [];
 window.rasciMatrixData = {};
 window.initRasciPanel = initRasciPanel;
 
-// Verificar inicialización del StorageManager
-console.log('🔧 app.js: Verificando StorageManager...');
-if (window.storageManager) {
-  console.log('✅ app.js: StorageManager disponible');
-} else {
-  console.error('❌ app.js: StorageManager NO disponible');
-}
-
 // Sistema de bloqueo para evitar condiciones de carrera
 window.rasciStateLock = {
   isLocked: false,
   lockTimeout: null,
   lock: function(timeoutMs = 5000) {
     if (this.isLocked) {
-      console.log('🔒 Estado RASCI bloqueado, esperando...');
       return false;
     }
     this.isLocked = true;
     this.lockTimeout = setTimeout(() => {
-      console.log('⏰ Timeout del bloqueo RASCI, liberando...');
       this.unlock();
     }, timeoutMs);
-    console.log('🔒 Estado RASCI bloqueado');
     return true;
   },
   unlock: function() {
@@ -55,7 +42,6 @@ window.rasciStateLock = {
       clearTimeout(this.lockTimeout);
       this.lockTimeout = null;
     }
-    console.log('🔓 Estado RASCI desbloqueado');
   }
 };
 
@@ -1574,99 +1560,20 @@ function handleContinueDiagram() {
 }
 
 async function handleOpenWithConfirmation() {
-  console.log('📂 Abriendo con confirmación...');
-  
-  // Crear modal personalizado
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
-  // Añadir estilos inline para asegurar visibilidad
-  modal.style.cssText = `
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    background: rgba(0, 0, 0, 0.5) !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    z-index: 99999 !important;
-    backdrop-filter: blur(2px) !important;
-    pointer-events: auto !important;
-  `;
   modal.innerHTML = `
-    <div class="modal-content" style="
-      background: white !important;
-      border-radius: 8px !important;
-      padding: 24px !important;
-      max-width: 400px !important;
-      width: 90% !important;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
-      pointer-events: auto !important;
-      position: relative !important;
-      z-index: 100000 !important;
-    ">
-      <h3 class="modal-title" style="
-        font-size: 18px !important;
-        font-weight: 600 !important;
-        color: #374151 !important;
-        margin: 0 0 16px 0 !important;
-        font-family: 'Segoe UI', Roboto, sans-serif !important;
-      ">Abrir Nuevo Proyecto</h3>
-      <p class="modal-message" style="
-        font-size: 14px !important;
-        color: #6b7280 !important;
-        margin-bottom: 20px !important;
-        line-height: 1.5 !important;
-        font-family: 'Segoe UI', Roboto, sans-serif !important;
-      ">¿Estás seguro de que quieres abrir un nuevo proyecto?<br><br>Esto sobrescribirá todos los datos actuales y se perderá el trabajo no guardado.</p>
-      <div class="modal-actions" style="
-        display: flex !important;
-        gap: 12px !important;
-        justify-content: flex-end !important;
-      ">
-        <button class="modal-btn" id="cancel-open" style="
-          padding: 10px 20px !important;
-          border: 1px solid #d1d5db !important;
-          border-radius: 6px !important;
-          background: white !important;
-          color: #374151 !important;
-          font-size: 14px !important;
-          font-weight: 500 !important;
-          cursor: pointer !important;
-          transition: all 0.2s ease !important;
-          font-family: 'Segoe UI', Roboto, sans-serif !important;
-          min-width: 80px !important;
-          pointer-events: auto !important;
-          position: relative !important;
-          z-index: 100000 !important;
-        ">Cancelar</button>
-        <button class="modal-btn danger" id="confirm-open" style="
-          padding: 10px 20px !important;
-          border: 1px solid #dc2626 !important;
-          border-radius: 6px !important;
-          background: #dc2626 !important;
-          color: white !important;
-          font-size: 14px !important;
-          font-weight: 500 !important;
-          cursor: pointer !important;
-          transition: all 0.2s ease !important;
-          font-family: 'Segoe UI', Roboto, sans-serif !important;
-          min-width: 80px !important;
-          pointer-events: auto !important;
-          position: relative !important;
-          z-index: 100000 !important;
-        ">Abrir</button>
+    <div class="modal-content">
+      <h3 class="modal-title">Abrir Nuevo Proyecto</h3>
+      <p class="modal-message">¿Estás seguro de que quieres abrir un nuevo proyecto?<br><br>Esto sobrescribirá todos los datos actuales y se perderá el trabajo no guardado.</p>
+      <div class="modal-actions">
+        <button class="modal-btn" id="cancel-open">Cancelar</button>
+        <button class="modal-btn danger" id="confirm-open">Abrir</button>
       </div>
     </div>
   `;
 
-  console.log('🔍 Modal creado:', modal);
-  console.log('🔍 Modal HTML:', modal.outerHTML);
-  
   document.body.appendChild(modal);
-  console.log('✅ Modal añadido al body');
-  console.log('🔍 Modal en DOM:', document.querySelector('.modal-overlay'));
 
   function closeModal() {
     if (modal.parentNode) {
@@ -1675,23 +1582,17 @@ async function handleOpenWithConfirmation() {
   }
 
   function confirmOpen() {
-    // Usar la misma funcionalidad que el botón "Abrir" del header
     if (window.importExportManager) {
-      console.log('🎯 Abriendo con ImportExportManager...');
       window.importExportManager.importProject();
     } else {
-      console.error('❌ ImportExportManager no está disponible');
-      // Fallback a la función original
       handleOpenDiagram();
     }
     closeModal();
   }
 
-  // Event listeners
   modal.querySelector('#cancel-open').addEventListener('click', closeModal);
   modal.querySelector('#confirm-open').addEventListener('click', confirmOpen);
 
-  // Cerrar con Escape
   document.addEventListener('keydown', function handleEscape(e) {
     if (e.key === 'Escape') {
       closeModal();
@@ -1699,7 +1600,6 @@ async function handleOpenWithConfirmation() {
     }
   });
 
-  // Cerrar al hacer clic fuera del modal
   modal.addEventListener('click', function handleOutsideClick(e) {
     if (e.target === modal) {
       closeModal();
@@ -1709,39 +1609,23 @@ async function handleOpenWithConfirmation() {
 }
 
 async function handleOpenDiagram() {
-  console.log('📂 Abriendo diagrama...');
-  console.log('🔍 handleOpenDiagram: StorageManager disponible:', !!window.storageManager);
-  
   try {
-    // Preparar localStorage para importación
     if (window.storageManager) {
-      console.log('🔧 StorageManager disponible, preparando importación...');
-      const success = await window.storageManager.prepareForImport();
-      if (success) {
-        console.log('✅ localStorage preparado para importación');
-      } else {
-        console.error('❌ Error preparando localStorage para importación');
-      }
+      await window.storageManager.prepareForImport();
     } else {
-      console.warn('⚠️ StorageManager no disponible, usando limpieza manual');
-      // Fallback: limpieza manual
       if (window.importExportManager && window.importExportManager.clearAllProjectData) {
         window.importExportManager.clearAllProjectData();
       }
     }
     
-    // Mostrar el modeler
     showModeler();
     
-    // Abrir el selector de archivos
     const fileInput = document.getElementById('file-input');
     if (fileInput) {
       fileInput.click();
     }
     
   } catch (error) {
-    console.error('❌ Error en handleOpenDiagram:', error);
-    // Continuar con el flujo normal
     const fileInput = document.getElementById('file-input');
     if (fileInput) {
       fileInput.click();
@@ -2071,17 +1955,9 @@ $(function () {
   showWelcomeScreen();
   
   // Inicializar el gestor de importación/exportación
-  console.log('🚀 Inicializando ImportExportManager...');
   if (window.ImportExportManager) {
     window.importExportManager = new window.ImportExportManager();
-    console.log('✅ ImportExportManager inicializado:', window.importExportManager);
-  } else {
-    console.error('❌ ImportExportManager no está disponible globalmente');
   }
   
-  // Función de prueba para el modal (disponible globalmente)
-  window.testModal = function() {
-    console.log('🧪 Probando modal...');
-    handleOpenWithConfirmation();
-  };
+
 });

@@ -1,5 +1,4 @@
-// RASCI Matrix Validator - Validación inteligente en tiempo real
-// Implementa todas las reglas organizativas y semánticas para matrices RASCI
+// RASCI Matrix Validator
 
 export class RasciMatrixValidator {
   constructor() {

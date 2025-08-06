@@ -1,10 +1,8 @@
-// RASCI Core - Main panel initialization and state management
+// RASCI Core
 import { renderMatrix, addNewRole, editRole, showDeleteConfirmModal, getBpmnTasks } from './matrix-manager.js';
 import { applyStyles } from './styles.js';
 import { initRasciMapping, executeSimpleRasciMapping } from '../mapping/index.js';
 import { rasciUIValidator } from '../ui/matrix-ui-validator.js';
-
-
 
 export function initRasciPanel(panel) {
   const container = panel.querySelector('#matrix-container');

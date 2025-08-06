@@ -1,4 +1,4 @@
-// === panel-loader.js limpio ===
+// === panel-loader.js ===
 
 class PanelLoader {
   constructor() {

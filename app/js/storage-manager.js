@@ -18,7 +18,6 @@ class StorageManager {
   }
 
   init() {
-    console.log('🔧 Inicializando StorageManager...');
     this.setupGlobalMethods();
   }
 
@@ -34,26 +33,13 @@ class StorageManager {
   // === RESETEO COMPLETO ===
   // Para "Crear Nuevo Diagrama" - Resetear todo y crear diagrama limpio
   async resetStorage() {
-    console.log('🧹 RESETEO COMPLETO: Limpiando localStorage y creando diagrama nuevo...');
-    
     try {
-      // 1. Limpiar localStorage preservando solo preferencias
       this.clearStorage();
-      
-      // 2. Crear diagrama BPMN limpio
       await this.createCleanBpmnDiagram();
-      
-      // 3. Resetear variables globales
       this.resetGlobalVariables();
-      
-      // 4. Configurar estado inicial
       this.setInitialState();
-      
-      console.log('✅ RESETEO COMPLETO: localStorage reseteado y diagrama nuevo creado');
       return true;
-      
     } catch (error) {
-      console.error('❌ Error en resetStorage:', error);
       return false;
     }
   }
@@ -61,24 +47,12 @@ class StorageManager {
   // === LIMPIEZA PARA IMPORTACIÓN ===
   // Para "Abrir Diagrama" - Limpiar y preparar para importar
   async prepareForImport() {
-    console.log('🧹 PREPARACIÓN PARA IMPORTACIÓN: Limpiando localStorage...');
-    
     try {
-      // 1. Limpiar localStorage preservando solo preferencias
       this.clearStorage();
-      
-      // 2. Resetear variables globales
       this.resetGlobalVariables();
-      
-      // 3. Configurar estado de importación
       this.setImportState();
-      
-          console.log('✅ PREPARACIÓN PARA IMPORTACIÓN: localStorage listo para importar');
-    this.logStorageState(); // Añadido: Log del estado FINAL después de la preparación
-    return true;
-      
+      return true;
     } catch (error) {
-      console.error('❌ Error en prepareForImport:', error);
       return false;
     }
   }
@@ -103,51 +77,32 @@ class StorageManager {
     
     // Eliminar las claves identificadas
     keysToRemove.forEach(key => {
-      console.log(`🗑️ Eliminando: ${key}`);
       localStorage.removeItem(key);
     });
-    
-    console.log(`✅ localStorage limpiado. Elementos restantes: ${localStorage.length}`);
-    this.logStorageState();
   }
 
   // === RESETEO DE VARIABLES GLOBALES ===
   resetGlobalVariables() {
-    console.log('🔄 Reseteando variables globales...');
-    
     // Variables RASCI
     if (window.rasciRoles) window.rasciRoles = [];
     if (window.rasciTasks) window.rasciTasks = [];
     if (window.rasciMatrixData) window.rasciMatrixData = {};
     
-    // Variables PPI - Verificar que el método existe antes de llamarlo
+    // Variables PPI
     if (window.ppiManager && window.ppiManager.core && typeof window.ppiManager.core.clearAllPPIs === 'function') {
       try {
         window.ppiManager.core.clearAllPPIs();
       } catch (error) {
-        console.warn('⚠️ Error al limpiar PPIs:', error);
+        // Silenciar error
       }
-    } else {
-      console.log('ℹ️ ppiManager.core.clearAllPPIs no disponible, omitiendo limpieza de PPIs');
     }
-    
-    // Variables BPMN
-    if (window.modeler) {
-      // El modeler se manejará por separado
-      console.log('📊 Modeler detectado, se manejará por separado');
-    }
-    
-    console.log('✅ Variables globales reseteadas');
   }
 
   // === LIMPIEZA ESPECÍFICA DE DATOS PPI ===
   clearPPIData() {
-    console.log('🧹 Limpiando datos PPI específicos...');
-    
     // Limpiar claves PPI del localStorage
     this.ppiKeysToClean.forEach(key => {
       if (localStorage.getItem(key)) {
-        console.log(`🗑️ Eliminando clave PPI: ${key}`);
         localStorage.removeItem(key);
       }
     });
@@ -157,14 +112,10 @@ class StorageManager {
     if (window.ppiRelationships) window.ppiRelationships = {};
     if (window.ppis) window.ppis = [];
     if (window.ppinotElements) window.ppinotElements = [];
-    
-    console.log('✅ Datos PPI limpiados');
   }
 
   // === CREAR DIAGRAMA BPMN LIMPIO ===
   async createCleanBpmnDiagram() {
-    console.log('📊 Creando diagrama BPMN limpio...');
-    
     try {
       if (window.modeler) {
         // Crear diagrama BPMN básico

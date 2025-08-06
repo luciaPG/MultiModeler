@@ -1,4 +1,4 @@
-// RASCI Mapping Core - Clean Version
+// RASCI Mapping Core
 // Core functionality for RASCI to RALph mapping
 
 let originalFlowMap = new Map();
