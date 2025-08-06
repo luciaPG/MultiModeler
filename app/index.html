@@ -508,6 +508,8 @@
           Abrir Diagrama
         </button>
       </div>
+      
+
     </div>
   </div>
 
@@ -530,6 +532,9 @@
           </button>
           <button class="tool-btn" id="save-btn">
             <i class="fas fa-save"></i> Guardar
+          </button>
+          <button class="tool-btn" id="test-export-btn" style="background-color: #10b981; color: white;" title="Probar exportación">
+            <i class="fas fa-download"></i> Probar
           </button>
         </div>
         
@@ -572,13 +577,21 @@
   
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+  <script src="js/storage-manager.js"></script>
   <script src="bundle.js"></script>
   <script src="js/panel-manager-debug.js"></script>
   <script src="js/panel-manager-debug2.js"></script>
   <script src="js/panels/ppi/index.js"></script>
   <script src="js/panels/ppi/bpmn-integration.js"></script>
   <script src="js/panels/ppi/natural-language-processor.js"></script>
-  <script src="js/panels/ppi/example-usage.js"></script>
+             <script src="js/panels/ppi/example-usage.js"></script>
+           <script src="js/test-import-export.js"></script>
+           <script src="js/debug-import-export.js"></script>
+           <script src="js/debug-diagram-loading.js"></script>
+           <script src="js/test-diagram-saving.js"></script>
+           <script src="js/test-ppi-cleaning.js"></script>
+           <script src="js/test-parent-child-relations.js"></script>
+           <script src="js/test-modal.js"></script>
 
   <script>
     // Application initialization is now handled in app.js

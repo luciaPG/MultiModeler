@@ -1,7 +1,6 @@
 // === app.js limpio ===
 // TODO: A TERMINAR EL DESARROLLO - Sistema de guardado automático implementado
 
-
 import $ from 'jquery';
 import MultiNotationModeler from './MultiNotationModeler/index.js';
 import BpmnModdle from 'bpmn-moddle';
@@ -11,6 +10,8 @@ import { PanelLoader } from './js/panel-loader.js';
 import { initRasciPanel } from './js/panels/rasci/core/main.js';
 // import './js/panel-snap-system.js'; // REMOVIDO - No se necesita desplazamiento de ventanas
 import './js/panel-manager.js';
+import './js/import-export-manager.js';
+import './js/storage-manager.js';
 
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
@@ -22,6 +23,14 @@ window.rasciRoles = [];
 window.rasciTasks = [];
 window.rasciMatrixData = {};
 window.initRasciPanel = initRasciPanel;
+
+// Verificar inicialización del StorageManager
+console.log('🔧 app.js: Verificando StorageManager...');
+if (window.storageManager) {
+  console.log('✅ app.js: StorageManager disponible');
+} else {
+  console.error('❌ app.js: StorageManager NO disponible');
+}
 
 // Sistema de bloqueo para evitar condiciones de carrera
 window.rasciStateLock = {
@@ -94,7 +103,7 @@ function initializeModelerSystem() {
   window.panelLoader = panelLoader;
 
   // Inicializar gestor de paneles
-  const panelManager = new PanelManager();
+  const panelManager = new window.PanelManager();
   window.panelManager = panelManager;
   panelManager.setPanelLoader(panelLoader);
 
@@ -130,6 +139,9 @@ function saveBpmnState() {
       const xml = modeler.saveXML({ format: true });
       xml.then(result => {
         if (result && result.xml && result.xml.trim().length > 0) {
+          console.log('💾 Guardando diagrama BPMN...');
+          console.log('📄 Longitud del diagrama a guardar:', result.xml.length);
+          console.log('📄 Primeras 200 caracteres del diagrama a guardar:', result.xml.substring(0, 200));
           localStorage.setItem('bpmnDiagram', result.xml);
           localStorage.setItem('bpmnDiagramTimestamp', Date.now().toString());
           showBpmnSaveIndicator();
@@ -346,32 +358,55 @@ function forceSaveBpmnState() {
 }
 
 function loadBpmnState() {
+  window.loadBpmnState = loadBpmnState; // Hacer disponible globalmente
   try {
-    console.log('loadBpmnState ejecutándose...');
+    console.log('🔄 loadBpmnState ejecutándose...');
     const savedDiagram = localStorage.getItem('bpmnDiagram');
+    console.log('📊 Diagrama guardado encontrado:', !!savedDiagram);
     
     if (!modeler) {
-      console.log('Modeler no disponible, reintentando en 500ms');
+      console.log('⚠️ Modeler no disponible, reintentando en 500ms');
       setTimeout(loadBpmnState, 500);
       return;
     }
     
-    if (savedDiagram && savedDiagram.trim().length > 0) {
-
+        if (savedDiagram && savedDiagram.trim().length > 0) {
+      console.log('✅ Cargando diagrama guardado...');
+      console.log('📄 Contenido del diagrama a importar:');
+      console.log(savedDiagram.substring(0, 500) + '...');
       
-      
-      
-              modeler.importXML(savedDiagram).then(() => {
-          // DIAGNÓSTICO POST-IMPORTACIÓN
-          const elementRegistry = modeler.get('elementRegistry');
-          const allElements = elementRegistry.getAll();
-          
-          // Buscar elementos PPINOT/RALph con el mismo filtro que en testElementXML (incluyendo conexiones)
-          const ppinotElements = allElements.filter(el => {
-            return (el.type && (el.type.includes('PPINOT') || el.type.includes('RALph'))) ||
-                   (el.businessObject && el.businessObject.$type && 
-                    (el.businessObject.$type.includes('PPINOT') || el.businessObject.$type.includes('RALph')));
+      modeler.importXML(savedDiagram).then(() => {
+        console.log('✅ Diagrama importado correctamente');
+        
+        // DIAGNÓSTICO POST-IMPORTACIÓN
+        const elementRegistry = modeler.get('elementRegistry');
+        const allElements = elementRegistry.getAll();
+        console.log(`📊 Elementos cargados en el modeler: ${allElements.length}`);
+        
+        // Mostrar todos los elementos cargados
+        console.log('📋 Todos los elementos cargados:');
+        allElements.forEach((el, index) => {
+          console.log(`   ${index + 1}. ${el.type} (ID: ${el.id})`);
+          if (el.businessObject && el.businessObject.$type) {
+            console.log(`      Business Object: ${el.businessObject.$type}`);
+          }
+        });
+        
+        // Buscar elementos PPINOT/RALph con el mismo filtro que en testElementXML (incluyendo conexiones)
+        const ppinotElements = allElements.filter(el => {
+          return (el.type && (el.type.includes('PPINOT') || el.type.includes('RALph'))) ||
+                 (el.businessObject && el.businessObject.$type && 
+                  (el.businessObject.$type.includes('PPINOT') || el.businessObject.$type.includes('RALph')));
+        });
+        
+        console.log(`📊 Elementos PPINOT/RALph encontrados: ${ppinotElements.length}`);
+        
+        if (ppinotElements.length > 0) {
+          console.log('📋 Elementos PPINOT/RALph:');
+          ppinotElements.forEach((el, index) => {
+            console.log(`   ${index + 1}. ${el.type} (ID: ${el.id})`);
           });
+        }
         
         // RESTAURAR POSICIÓN Y ZOOM DEL CANVAS
         const savedCanvasState = localStorage.getItem('bpmnCanvasState');
@@ -467,6 +502,7 @@ function loadBpmnState() {
                   const shapes = elementsToRestore.filter(el => !el.source || !el.target);
                   const connections = elementsToRestore.filter(el => el.source && el.target);
                   
+                  // Variables for tracking success/error counts (used in console logs)
                   let successCount = 0;
                   let errorCount = 0;
                   
@@ -628,33 +664,39 @@ function loadBpmnState() {
                     let successCount = 0;
                     let errorCount = 0;
                     
+                    console.log(`🔄 Iniciando restauración de ${validRelations.length} relaciones de parentesco...`);
+                    
                     validRelations.forEach(([childId, relation]) => {
                       const childElement = currentElementRegistry.get(childId);
                       const parentElement = currentElementRegistry.get(relation.parentId);
                       
                       if (childElement && parentElement) {
-                        console.log('👨‍👦 Restaurando relación:', childId, '->', relation.parentId);
+                        console.log(`👨‍👦 Restaurando relación: ${childId} (${relation.childType}) -> ${relation.parentId} (${relation.parentType})`);
                         try {
                           // Verificar si la relación ya está establecida
                           if (childElement.parent && childElement.parent.id === relation.parentId) {
-                            console.log('ℹ️ Relación ya establecida:', childId, '->', relation.parentId);
+                            console.log(`ℹ️ Relación ya establecida: ${childId} -> ${relation.parentId}`);
                             successCount++;
                             return;
                           }
                           
                           // Mover el elemento hijo al padre manteniendo posición relativa
                           currentModeling.moveElements([childElement], { x: 0, y: 0 }, parentElement);
-                          console.log('✅ Relación restaurada correctamente');
+                          console.log(`✅ Relación restaurada correctamente: ${childId} -> ${relation.parentId}`);
                           successCount++;
                         } catch (e) {
-                          console.warn('⚠️ Error restaurando relación:', e);
+                          console.warn(`⚠️ Error restaurando relación ${childId} -> ${relation.parentId}:`, e);
                           errorCount++;
                         }
                       } else {
                         console.warn(`⚠️ Elementos no encontrados para relación ${childId} -> ${relation.parentId}`);
+                        if (!childElement) console.warn(`   - Elemento hijo ${childId} no encontrado`);
+                        if (!parentElement) console.warn(`   - Elemento padre ${relation.parentId} no encontrado`);
                         errorCount++;
                       }
                     });
+                    
+                    console.log(`📊 Resumen de restauración de relaciones: ${successCount} exitosas, ${errorCount} errores`);
                     
             
                     
@@ -719,7 +761,9 @@ function loadBpmnState() {
         // No es necesario llamar aquí ya que se ejecuta cuando el modeler está listo
         
       }).catch(err => {
-        console.warn('Error al cargar diagrama guardado, creando nuevo:', err);
+        console.error('❌ Error al cargar diagrama guardado:', err);
+        console.error('📄 Contenido del diagrama guardado:', savedDiagram.substring(0, 200) + '...');
+        console.warn('🔄 Creando nuevo diagrama como fallback...');
         createNewDiagram();
       });
     } else {
@@ -740,7 +784,7 @@ function validateAndSanitizeWaypoints(waypoints) {
 }
 
 let modeler = null;
-const moddle = new BpmnModdle({});
+// const moddle = new BpmnModdle({}); // Not used in current implementation
 const container = $('.panel:first-child');
 const body = $('body');
 
@@ -1471,20 +1515,57 @@ function updateUI(message = '') {
 }
 
 // Funciones para manejo de archivos
-function handleNewDiagram() {
-  showModeler();
-  // Limpiar cualquier diagrama existente
-  localStorage.removeItem('bpmnDiagram');
-  localStorage.removeItem('bpmnDiagramTimestamp');
-  localStorage.removeItem('bpmnCanvasState');
-  localStorage.removeItem('RALphElements');
-  localStorage.removeItem('bpmnParentChildRelations');
-  // Limpiar estado RASCI
-  localStorage.removeItem('rasciRoles');
-  localStorage.removeItem('rasciMatrixData');
-  // Actualizar la UI si se regresa a la pantalla de bienvenida
-  checkSavedDiagram();
-  // El modeler se inicializará automáticamente
+async function handleNewDiagram() {
+  console.log('🆕 Creando nuevo diagrama...');
+  
+  try {
+    // Usar StorageManager para reset completo
+    if (window.storageManager) {
+      const success = await window.storageManager.resetStorage();
+      if (success) {
+        console.log('✅ Reset completo exitoso');
+      } else {
+        console.error('❌ Error en reset completo');
+        // Fallback: limpieza básica
+        if (window.storageManager) {
+          window.storageManager.clearStorage();
+        }
+      }
+    } else {
+      console.warn('⚠️ StorageManager no disponible, usando limpieza manual');
+      // Fallback: limpieza manual
+      const keysToKeep = ['userPreferences', 'theme', 'globalSettings'];
+      const keysToRemove = [];
+      
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!keysToKeep.includes(key)) {
+          keysToRemove.push(key);
+        }
+      }
+      
+      keysToRemove.forEach(key => {
+        console.log(`🗑️ Eliminando: ${key}`);
+        localStorage.removeItem(key);
+      });
+      
+      // Limpiar variables globales
+      if (window.rasciRoles) window.rasciRoles = [];
+      if (window.rasciTasks) window.rasciTasks = [];
+      if (window.rasciMatrixData) window.rasciMatrixData = {};
+    }
+    
+    showModeler();
+    // Actualizar la UI si se regresa a la pantalla de bienvenida
+    checkSavedDiagram();
+    // El modeler se inicializará automáticamente
+    
+  } catch (error) {
+    console.error('❌ Error en handleNewDiagram:', error);
+    // Continuar con el flujo normal incluso si hay error
+    showModeler();
+    checkSavedDiagram();
+  }
 }
 
 function handleContinueDiagram() {
@@ -1492,27 +1573,356 @@ function handleContinueDiagram() {
   // El diagrama guardado se cargará automáticamente cuando se inicialice el modeler
 }
 
-function handleOpenDiagram() {
-  const fileInput = document.getElementById('file-input');
-  if (fileInput) {
-    fileInput.click();
+async function handleOpenWithConfirmation() {
+  console.log('📂 Abriendo con confirmación...');
+  
+  // Crear modal personalizado
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  // Añadir estilos inline para asegurar visibilidad
+  modal.style.cssText = `
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 99999 !important;
+    backdrop-filter: blur(2px) !important;
+    pointer-events: auto !important;
+  `;
+  modal.innerHTML = `
+    <div class="modal-content" style="
+      background: white !important;
+      border-radius: 8px !important;
+      padding: 24px !important;
+      max-width: 400px !important;
+      width: 90% !important;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+      pointer-events: auto !important;
+      position: relative !important;
+      z-index: 100000 !important;
+    ">
+      <h3 class="modal-title" style="
+        font-size: 18px !important;
+        font-weight: 600 !important;
+        color: #374151 !important;
+        margin: 0 0 16px 0 !important;
+        font-family: 'Segoe UI', Roboto, sans-serif !important;
+      ">Abrir Nuevo Proyecto</h3>
+      <p class="modal-message" style="
+        font-size: 14px !important;
+        color: #6b7280 !important;
+        margin-bottom: 20px !important;
+        line-height: 1.5 !important;
+        font-family: 'Segoe UI', Roboto, sans-serif !important;
+      ">¿Estás seguro de que quieres abrir un nuevo proyecto?<br><br>Esto sobrescribirá todos los datos actuales y se perderá el trabajo no guardado.</p>
+      <div class="modal-actions" style="
+        display: flex !important;
+        gap: 12px !important;
+        justify-content: flex-end !important;
+      ">
+        <button class="modal-btn" id="cancel-open" style="
+          padding: 10px 20px !important;
+          border: 1px solid #d1d5db !important;
+          border-radius: 6px !important;
+          background: white !important;
+          color: #374151 !important;
+          font-size: 14px !important;
+          font-weight: 500 !important;
+          cursor: pointer !important;
+          transition: all 0.2s ease !important;
+          font-family: 'Segoe UI', Roboto, sans-serif !important;
+          min-width: 80px !important;
+          pointer-events: auto !important;
+          position: relative !important;
+          z-index: 100000 !important;
+        ">Cancelar</button>
+        <button class="modal-btn danger" id="confirm-open" style="
+          padding: 10px 20px !important;
+          border: 1px solid #dc2626 !important;
+          border-radius: 6px !important;
+          background: #dc2626 !important;
+          color: white !important;
+          font-size: 14px !important;
+          font-weight: 500 !important;
+          cursor: pointer !important;
+          transition: all 0.2s ease !important;
+          font-family: 'Segoe UI', Roboto, sans-serif !important;
+          min-width: 80px !important;
+          pointer-events: auto !important;
+          position: relative !important;
+          z-index: 100000 !important;
+        ">Abrir</button>
+      </div>
+    </div>
+  `;
+
+  console.log('🔍 Modal creado:', modal);
+  console.log('🔍 Modal HTML:', modal.outerHTML);
+  
+  document.body.appendChild(modal);
+  console.log('✅ Modal añadido al body');
+  console.log('🔍 Modal en DOM:', document.querySelector('.modal-overlay'));
+
+  function closeModal() {
+    if (modal.parentNode) {
+      modal.parentNode.removeChild(modal);
+    }
+  }
+
+  function confirmOpen() {
+    // Usar la misma funcionalidad que el botón "Abrir" del header
+    if (window.importExportManager) {
+      console.log('🎯 Abriendo con ImportExportManager...');
+      window.importExportManager.importProject();
+    } else {
+      console.error('❌ ImportExportManager no está disponible');
+      // Fallback a la función original
+      handleOpenDiagram();
+    }
+    closeModal();
+  }
+
+  // Event listeners
+  modal.querySelector('#cancel-open').addEventListener('click', closeModal);
+  modal.querySelector('#confirm-open').addEventListener('click', confirmOpen);
+
+  // Cerrar con Escape
+  document.addEventListener('keydown', function handleEscape(e) {
+    if (e.key === 'Escape') {
+      closeModal();
+      document.removeEventListener('keydown', handleEscape);
+    }
+  });
+
+  // Cerrar al hacer clic fuera del modal
+  modal.addEventListener('click', function handleOutsideClick(e) {
+    if (e.target === modal) {
+      closeModal();
+      modal.removeEventListener('click', handleOutsideClick);
+    }
+  });
+}
+
+async function handleOpenDiagram() {
+  console.log('📂 Abriendo diagrama...');
+  console.log('🔍 handleOpenDiagram: StorageManager disponible:', !!window.storageManager);
+  
+  try {
+    // Preparar localStorage para importación
+    if (window.storageManager) {
+      console.log('🔧 StorageManager disponible, preparando importación...');
+      const success = await window.storageManager.prepareForImport();
+      if (success) {
+        console.log('✅ localStorage preparado para importación');
+      } else {
+        console.error('❌ Error preparando localStorage para importación');
+      }
+    } else {
+      console.warn('⚠️ StorageManager no disponible, usando limpieza manual');
+      // Fallback: limpieza manual
+      if (window.importExportManager && window.importExportManager.clearAllProjectData) {
+        window.importExportManager.clearAllProjectData();
+      }
+    }
+    
+    // Mostrar el modeler
+    showModeler();
+    
+    // Abrir el selector de archivos
+    const fileInput = document.getElementById('file-input');
+    if (fileInput) {
+      fileInput.click();
+    }
+    
+  } catch (error) {
+    console.error('❌ Error en handleOpenDiagram:', error);
+    // Continuar con el flujo normal
+    const fileInput = document.getElementById('file-input');
+    if (fileInput) {
+      fileInput.click();
+    }
   }
 }
 
 function handleFileSelect(event) {
   const file = event.target.files[0];
   if (file) {
+    console.log('📁 Archivo seleccionado:', file.name, 'Tipo:', file.type);
+    
     const reader = new FileReader();
     reader.onload = function(e) {
       const content = e.target.result;
-      localStorage.setItem('bpmnDiagram', content);
-      localStorage.setItem('bpmnDiagramTimestamp', Date.now().toString());
-      showModeler();
-      // Actualizar la UI para reflejar que ahora hay un diagrama guardado
-      checkSavedDiagram();
-      // El diagrama se cargará automáticamente cuando se inicialice el modeler
+      
+      // Detectar tipo de archivo basado en extensión y contenido
+      const isProjectFile = file.name.endsWith('.mmproject') || 
+                           file.name.endsWith('.json') ||
+                           content.trim().startsWith('{');
+      
+      if (isProjectFile) {
+        console.log('📦 Archivo de proyecto detectado, importando proyecto completo...');
+        handleProjectImport(content);
+      } else {
+        console.log('📄 Archivo BPMN detectado, importando diagrama...');
+        handleBpmnImport(content);
+      }
     };
     reader.readAsText(file);
+  }
+}
+
+function handleBpmnImport(content) {
+  console.log('📁 Archivo BPMN leído, guardando en localStorage...');
+  localStorage.setItem('bpmnDiagram', content);
+  localStorage.setItem('bpmnDiagramTimestamp', Date.now().toString());
+  console.log('✅ Diagrama BPMN guardado en localStorage');
+  
+  showModeler();
+  checkSavedDiagram();
+  
+  // Cargar el diagrama después de que el modeler esté inicializado
+  const loadDiagramWithRetry = (attempts = 0, maxAttempts = 10) => {
+    console.log(`🔄 Intento ${attempts + 1} de cargar diagrama BPMN...`);
+    
+    if (window.modeler && typeof window.loadBpmnState === 'function') {
+      console.log('✅ Modeler listo, cargando diagrama BPMN...');
+      window.loadBpmnState();
+      
+      // Ejecutar diagnóstico después de cargar
+      setTimeout(() => {
+        if (typeof window.debugDiagramLoading === 'function') {
+          window.debugDiagramLoading();
+        }
+      }, 2000);
+    } else if (attempts < maxAttempts) {
+      console.log('⏳ Modeler no listo, reintentando en 500ms...');
+      setTimeout(() => loadDiagramWithRetry(attempts + 1, maxAttempts), 500);
+    } else {
+      console.error('❌ No se pudo cargar el diagrama después de múltiples intentos');
+    }
+  };
+  
+  // Iniciar el proceso de carga con reintentos
+  setTimeout(() => loadDiagramWithRetry(), 500);
+}
+
+function handleProjectImport(content) {
+  try {
+    const projectData = JSON.parse(content);
+    const projectName = projectData.metadata && projectData.metadata.name ? projectData.metadata.name : 'Sin nombre';
+    console.log('📦 Proyecto importado:', projectName);
+    
+    // Buscar el diagrama BPMN en diferentes ubicaciones posibles
+    let bpmnDiagram = null;
+    
+    // 1. Buscar en la ubicación estándar
+    if (projectData.bpmnDiagram) {
+      bpmnDiagram = projectData.bpmnDiagram;
+      console.log('✅ Diagrama BPMN encontrado en bpmnDiagram');
+    }
+    // 2. Buscar en panels.bpmn.diagram (estructura actual)
+    else if (projectData.panels && projectData.panels.bpmn && projectData.panels.bpmn.diagram) {
+      bpmnDiagram = projectData.panels.bpmn.diagram;
+      console.log('✅ Diagrama BPMN encontrado en panels.bpmn.diagram');
+      console.log('📄 Diagrama completo extraído del proyecto:');
+      console.log(bpmnDiagram);
+    }
+    // 3. Buscar en cualquier otra ubicación posible
+    else if (projectData.diagram) {
+      bpmnDiagram = projectData.diagram;
+      console.log('✅ Diagrama BPMN encontrado en diagram');
+    }
+    
+    if (bpmnDiagram) {
+      console.log('📄 Longitud del diagrama BPMN:', bpmnDiagram.length);
+      console.log('📄 Primeras 100 caracteres del diagrama:', bpmnDiagram.substring(0, 100));
+      
+      // Importar datos adicionales del proyecto si están disponibles
+      if (projectData.panels) {
+        console.log('📦 Importando datos adicionales del proyecto...');
+        
+        // Importar datos RASCI
+        if (projectData.panels.rasci) {
+          console.log('📊 Importando datos RASCI...');
+          if (projectData.panels.rasci.roles) {
+            localStorage.setItem('rasciRoles', JSON.stringify(projectData.panels.rasci.roles));
+          }
+          if (projectData.panels.rasci.matrix) {
+            localStorage.setItem('rasciMatrixData', JSON.stringify(projectData.panels.rasci.matrix));
+          }
+          if (projectData.panels.rasci.tasks) {
+            localStorage.setItem('rasciTasks', JSON.stringify(projectData.panels.rasci.tasks));
+          }
+        }
+        
+        // Importar datos PPI
+        if (projectData.panels.ppi) {
+          console.log('📊 Importando datos PPI...');
+          if (projectData.panels.ppi.indicators) {
+            localStorage.setItem('ppiIndicators', JSON.stringify(projectData.panels.ppi.indicators));
+          }
+          if (projectData.panels.ppi.relationships) {
+            localStorage.setItem('ppiRelationships', JSON.stringify(projectData.panels.ppi.relationships));
+          }
+        }
+        
+        // Importar datos BPMN adicionales (relaciones de parentesco, etc.)
+        if (projectData.panels.bpmn) {
+          console.log('📊 Importando datos BPMN adicionales...');
+          if (projectData.panels.bpmn.relationships) {
+            if (projectData.panels.bpmn.relationships.parentChild) {
+              localStorage.setItem('bpmnParentChildRelations', JSON.stringify(projectData.panels.bpmn.relationships.parentChild));
+              console.log('✅ Relaciones padre-hijo importadas');
+            }
+            if (projectData.panels.bpmn.relationships.ppinot) {
+              localStorage.setItem('bpmnPPINOTRelations', JSON.stringify(projectData.panels.bpmn.relationships.ppinot));
+              console.log('✅ Relaciones PPINOT importadas');
+            }
+          }
+          if (projectData.panels.bpmn.elements) {
+            if (projectData.panels.bpmn.elements.ppinot) {
+              localStorage.setItem('bpmnPPINOTElements', JSON.stringify(projectData.panels.bpmn.elements.ppinot));
+              console.log('✅ Elementos PPINOT importados');
+            }
+            if (projectData.panels.bpmn.elements.ralph) {
+              localStorage.setItem('bpmnRALPHElements', JSON.stringify(projectData.panels.bpmn.elements.ralph));
+              console.log('✅ Elementos RALPH importados');
+            }
+          }
+          if (projectData.panels.bpmn.canvas) {
+            localStorage.setItem('bpmnCanvasState', JSON.stringify(projectData.panels.bpmn.canvas));
+            console.log('✅ Estado del canvas importado');
+          }
+        }
+        
+        // Importar configuración de paneles
+        if (projectData.panels.configuration) {
+          console.log('📊 Importando configuración de paneles...');
+          if (projectData.panels.configuration.activePanels) {
+            localStorage.setItem('activePanels', JSON.stringify(projectData.panels.configuration.activePanels));
+          }
+          if (projectData.panels.configuration.layout) {
+            localStorage.setItem('panelLayout', projectData.panels.configuration.layout);
+          }
+        }
+      }
+      
+      handleBpmnImport(bpmnDiagram);
+    } else {
+      console.error('❌ No se encontró diagrama BPMN en el proyecto');
+      console.log('📊 Estructura del proyecto:', Object.keys(projectData));
+      if (projectData.panels) {
+        console.log('📊 Paneles disponibles:', Object.keys(projectData.panels));
+      }
+      alert('El archivo de proyecto no contiene un diagrama BPMN válido');
+    }
+  } catch (error) {
+    console.error('❌ Error al parsear archivo de proyecto:', error);
+    alert('Error al leer el archivo de proyecto');
   }
 }
 
@@ -1612,6 +2022,8 @@ $(function () {
     continueDiagramBtn.addEventListener('click', handleContinueDiagram);
   }
   
+
+  
   // Configurar event listeners para el modelador
   const newBtn = document.getElementById('new-btn');
   const openBtn = document.getElementById('open-btn');
@@ -1624,13 +2036,23 @@ $(function () {
   }
   
   if (openBtn) {
-    openBtn.addEventListener('click', handleOpenDiagram);
+    openBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      handleOpenWithConfirmation();
+    });
   }
   
   if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
-      if (modeler) {
-        saveBpmnState();
+    saveBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (window.importExportManager) {
+        console.log('🎯 Botón Guardar clickeado (app.js) - llamando a ImportExportManager');
+        window.importExportManager.exportProject();
+      } else {
+        console.error('❌ ImportExportManager no está disponible');
+        if (modeler) {
+          saveBpmnState();
+        }
       }
     });
   }
@@ -1647,4 +2069,19 @@ $(function () {
   
   // Mostrar pantalla de bienvenida por defecto
   showWelcomeScreen();
+  
+  // Inicializar el gestor de importación/exportación
+  console.log('🚀 Inicializando ImportExportManager...');
+  if (window.ImportExportManager) {
+    window.importExportManager = new window.ImportExportManager();
+    console.log('✅ ImportExportManager inicializado:', window.importExportManager);
+  } else {
+    console.error('❌ ImportExportManager no está disponible globalmente');
+  }
+  
+  // Función de prueba para el modal (disponible globalmente)
+  window.testModal = function() {
+    console.log('🧪 Probando modal...');
+    handleOpenWithConfirmation();
+  };
 });
