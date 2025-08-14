@@ -247,8 +247,15 @@ class PPICore {
   loadPPIs() {
     try {
       const saved = localStorage.getItem('ppis');
-      if (saved) {
-        this.ppis = JSON.parse(saved);
+      if (saved && saved !== '[]' && saved !== 'null') {
+        const parsedPPIs = JSON.parse(saved);
+        if (Array.isArray(parsedPPIs) && parsedPPIs.length > 0) {
+          this.ppis = parsedPPIs;
+        } else {
+          this.ppis = [];
+        }
+      } else {
+        this.ppis = [];
       }
     } catch (e) {
       this.ppis = [];
@@ -344,7 +351,8 @@ class PPICore {
       // GUARDAR TAMBIÉN EN EL XML BPMN PARA PERSISTENCIA COMPLETA
       this.savePPINOTRelationshipsToXML(ppinotData.parentChildRelationships);
       
-    } catch (e) {
+    } catch (error) {
+      console.error('Error guardando elementos PPINOT:', error);
     }
   }
 
@@ -442,12 +450,21 @@ class PPICore {
   loadPPINOTElements() {
     try {
       const saved = localStorage.getItem('ppinotElements');
-      if (!saved) {
-  
+      if (!saved || saved === 'null' || saved === '{}') {
         return false;
       }
       
       const ppinotData = JSON.parse(saved);
+      
+      // Verificar que los datos sean válidos
+      if (!ppinotData || !ppinotData.ppiElements || !ppinotData.ppiChildren) {
+        return false;
+      }
+      
+      // Verificar que haya al menos algunos datos válidos
+      if (ppinotData.ppiElements.length === 0 && ppinotData.ppiChildren.length === 0) {
+        return false;
+      }
 
       
       // Marcar para restauración automática cuando el modeler esté listo

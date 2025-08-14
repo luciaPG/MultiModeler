@@ -2,7 +2,7 @@
 
 // Core functionality
 export { initRasciPanel } from './core/main.js';
-export { renderMatrix, addNewRole, editRole, deleteRole, showDeleteConfirmModal } from './core/matrix-manager.js';
+export { renderMatrix, addNewRole, editRole, deleteRole, showDeleteConfirmModal, forceReloadMatrix } from './core/matrix-manager.js';
 
 // Validation system
 export { RasciMatrixValidator, rasciValidator } from './validation/matrix-validator.js';

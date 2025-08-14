@@ -1,6 +1,24 @@
 // === Storage Manager ===
 // Gestor centralizado de localStorage para MultiModeler
 
+// Importar funciones RASCI directamente
+let forceReloadMatrix = null;
+let renderMatrix = null;
+
+// Función para cargar funciones RASCI dinámicamente
+async function loadRasciFunctions() {
+  try {
+    if (!forceReloadMatrix || !renderMatrix) {
+      const rasciModule = await import('./panels/rasci/core/matrix-manager.js');
+      forceReloadMatrix = rasciModule.forceReloadMatrix;
+      renderMatrix = rasciModule.renderMatrix;
+      console.log('✅ Funciones RASCI cargadas dinámicamente');
+    }
+  } catch (error) {
+    console.warn('⚠️ No se pudieron cargar las funciones RASCI:', error);
+  }
+}
+
 class StorageManager {
   constructor() {
     this.version = '1.0.0';
@@ -34,36 +52,30 @@ class StorageManager {
   // Para "Crear Nuevo Diagrama" - Resetear todo y crear diagrama limpio
   async resetStorage() {
     try {
-      this.clearStorage();
+      await this.clearStorage();
       await this.createCleanBpmnDiagram();
       this.resetGlobalVariables();
       this.setInitialState();
+      await this.forcePanelReset();
       return true;
     } catch (error) {
+      console.error('❌ Error en resetStorage:', error);
       return false;
     }
   }
 
   // === LIMPIEZA PARA IMPORTACIÓN ===
-  // Para "Abrir Diagrama" - Limpiar y preparar para importar
-  async prepareForImport() {
-    try {
-      this.clearStorage();
-      this.resetGlobalVariables();
-      this.setImportState();
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  // === LIMPIEZA BÁSICA ===
-  clearStorage() {
-    console.log('🧹 Limpiando localStorage...');
-    this.logStorageState(); // Añadido: Log del estado ANTES de la limpieza
+  // Versión de clearStorage que no marca storageCleared
+  async clearStorageForImport() {
+    console.log('🧹 Limpiando localStorage para importación...');
+    
+    this.logStorageState();
     
     // Primero limpiar datos PPI específicos
     this.clearPPIData();
+    
+    // Limpiar datos RASCI específicos
+    this.clearRasciData();
     
     const keysToRemove = [];
     
@@ -79,6 +91,204 @@ class StorageManager {
     keysToRemove.forEach(key => {
       localStorage.removeItem(key);
     });
+    
+    // No forzar recarga de datos de paneles aquí para evitar interferencia con importación
+    // Los paneles se recargarán después de la importación
+  }
+
+  // === LIMPIEZA PARA IMPORTACIÓN ===
+  // Para "Abrir Diagrama" - Limpiar y preparar para importar
+  async prepareForImport() {
+    try {
+      // Verificar si se está importando un proyecto
+      if (window.isImportingProject === true) {
+        console.log('📦 Proyecto en importación detectado, saltando limpieza para importación...');
+        return true;
+      }
+      
+      // Limpiar cualquier marca de storageCleared anterior
+      window.storageCleared = false;
+      
+      // Limpiar localStorage sin marcar storageCleared
+      await this.clearStorageForImport();
+      
+      this.resetGlobalVariables();
+      this.setImportState();
+      await this.forcePanelReset();
+      return true;
+    } catch (error) {
+      console.error('❌ Error en prepareForImport:', error);
+      return false;
+    }
+  }
+
+  // === LIMPIEZA BÁSICA ===
+  async clearStorage() {
+    console.log('🧹 Limpiando localStorage...');
+    
+    // Verificar si se está importando un proyecto
+    if (window.isImportingProject === true) {
+      console.log('📦 Proyecto en importación detectado, saltando limpieza automática...');
+      return;
+    }
+    
+    this.logStorageState();
+    
+    // Marcar que se está haciendo una limpieza
+    window.storageCleared = true;
+    
+    // Primero limpiar datos PPI específicos
+    this.clearPPIData();
+    
+    // Limpiar datos RASCI específicos
+    this.clearRasciData();
+    
+    const keysToRemove = [];
+    
+    // Identificar todas las claves a eliminar
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!this.keysToPreserve.includes(key)) {
+        keysToRemove.push(key);
+      }
+    }
+    
+    // Eliminar las claves identificadas
+    keysToRemove.forEach(key => {
+      localStorage.removeItem(key);
+    });
+    
+    // Forzar recarga de datos de paneles
+    await this.forcePanelDataReload();
+    
+    // Limpiar la marca después de un tiempo
+    setTimeout(() => {
+      window.storageCleared = false;
+    }, 5000);
+  }
+
+  // === LIMPIEZA ESPECÍFICA DE DATOS RASCI ===
+  clearRasciData() {
+    // Limpiar claves RASCI del localStorage
+    const rasciKeysToClean = [
+      'rasciRoles',
+      'rasciTasks', 
+      'rasciMatrixData',
+      'rasciSettings'
+    ];
+    
+    rasciKeysToClean.forEach(key => {
+      if (localStorage.getItem(key)) {
+        localStorage.removeItem(key);
+      }
+    });
+    
+    // Limpiar variables globales RASCI
+    if (window.rasciRoles) window.rasciRoles = [];
+    if (window.rasciTasks) window.rasciTasks = [];
+    if (window.rasciMatrixData) window.rasciMatrixData = {};
+  }
+
+  // === LIMPIEZA ESPECÍFICA DE DATOS PPI ===
+  clearPPIData() {
+    // Limpiar claves PPI del localStorage
+    this.ppiKeysToClean.forEach(key => {
+      if (localStorage.getItem(key)) {
+        localStorage.removeItem(key);
+      }
+    });
+    
+    // Limpiar variables globales PPI
+    if (window.ppiIndicators) window.ppiIndicators = [];
+    if (window.ppiRelationships) window.ppiRelationships = {};
+    if (window.ppis) window.ppis = [];
+    if (window.ppinotElements) window.ppinotElements = [];
+    
+    // Limpiar datos del PPI Manager si existe
+    if (window.ppiManager && window.ppiManager.core) {
+      try {
+        if (typeof window.ppiManager.core.clearAllPPIs === 'function') {
+          window.ppiManager.core.clearAllPPIs();
+        }
+        // Resetear arrays internos del PPI Manager
+        if (window.ppiManager.core.ppis) {
+          window.ppiManager.core.ppis = [];
+        }
+        if (window.ppiManager.core.filteredPPIs) {
+          window.ppiManager.core.filteredPPIs = [];
+        }
+        if (window.ppiManager.core.processedElements) {
+          window.ppiManager.core.processedElements.clear();
+        }
+      } catch (error) {
+        // Silenciar error
+      }
+    }
+  }
+
+  // === FORZAR RECARGA DE DATOS DE PANELES ===
+  async forcePanelDataReload() {
+    // Cargar funciones RASCI si no están disponibles
+    await loadRasciFunctions();
+    
+    // Solo limpiar datos si no se está importando un proyecto
+    if (!window.isImportingProject) {
+      // Forzar recarga de datos RASCI
+      if (window.rasciRoles) {
+        window.rasciRoles = [];
+      }
+      if (window.rasciTasks) {
+        window.rasciTasks = [];
+      }
+      if (window.rasciMatrixData) {
+        window.rasciMatrixData = {};
+      }
+      
+      // Forzar recarga de datos PPI
+      if (window.ppiManager && window.ppiManager.core) {
+        try {
+          // Limpiar arrays internos
+          if (window.ppiManager.core.ppis) {
+            window.ppiManager.core.ppis = [];
+          }
+          if (window.ppiManager.core.filteredPPIs) {
+            window.ppiManager.core.filteredPPIs = [];
+          }
+          if (window.ppiManager.core.processedElements) {
+            window.ppiManager.core.processedElements.clear();
+          }
+          
+          // Forzar recarga de la interfaz PPI
+          if (typeof window.ppiManager.refreshPPIList === 'function') {
+            setTimeout(() => {
+              window.ppiManager.refreshPPIList();
+            }, 100);
+          }
+        } catch (error) {
+          // Silenciar error
+        }
+      }
+    }
+    
+    // Forzar recarga completa de la matriz RASCI
+    setTimeout(async () => {
+      try {
+        // Usar funciones cargadas dinámicamente
+        if (forceReloadMatrix && typeof forceReloadMatrix === 'function') {
+          forceReloadMatrix();
+        } else if (renderMatrix && typeof renderMatrix === 'function') {
+          // Fallback a renderMatrix si forceReloadMatrix no está disponible
+          const rasciPanel = document.querySelector('#rasci-panel');
+          if (rasciPanel) {
+            renderMatrix(rasciPanel, [], null);
+          }
+        } else {
+          console.warn('⚠️ Funciones RASCI no disponibles para recarga');
+        }
+      } catch (error) {
+        console.warn('Error en recarga de matriz RASCI:', error);
+      }
+    }, 200);
   }
 
   // === RESETEO DE VARIABLES GLOBALES ===
@@ -96,22 +306,6 @@ class StorageManager {
         // Silenciar error
       }
     }
-  }
-
-  // === LIMPIEZA ESPECÍFICA DE DATOS PPI ===
-  clearPPIData() {
-    // Limpiar claves PPI del localStorage
-    this.ppiKeysToClean.forEach(key => {
-      if (localStorage.getItem(key)) {
-        localStorage.removeItem(key);
-      }
-    });
-    
-    // Limpiar variables globales PPI
-    if (window.ppiIndicators) window.ppiIndicators = [];
-    if (window.ppiRelationships) window.ppiRelationships = {};
-    if (window.ppis) window.ppis = [];
-    if (window.ppinotElements) window.ppinotElements = [];
   }
 
   // === CREAR DIAGRAMA BPMN LIMPIO ===
@@ -206,6 +400,9 @@ class StorageManager {
     
     // Limpiar datos PPI antes de configurar estado inicial
     this.clearPPIData();
+    
+    // Limpiar datos RASCI antes de configurar estado inicial
+    this.clearRasciData();
     
     // Configurar paneles por defecto
     localStorage.setItem('activePanels', JSON.stringify(['bpmn']));
@@ -350,6 +547,74 @@ class StorageManager {
     localStorage.setItem('storageBackup', JSON.stringify(backup));
     console.log('✅ Backup creado');
     return true;
+  }
+
+  // === FORZAR RESET DE PANELES ===
+  async forcePanelReset() {
+    // Cargar funciones RASCI si no están disponibles
+    await loadRasciFunctions();
+    
+    // Solo resetear datos si no se está importando un proyecto
+    if (!window.isImportingProject) {
+      // Forzar reset de datos RASCI
+      if (window.rasciRoles) {
+        window.rasciRoles = [];
+      }
+      if (window.rasciTasks) {
+        window.rasciTasks = [];
+      }
+      if (window.rasciMatrixData) {
+        window.rasciMatrixData = {};
+      }
+      
+      // Forzar reset de datos PPI
+      if (window.ppiManager && window.ppiManager.core) {
+        try {
+          // Limpiar arrays internos
+          if (window.ppiManager.core.ppis) {
+            window.ppiManager.core.ppis = [];
+          }
+          if (window.ppiManager.core.filteredPPIs) {
+            window.ppiManager.core.filteredPPIs = [];
+          }
+          if (window.ppiManager.core.processedElements) {
+            window.ppiManager.core.processedElements.clear();
+          }
+          if (window.ppiManager.core.pendingPPINOTRestore) {
+            window.ppiManager.core.pendingPPINOTRestore = null;
+          }
+          
+          // Forzar recarga de la interfaz PPI
+          if (typeof window.ppiManager.refreshPPIList === 'function') {
+            setTimeout(() => {
+              window.ppiManager.refreshPPIList();
+            }, 100);
+          }
+        } catch (error) {
+          // Silenciar error
+        }
+      }
+    }
+    
+    // Forzar recarga completa de la matriz RASCI
+    setTimeout(async () => {
+      try {
+        // Usar funciones cargadas dinámicamente
+        if (forceReloadMatrix && typeof forceReloadMatrix === 'function') {
+          forceReloadMatrix();
+        } else if (renderMatrix && typeof renderMatrix === 'function') {
+          // Fallback a renderMatrix si forceReloadMatrix no está disponible
+          const rasciPanel = document.querySelector('#rasci-panel');
+          if (rasciPanel) {
+            renderMatrix(rasciPanel, [], null);
+          }
+        } else {
+          console.warn('⚠️ Funciones RASCI no disponibles para reset');
+        }
+      } catch (error) {
+        console.warn('Error en reset de matriz RASCI:', error);
+      }
+    }, 200);
   }
 }
 

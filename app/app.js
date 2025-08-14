@@ -16,6 +16,34 @@ import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import 'diagram-js/assets/diagram-js.css';
 import './css/app.css';
 
+// Importar funciones RASCI al inicio para hacerlas disponibles globalmente
+import { forceReloadMatrix, renderMatrix, detectRalphRolesFromCanvas } from './js/panels/rasci/core/matrix-manager.js';
+
+// Hacer funciones RASCI disponibles globalmente desde el inicio
+window.forceReloadMatrix = forceReloadMatrix;
+window.renderMatrix = renderMatrix;
+window.detectRalphRolesFromCanvas = detectRalphRolesFromCanvas;
+
+// Función para verificar que las funciones estén disponibles
+function ensureRasciFunctionsAvailable() {
+  if (typeof window.forceReloadMatrix !== 'function') {
+    console.warn('⚠️ forceReloadMatrix no disponible, importando...');
+    window.forceReloadMatrix = forceReloadMatrix;
+  }
+  if (typeof window.renderMatrix !== 'function') {
+    console.warn('⚠️ renderMatrix no disponible, importando...');
+    window.renderMatrix = renderMatrix;
+  }
+  if (typeof window.detectRalphRolesFromCanvas !== 'function') {
+    console.warn('⚠️ detectRalphRolesFromCanvas no disponible, importando...');
+    window.detectRalphRolesFromCanvas = detectRalphRolesFromCanvas;
+  }
+  return true;
+}
+
+// Ejecutar verificación al cargar
+ensureRasciFunctionsAvailable();
+
 // Variables globales
 window.rasciRoles = [];
 window.rasciTasks = [];
@@ -98,6 +126,22 @@ function initializeModelerSystem() {
 
   // Configurar layout inicial
   panelContainer.classList.add('layout-4');
+
+  // Asegurar que las funciones RASCI estén disponibles globalmente
+  setTimeout(() => {
+    // Verificar si forceReloadMatrix está disponible, si no, crear un stub
+    if (typeof window.forceReloadMatrix !== 'function') {
+      console.log('⚠️ forceReloadMatrix no disponible, creando stub...');
+      window.forceReloadMatrix = function() {
+        console.log('🔄 Stub forceReloadMatrix llamado - esperando inicialización de paneles...');
+        // Intentar encontrar el panel RASCI y forzar recarga
+        const rasciPanel = document.querySelector('#rasci-panel');
+        if (rasciPanel && typeof window.renderMatrix === 'function') {
+          window.renderMatrix(rasciPanel, [], null);
+        }
+      };
+    }
+  }, 500);
 
   setTimeout(() => {
     // El modeler se inicializará automáticamente cuando se aplique la configuración
@@ -691,19 +735,28 @@ function loadBpmnState() {
               
                       try {
                         const canvas = modeler.get('canvas');
-                        if (canvas && canvas.zoom) {
+                        const canvasContainer = canvas && canvas._container;
+                        
+                        // Verificar que el canvas esté completamente inicializado
+                        if (canvas && canvas.zoom && canvasContainer && canvas.viewbox) {
                           // Hacer zoom ligeramente para forzar re-render
                           const currentZoom = canvas.zoom();
-                          canvas.zoom(currentZoom * 1.001);
-                          setTimeout(() => {
-                            canvas.zoom(currentZoom);
-                          }, 100);
+                          if (currentZoom && currentZoom > 0) {
+                            canvas.zoom(currentZoom * 1.001);
+                            setTimeout(() => {
+                              canvas.zoom(currentZoom);
+                            }, 100);
+                          }
                         }
                         
-                        // También forzar actualización del registro de elementos
+                        // También forzar actualización del registro de elementos CON VERIFICACIONES
                         const eventBus = modeler.get('eventBus');
-                        if (eventBus) {
-                          eventBus.fire('canvas.viewbox.changed');
+                        if (eventBus && canvas && canvas.viewbox && canvas.viewbox()) {
+                          try {
+                            eventBus.fire('canvas.viewbox.changed');
+                          } catch (viewboxError) {
+                            console.warn('⚠️ Error firing viewbox.changed:', viewboxError);
+                          }
                         }
                       } catch (e) {
                         console.warn('⚠️ Error actualizando visualización:', e);
@@ -736,12 +789,29 @@ function loadBpmnState() {
         
         updateUI('Diagrama BPMN restaurado.');
         
+        // RECARGAS AUTOMÁTICAS DESHABILITADAS TEMPORALMENTE PARA EVITAR BUCLE
+        console.log('ℹ️ Recarga automática RASCI deshabilitada - usar botón manual si es necesario');
+        
+        /*
         // Recargar estado RASCI después de cargar el diagrama BPMN
         setTimeout(() => {
-          if (typeof window.reloadRasciState === 'function') {
+          console.log('🔄 Recargando estado RASCI después de cargar diagrama...');
+          if (typeof window.ensureRasciMatrixLoaded === 'function') {
+            window.ensureRasciMatrixLoaded();
+          } else if (typeof window.reloadRasciState === 'function') {
             window.reloadRasciState();
+          } else if (typeof window.forceReloadRasciState === 'function') {
+            window.forceReloadRasciState();
           }
-        }, 1000);
+          
+          // También forzar actualización de matriz desde diagrama por si hay nuevas tareas
+          setTimeout(() => {
+            if (typeof window.updateMatrixFromDiagram === 'function') {
+              window.updateMatrixFromDiagram();
+            }
+          }, 500);
+        }, 1500); // Más tiempo para asegurar que todo esté cargado
+        */
         
         // La restauración de relaciones PPINOT se maneja automáticamente en PPIManager
         // No es necesario llamar aquí ya que se ejecuta cuando el modeler está listo
@@ -783,6 +853,15 @@ function initializeModeler() {
       return;
     }
     
+    // Asegurar que el canvas tenga dimensiones válidas
+    const rect = canvasElement.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+      console.warn('Canvas element has zero dimensions, adjusting...');
+      canvasElement.style.width = '100%';
+      canvasElement.style.height = '100%';
+      canvasElement.style.minHeight = '400px';
+    }
+    
     // Limpiar modeler anterior si existe
     if (window.modeler && typeof window.modeler.destroy === 'function') {
       try {
@@ -792,53 +871,60 @@ function initializeModeler() {
       }
     }
     
-    modeler = new MultiNotationModeler({
-      container: '#js-canvas',
-      moddleExtensions: {
-        PPINOT: PPINOTModdle,
-        RALph: RALphModdle
+    // Esperar un frame para asegurar que el DOM esté listo
+    requestAnimationFrame(() => {
+      try {
+        modeler = new MultiNotationModeler({
+          container: '#js-canvas',
+          moddleExtensions: {
+            PPINOT: PPINOTModdle,
+            RALph: RALphModdle
+          }
+        });
+        window.bpmnModeler = modeler;
+
+        const eventBus = modeler.get('eventBus');
+        if (eventBus) {
+          eventBus.on(['connection.create', 'bendpoint.move.end'], event => {
+            const wp = event && event.context && event.context.connection && event.context.connection.waypoints;
+            if (wp) event.context.connection.waypoints = validateAndSanitizeWaypoints(wp);
+          });
+          
+          // Guardar estado automáticamente cuando hay cambios
+          eventBus.on([
+            'element.added',
+            'element.removed', 
+            'element.changed',
+            'elements.changed',
+            'shape.move.end',
+            'shape.resize.end',
+            'connection.create',
+            'connection.delete'
+          ], () => {
+            autoSaveBpmnState(); // Usar sistema de guardado automático con debounce
+          });
+          
+          // Guardar antes de que el usuario abandone la página
+          window.addEventListener('beforeunload', () => {
+            if (modeler) {
+              forceSaveBpmnState(); // Guardado inmediato antes de recargar
+            }
+          });
+        }
+        
+        // El modeler está listo
+        window.modeler = modeler;
+        
+        console.log('Modeler inicializado correctamente');
+        
+        // Inicializar integración con PPI si está disponible
+        if (window.ppiManager && window.BpmnIntegration) {
+          window.bpmnIntegration = new BpmnIntegration(window.ppiManager, modeler);
+        }
+      } catch (error) {
+        console.error('Error en initializeModeler:', error);
       }
     });
-    window.bpmnModeler = modeler;
-
-    const eventBus = modeler.get('eventBus');
-    if (eventBus) {
-      eventBus.on(['connection.create', 'bendpoint.move.end'], event => {
-        const wp = event && event.context && event.context.connection && event.context.connection.waypoints;
-        if (wp) event.context.connection.waypoints = validateAndSanitizeWaypoints(wp);
-      });
-      
-      // Guardar estado automáticamente cuando hay cambios
-      eventBus.on([
-        'element.added',
-        'element.removed', 
-        'element.changed',
-        'elements.changed',
-        'shape.move.end',
-        'shape.resize.end',
-        'connection.create',
-        'connection.delete'
-      ], () => {
-        autoSaveBpmnState(); // Usar sistema de guardado automático con debounce
-      });
-      
-      // Guardar antes de que el usuario abandone la página
-      window.addEventListener('beforeunload', () => {
-        if (modeler) {
-          forceSaveBpmnState(); // Guardado inmediato antes de recargar
-        }
-      });
-    }
-    
-    // El modeler está listo
-    window.modeler = modeler;
-    
-    console.log('Modeler inicializado correctamente');
-    
-    // Inicializar integración con PPI si está disponible
-    if (window.ppiManager && window.BpmnIntegration) {
-      window.bpmnIntegration = new BpmnIntegration(window.ppiManager, modeler);
-    }
   } catch (error) {
     console.error('Error en initializeModeler:', error);
   }
@@ -896,11 +982,15 @@ function isModelerHealthy() {
 function debugBpmnState() {
   const savedDiagram = localStorage.getItem('bpmnDiagram');
   if (savedDiagram) {
+    console.log('Diagrama guardado encontrado en localStorage');
   } else {
+    console.log('No hay diagrama guardado en localStorage');
   }
   
   if (modeler) {
+    console.log('Modeler está inicializado');
   } else {
+    console.log('Modeler no está inicializado');
   }
 }
 
@@ -1514,7 +1604,7 @@ async function handleNewDiagram() {
         console.error('❌ Error en reset completo');
         // Fallback: limpieza básica
         if (window.storageManager) {
-          window.storageManager.clearStorage();
+          await window.storageManager.clearStorage();
         }
       }
     } else {
@@ -1541,6 +1631,11 @@ async function handleNewDiagram() {
       if (window.rasciMatrixData) window.rasciMatrixData = {};
     }
     
+    // Forzar recarga de datos de paneles después de limpiar
+    if (window.storageManager && typeof window.storageManager.forcePanelDataReload === 'function') {
+      await window.storageManager.forcePanelDataReload();
+    }
+    
     showModeler();
     // Actualizar la UI si se regresa a la pantalla de bienvenida
     checkSavedDiagram();
@@ -1557,6 +1652,22 @@ async function handleNewDiagram() {
 function handleContinueDiagram() {
   showModeler();
   // El diagrama guardado se cargará automáticamente cuando se inicialice el modeler
+  
+  // RECARGAS AUTOMÁTICAS DESHABILITADAS TEMPORALMENTE PARA EVITAR BUCLE
+  console.log('ℹ️ Recarga automática RASCI en handleContinueDiagram deshabilitada - usar botón manual');
+  
+  /*
+  // ASEGURAR que se recarga el estado RASCI después de mostrar el modelador
+  setTimeout(() => {
+    if (typeof window.ensureRasciMatrixLoaded === 'function') {
+      console.log('🔄 Usando función robusta para recargar RASCI después de continuar diagrama...');
+      window.ensureRasciMatrixLoaded();
+    } else if (typeof window.reloadRasciState === 'function') {
+      console.log('🔄 Recargando estado RASCI después de continuar diagrama...');
+      window.reloadRasciState();
+    }
+  }, 1500); // Un poco más de delay para asegurar que el modeler esté listo
+  */
 }
 
 async function handleOpenWithConfirmation() {
@@ -1610,8 +1721,15 @@ async function handleOpenWithConfirmation() {
 
 async function handleOpenDiagram() {
   try {
+    // NOTA: NO limpiar la marca de importación aquí ya que el usuario puede importar un proyecto
+    // La marca se configurará apropiadamente en handleFileSelect según el tipo de archivo
+    
     if (window.storageManager) {
       await window.storageManager.prepareForImport();
+      // Forzar recarga de datos de paneles después de limpiar
+      if (typeof window.storageManager.forcePanelDataReload === 'function') {
+        await window.storageManager.forcePanelDataReload();
+      }
     } else {
       if (window.importExportManager && window.importExportManager.clearAllProjectData) {
         window.importExportManager.clearAllProjectData();
@@ -1626,6 +1744,7 @@ async function handleOpenDiagram() {
     }
     
   } catch (error) {
+    console.error('❌ Error en handleOpenDiagram:', error);
     const fileInput = document.getElementById('file-input');
     if (fileInput) {
       fileInput.click();
@@ -1648,15 +1767,22 @@ function handleFileSelect(event) {
                            content.trim().startsWith('{');
       
       if (isProjectFile) {
+        // ESTABLECER MARCA ANTES DE IMPORTAR PROYECTO
+        window.isImportingProject = true;
         console.log('📦 Archivo de proyecto detectado, importando proyecto completo...');
         handleProjectImport(content);
       } else {
+        // LIMPIAR MARCA PARA ARCHIVOS BPMN REGULARES
+        window.isImportingProject = false;
         console.log('📄 Archivo BPMN detectado, importando diagrama...');
         handleBpmnImport(content);
       }
     };
     reader.readAsText(file);
   }
+  
+  // Limpiar el input para permitir reseleccionar el mismo archivo
+  event.target.value = '';
 }
 
 function handleBpmnImport(content) {
@@ -1669,12 +1795,30 @@ function handleBpmnImport(content) {
   checkSavedDiagram();
   
   // Cargar el diagrama después de que el modeler esté inicializado
-  const loadDiagramWithRetry = (attempts = 0, maxAttempts = 10) => {
+  const loadDiagramWithRetry = (attempts = 0, maxAttempts = 15) => {
     console.log(`🔄 Intento ${attempts + 1} de cargar diagrama BPMN...`);
     
     if (window.modeler && typeof window.loadBpmnState === 'function') {
       console.log('✅ Modeler listo, cargando diagrama BPMN...');
       window.loadBpmnState();
+      
+      // Si se está importando un proyecto, forzar recarga de la matriz RASCI
+      if (window.isImportingProject === true) {
+        setTimeout(() => {
+          if (typeof window.forceReloadMatrix === 'function') {
+            console.log('🔄 Forzando recarga de matriz RASCI después de importación...');
+            window.forceReloadMatrix();
+          }
+        }, 1500);
+        
+        // Segunda recarga después de más tiempo para asegurar que se cargan los datos
+        setTimeout(() => {
+          if (typeof window.forceReloadMatrix === 'function') {
+            console.log('🔄 Segunda recarga de matriz RASCI para asegurar datos...');
+            window.forceReloadMatrix();
+          }
+        }, 3000);
+      }
       
       // Ejecutar diagnóstico después de cargar
       setTimeout(() => {
@@ -1687,6 +1831,12 @@ function handleBpmnImport(content) {
       setTimeout(() => loadDiagramWithRetry(attempts + 1, maxAttempts), 500);
     } else {
       console.error('❌ No se pudo cargar el diagrama después de múltiples intentos');
+      
+      // Limpiar la marca de importación si falla
+      if (window.isImportingProject === true) {
+        window.isImportingProject = false;
+        console.log('⚠️ Limpiando marca de importación debido a fallo en carga');
+      }
     }
   };
   
@@ -1696,6 +1846,9 @@ function handleBpmnImport(content) {
 
 function handleProjectImport(content) {
   try {
+    // La marca isImportingProject ya está establecida en handleFileSelect
+    console.log('📦 Iniciando importación de proyecto...');
+    
     const projectData = JSON.parse(content);
     const projectName = projectData.metadata && projectData.metadata.name ? projectData.metadata.name : 'Sin nombre';
     console.log('📦 Proyecto importado:', projectName);
@@ -1734,12 +1887,15 @@ function handleProjectImport(content) {
           console.log('📊 Importando datos RASCI...');
           if (projectData.panels.rasci.roles) {
             localStorage.setItem('rasciRoles', JSON.stringify(projectData.panels.rasci.roles));
+            console.log('✅ Roles RASCI importados:', projectData.panels.rasci.roles);
           }
           if (projectData.panels.rasci.matrix) {
             localStorage.setItem('rasciMatrixData', JSON.stringify(projectData.panels.rasci.matrix));
+            console.log('✅ Matriz RASCI importada:', projectData.panels.rasci.matrix);
           }
           if (projectData.panels.rasci.tasks) {
             localStorage.setItem('rasciTasks', JSON.stringify(projectData.panels.rasci.tasks));
+            console.log('✅ Tareas RASCI importadas:', projectData.panels.rasci.tasks);
           }
         }
         
@@ -1795,7 +1951,53 @@ function handleProjectImport(content) {
         }
       }
       
-      handleBpmnImport(bpmnDiagram);
+      // Para proyectos, guardar el diagrama directamente sin pasar por handleBpmnImport
+      // para evitar conflictos con la inicialización del panel manager
+      console.log('📁 Guardando diagrama BPMN del proyecto en localStorage...');
+      localStorage.setItem('bpmnDiagram', bpmnDiagram);
+      localStorage.setItem('bpmnDiagramTimestamp', Date.now().toString());
+      console.log('✅ Diagrama BPMN guardado en localStorage');
+      
+      // Mostrar el modeler si no está visible
+      showModeler();
+      
+      // Cargar el diagrama después de que el modeler esté inicializado
+      const loadDiagramWithRetry = (attempts = 0, maxAttempts = 15) => {
+        console.log(`🔄 Intento ${attempts + 1} de cargar diagrama BPMN...`);
+        
+        if (window.modeler && typeof window.loadBpmnState === 'function') {
+          console.log('✅ Modeler listo, cargando diagrama BPMN...');
+          window.loadBpmnState();
+          
+          // Forzar recarga de la matriz RASCI después de la importación
+          setTimeout(() => {
+            console.log('🔄 Forzando recarga de matriz RASCI después de importación...');
+            if (typeof window.forceReloadMatrix === 'function') {
+              window.forceReloadMatrix();
+            }
+          }, 100);
+          
+          // Segunda recarga para asegurar que los datos se mantienen
+          setTimeout(() => {
+            console.log('🔄 Segunda recarga de matriz RASCI para asegurar datos...');
+            if (typeof window.forceReloadMatrix === 'function') {
+              window.forceReloadMatrix();
+            }
+          }, 300);
+          
+        } else if (attempts < maxAttempts) {
+          console.log('⏳ Modeler no listo, reintentando en 500ms...');
+          setTimeout(() => loadDiagramWithRetry(attempts + 1, maxAttempts), 500);
+        } else {
+          console.error('❌ No se pudo cargar el diagrama después de múltiples intentos');
+        }
+      };
+      
+      // Pequeña pausa para asegurar que los datos se guardan antes de cargar el diagrama
+      setTimeout(() => {
+        loadDiagramWithRetry();
+      }, 200);
+      
     } else {
       console.error('❌ No se encontró diagrama BPMN en el proyecto');
       console.log('📊 Estructura del proyecto:', Object.keys(projectData));
@@ -1803,10 +2005,23 @@ function handleProjectImport(content) {
         console.log('📊 Paneles disponibles:', Object.keys(projectData.panels));
       }
       alert('El archivo de proyecto no contiene un diagrama BPMN válido');
+      
+      // Limpiar la marca de importación en caso de error
+      window.isImportingProject = false;
     }
+    
+    // Limpiar la marca de importación después de completar
+    setTimeout(() => {
+      window.isImportingProject = false;
+      console.log('✅ Marca de importación limpiada');
+    }, 3000);
+    
   } catch (error) {
     console.error('❌ Error al parsear archivo de proyecto:', error);
     alert('Error al leer el archivo de proyecto');
+    
+    // Limpiar la marca de importación en caso de error
+    window.isImportingProject = false;
   }
 }
 
@@ -1879,6 +2094,26 @@ function checkSavedDiagram() {
     }
   }
 }
+
+// Función de utilidad para verificar el estado de importación
+function checkImportStatus() {
+  const status = {
+    isImporting: window.isImportingProject === true,
+    storageCleared: window.storageCleared === true,
+    hasRasciRoles: localStorage.getItem('rasciRoles') !== null,
+    hasRasciMatrix: localStorage.getItem('rasciMatrixData') !== null,
+    rasciRoles: localStorage.getItem('rasciRoles'),
+    rasciMatrix: localStorage.getItem('rasciMatrixData'),
+    modelerReady: window.modeler !== undefined,
+    forceReloadMatrixAvailable: typeof window.forceReloadMatrix === 'function'
+  };
+  
+  console.log('🔍 Estado de importación:', status);
+  return status;
+}
+
+// Hacer la función disponible globalmente para debugging
+window.checkImportStatus = checkImportStatus;
 
 // Panel y modeler init principal
 $(function () {
@@ -1961,3 +2196,119 @@ $(function () {
   
 
 });
+
+// Función global para forzar recarga de matriz RASCI (para debugging)
+window.forceRasciReload = function() {
+  console.log('🔧 Forzando recarga de matriz RASCI manualmente...');
+  
+  // Primero verificar y asegurar que las funciones estén disponibles
+  const status = window.ensureRasciFunctions();
+  
+  if (typeof window.forceReloadMatrix === 'function') {
+    window.forceReloadMatrix();
+  } else {
+    console.warn('⚠️ forceReloadMatrix no está disponible, intentando métodos alternativos...');
+    
+    // Intentar usar renderMatrix directamente
+    const rasciPanel = document.querySelector('#rasci-panel');
+    if (rasciPanel && typeof window.renderMatrix === 'function') {
+      console.log('🔄 Usando renderMatrix como fallback...');
+      window.renderMatrix(rasciPanel, [], null);
+    } else {
+      console.error('❌ No se pudo encontrar panel RASCI o renderMatrix no está disponible');
+      
+      // Intentar forzar la inicialización del panel RASCI
+      if (window.panelManager && typeof window.panelManager.applyConfiguration === 'function') {
+        console.log('🔄 Intentando reinicializar paneles...');
+        window.panelManager.applyConfiguration();
+        
+        // Esperar un poco y volver a intentar
+        setTimeout(() => {
+          const rasciPanel2 = document.querySelector('#rasci-panel');
+          if (rasciPanel2 && typeof window.renderMatrix === 'function') {
+            console.log('🔄 Reintentando renderMatrix después de reinicialización...');
+            window.renderMatrix(rasciPanel2, [], null);
+          }
+        }, 1000);
+      }
+    }
+  }
+};
+
+// Función global para limpiar marca de importación (para debugging)
+window.clearImportFlag = function() {
+  console.log('🔧 Limpiando marca de importación manualmente...');
+  window.isImportingProject = false;
+  window.storageCleared = false;
+};
+
+// Función de utilidad para verificar el estado de importación
+
+// Función para verificar y forzar disponibilidad de funciones RASCI
+window.ensureRasciFunctions = function() {
+  console.log('🔧 Verificando disponibilidad de funciones RASCI...');
+  
+  const status = {
+    forceReloadMatrix: typeof window.forceReloadMatrix === 'function',
+    renderMatrix: typeof window.renderMatrix === 'function',
+    rasciPanel: document.querySelector('#rasci-panel') !== null,
+    panelManager: window.panelManager !== undefined
+  };
+  
+  console.log('📊 Estado de funciones RASCI:', status);
+  
+  // Si forceReloadMatrix no está disponible, intentar crearlo
+  if (!status.forceReloadMatrix) {
+    console.log('⚠️ forceReloadMatrix no disponible, intentando crear...');
+    
+    // Intentar importar desde el módulo RASCI
+    if (typeof window.initRasciPanel === 'function') {
+      console.log('✅ initRasciPanel disponible, intentando inicializar panel...');
+      const rasciPanel = document.querySelector('#rasci-panel');
+      if (rasciPanel) {
+        try {
+          window.initRasciPanel(rasciPanel);
+          console.log('✅ Panel RASCI inicializado manualmente');
+        } catch (e) {
+          console.error('❌ Error inicializando panel RASCI:', e);
+        }
+      }
+    }
+  }
+  
+  return status;
+};
+
+// Función global para forzar recarga de matriz RASCI (para debugging)
+
+// Función para forzar inicialización completa del sistema
+window.forceSystemInit = function() {
+  console.log('🔧 Forzando inicialización completa del sistema...');
+  
+  // Limpiar marcas de importación
+  window.isImportingProject = false;
+  window.storageCleared = false;
+  
+  // Reinicializar el sistema de paneles
+  if (window.panelManager && typeof window.panelManager.applyConfiguration === 'function') {
+    console.log('🔄 Reinicializando configuración de paneles...');
+    window.panelManager.applyConfiguration();
+  }
+  
+  // Esperar y verificar funciones RASCI
+  setTimeout(() => {
+    window.ensureRasciFunctions();
+    
+    // Intentar recarga de matriz
+    setTimeout(() => {
+      if (typeof window.forceReloadMatrix === 'function') {
+        console.log('🔄 Forzando recarga de matriz después de inicialización...');
+        window.forceReloadMatrix();
+      }
+    }, 500);
+  }, 1000);
+  
+  console.log('✅ Inicialización completa del sistema completada');
+};
+
+// Función para verificar y forzar disponibilidad de funciones RASCI

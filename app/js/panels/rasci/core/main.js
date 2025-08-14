@@ -1,11 +1,14 @@
 // RASCI Core
-import { renderMatrix, addNewRole, editRole, showDeleteConfirmModal, getBpmnTasks } from './matrix-manager.js';
+import { renderMatrix, addNewRole, editRole, showDeleteConfirmModal, getBpmnTasks, forceReloadMatrix } from './matrix-manager.js';
 import { applyStyles } from './styles.js';
 import { initRasciMapping, executeSimpleRasciMapping } from '../mapping/index.js';
 import { rasciUIValidator } from '../ui/matrix-ui-validator.js';
 
 export function initRasciPanel(panel) {
   const container = panel.querySelector('#matrix-container');
+
+  // Hacer forceReloadMatrix disponible globalmente
+  window.forceReloadMatrix = forceReloadMatrix;
 
   // Configurar contenedor - USAR FLEX para ajuste automático
   container.style.overflowX = 'visible';
@@ -23,9 +26,14 @@ export function initRasciPanel(panel) {
 
   // Inicializar roles desde localStorage o usar array vacío
   let roles = [];
-  if (localStorage.getItem('rasciRoles')) {
+  // Verificar si hay datos válidos en localStorage antes de cargar
+  const savedRoles = localStorage.getItem('rasciRoles');
+  if (savedRoles && savedRoles !== '[]' && savedRoles !== 'null') {
     try {
-      roles = JSON.parse(localStorage.getItem('rasciRoles'));
+      const parsedRoles = JSON.parse(savedRoles);
+      if (Array.isArray(parsedRoles) && parsedRoles.length > 0) {
+        roles = parsedRoles;
+      }
     } catch (e) {
       roles = [];
     }
@@ -33,11 +41,16 @@ export function initRasciPanel(panel) {
 
   // Inicializar la matriz global si no existe
   if (!window.rasciMatrixData) {
-    // Intentar cargar desde localStorage
+    // Intentar cargar desde localStorage solo si hay datos válidos
     const savedMatrixData = localStorage.getItem('rasciMatrixData');
-    if (savedMatrixData) {
+    if (savedMatrixData && savedMatrixData !== '{}' && savedMatrixData !== 'null') {
       try {
-        window.rasciMatrixData = JSON.parse(savedMatrixData);
+        const parsedMatrixData = JSON.parse(savedMatrixData);
+        if (parsedMatrixData && Object.keys(parsedMatrixData).length > 0) {
+          window.rasciMatrixData = parsedMatrixData;
+        } else {
+          window.rasciMatrixData = {};
+        }
       } catch (e) {
         window.rasciMatrixData = {};
       }
@@ -180,57 +193,47 @@ export function initRasciPanel(panel) {
     }
   }
 
-  // Configurar observer para cambios de visibilidad
+  // Configurar observer para cambios de visibilidad (DESHABILITADO PARA EVITAR BUCLE)
   function setupVisibilityObserver() {
+    // Observer deshabilitado temporalmente para evitar bucle infinito
+    console.log('🔕 Observer de visibilidad deshabilitado para evitar bucle');
+    
+    // Solo configurar una carga inicial única
+    let hasLoaded = false;
+    
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
           const target = mutation.target;
-          if (target.id === 'rasci-panel' && target.style.display !== 'none') {
-            // Panel se hizo visible, cargar estado y actualizar matriz inmediatamente
+          if (target.id === 'rasci-panel' && target.style.display !== 'none' && !hasLoaded) {
+            hasLoaded = true; // Evitar múltiples cargas
+            console.log('📖 Panel RASCI visible por primera vez - cargando estado...');
+            
+            // Cargar estado desde localStorage una sola vez
             setTimeout(() => {
-              showReloadIndicator();
-              
-              // Cargar estado desde localStorage antes de actualizar
               try {
                 const savedRoles = localStorage.getItem('rasciRoles');
                 if (savedRoles) {
                   window.rasciRoles = JSON.parse(savedRoles);
+                  console.log('✅ Roles cargados desde localStorage:', window.rasciRoles);
                 }
                 
                 const savedMatrixData = localStorage.getItem('rasciMatrixData');
                 if (savedMatrixData) {
                   window.rasciMatrixData = JSON.parse(savedMatrixData);
+                  console.log('✅ Matriz cargada desde localStorage');
                 }
               } catch (e) {
                 console.warn('Error cargando estado RASCI:', e);
               }
               
-              // PREVENIR SOBRESCRITURA DE VALORES EXISTENTES AL CARGAR
-              if (window.rasciMatrixData && typeof window.preventOverwriteExistingValues === 'function') {
-                window.preventOverwriteExistingValues();
+              // Solo renderizar la matriz una vez
+              const rasciPanel = document.querySelector('#rasci-panel');
+              if (rasciPanel) {
+                renderMatrix(rasciPanel, window.rasciRoles || [], autoSaveRasciState);
+                console.log('✅ Matriz renderizada (carga única)');
               }
-              
-              // Solo actualizar si no hay datos guardados para evitar sobrescribir
-              if (!window.rasciMatrixData || Object.keys(window.rasciMatrixData).length === 0) {
-                if (typeof window.updateMatrixFromDiagram === 'function') {
-                  window.updateMatrixFromDiagram();
-                }
-              } else {
-                // Si hay datos guardados, solo renderizar la matriz sin actualizar
-                const rasciPanel = document.querySelector('#rasci-panel');
-                if (rasciPanel) {
-                  renderMatrix(rasciPanel, window.rasciRoles || [], autoSaveRasciState);
-                }
-              }
-              
-              setTimeout(() => {
-                if (window.rasciUIValidator && typeof window.rasciUIValidator.forceValidation === 'function') {
-                  window.rasciUIValidator.forceValidation();
-                }
-                hideReloadIndicator();
-              }, 50);
-            }, 50);
+            }, 100);
           }
         }
       });
@@ -347,8 +350,10 @@ export function initRasciPanel(panel) {
     });
   }
 
-  // Configurar función global para cambiar pestañas
+  // Configurar función global para cambiar pestañas (SIN RECARGA AUTOMÁTICA)
   window.cambiarPestana = function(tabName) {
+    console.log('🔀 Cambiando a pestaña:', tabName);
+    
     // Remover clase active de todas las pestañas
     const allTabs = panel.querySelectorAll('.panel-tabs .tab');
     allTabs.forEach(tab => {
@@ -368,22 +373,9 @@ export function initRasciPanel(panel) {
     if (selectedTab && selectedContent) {
       selectedTab.classList.add('active');
       selectedContent.classList.add('active');
+      console.log('✅ Pestaña cambiada sin recargas automáticas');
       
-             // Actualizar matriz si es la pestaña principal
-       if (tabName === 'main') {
-         setTimeout(() => {
-           showReloadIndicator();
-           if (typeof window.updateMatrixFromDiagram === 'function') {
-             window.updateMatrixFromDiagram();
-           }
-           setTimeout(() => {
-             if (window.rasciUIValidator && typeof window.rasciUIValidator.forceValidation === 'function') {
-               window.rasciUIValidator.forceValidation();
-             }
-             hideReloadIndicator();
-           }, 50);
-         }, 50);
-       }
+      // NO RECARGAR AUTOMÁTICAMENTE - El usuario debe usar el botón manual si lo necesita
     }
   };
 
@@ -551,83 +543,25 @@ export function initRasciPanel(panel) {
   // Inicializar validador de matriz RASCI
   rasciUIValidator.init(panel);
 
-  // Sistema de detección de cambios en BPMN
+  // Sistema de detección de cambios en BPMN (DESHABILITADO PARA EVITAR BUCLE)
   function setupBpmnChangeDetection() {
+    console.log('🔕 Detección automática de cambios BPMN deshabilitada para evitar bucle');
+    
+    // Sistema deshabilitado temporalmente
+    // El usuario debe usar el botón "Recargar Matriz" manualmente
+    
+    /*
     if (window.bpmnModeler && window.bpmnModeler.get) {
       const eventBus = window.bpmnModeler.get('eventBus');
       if (eventBus) {
-        // Eventos que indican cambios en el diagrama
-        const changeEvents = [
-          'element.added',
-          'element.removed',
-          'element.changed',
-          'elements.changed',
-          'shape.move.end',
-          'shape.resize.end',
-          'connection.create',
-          'connection.delete',
-          'commandStack.changed',
-          'canvas.viewbox.changed'
-        ];
-
-        // Debounce para evitar múltiples recargas
-        let reloadTimeout = null;
-
-        changeEvents.forEach(event => {
-          eventBus.on(event, (e) => {
-            
-            // Cancelar timeout anterior si existe
-            if (reloadTimeout) {
-              clearTimeout(reloadTimeout);
-            }
-
-                         // Recargar matriz inmediatamente después de cambios en BPMN
-             reloadTimeout = setTimeout(() => {
-               
-               // Mostrar indicador de recarga
-               showReloadIndicator();
-               
-
-               
-               // Forzar detección de nuevas tareas primero
-               if (typeof window.forceDetectNewTasks === 'function') {
-                 window.forceDetectNewTasks();
-               }
-               
-               // Forzar recarga de matriz
-               if (typeof window.updateMatrixFromDiagram === 'function') {
-                 window.updateMatrixFromDiagram();
-               } else {
-                 // Intentar recarga manual
-                 const rasciPanel = document.querySelector('#rasci-panel');
-                 if (rasciPanel) {
-                   renderMatrix(rasciPanel, roles, autoSaveRasciState);
-                 }
-               }
-               
-               // Forzar validación inmediatamente
-               setTimeout(() => {
-                 if (window.rasciUIValidator && typeof window.rasciUIValidator.forceValidation === 'function') {
-                   window.rasciUIValidator.forceValidation();
-                 }
-                 
-                 // Validación específica para tareas vacías
-                 if (window.rasciUIValidator && typeof window.rasciUIValidator.validateEmptyTasks === 'function') {
-                   window.rasciUIValidator.validateEmptyTasks();
-                 }
-                 
-                 // Ocultar indicador después de completar
-                 hideReloadIndicator();
-               }, 20);
-             }, 20); // Reducido a 20ms para respuesta ultra rápida
-          });
-        });
-
-
+        console.log('EventBus disponible pero listeners deshabilitados');
       } else {
+        console.log('EventBus no disponible');
       }
     } else {
+      console.log('BPMN Modeler no disponible');
     }
+    */
   }
 
   // Configurar detección de cambios
@@ -1066,4 +1000,92 @@ window.forceReloadRasciState = function() {
   } else {
     console.warn('⚠️ Panel RASCI no encontrado');
   }
+};
+
+// Función más robusta para forzar recarga después de importación o carga
+window.ensureRasciMatrixLoaded = function() {
+  console.log('🔄 Asegurando que la matriz RASCI esté cargada...');
+  
+  // Múltiples intentos de recarga con intervalos
+  let attempts = 0;
+  const maxAttempts = 5;
+  
+  const tryReload = () => {
+    attempts++;
+    console.log(`🔄 Intento ${attempts} de recarga RASCI...`);
+    
+    // Primero, verificar si detectRalphRolesFromCanvas está disponible
+    if (typeof window.detectRalphRolesFromCanvas === 'function') {
+      console.log('✅ Función detectRalphRolesFromCanvas disponible, detectando roles...');
+      try {
+        const detectedRoles = window.detectRalphRolesFromCanvas();
+        if (detectedRoles && detectedRoles.length > 0) {
+          console.log(`✅ ${detectedRoles.length} roles RALph detectados:`, detectedRoles);
+          
+          // Asegurar que los roles detectados estén en window.rasciRoles
+          if (!window.rasciRoles || window.rasciRoles.length === 0) {
+            window.rasciRoles = [...detectedRoles];
+            localStorage.setItem('rasciRoles', JSON.stringify(window.rasciRoles));
+            console.log('✅ Roles RALph agregados a window.rasciRoles');
+          } else {
+            // Agregar roles nuevos que no estén ya
+            let added = false;
+            detectedRoles.forEach(role => {
+              if (!window.rasciRoles.includes(role)) {
+                window.rasciRoles.push(role);
+                added = true;
+              }
+            });
+            if (added) {
+              localStorage.setItem('rasciRoles', JSON.stringify(window.rasciRoles));
+              console.log('✅ Nuevos roles RALph agregados');
+            }
+          }
+        } else {
+          console.log('ℹ️ No se detectaron roles RALph en el canvas');
+        }
+      } catch (e) {
+        console.warn('⚠️ Error detectando roles RALph:', e);
+      }
+    } else {
+      console.warn('⚠️ Función detectRalphRolesFromCanvas no disponible aún');
+    }
+    
+    const rasciPanel = document.querySelector('#rasci-panel');
+    if (rasciPanel) {
+      // Panel existe, forzar renderizado con roles actuales
+      try {
+        const currentRoles = window.rasciRoles || [];
+        renderMatrix(rasciPanel, currentRoles, null);
+        console.log('✅ Matriz RASCI recargada exitosamente con', currentRoles.length, 'roles');
+        
+        // Forzar detección adicional si tenemos pocos roles
+        if (currentRoles.length === 0 && typeof window.forceDetectAndSaveRoles === 'function') {
+          setTimeout(() => {
+            window.forceDetectAndSaveRoles();
+          }, 200);
+        }
+        
+        return true;
+      } catch (e) {
+        console.warn('⚠️ Error en renderizado, intentando de nuevo...', e);
+      }
+    }
+    
+    if (attempts < maxAttempts) {
+      setTimeout(tryReload, 500 * attempts); // Delay incremental
+    } else {
+      console.warn('⚠️ No se pudo recargar la matriz RASCI después de varios intentos');
+      
+      // Último intento: forzar detección manual
+      if (typeof window.forceDetectAndSaveRoles === 'function') {
+        console.log('🔄 Último intento: forzando detección manual...');
+        window.forceDetectAndSaveRoles();
+      }
+    }
+    return false;
+  };
+  
+  // Iniciar el proceso
+  setTimeout(tryReload, 100);
 };

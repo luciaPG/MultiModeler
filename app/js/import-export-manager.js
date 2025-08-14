@@ -384,7 +384,7 @@ class ImportExportManager {
     // Limpiar datos existentes
     this.clearExistingData();
 
-    // Importar datos de paneles
+    // Importar datos de paneles EN ORDEN CORRECTO
     if (projectData.panels.bpmn) {
       console.log('📊 Importando datos BPMN...');
       await this.importBpmnData(projectData.panels.bpmn);
@@ -419,8 +419,28 @@ class ImportExportManager {
 
     console.log('✅ Todos los datos importados correctamente');
     
-    // Mostrar mensaje de éxito y opciones al usuario
-    this.showImportSuccessMessage();
+    // ASEGURAR RECARGA FINAL DE TODOS LOS PANELES
+    setTimeout(() => {
+      console.log('🔄 Realizando recarga final de paneles después de importación completa...');
+      
+      // Recargar estado RASCI con función robusta
+      if (typeof window.ensureRasciMatrixLoaded === 'function') {
+        window.ensureRasciMatrixLoaded();
+      } else if (typeof window.reloadRasciState === 'function') {
+        window.reloadRasciState();
+      }
+      
+      // Forzar actualización de matriz desde diagrama
+      if (typeof window.updateMatrixFromDiagram === 'function') {
+        window.updateMatrixFromDiagram();
+      }
+      
+      // Aplicar configuración de paneles si está disponible
+      if (window.panelManager && typeof window.panelManager.applyConfiguration === 'function') {
+        window.panelManager.applyConfiguration();
+      }
+      
+    }, 1000);
   }
 
   clearExistingData() {
@@ -545,6 +565,20 @@ class ImportExportManager {
         localStorage.setItem('rasciSettings', JSON.stringify(rasciData.settings));
         console.log('✅ Configuraciones RASCI restauradas');
       }
+
+      // FORZAR RECARGA DE LA MATRIZ RASCI EN LA UI
+      setTimeout(() => {
+        if (typeof window.ensureRasciMatrixLoaded === 'function') {
+          console.log('🔄 Usando función robusta para recargar matriz RASCI...');
+          window.ensureRasciMatrixLoaded();
+        } else if (typeof window.reloadRasciState === 'function') {
+          console.log('🔄 Forzando recarga de matriz RASCI después de importación...');
+          window.reloadRasciState();
+        } else if (typeof window.forceReloadRasciState === 'function') {
+          console.log('🔄 Forzando recarga alternativa de matriz RASCI...');
+          window.forceReloadRasciState();
+        }
+      }, 500);
 
     } catch (error) {
       console.error('❌ Error importando datos RASCI:', error);

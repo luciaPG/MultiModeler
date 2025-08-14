@@ -1319,11 +1319,16 @@ class PanelManager {
             window.debugBpmnState();
           }
           
-          setTimeout(() => {
-            if (typeof window.loadBpmnState === 'function') {
-              window.loadBpmnState();
-            }
-          }, 200);
+          // NO cargar estado automáticamente si se está importando un proyecto
+          if (window.isImportingProject === true) {
+            console.log('⏸️ Importación de proyecto en curso, omitiendo carga automática de estado BPMN');
+          } else {
+            setTimeout(() => {
+              if (typeof window.loadBpmnState === 'function') {
+                window.loadBpmnState();
+              }
+            }, 200);
+          }
         }
       }, 500); // Dar más tiempo para que se cree el DOM
     }

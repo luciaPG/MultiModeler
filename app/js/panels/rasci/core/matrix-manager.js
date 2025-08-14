@@ -8,11 +8,54 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
   roles = rolesArray || window.rasciRoles || [];
   autoSaveRasciState = autoSaveFunction;
   
-  if (!window.rasciMatrixData) {
+  // Verificar si se está importando un proyecto
+  const isImportingProject = window.isImportingProject === true;
+  
+  // Verificar si se ha limpiado el storage recientemente
+  const storageWasCleared = window.storageCleared === true;
+  
+  // Verificar si hay datos antiguos que deben limpiarse
+  const shouldClearOldData = !isImportingProject && (
+    storageWasCleared || 
+    !window.rasciMatrixData || 
+    Object.keys(window.rasciMatrixData).length === 0 ||
+    (localStorage.getItem('rasciMatrixData') && 
+     localStorage.getItem('rasciMatrixData') === '{}')
+  );
+  
+  if (shouldClearOldData) {
+    console.log('🧹 Detectados datos antiguos o storage limpiado, reinicializando matriz...');
+    window.rasciMatrixData = {};
+    
+    // Si hay modeler disponible, obtener tareas actuales
+    if (window.bpmnModeler) {
+      const currentTasks = getBpmnTasks();
+      currentTasks.forEach(taskName => {
+        const taskRoles = {};
+        if (roles && roles.length > 0) {
+          roles.forEach(role => {
+            taskRoles[role] = '';
+          });
+        }
+        window.rasciMatrixData[taskName] = taskRoles;
+      });
+      
+      // Guardar el estado limpio
+      try {
+        localStorage.setItem('rasciMatrixData', JSON.stringify(window.rasciMatrixData));
+        console.log('✅ Matriz reinicializada y guardada');
+      } catch (e) {
+        console.warn('Error guardando matriz limpia:', e);
+      }
+    }
+  } else if (!window.rasciMatrixData) {
     const savedMatrixData = localStorage.getItem('rasciMatrixData');
     if (savedMatrixData) {
       try {
         window.rasciMatrixData = JSON.parse(savedMatrixData);
+        if (isImportingProject) {
+          console.log('📦 Datos RASCI cargados desde importación:', window.rasciMatrixData);
+        }
       } catch (e) {
         window.rasciMatrixData = {};
       }
@@ -290,27 +333,57 @@ export function renderMatrix(panel, rolesArray, autoSaveFunction) {
   // Use current roles for rendering
   const currentRoles = roles || window.rasciRoles || [];
   
+  // PRESERVAR VALORES EXISTENTES ANTES DE MODIFICAR LA MATRIZ
+  const existingValues = {};
+  if (window.rasciMatrixData) {
+    Object.keys(window.rasciMatrixData).forEach(taskName => {
+      existingValues[taskName] = {};
+      Object.keys(window.rasciMatrixData[taskName]).forEach(roleName => {
+        const value = window.rasciMatrixData[taskName][roleName];
+        if (value && ['R', 'A', 'S', 'C', 'I'].includes(value)) {
+          existingValues[taskName][roleName] = value;
+        }
+      });
+    });
+  }
+  
   tasks.forEach(taskName => {
     if (!window.rasciMatrixData[taskName]) {
-      // Inicializar la tarea con estructura de roles vacíos para que el validador la detecte
+      // Nueva tarea: inicializar con estructura de roles vacíos
       const taskRoles = {};
       if (currentRoles && currentRoles.length > 0) {
         currentRoles.forEach(role => {
-          taskRoles[role] = ''; // Inicializar con string vacío para que el validador detecte la estructura
+          taskRoles[role] = ''; // Inicializar con string vacío solo para nuevas tareas
         });
       }
       
       window.rasciMatrixData[taskName] = taskRoles;
     } else {
-      // Preservar tarea existente y solo agregar roles faltantes
+      // Tarea existente: preservar valores y agregar roles faltantes
       const existingTask = window.rasciMatrixData[taskName];
       if (currentRoles && currentRoles.length > 0) {
         currentRoles.forEach(role => {
           if (!(role in existingTask)) {
-            existingTask[role] = ''; // Solo agregar rol faltante con valor vacío
+            // Solo agregar rol faltante con valor vacío
+            existingTask[role] = '';
+          }
+          // IMPORTANTE: Si había un valor preservado, restaurarlo
+          else if (existingValues[taskName] && existingValues[taskName][role]) {
+            existingTask[role] = existingValues[taskName][role];
           }
         });
       }
+    }
+  });
+  
+  // RESTAURAR TODOS LOS VALORES PRESERVADOS
+  Object.keys(existingValues).forEach(taskName => {
+    if (window.rasciMatrixData[taskName]) {
+      Object.keys(existingValues[taskName]).forEach(roleName => {
+        if (window.rasciMatrixData[taskName][roleName] !== undefined) {
+          window.rasciMatrixData[taskName][roleName] = existingValues[taskName][roleName];
+        }
+      });
     }
   });
 
@@ -577,51 +650,92 @@ export function getBpmnTasks() {
   return tasks;
 }
 
-  // Función para actualizar matriz desde el diagrama (sin recargo visual)
+  // Función para actualizar matriz desde el diagrama (PRESERVANDO RESPONSABILIDADES)
   export function updateMatrixFromDiagram() {
+  console.log('🔄 updateMatrixFromDiagram - PRESERVANDO responsabilidades existentes');
   
   if (!window.bpmnModeler) {
     return;
   }
 
-    // Obtener las tareas actuales del diagrama
-    const currentTasks = getBpmnTasks();
-    
-    // Asegurar que window.rasciMatrixData existe
-    if (!window.rasciMatrixData) {
-      window.rasciMatrixData = {};
-    }
-    
-    // Crear una copia de seguridad de los datos existentes para evitar sobrescritura
-    const existingDataBackup = JSON.parse(JSON.stringify(window.rasciMatrixData));
+  // PASO 1: PRESERVAR todas las responsabilidades existentes ANTES de hacer cambios
+  const preservedValues = preserveRasciValues();
+  
+  // Obtener las tareas actuales del diagrama
+  const currentTasks = getBpmnTasks();
+  
+  // Asegurar que window.rasciMatrixData existe
+  if (!window.rasciMatrixData) {
+    window.rasciMatrixData = {};
+  }
+  
+  // Crear una copia de seguridad de los datos existentes para evitar sobrescritura
+  const existingDataBackup = JSON.parse(JSON.stringify(window.rasciMatrixData));
     
       // Añadir nuevas tareas al window.rasciMatrixData si no existen
   let hasNewTasks = false;
   
-  // Use global roles if local roles are not available (NO DETECTAR ROLES RALPH AUTOMÁTICAMENTE)
-  const currentRoles = roles || window.rasciRoles || [];
+  // Use global roles if local roles are not available + DETECTAR ROLES RALPH DEL CANVAS
+  let currentRoles = roles || window.rasciRoles || [];
+  
+  // SIEMPRE DETECTAR ROLES RALPH DEL CANVAS Y AGREGARLOS
+  if (typeof window.detectRalphRolesFromCanvas === 'function') {
+    try {
+      const detectedRalphRoles = window.detectRalphRolesFromCanvas();
+      if (detectedRalphRoles && detectedRalphRoles.length > 0) {
+        console.log(`🔍 ${detectedRalphRoles.length} roles RALph detectados en canvas:`, detectedRalphRoles);
+        
+        // Agregar roles RALph detectados que no estén ya en currentRoles
+        detectedRalphRoles.forEach(ralphRole => {
+          if (!currentRoles.includes(ralphRole)) {
+            currentRoles.push(ralphRole);
+            console.log(`➕ Rol RALph agregado: ${ralphRole}`);
+          }
+        });
+        
+        // Actualizar roles globales con los roles RALph detectados
+        window.rasciRoles = [...currentRoles];
+        
+        // Guardar en localStorage
+        try {
+          localStorage.setItem('rasciRoles', JSON.stringify(window.rasciRoles));
+          console.log('💾 Roles RALph guardados en localStorage');
+        } catch (e) {
+          console.warn('Error guardando roles en localStorage:', e);
+        }
+      }
+    } catch (e) {
+      console.warn('Error detectando roles RALph:', e);
+    }
+  }
   
   currentTasks.forEach(taskName => {
     if (!window.rasciMatrixData[taskName]) {
-      // Inicializar la tarea con estructura de roles vacíos para que el validador la detecte
+      // Nueva tarea: inicializar con estructura de roles vacíos
       const taskRoles = {};
       if (currentRoles && currentRoles.length > 0) {
         currentRoles.forEach(role => {
-          taskRoles[role] = ''; // Inicializar con string vacío para que el validador detecte la estructura
+          taskRoles[role] = ''; // Inicializar con string vacío solo para nuevas tareas
         });
       }
       
       window.rasciMatrixData[taskName] = taskRoles;
       hasNewTasks = true;
+      console.log(`➕ Nueva tarea agregada: ${taskName}`);
     } else {
-      // Preservar tareas existentes pero asegurar que tengan todos los roles actuales
+      // Tarea existente: PRESERVAR valores existentes y solo agregar roles nuevos
       const existingTaskRoles = window.rasciMatrixData[taskName];
       if (currentRoles && currentRoles.length > 0) {
         let taskUpdated = false;
         currentRoles.forEach(role => {
           if (!(role in existingTaskRoles)) {
-            existingTaskRoles[role] = ''; // Añadir nuevo rol con valor vacío
+            // Solo agregar nuevo rol con valor vacío, NO tocar valores existentes
+            existingTaskRoles[role] = '';
             taskUpdated = true;
+            console.log(`➕ Nuevo rol agregado a tarea existente: ${taskName}[${role}]`);
+          } else {
+            // IMPORTANTE: NO modificar valores existentes
+            console.log(`✅ Preservando valor existente: ${taskName}[${role}] = "${existingTaskRoles[role]}"`);
           }
         });
         if (taskUpdated) {
@@ -629,36 +743,30 @@ export function getBpmnTasks() {
         }
       }
     }
-      });
+  });
     
       // PREVENIR SOBRESCRITURA DE VALORES EXISTENTES
     if (typeof window.preventOverwriteExistingValues === 'function') {
       window.preventOverwriteExistingValues();
     }
     
-    // RESTAURAR VALORES QUE SE HAYAN SOBRESCRITO
-    let restoredCount = 0;
-    Object.keys(existingDataBackup).forEach(taskName => {
-      if (window.rasciMatrixData[taskName]) {
-        Object.keys(existingDataBackup[taskName]).forEach(roleName => {
-          const backupValue = existingDataBackup[taskName][roleName];
-          const currentValue = window.rasciMatrixData[taskName][roleName];
-          
-          // Si el valor de backup no está vacío y el valor actual está vacío, restaurar
-          if (backupValue && backupValue !== '' && currentValue === '') {
-            window.rasciMatrixData[taskName][roleName] = backupValue;
-            restoredCount++;
-          }
-        });
+    // PASO FINAL: RESTAURAR TODAS LAS RESPONSABILIDADES PRESERVADAS
+    const finalRestoredCount = restoreRasciValues(preservedValues);
+    
+    if (finalRestoredCount > 0) {
+      console.log(`✅ ${finalRestoredCount} responsabilidades RASCI finalmente restauradas`);
+      // Guardar inmediatamente después de restaurar
+      if (autoSaveRasciState) {
+        autoSaveRasciState();
       }
-    });
-  
-  if (restoredCount > 0) {
-    // Guardar inmediatamente después de restaurar
-    if (autoSaveRasciState) {
-      autoSaveRasciState();
+      
+      // Guardar también en localStorage
+      try {
+        localStorage.setItem('rasciMatrixData', JSON.stringify(window.rasciMatrixData));
+      } catch (e) {
+        console.warn('Error guardando matriz restaurada en localStorage:', e);
+      }
     }
-  }
     
     // Eliminar tareas que ya no existen en el diagrama
     const existingTasks = Object.keys(window.rasciMatrixData);
@@ -675,6 +783,16 @@ export function getBpmnTasks() {
       const rasciPanel = document.querySelector('#rasci-panel');
       if (rasciPanel) {
         renderMatrix(rasciPanel, currentRoles, autoSaveRasciState);
+      }
+    }
+    
+    // ASEGURAR QUE LOS ROLES GLOBALES ESTÉN SIEMPRE ACTUALIZADOS
+    if (currentRoles && currentRoles.length > 0) {
+      window.rasciRoles = [...currentRoles];
+      try {
+        localStorage.setItem('rasciRoles', JSON.stringify(window.rasciRoles));
+      } catch (e) {
+        console.warn('Error guardando roles en localStorage:', e);
       }
     }
     
@@ -1182,62 +1300,165 @@ window.forceFullSync = () => {
 export function forceReloadMatrix() {
   console.log('🔄 forceReloadMatrix llamado');
   
+  // Verificar si se está importando un proyecto
+  const isImportingProject = window.isImportingProject === true;
+  
+  // SIEMPRE PRESERVAR responsabilidades existentes antes de cualquier operación
+  let preservedResponsibilities = {};
+  if (window.rasciMatrixData) {
+    Object.keys(window.rasciMatrixData).forEach(taskName => {
+      preservedResponsibilities[taskName] = {};
+      Object.keys(window.rasciMatrixData[taskName]).forEach(roleName => {
+        const value = window.rasciMatrixData[taskName][roleName];
+        if (value && ['R', 'A', 'S', 'C', 'I'].includes(value)) {
+          preservedResponsibilities[taskName][roleName] = value;
+        }
+      });
+    });
+  }
+  
+  const totalPreservedValues = Object.values(preservedResponsibilities)
+    .reduce((total, taskRoles) => total + Object.keys(taskRoles).length, 0);
+    
+  if (totalPreservedValues > 0) {
+    console.log(`🛡️ Preservando ${totalPreservedValues} responsabilidades RASCI antes de recargar`);
+  }
+  
+  if (isImportingProject) {
+    console.log('📦 Proyecto en importación detectado, preservando datos importados...');
+    
+    // Cargar datos desde localStorage sin limpiar
+    try {
+      const savedRoles = localStorage.getItem('rasciRoles');
+      if (savedRoles && savedRoles !== '[]' && savedRoles !== 'null') {
+        window.rasciRoles = JSON.parse(savedRoles);
+        console.log('📦 Roles RASCI cargados desde importación:', window.rasciRoles);
+      } else {
+        console.log('⚠️ No hay roles RASCI válidos en localStorage');
+      }
+      
+      const savedMatrixData = localStorage.getItem('rasciMatrixData');
+      if (savedMatrixData && savedMatrixData !== '{}' && savedMatrixData !== 'null') {
+        window.rasciMatrixData = JSON.parse(savedMatrixData);
+        console.log('📦 Matriz RASCI cargada desde importación:', window.rasciMatrixData);
+      } else {
+        console.log('⚠️ No hay matriz RASCI válida en localStorage');
+        window.rasciMatrixData = {};
+      }
+    } catch (e) {
+      console.warn('Error cargando datos RASCI importados:', e);
+      window.rasciMatrixData = {};
+      window.rasciRoles = [];
+    }
+  } else {
+    // NO LIMPIAR completamente los datos - solo estructurar
+    if (!window.rasciMatrixData) {
+      window.rasciMatrixData = {};
+    }
+    
+    // Cargar roles existentes si están disponibles
+    const savedRoles = localStorage.getItem('rasciRoles');
+    if (!savedRoles || savedRoles === '[]' || savedRoles === 'null') {
+      if (!window.rasciRoles) {
+        window.rasciRoles = [];
+      }
+    } else {
+      try {
+        window.rasciRoles = JSON.parse(savedRoles);
+      } catch (e) {
+        if (!window.rasciRoles) {
+          window.rasciRoles = [];
+        }
+      }
+    }
+  }
+  
   if (!window.bpmnModeler) {
     console.warn('⚠️ BPMN Modeler no disponible');
+    // Aún así, limpiar la matriz visual
+    const rasciPanel = document.querySelector('#rasci-panel');
+    if (rasciPanel) {
+      renderMatrix(rasciPanel, window.rasciRoles || [], null);
+    }
     return;
   }
 
-  // Cargar estado desde localStorage antes de recargar
-  try {
-    const savedRoles = localStorage.getItem('rasciRoles');
-    if (savedRoles) {
-      window.rasciRoles = JSON.parse(savedRoles);
-    }
-    
-    const savedMatrixData = localStorage.getItem('rasciMatrixData');
-    if (savedMatrixData) {
-      window.rasciMatrixData = JSON.parse(savedMatrixData);
-    }
-  } catch (e) {
-    console.warn('Error cargando estado RASCI en forceReloadMatrix:', e);
-  }
-  
   // Obtener las tareas actuales del diagrama
   const currentTasks = getBpmnTasks();
   console.log('📋 Tareas actuales:', currentTasks);
   
-  // Asegurar que window.rasciMatrixData existe
-  if (!window.rasciMatrixData) {
+  if (isImportingProject) {
+    // Si se está importando, solo agregar tareas faltantes sin limpiar datos existentes
+    let changes = 0;
+    currentTasks.forEach(taskName => {
+      if (!window.rasciMatrixData[taskName]) {
+        console.log(`➕ Agregando tarea faltante: ${taskName}`);
+        const taskRoles = {};
+        if (window.rasciRoles && window.rasciRoles.length > 0) {
+          window.rasciRoles.forEach(role => {
+            taskRoles[role] = '';
+          });
+        }
+        window.rasciMatrixData[taskName] = taskRoles;
+        changes++;
+      }
+    });
+    
+    console.log(`📊 Matriz actualizada con datos importados (${changes} cambios)`);
+  } else {
+    // Preservar responsabilidades existentes antes de actualizar la matriz
+    const existingData = { ...window.rasciMatrixData };
+    console.log('💾 Preservando datos existentes antes de actualizar matriz');
+    
+    // Reinicializar matriz pero preservando responsabilidades
     window.rasciMatrixData = {};
-  }
-  
-  // NO limpiar datos existentes, solo agregar tareas faltantes
-  let changes = 0;
-  currentTasks.forEach(taskName => {
-    if (!window.rasciMatrixData[taskName]) {
-      console.log(`➕ Agregando tarea faltante: ${taskName}`);
+    currentTasks.forEach(taskName => {
+      console.log(`➕ Agregando tarea: ${taskName}`);
       const taskRoles = {};
       if (window.rasciRoles && window.rasciRoles.length > 0) {
         window.rasciRoles.forEach(role => {
-          taskRoles[role] = ''; // Inicializar con string vacío solo para tareas nuevas
+          // Preservar responsabilidad existente si existe, sino vacía
+          const existingValue = existingData[taskName] && existingData[taskName][role];
+          taskRoles[role] = existingValue || '';
+          if (existingValue) {
+            console.log(`💾 Preservando responsabilidad: ${taskName} -> ${role} = "${existingValue}"`);
+          }
         });
       }
       window.rasciMatrixData[taskName] = taskRoles;
-      changes++;
-    }
-  });
+    });
+    
+    console.log('📊 Matriz actualizada preservando responsabilidades existentes');
+  }
   
-  // Eliminar tareas que ya no existen en el diagrama
-  const existingTasks = Object.keys(window.rasciMatrixData);
-  existingTasks.forEach(taskName => {
-    if (!currentTasks.includes(taskName)) {
-      console.log(`🗑️ Eliminando tarea que ya no existe: ${taskName}`);
-      delete window.rasciMatrixData[taskName];
-      changes++;
-    }
-  });
+  // RESTAURAR responsabilidades preservadas en cualquier caso
+  if (totalPreservedValues > 0) {
+    console.log('🔄 Restaurando responsabilidades preservadas...');
+    let restoredCount = 0;
+    
+    Object.keys(preservedResponsibilities).forEach(taskName => {
+      if (window.rasciMatrixData[taskName]) {
+        Object.keys(preservedResponsibilities[taskName]).forEach(roleName => {
+          if (window.rasciMatrixData[taskName][roleName] !== undefined) {
+            window.rasciMatrixData[taskName][roleName] = preservedResponsibilities[taskName][roleName];
+            restoredCount++;
+            console.log(`✅ Restaurado: ${taskName}[${roleName}] = "${preservedResponsibilities[taskName][roleName]}"`);
+          }
+        });
+      }
+    });
+    
+    console.log(`✅ ${restoredCount} responsabilidades restauradas de ${totalPreservedValues} preservadas`);
+  }
   
-  console.log(`📊 Cambios realizados: ${changes}`);
+  // Guardar el estado en localStorage
+  try {
+    localStorage.setItem('rasciMatrixData', JSON.stringify(window.rasciMatrixData));
+    localStorage.setItem('rasciRoles', JSON.stringify(window.rasciRoles || []));
+    console.log('✅ Estado RASCI guardado en localStorage');
+  } catch (e) {
+    console.warn('Error guardando estado RASCI:', e);
+  }
   
   // Forzar recarga visual
   const rasciPanel = document.querySelector('#rasci-panel');
@@ -1254,6 +1475,59 @@ export function forceReloadMatrix() {
       window.rasciUIValidator.forceValidation();
     }
   }, 300);
+}
+
+// Función para preservar responsabilidades RASCI existentes
+function preserveRasciValues() {
+  if (!window.rasciMatrixData) {
+    return {};
+  }
+  
+  const preserved = {};
+  let totalPreserved = 0;
+  
+  Object.keys(window.rasciMatrixData).forEach(taskName => {
+    preserved[taskName] = {};
+    Object.keys(window.rasciMatrixData[taskName]).forEach(roleName => {
+      const value = window.rasciMatrixData[taskName][roleName];
+      if (value && ['R', 'A', 'S', 'C', 'I'].includes(value)) {
+        preserved[taskName][roleName] = value;
+        totalPreserved++;
+      }
+    });
+  });
+  
+  if (totalPreserved > 0) {
+    console.log(`🛡️ ${totalPreserved} responsabilidades RASCI preservadas`);
+  }
+  
+  return preserved;
+}
+
+// Función para restaurar responsabilidades RASCI preservadas
+function restoreRasciValues(preserved) {
+  if (!preserved || !window.rasciMatrixData) {
+    return 0;
+  }
+  
+  let restoredCount = 0;
+  
+  Object.keys(preserved).forEach(taskName => {
+    if (window.rasciMatrixData[taskName]) {
+      Object.keys(preserved[taskName]).forEach(roleName => {
+        if (window.rasciMatrixData[taskName][roleName] !== undefined) {
+          window.rasciMatrixData[taskName][roleName] = preserved[taskName][roleName];
+          restoredCount++;
+        }
+      });
+    }
+  });
+  
+  if (restoredCount > 0) {
+    console.log(`✅ ${restoredCount} responsabilidades RASCI restauradas`);
+  }
+  
+  return restoredCount;
 }
 
 // Función para detectar roles RALPH del canvas SOLO PARA LECTURA (NO INVASIVA)
