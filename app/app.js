@@ -1,5 +1,5 @@
 // === app.js ===
-// MultiModeler - Aplicación principal
+// MultiModeler - Aplicación principal - Versión limpia
 
 import $ from 'jquery';
 import MultiNotationModeler from './MultiNotationModeler/index.js';
@@ -16,33 +16,13 @@ import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import 'diagram-js/assets/diagram-js.css';
 import './css/app.css';
 
-// Importar funciones RASCI al inicio para hacerlas disponibles globalmente
+// Importar funciones RASCI
 import { forceReloadMatrix, renderMatrix, detectRalphRolesFromCanvas } from './js/panels/rasci/core/matrix-manager.js';
 
-// Hacer funciones RASCI disponibles globalmente desde el inicio
+// Hacer funciones RASCI disponibles globalmente
 window.forceReloadMatrix = forceReloadMatrix;
 window.renderMatrix = renderMatrix;
 window.detectRalphRolesFromCanvas = detectRalphRolesFromCanvas;
-
-// Función para verificar que las funciones estén disponibles
-function ensureRasciFunctionsAvailable() {
-  if (typeof window.forceReloadMatrix !== 'function') {
-    console.warn('⚠️ forceReloadMatrix no disponible, importando...');
-    window.forceReloadMatrix = forceReloadMatrix;
-  }
-  if (typeof window.renderMatrix !== 'function') {
-    console.warn('⚠️ renderMatrix no disponible, importando...');
-    window.renderMatrix = renderMatrix;
-  }
-  if (typeof window.detectRalphRolesFromCanvas !== 'function') {
-    console.warn('⚠️ detectRalphRolesFromCanvas no disponible, importando...');
-    window.detectRalphRolesFromCanvas = detectRalphRolesFromCanvas;
-  }
-  return true;
-}
-
-// Ejecutar verificación al cargar
-ensureRasciFunctionsAvailable();
 
 // Variables globales
 window.rasciRoles = [];
@@ -73,26 +53,166 @@ window.rasciStateLock = {
   }
 };
 
-// Variables para el sistema de guardado automático BPMN
-let bpmnSaveTimeout = null;
-let lastBpmnSaveTime = 0;
+// Interceptar errores de getCTM como último recurso
+window.addEventListener('error', (event) => {
+  if (event.message && event.message.includes('getCTM')) {
+    console.warn('🛡️ Intercepted getCTM error, applying emergency cleanup...');
+    event.preventDefault();
+    
+    // Ejecutar limpieza de emergencia
+    try {
+      if (typeof window.forceCleanupListeners === 'function') {
+        window.forceCleanupListeners();
+      }
+    } catch (cleanupError) {
+      console.error('Error during emergency cleanup:', cleanupError);
+    }
+    
+    return false; // Prevenir que el error se propague
+  }
+});
 
 // Variables para la navegación entre pantallas
 let welcomeScreen = null;
 let modelerContainer = null;
 let isModelerInitialized = false;
+let isModelerSystemInitialized = false; // Flag separado para el sistema de modeler
+let isProcessingFile = false; // Flag para evitar procesamiento múltiple de archivos
+let fileHandlersSetup = false; // Flag para evitar setup múltiple de handlers
+let appInitialized = false; // Flag para evitar inicialización múltiple de la app
+let isOpenButtonClicked = false; // Flag para evitar múltiples clicks del botón abrir
+let eventListenersRegistered = false; // Flag para evitar registrar listeners múltiples veces
+let lastOpenButtonClick = 0; // Timestamp del último click del botón abrir
+
+// Función para resetear todos los flags (útil para debugging)
+window.resetAppFlags = function() {
+  console.log('Resetting all app flags...');
+  appInitialized = false;
+  fileHandlersSetup = false;
+  isProcessingFile = false;
+  isOpenButtonClicked = false;
+  eventListenersRegistered = false;
+  lastOpenButtonClick = 0;
+  isModelerInitialized = false;
+  isModelerSystemInitialized = false;
+  console.log('All flags reset');
+};
+
+// Función para diagnosticar el estado del modeler
+window.diagnoseModeler = function() {
+  console.log('=== MODELER DIAGNOSIS ===');
+  
+  if (!window.modeler) {
+    console.log('❌ No modeler instance found');
+    return;
+  }
+  
+  console.log('✅ Modeler instance exists');
+  
+  try {
+    const canvas = window.modeler.get('canvas');
+    console.log('Canvas service:', canvas ? '✅ Available' : '❌ Missing');
+    
+    const modeling = window.modeler.get('modeling');
+    console.log('Modeling service:', modeling ? '✅ Available' : '❌ Missing');
+    
+    const elementFactory = window.modeler.get('elementFactory');
+    console.log('ElementFactory service:', elementFactory ? '✅ Available' : '❌ Missing');
+    
+    const create = window.modeler.get('create');
+    console.log('Create service:', create ? '✅ Available' : '❌ Missing');
+    
+    const selection = window.modeler.get('selection');
+    console.log('Selection service:', selection ? '✅ Available' : '❌ Missing');
+    
+    const contextPad = window.modeler.get('contextPad');
+    console.log('ContextPad service:', contextPad ? '✅ Available' : '❌ Missing');
+    
+    const palette = window.modeler.get('palette');
+    console.log('Palette service:', palette ? '✅ Available' : '❌ Missing');
+    
+    const moveCanvas = window.modeler.get('moveCanvas');
+    console.log('MoveCanvas service:', moveCanvas ? '✅ Available' : '❌ Missing');
+    
+    if (canvas) {
+      const rootElement = canvas.getRootElement();
+      console.log('Root element:', rootElement ? '✅ Available' : '❌ Missing');
+      
+      const canvasContainer = canvas.getContainer();
+      const svg = canvasContainer && canvasContainer.querySelector('svg');
+      console.log('SVG element:', svg ? '✅ Available' : '❌ Missing');
+      console.log('SVG getCTM function:', (svg && typeof svg.getCTM === 'function') ? '✅ Available' : '❌ Missing');
+      
+      if (svg) {
+        console.log('SVG position info:');
+        try {
+          const ctm = svg.getCTM();
+          console.log('  CTM available:', !!ctm);
+        } catch (ctmError) {
+          console.log('  ❌ CTM Error:', ctmError.message);
+        }
+      }
+    }
+    
+  } catch (error) {
+    console.error('❌ Error during diagnosis:', error);
+  }
+  
+  console.log('=== END DIAGNOSIS ===');
+};
+
+// Función para forzar limpieza de listeners problemáticos
+window.forceCleanupListeners = function() {
+  console.log('🧹 Forcing cleanup of problematic listeners...');
+  
+  try {
+    // Clonar el documento para eliminar TODOS los listeners
+    const events = ['mousemove', 'mouseup', 'mousedown', 'wheel', 'scroll', 'dragstart', 'dragend'];
+    
+    // Crear un conjunto de handlers falsos para remover
+    const dummyHandler = function() {};
+    
+    events.forEach(eventType => {
+      // Intentar remover listeners tanto en capture como en bubble phase
+      for (let i = 0; i < 10; i++) { // Múltiples intentos
+        document.removeEventListener(eventType, dummyHandler, true);
+        document.removeEventListener(eventType, dummyHandler, false);
+      }
+    });
+    
+    // Limpiar específicamente los listeners que causan getCTM error
+    const moveHandlers = document.querySelectorAll('[data-move-handler]');
+    moveHandlers.forEach(element => {
+      element.removeAttribute('data-move-handler');
+    });
+    
+    // Forzar limpieza del canvas completamente
+    cleanupCanvasCompletely();
+    
+    // También limpiar el window de listeners relacionados
+    const windowEvents = ['resize', 'blur', 'focus'];
+    windowEvents.forEach(eventType => {
+      for (let i = 0; i < 5; i++) {
+        window.removeEventListener(eventType, dummyHandler, true);
+        window.removeEventListener(eventType, dummyHandler, false);
+      }
+    });
+    
+    console.log('✅ Cleanup completed');
+  } catch (error) {
+    console.error('❌ Error during forced cleanup:', error);
+  }
+};
 
 // Funciones de navegación entre pantallas
-function showWelcomeScreen() {
+window.showWelcomeScreen = function() {
   if (welcomeScreen) {
     welcomeScreen.classList.remove('hidden');
   }
   if (modelerContainer) {
     modelerContainer.classList.remove('show');
   }
-  // Verificar estado del diagrama guardado cuando se muestra la pantalla de bienvenida
-  checkSavedDiagram();
-}
+};
 
 function showModeler() {
   if (welcomeScreen) {
@@ -102,10 +222,9 @@ function showModeler() {
     modelerContainer.classList.add('show');
   }
   
-  // Inicializar el modelador si no se ha hecho antes
-  if (!isModelerInitialized) {
+  if (!isModelerSystemInitialized) {
     initializeModelerSystem();
-    isModelerInitialized = true;
+    isModelerSystemInitialized = true;
   }
 }
 
@@ -116,25 +235,16 @@ function initializeModelerSystem() {
   const panelLoader = new PanelLoader();
   window.panelLoader = panelLoader;
 
-  // Inicializar gestor de paneles
   const panelManager = new window.PanelManager();
   window.panelManager = panelManager;
   panelManager.setPanelLoader(panelLoader);
 
-  // Crear paneles iniciales usando el gestor
   panelManager.applyConfiguration();
-
-  // Configurar layout inicial
   panelContainer.classList.add('layout-4');
 
-  // Asegurar que las funciones RASCI estén disponibles globalmente
   setTimeout(() => {
-    // Verificar si forceReloadMatrix está disponible, si no, crear un stub
     if (typeof window.forceReloadMatrix !== 'function') {
-      console.log('⚠️ forceReloadMatrix no disponible, creando stub...');
       window.forceReloadMatrix = function() {
-        console.log('🔄 Stub forceReloadMatrix llamado - esperando inicialización de paneles...');
-        // Intentar encontrar el panel RASCI y forzar recarga
         const rasciPanel = document.querySelector('#rasci-panel');
         if (rasciPanel && typeof window.renderMatrix === 'function') {
           window.renderMatrix(rasciPanel, [], null);
@@ -143,693 +253,29 @@ function initializeModelerSystem() {
     }
   }, 500);
 
-  setTimeout(() => {
-    // El modeler se inicializará automáticamente cuando se aplique la configuración
-  }, 300);
-}
-
-// Funciones de persistencia para el estado del BPMN
-function saveBpmnState() {
-  try {
-    if (modeler) {
-      // GUARDAR POSICIÓN Y ZOOM DEL CANVAS
-      const canvas = modeler.get('canvas');
-      if (canvas) {
-        const viewbox = canvas.viewbox();
-        const canvasState = {
-          x: viewbox.x,
-          y: viewbox.y,
-          width: viewbox.width,
-          height: viewbox.height,
-          scale: viewbox.scale
-        };
-        localStorage.setItem('bpmnCanvasState', JSON.stringify(canvasState));
+  setTimeout(async () => {
+    // Inicializar el modeler automáticamente, pero solo si no está ya inicializado
+    if (!isModelerInitialized && !window.modeler) {
+      try {
+        // Esperar a que todos los paneles estén completamente cargados
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log('Auto-initializing modeler...');
+        await initializeModeler();
+      } catch (error) {
+        console.error('Error auto-initializing modeler:', error);
       }
-      
-      const xml = modeler.saveXML({ format: true });
-      xml.then(result => {
-        if (result && result.xml && result.xml.trim().length > 0) {
-          console.log('💾 Guardando diagrama BPMN...');
-          console.log('📄 Longitud del diagrama a guardar:', result.xml.length);
-          console.log('📄 Primeras 200 caracteres del diagrama a guardar:', result.xml.substring(0, 200));
-          localStorage.setItem('bpmnDiagram', result.xml);
-          localStorage.setItem('bpmnDiagramTimestamp', Date.now().toString());
-          showBpmnSaveIndicator();
-          
-          // GUARDAR RELACIONES PADRE-HIJO
-          const elementRegistry = modeler.get('elementRegistry');
-          const allElements = elementRegistry.getAll();
-          
-          // Filtrar elementos PPINOT y RALph (shapes y conexiones)
-          const ppinotElements = allElements.filter(el => {
-            if (el.type && (el.type.includes('PPINOT') || el.type.includes('RALph'))) return true;
-            if (el.businessObject && el.businessObject.$type) {
-              const type = el.businessObject.$type;
-              const ppinotTypes = ['PPINOT', 'Target', 'Scope', 'Ppi', 'Resource', 'Measure', 'Condition'];
-              const ralphTypes = [
-                'RALph', 'Person', 'RoleRALph', 'Personcap', 'Orgunit', 'Position', 
-                'DelegateTo', 'History-Same', 'History-Any', 'History-Any-Red', 
-                'History-Any-Green', 'History-Same-Green', 'History-Same-Red', 
-                'History-AnyInstanceInTime-Green', 'History-AnyInstanceInTime-Red',
-                'Complex-Assignment-AND', 'Complex-Assignment-OR', 
-                'HistoryConnectorActivityInstance', 'dataField', 'ResourceArc',
-                'negatedAssignment', 'solidLine', 'solidLineWithCircle', 
-                'dashedLine', 'dashedLineWithCircle', 'simpleArrow', 'doubleArrow',
-                'reportsTo', 'reportsDirectly', 'reportsTransitively', 
-                'delegatesDirectly', 'delegatesTransitively'
-              ];
-              return ppinotTypes.some(t => type.includes(t)) || ralphTypes.some(t => type.includes(t));
-            }
-            return false;
-          });
-          
-
-          
-          // Guardar relaciones padre-hijo
-          const parentChildRelations = {};
-          ppinotElements.forEach(el => {
-            if (el.parent && el.parent.id) {
-              parentChildRelations[el.id] = {
-                parentId: el.parent.id,
-                parentType: el.parent.type,
-                childType: el.type,
-                childBusinessObjectType: el.businessObject ? el.businessObject.$type : null,
-                parentBusinessObjectType: el.parent.businessObject ? el.parent.businessObject.$type : null,
-                // Guardar posición relativa
-                x: el.x,
-                y: el.y,
-                width: el.width,
-                height: el.height
-              };
-            }
-          });
-          
-          if (Object.keys(parentChildRelations).length > 0) {
-            localStorage.setItem('bpmnParentChildRelations', JSON.stringify(parentChildRelations));
-          }
-          
-          // NUEVO: Guardar elementos RALPH por separado como en el sistema original
-          const ralphElements = allElements.filter(el => 
-            el.type && el.type.includes('RALph')
-          );
-          
-          if (ralphElements.length > 0) {
-            // Convertir elementos RALPH a formato JSON para guardar por separado (OPTIMIZADO)
-            const ralphData = ralphElements.map(el => {
-              const data = {
-                id: el.id,
-                type: el.type,
-                x: el.x,
-                y: el.y
-              };
-              
-              // Solo agregar propiedades si existen para reducir tamaño
-              if (el.width) data.width = el.width;
-              if (el.height) data.height = el.height;
-              if (el.businessObject && el.businessObject.$type) data.businessObjectType = el.businessObject.$type;
-              if (el.businessObject && el.businessObject.name) data.name = el.businessObject.name;
-              
-              // Solo para conexiones
-              if (el.source && el.target) {
-                data.source = el.source.id;
-                data.target = el.target.id;
-                if (el.waypoints && el.waypoints.length > 0) {
-                  data.waypoints = el.waypoints.map(wp => ({ x: wp.x, y: wp.y }));
-                }
-              }
-              
-              return data;
-            });
-            
-            localStorage.setItem('RALphElements', JSON.stringify(ralphData));
-          }
-          
-          // GUARDAR TAMBIÉN LAS RELACIONES PPINOT EN EL XML (si está disponible)
-          if (window.ppiManager && window.ppiManager.core) {
-            // Filtrar elementos hijos de PPINOT
-            const ppiChildren = allElements.filter(element => {
-              const isChildOfPPI = element.parent && 
-                (element.parent.type === 'PPINOT:Ppi' || 
-                 (element.parent.businessObject && element.parent.businessObject.$type === 'PPINOT:Ppi'));
-              
-              const isValidChildType = element.type === 'PPINOT:Scope' || 
-                element.type === 'PPINOT:Target' ||
-                element.type === 'PPINOT:Measure' ||
-                element.type === 'PPINOT:Condition' ||
-                (element.businessObject && (
-                  element.businessObject.$type === 'PPINOT:Scope' ||
-                  element.businessObject.$type === 'PPINOT:Target' ||
-                  element.businessObject.$type === 'PPINOT:Measure' ||
-                  element.businessObject.$type === 'PPINOT:Condition'
-                ));
-              
-              return isChildOfPPI && isValidChildType;
-            });
-            
-            // Crear relaciones para guardar
-            const relationships = ppiChildren.map(el => ({
-              childId: el.id,
-              parentId: el.parent ? el.parent.id : null,
-              childType: el.type,
-              parentType: el.parent ? el.parent.type : null,
-              childBusinessObjectType: el.businessObject ? el.businessObject.$type : null,
-              parentBusinessObjectType: el.parent && el.parent.businessObject ? el.parent.businessObject.$type : null,
-              childName: el.businessObject ? el.businessObject.name : '',
-              parentName: el.parent && el.parent.businessObject ? el.parent.businessObject.name : '',
-              timestamp: Date.now()
-            }));
-            
-            // Guardar relaciones en el XML
-            window.ppiManager.core.savePPINOTRelationshipsToXML(relationships);
-          }
-        }
-      }).catch(err => {
-        console.error('Error al guardar XML:', err);
-      });
+    } else {
+      console.log('Skipping auto-initialization - modeler already exists or initialized');
     }
-  } catch (e) {
-    console.error('Error en saveBpmnState:', e);
-  }
-}
-
-// Función para mostrar indicador de guardado BPMN
-function showBpmnSaveIndicator() {
-  let saveIndicator = document.getElementById('bpmn-save-indicator');
-  if (!saveIndicator) {
-    saveIndicator = document.createElement('div');
-    saveIndicator.id = 'bpmn-save-indicator';
-    saveIndicator.innerHTML = `
-      <div style="
-        position: fixed;
-        top: 20px;
-        left: 20px;
-        background: #3b82f6;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 6px;
-        font-size: 12px;
-        font-weight: 500;
-        z-index: 10000;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        opacity: 0;
-        transform: translateY(-10px);
-        transition: all 0.3s ease;
-      ">
-        <i class="fas fa-save" style="font-size: 10px;"></i>
-        <span>BPMN guardado</span>
-      </div>
-    `;
-    document.body.appendChild(saveIndicator);
-  }
-
-  // Mostrar indicador
-  saveIndicator.style.opacity = '1';
-  saveIndicator.style.transform = 'translateY(0)';
-
-  // Ocultar después de 2 segundos
-  setTimeout(() => {
-    saveIndicator.style.opacity = '0';
-    saveIndicator.style.transform = 'translateY(-10px)';
-  }, 2000);
-}
-
-// Función para guardado automático BPMN con debounce
-function autoSaveBpmnState() {
-  const now = Date.now();
-  
-  // Evitar guardados muy frecuentes (mínimo 1 segundo entre guardados)
-  if (now - lastBpmnSaveTime < 1000) {
-    // Cancelar timeout anterior y programar uno nuevo
-    if (bpmnSaveTimeout) {
-      clearTimeout(bpmnSaveTimeout);
-    }
-    bpmnSaveTimeout = setTimeout(() => {
-      saveBpmnState();
-      lastBpmnSaveTime = Date.now();
-    }, 1000);
-    return;
-  }
-  
-  // Guardar inmediatamente si ha pasado suficiente tiempo
-  saveBpmnState();
-  lastBpmnSaveTime = now;
-}
-
-// Función para forzar guardado inmediato (sin debounce)
-function forceSaveBpmnState() {
-  if (bpmnSaveTimeout) {
-    clearTimeout(bpmnSaveTimeout);
-  }
-  saveBpmnState();
-  lastBpmnSaveTime = Date.now();
+  }, 800);
 }
 
 function loadBpmnState() {
-  window.loadBpmnState = loadBpmnState; // Hacer disponible globalmente
-  try {
-    console.log('🔄 loadBpmnState ejecutándose...');
-    const savedDiagram = localStorage.getItem('bpmnDiagram');
-    console.log('📊 Diagrama guardado encontrado:', !!savedDiagram);
-    
-    if (!modeler) {
-      console.log('⚠️ Modeler no disponible, reintentando en 500ms');
-      setTimeout(loadBpmnState, 500);
-      return;
-    }
-    
-        if (savedDiagram && savedDiagram.trim().length > 0) {
-      console.log('✅ Cargando diagrama guardado...');
-      console.log('📄 Contenido del diagrama a importar:');
-      console.log(savedDiagram.substring(0, 500) + '...');
-      
-      modeler.importXML(savedDiagram).then(() => {
-        console.log('✅ Diagrama importado correctamente');
-        
-        // DIAGNÓSTICO POST-IMPORTACIÓN
-        const elementRegistry = modeler.get('elementRegistry');
-        const allElements = elementRegistry.getAll();
-        console.log(`📊 Elementos cargados en el modeler: ${allElements.length}`);
-        
-        // Mostrar todos los elementos cargados
-        console.log('📋 Todos los elementos cargados:');
-        allElements.forEach((el, index) => {
-          console.log(`   ${index + 1}. ${el.type} (ID: ${el.id})`);
-          if (el.businessObject && el.businessObject.$type) {
-            console.log(`      Business Object: ${el.businessObject.$type}`);
-          }
-        });
-        
-        // Buscar elementos PPINOT/RALph con el mismo filtro que en testElementXML (incluyendo conexiones)
-        const ppinotElements = allElements.filter(el => {
-          return (el.type && (el.type.includes('PPINOT') || el.type.includes('RALph'))) ||
-                 (el.businessObject && el.businessObject.$type && 
-                  (el.businessObject.$type.includes('PPINOT') || el.businessObject.$type.includes('RALph')));
-        });
-        
-        console.log(`📊 Elementos PPINOT/RALph encontrados: ${ppinotElements.length}`);
-        
-        if (ppinotElements.length > 0) {
-          console.log('📋 Elementos PPINOT/RALph:');
-          ppinotElements.forEach((el, index) => {
-            console.log(`   ${index + 1}. ${el.type} (ID: ${el.id})`);
-          });
-        }
-        
-        // RESTAURAR POSICIÓN Y ZOOM DEL CANVAS
-        const savedCanvasState = localStorage.getItem('bpmnCanvasState');
-        if (savedCanvasState) {
-          try {
-            const canvasState = JSON.parse(savedCanvasState);
-            const canvas = modeler.get('canvas');
-            if (canvas && canvasState) {
-              // Restaurar viewbox con un pequeño delay para asegurar que el diagrama esté listo
-              setTimeout(() => {
-                canvas.viewbox({
-                  x: canvasState.x,
-                  y: canvasState.y,
-                  width: canvasState.width,
-                  height: canvasState.height
-                });
-
-              }, 100);
-            }
-          } catch (e) {
-            console.warn('⚠️ Error restaurando posición del canvas:', e);
-          }
-        }
-        
-        // NUEVO: Restaurar elementos RALPH desde almacenamiento separado
-        const savedRALphElements = localStorage.getItem('RALphElements');
-        if (savedRALphElements) {
-          try {
-            const ralphData = JSON.parse(savedRALphElements);
-
-            
-            if (ralphData.length > 0) {
-              // VERSIÓN OPTIMIZADA: Restaurar elementos RALPH con mejor rendimiento
-              const restoreRALphElementsOptimized = () => {
-                try {
-                  const elementFactory = modeler.get('elementFactory');
-                  const modeling = modeler.get('modeling');
-                  const canvas = modeler.get('canvas');
-                  const elementRegistry = modeler.get('elementRegistry');
-                  const rootElement = canvas.getRootElement();
-                  
-                  if (!elementFactory || !modeling || !canvas) {
-                    console.warn('⚠️ Modeler no listo, reintentando en 100ms...');
-                    setTimeout(restoreRALphElementsOptimized, 100);
-                    return;
-                  }
-                  
-                  // Obtener todos los elementos RALPH que ya están en el diagrama
-                  const existingRALphElements = elementRegistry.getAll().filter(el => 
-                    el.type && el.type.includes('RALph')
-                  );
-                  
-                  // Filtrar elementos que NO están ya en el diagrama (por tipo, no por ID)
-                  const elementsToRestore = ralphData.filter(savedElement => {
-                    // Verificar si ya existe un elemento con el mismo ID
-                    const existingById = elementRegistry.get(savedElement.id);
-                    if (existingById) {
-                      return false; // Ya existe con ese ID
-                    }
-                    
-                    // Para conexiones, verificar si ya existe una conexión entre los mismos elementos
-                    if (savedElement.source && savedElement.target) {
-                      const sourceElement = elementRegistry.get(savedElement.source);
-                      const targetElement = elementRegistry.get(savedElement.target);
-                      
-                      if (sourceElement && targetElement) {
-                        const existingConnection = elementRegistry.getAll().find(el => 
-                          el.type === savedElement.type && 
-                          el.source && el.target &&
-                          el.source.id === savedElement.source && 
-                          el.target.id === savedElement.target
-                        );
-                        
-                        if (existingConnection) {
-                          return false; // Ya existe una conexión entre estos elementos
-                        }
-                      }
-                    }
-                    
-                    return true; // No existe, restaurar
-                  });
-                  
-                  console.log(`🎯 Elementos RALPH a restaurar: ${elementsToRestore.length} de ${ralphData.length}`);
-                  console.log('📋 Tipos de elementos existentes:', existingRALphElements.map(el => el.type));
-                  console.log('📋 Tipos de elementos a restaurar:', elementsToRestore.map(el => el.type));
-                  
-                  if (elementsToRestore.length === 0) {
-                    console.log('✅ Todos los elementos RALPH ya están en el diagrama');
-                    return;
-                  }
-                  
-                  // Separar elementos y conexiones para procesamiento optimizado
-                  const shapes = elementsToRestore.filter(el => !el.source || !el.target);
-                  const connections = elementsToRestore.filter(el => el.source && el.target);
-                  
-                  // Variables for tracking success/error counts (used in console logs)
-                  let successCount = 0;
-                  let errorCount = 0;
-                  
-                  // Función para procesar elementos en chunks para mejor rendimiento
-                  const processElementsInChunks = (elements, isConnection = false) => {
-                    const chunkSize = 10; // Procesar 10 elementos por frame
-                    let currentIndex = 0;
-                    
-                    const processChunk = () => {
-                      const chunk = elements.slice(currentIndex, currentIndex + chunkSize);
-                      
-                      chunk.forEach(ralphElement => {
-                        try {
-                          const existingElement = elementRegistry.get(ralphElement.id);
-                          if (existingElement) {
-                            successCount++;
-                            return;
-                          }
-                          
-                          if (isConnection) {
-                            // Procesar conexión
-                            const sourceElement = elementRegistry.get(ralphElement.source);
-                            const targetElement = elementRegistry.get(ralphElement.target);
-                            
-                            if (sourceElement && targetElement) {
-                              const connection = elementFactory.createConnection({
-                                type: ralphElement.type,
-                                source: sourceElement,
-                                target: targetElement,
-                                id: ralphElement.id,
-                                waypoints: ralphElement.waypoints || [
-                                  { x: sourceElement.x + sourceElement.width / 2, y: sourceElement.y + sourceElement.height / 2 },
-                                  { x: targetElement.x + targetElement.width / 2, y: targetElement.y + targetElement.height / 2 }
-                                ]
-                              });
-                              
-                              modeling.createConnection(sourceElement, targetElement, connection, rootElement);
-                              successCount++;
-                            } else {
-                              errorCount++;
-                            }
-                          } else {
-                            // Procesar shape
-                            const element = elementFactory.createShape({
-                              type: ralphElement.type,
-                              id: ralphElement.id
-                            });
-                            
-                            modeling.createShape(element, { 
-                              x: ralphElement.x || 100, 
-                              y: ralphElement.y || 100 
-                            }, rootElement);
-                            
-                            successCount++;
-                          }
-                        } catch (e) {
-                          errorCount++;
-                        }
-                      });
-                      
-                      currentIndex += chunkSize;
-                      
-                      if (currentIndex < elements.length) {
-                        // Continuar con el siguiente chunk en el siguiente frame
-                        requestAnimationFrame(processChunk);
-                      } else {
-                        // Todos los elementos procesados
-                        console.log(`🎯 RALPH restaurado: ${successCount} éxitos, ${errorCount} errores`);
-                      }
-                    };
-                    
-                    // Iniciar procesamiento
-                    if (elements.length > 0) {
-                      requestAnimationFrame(processChunk);
-                    }
-                  };
-                  
-                  // Procesar shapes primero, luego conexiones
-                  processElementsInChunks(shapes, false);
-                  processElementsInChunks(connections, true);
-                  
-                } catch (e) {
-                  console.error('❌ Error en restauración RALPH:', e);
-                }
-              };
-              
-              // Iniciar restauración optimizada con delay mínimo
-              setTimeout(restoreRALphElementsOptimized, 10);
-            }
-          } catch (e) {
-            console.error('❌ Error parseando elementos RALPH guardados:', e);
-          }
-        }
-        
-        // Verificar si hay elementos faltantes en el XML guardado vs importados
-        const targetInXML = savedDiagram.includes('Target');
-        const scopeInXML = savedDiagram.includes('Scope');
-        const targetImported = ppinotElements.some(el => el.type.includes('Target'));
-        const scopeImported = ppinotElements.some(el => el.type.includes('Scope'));
-        
-        if (targetInXML && !targetImported) {
-          console.error('❌ PROBLEMA: Target está en XML pero no se importó');
-        }
-        if (scopeInXML && !scopeImported) {
-          console.error('❌ PROBLEMA: Scope está en XML pero no se importó');
-        }
-        
-        // RESTAURAR RELACIONES PADRE-HIJO
-        const savedRelations = localStorage.getItem('bpmnParentChildRelations');
-        if (savedRelations) {
-          try {
-            const relations = JSON.parse(savedRelations);
-    
-            
-            const elementRegistry = modeler.get('elementRegistry');
-            
-            // Verificar qué elementos existen antes de restaurar relaciones
-            const existingElements = elementRegistry.getAll();
-            const existingIds = existingElements.map(el => el.id);
-            console.log('📋 Elementos disponibles para restaurar relaciones:', existingIds);
-            
-            // Filtrar relaciones donde tanto padre como hijo existen
-            const validRelations = Object.entries(relations).filter(([childId, relation]) => {
-              const childExists = existingIds.includes(childId);
-              const parentExists = existingIds.includes(relation.parentId);
-              
-              if (!childExists) {
-                console.warn(`⚠️ Elemento hijo ${childId} (${relation.childType}) no encontrado en el diagrama importado`);
-              }
-              if (!parentExists) {
-                console.warn(`⚠️ Elemento padre ${relation.parentId} (${relation.parentType}) no encontrado en el diagrama importado`);
-              }
-              
-              return childExists && parentExists;
-            });
-            
-            console.log(`✅ Relaciones válidas para restaurar: ${validRelations.length} de ${Object.keys(relations).length}`);
-            
-            if (validRelations.length > 0) {
-              // Restaurar relaciones con múltiples intentos hasta que el modeler esté listo
-              const restoreRelationsWithRetry = (attempts = 0, maxAttempts = 10) => {
-                setTimeout(() => {
-                  try {
-                    const currentElementRegistry = modeler.get('elementRegistry');
-                    const currentModeling = modeler.get('modeling');
-                    const canvas = modeler.get('canvas');
-                    
-                    // Verificar que el modeler está completamente listo
-                    if (!currentElementRegistry || !currentModeling || !canvas) {
-                      if (attempts < maxAttempts) {
-                        console.log(`⏳ Modeler no listo, reintentando (${attempts + 1}/${maxAttempts})...`);
-                        restoreRelationsWithRetry(attempts + 1, maxAttempts);
-                      } else {
-                        console.error('❌ Timeout: Modeler no se inicializó completamente');
-                      }
-                      return;
-                    }
-                    
-                    let successCount = 0;
-                    let errorCount = 0;
-                    
-                    console.log(`🔄 Iniciando restauración de ${validRelations.length} relaciones de parentesco...`);
-                    
-                    validRelations.forEach(([childId, relation]) => {
-                      const childElement = currentElementRegistry.get(childId);
-                      const parentElement = currentElementRegistry.get(relation.parentId);
-                      
-                      if (childElement && parentElement) {
-                        console.log(`👨‍👦 Restaurando relación: ${childId} (${relation.childType}) -> ${relation.parentId} (${relation.parentType})`);
-                        try {
-                          // Verificar si la relación ya está establecida
-                          if (childElement.parent && childElement.parent.id === relation.parentId) {
-                            console.log(`ℹ️ Relación ya establecida: ${childId} -> ${relation.parentId}`);
-                            successCount++;
-                            return;
-                          }
-                          
-                          // Mover el elemento hijo al padre manteniendo posición relativa
-                          currentModeling.moveElements([childElement], { x: 0, y: 0 }, parentElement);
-                          console.log(`✅ Relación restaurada correctamente: ${childId} -> ${relation.parentId}`);
-                          successCount++;
-                        } catch (e) {
-                          console.warn(`⚠️ Error restaurando relación ${childId} -> ${relation.parentId}:`, e);
-                          errorCount++;
-                        }
-                      } else {
-                        console.warn(`⚠️ Elementos no encontrados para relación ${childId} -> ${relation.parentId}`);
-                        if (!childElement) console.warn(`   - Elemento hijo ${childId} no encontrado`);
-                        if (!parentElement) console.warn(`   - Elemento padre ${relation.parentId} no encontrado`);
-                        errorCount++;
-                      }
-                    });
-                    
-                    console.log(`📊 Resumen de restauración de relaciones: ${successCount} exitosas, ${errorCount} errores`);
-                    
-            
-                    
-                    // Forzar actualización visual múltiple para asegurar que se muestren las relaciones
-                    setTimeout(() => {
-              
-                      try {
-                        const canvas = modeler.get('canvas');
-                        const canvasContainer = canvas && canvas._container;
-                        
-                        // Verificar que el canvas esté completamente inicializado
-                        if (canvas && canvas.zoom && canvasContainer && canvas.viewbox) {
-                          // Hacer zoom ligeramente para forzar re-render
-                          const currentZoom = canvas.zoom();
-                          if (currentZoom && currentZoom > 0) {
-                            canvas.zoom(currentZoom * 1.001);
-                            setTimeout(() => {
-                              canvas.zoom(currentZoom);
-                            }, 100);
-                          }
-                        }
-                        
-                        // También forzar actualización del registro de elementos CON VERIFICACIONES
-                        const eventBus = modeler.get('eventBus');
-                        if (eventBus && canvas && canvas.viewbox && canvas.viewbox()) {
-                          try {
-                            eventBus.fire('canvas.viewbox.changed');
-                          } catch (viewboxError) {
-                            console.warn('⚠️ Error firing viewbox.changed:', viewboxError);
-                          }
-                        }
-                      } catch (e) {
-                        console.warn('⚠️ Error actualizando visualización:', e);
-                      }
-                    }, 300);
-                    
-                  } catch (e) {
-                    if (attempts < maxAttempts) {
-                      console.log(`⏳ Error en intento ${attempts + 1}, reintentando...`, e);
-                      restoreRelationsWithRetry(attempts + 1, maxAttempts);
-                    } else {
-                      console.error('❌ Error final restaurando relaciones:', e);
-                    }
-                  }
-                }, 500 + (attempts * 300)); // Incrementar delay con cada intento
-              };
-              
-              // Iniciar proceso de restauración
-              restoreRelationsWithRetry();
-            } else {
-              console.log('ℹ️ No hay relaciones válidas para restaurar');
-            }
-            
-          } catch (e) {
-            console.error('❌ Error parseando relaciones padre-hijo:', e);
-          }
-        } else {
-          console.log('ℹ️ No hay relaciones padre-hijo guardadas');
-        }
-        
-        updateUI('Diagrama BPMN restaurado.');
-        
-        // RECARGAS AUTOMÁTICAS DESHABILITADAS TEMPORALMENTE PARA EVITAR BUCLE
-        console.log('ℹ️ Recarga automática RASCI deshabilitada - usar botón manual si es necesario');
-        
-        /*
-        // Recargar estado RASCI después de cargar el diagrama BPMN
-        setTimeout(() => {
-          console.log('🔄 Recargando estado RASCI después de cargar diagrama...');
-          if (typeof window.ensureRasciMatrixLoaded === 'function') {
-            window.ensureRasciMatrixLoaded();
-          } else if (typeof window.reloadRasciState === 'function') {
-            window.reloadRasciState();
-          } else if (typeof window.forceReloadRasciState === 'function') {
-            window.forceReloadRasciState();
-          }
-          
-          // También forzar actualización de matriz desde diagrama por si hay nuevas tareas
-          setTimeout(() => {
-            if (typeof window.updateMatrixFromDiagram === 'function') {
-              window.updateMatrixFromDiagram();
-            }
-          }, 500);
-        }, 1500); // Más tiempo para asegurar que todo esté cargado
-        */
-        
-        // La restauración de relaciones PPINOT se maneja automáticamente en PPIManager
-        // No es necesario llamar aquí ya que se ejecuta cuando el modeler está listo
-        
-      }).catch(err => {
-        console.error('❌ Error al cargar diagrama guardado:', err);
-        console.error('📄 Contenido del diagrama guardado:', savedDiagram.substring(0, 200) + '...');
-        console.warn('🔄 Creando nuevo diagrama como fallback...');
-        createNewDiagram();
-      });
-    } else {
-      console.log('No hay diagrama guardado, creando nuevo...');
-      createNewDiagram();
-    }
-  } catch (e) {
-    console.error('Error en loadBpmnState:', e);
-    createNewDiagram();
+  if (!modeler) {
+    setTimeout(loadBpmnState, 500);
+    return;
   }
+  createNewDiagram();
 }
 
 function validateAndSanitizeWaypoints(waypoints) {
@@ -840,104 +286,226 @@ function validateAndSanitizeWaypoints(waypoints) {
 }
 
 let modeler = null;
-// const moddle = new BpmnModdle({}); // Not used in current implementation
 const container = $('.panel:first-child');
 const body = $('body');
 
-function initializeModeler() {
+async function initializeModeler() {
   try {
-    // Verificar que el elemento canvas existe antes de inicializar
+    console.log('initializeModeler called - Current state:', {
+      modelerExists: !!window.modeler,
+      isInitialized: isModelerInitialized
+    });
+    
     const canvasElement = document.getElementById('js-canvas');
     if (!canvasElement) {
-      console.error('Canvas element #js-canvas not found, cannot initialize modeler');
-      return;
+      console.error('Canvas element not found, waiting for DOM...');
+      // Esperar a que el DOM esté listo y reintentar
+      return new Promise((resolve, reject) => {
+        let retryCount = 0;
+        const maxRetries = 10;
+        
+        const retryInterval = setInterval(() => {
+          const retryCanvas = document.getElementById('js-canvas');
+          retryCount++;
+          
+          if (retryCanvas) {
+            clearInterval(retryInterval);
+            console.log('Canvas found after', retryCount, 'retries');
+            // Recurrir a la función pero con el canvas ya disponible
+            initializeModeler().then(resolve).catch(reject);
+          } else if (retryCount >= maxRetries) {
+            clearInterval(retryInterval);
+            reject('Canvas element not found after ' + maxRetries + ' retries');
+          }
+        }, 300);
+      });
     }
     
-    // Asegurar que el canvas tenga dimensiones válidas
+    // Verificar que el canvas tenga dimensiones válidas
     const rect = canvasElement.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) {
-      console.warn('Canvas element has zero dimensions, adjusting...');
       canvasElement.style.width = '100%';
       canvasElement.style.height = '100%';
       canvasElement.style.minHeight = '400px';
+      
+      // Forzar un reflow para asegurar que las dimensiones se apliquen
+      canvasElement.offsetHeight;
     }
     
-    // Limpiar modeler anterior si existe
     if (window.modeler && typeof window.modeler.destroy === 'function') {
+      // Solo destruir si el modeler no está funcionando correctamente
       try {
-        window.modeler.destroy();
+        const canvas = window.modeler.get('canvas');
+        const canvasContainer = canvas && canvas.getContainer();
+        const svg = canvasContainer && canvasContainer.querySelector('svg');
+        
+        // Si el modeler ya está funcionando Y inicializado, no lo destruyas
+        if (canvas && canvasContainer && svg && typeof svg.getCTM === 'function' && isModelerInitialized) {
+          console.log('Modeler already functional and initialized, skipping destruction');
+          return Promise.resolve(window.modeler);
+        } else {
+          console.log('Destroying previous modeler... (initialized:', isModelerInitialized, ')');
+          
+          // Deshabilitar MoveCanvas específicamente antes de limpiar
+          disableMoveCanvas();
+          
+          // Estrategia más agresiva para limpiar event listeners
+          try {
+            const eventBus = window.modeler.get('eventBus');
+            if (eventBus) {
+              // Remover todos los event listeners del eventBus
+              eventBus.off();
+            }
+            
+            // Limpiar específicamente los listeners del MoveCanvas que causan el error getCTM
+            const moveCanvas = window.modeler.get('moveCanvas');
+            if (moveCanvas) {
+              // Acceder a los listeners internos del MoveCanvas y limpiarlos
+              if (moveCanvas._eventBus) {
+                moveCanvas._eventBus.off();
+              }
+              
+              // Limpiar handlers específicos del documento
+              const handleMove = moveCanvas.handleMove;
+              const handleEnd = moveCanvas.handleEnd;
+              
+              if (handleMove) {
+                document.removeEventListener('mousemove', handleMove);
+                document.removeEventListener('mousemove', handleMove, true);
+              }
+              if (handleEnd) {
+                document.removeEventListener('mouseup', handleEnd);
+                document.removeEventListener('mouseup', handleEnd, true);
+              }
+              
+              // Si tiene un método de cleanup, llamarlo
+              if (typeof moveCanvas.cleanup === 'function') {
+                moveCanvas.cleanup();
+              }
+              if (typeof moveCanvas.deactivate === 'function') {
+                moveCanvas.deactivate();
+              }
+            }
+            
+            // Limpiar event listeners del canvas y contenedor
+            if (canvas && canvasContainer) {
+              const svg = canvasContainer.querySelector('svg');
+              if (svg) {
+                // Clonar y reemplazar el SVG para eliminar todos los listeners
+                const newSvg = svg.cloneNode(true);
+                svg.parentNode.replaceChild(newSvg, svg);
+              }
+              
+              // También limpiar listeners del contenedor
+              const newContainer = canvasContainer.cloneNode(true);
+              canvasContainer.parentNode.replaceChild(newContainer, canvasContainer);
+            }
+            
+          } catch (eventError) {
+            console.warn('Error cleaning event listeners:', eventError);
+          }
+          
+          // Esperar más tiempo para que se limpien completamente los listeners
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          window.modeler.destroy();
+          isModelerInitialized = false; // Marcar como no inicializado
+        }
       } catch (e) {
-        console.warn('Error al destruir modeler anterior:', e);
+        console.warn('Error checking/destroying previous modeler:', e);
+        try {
+          // Limpieza de emergencia
+          disableMoveCanvas();
+          
+          const eventBus = window.modeler.get && window.modeler.get('eventBus');
+          if (eventBus && eventBus.off) {
+            eventBus.off();
+          }
+          
+          // Remover todos los event listeners del documento que puedan estar relacionados
+          document.removeEventListener('mousemove', function() {});
+          
+          await new Promise(resolve => setTimeout(resolve, 500));
+          window.modeler.destroy();
+          isModelerInitialized = false; // Marcar como no inicializado
+        } catch (destroyError) {
+          console.warn('Error destroying modeler:', destroyError);
+          isModelerInitialized = false;
+          // Como último recurso, simplemente remover la referencia
+          window.modeler = null;
+        }
       }
     }
     
-    // Esperar un frame para asegurar que el DOM esté listo
-    requestAnimationFrame(() => {
-      try {
-        modeler = new MultiNotationModeler({
-          container: '#js-canvas',
-          moddleExtensions: {
-            PPINOT: PPINOTModdle,
-            RALph: RALphModdle
-          }
-        });
-        window.bpmnModeler = modeler;
-
-        const eventBus = modeler.get('eventBus');
-        if (eventBus) {
-          eventBus.on(['connection.create', 'bendpoint.move.end'], event => {
-            const wp = event && event.context && event.context.connection && event.context.connection.waypoints;
-            if (wp) event.context.connection.waypoints = validateAndSanitizeWaypoints(wp);
-          });
-          
-          // Guardar estado automáticamente cuando hay cambios
-          eventBus.on([
-            'element.added',
-            'element.removed', 
-            'element.changed',
-            'elements.changed',
-            'shape.move.end',
-            'shape.resize.end',
-            'connection.create',
-            'connection.delete'
-          ], () => {
-            autoSaveBpmnState(); // Usar sistema de guardado automático con debounce
-          });
-          
-          // Guardar antes de que el usuario abandone la página
-          window.addEventListener('beforeunload', () => {
-            if (modeler) {
-              forceSaveBpmnState(); // Guardado inmediato antes de recargar
+    return new Promise((resolve, reject) => {
+      // Limpiar completamente el canvas antes de crear un nuevo modeler
+      cleanupCanvasCompletely();
+      
+      // Dar más tiempo para que el DOM esté completamente renderizado
+      setTimeout(() => {
+        try {
+          console.log('Creating new MultiNotationModeler...');
+          modeler = new MultiNotationModeler({
+            container: '#js-canvas',
+            moddleExtensions: {
+              PPINOT: PPINOTModdle,
+              RALph: RALphModdle
             }
+            // Removida configuración keyboard.bindTo deprecated
           });
+          window.bpmnModeler = modeler;
+
+          const eventBus = modeler.get('eventBus');
+          if (eventBus) {
+            eventBus.on(['connection.create', 'bendpoint.move.end'], event => {
+              const wp = event && event.context && event.context.connection && event.context.connection.waypoints;
+              if (wp) event.context.connection.waypoints = validateAndSanitizeWaypoints(wp);
+            });
+          }
+          
+          window.modeler = modeler;
+          isModelerInitialized = true; // Marcar como inicializado
+          console.log('Modeler created successfully');
+          
+          if (window.ppiManager && window.BpmnIntegration) {
+            window.bpmnIntegration = new window.BpmnIntegration(window.ppiManager, modeler);
+          }
+          
+          // Verificar que el canvas SVG esté completamente inicializado
+          const canvas = modeler.get('canvas');
+          const canvasContainer = canvas.getContainer();
+          
+          // Esperar a que el SVG esté realmente disponible
+          const waitForSVG = () => {
+            const svg = canvasContainer.querySelector('svg');
+            if (svg && typeof svg.getCTM === 'function') {
+              console.log('Canvas SVG is ready');
+              resolve(modeler);
+            } else {
+              console.log('Waiting for SVG to be ready...');
+              setTimeout(waitForSVG, 100);
+            }
+          };
+          
+          // Dar un momento inicial y luego verificar el SVG
+          setTimeout(waitForSVG, 300);
+        } catch (error) {
+          console.error('Error creating modeler:', error);
+          reject(error);
         }
-        
-        // El modeler está listo
-        window.modeler = modeler;
-        
-        console.log('Modeler inicializado correctamente');
-        
-        // Inicializar integración con PPI si está disponible
-        if (window.ppiManager && window.BpmnIntegration) {
-          window.bpmnIntegration = new BpmnIntegration(window.ppiManager, modeler);
-        }
-      } catch (error) {
-        console.error('Error en initializeModeler:', error);
-      }
+      }, 200);
     });
   } catch (error) {
-    console.error('Error en initializeModeler:', error);
+    console.error('Error in initializeModeler:', error);
+    return Promise.reject(error);
   }
 }
 
 async function createNewDiagram() {
   try {
-    console.log('createNewDiagram ejecutándose...');
     if (typeof modeler.clear === 'function') await modeler.clear();
     await modeler.createDiagram();
-    console.log('Nuevo diagrama creado con éxito');
 
-    // Recargar estado RASCI después de crear nuevo diagrama
     setTimeout(() => {
       if (typeof window.reloadRasciState === 'function') {
         window.reloadRasciState();
@@ -963,7 +531,6 @@ async function createNewDiagram() {
   }
 }
 
-// Función para verificar si el modeler está en buen estado
 function isModelerHealthy() {
   if (!window.modeler) return false;
   
@@ -971,619 +538,17 @@ function isModelerHealthy() {
     const canvas = window.modeler.get('canvas');
     const canvasElement = document.getElementById('js-canvas');
     
-    // Verificar que existe el elemento canvas y que el modeler puede acceder a él
     return canvas && canvasElement && canvasElement.parentNode;
   } catch (e) {
     return false;
   }
 }
 
-// Función de debug para verificar el estado del localStorage
-function debugBpmnState() {
-  const savedDiagram = localStorage.getItem('bpmnDiagram');
-  if (savedDiagram) {
-    console.log('Diagrama guardado encontrado en localStorage');
-  } else {
-    console.log('No hay diagrama guardado en localStorage');
-  }
-  
-  if (modeler) {
-    console.log('Modeler está inicializado');
-  } else {
-    console.log('Modeler no está inicializado');
-  }
-}
-
-// Hacer las funciones globales para que el gestor de paneles pueda acceder a ellas
+// Hacer las funciones globales
 window.initializeModeler = initializeModeler;
 window.createNewDiagram = createNewDiagram;
 window.isModelerHealthy = isModelerHealthy;
-window.saveBpmnState = saveBpmnState;
-window.forceSaveBpmnState = forceSaveBpmnState;
 window.loadBpmnState = loadBpmnState;
-window.autoSaveBpmnState = autoSaveBpmnState;
-window.debugBpmnState = debugBpmnState;
-
-// Función de prueba XML para cualquier tipo de elemento
-window.testElementXML = function(elementType) {
-  if (!modeler) {
-    console.error('Modeler no disponible');
-    return;
-  }
-  
-  console.log(`🔍 PRUEBA COMPLETA XML ${elementType}`);
-  
-  return new Promise((resolve, reject) => {
-    try {
-      // 1. Limpiar diagrama
-      modeler.createDiagram().then(() => {
-        console.log('✅ Diagrama limpio creado');
-        
-        // 2. Crear elemento
-        const elementFactory = modeler.get('elementFactory');
-        const modeling = modeler.get('modeling');
-        const canvas = modeler.get('canvas');
-        const rootElement = canvas.getRootElement();
-        
-        const element = elementFactory.createShape({
-          type: elementType
-        });
-        
-        modeling.createShape(element, { x: 100, y: 100 }, rootElement);
-        console.log(`✅ ${elementType} creado y agregado:`, element.id);
-        
-        // 3. Exportar XML
-        modeler.saveXML({ format: true }).then(result => {
-          console.log('✅ XML exportado');
-          const elementName = elementType.split(':')[1] || elementType;
-          console.log(`🔍 XML contiene ${elementName}:`, result.xml.includes(elementName));
-          console.log(`🔍 XML contiene ${elementType}:`, result.xml.includes(elementType));
-          
-          // Mostrar fragmento del XML con el elemento
-          const elementMatch = result.xml.match(new RegExp(`<.*${elementName}.*>`, 'g'));
-          if (elementMatch) {
-            console.log(`🎯 Elementos ${elementName} en XML:`, elementMatch);
-          }
-          
-          // 4. Importar XML de nuevo
-          modeler.importXML(result.xml).then(() => {
-            console.log('✅ XML reimportado');
-            
-            // 5. Verificar si el elemento existe después de importar
-            const elementRegistry = modeler.get('elementRegistry');
-            const allElements = elementRegistry.getAll();
-            
-            const elementsAfterImport = allElements.filter(el => 
-              el.id.includes(elementName) || 
-              (el.type && el.type.includes(elementName)) ||
-              (el.businessObject && el.businessObject.$type && el.businessObject.$type.includes(elementName))
-            );
-            
-            console.log(`🔍 Elementos ${elementName} después de importar:`, elementsAfterImport.length);
-            elementsAfterImport.forEach(el => {
-              console.log(`  ${elementName} found:`, {
-                id: el.id,
-                type: el.type,
-                businessObjectType: el.businessObject ? el.businessObject.$type : 'N/A'
-              });
-            });
-            
-            if (elementsAfterImport.length === 0) {
-              console.error(`❌ PROBLEMA: ${elementName} se perdió durante importación XML`);
-            } else {
-              console.log(`✅ SUCCESS: ${elementName} sobrevivió el ciclo XML`);
-            }
-            
-            resolve({
-              elementType: elementType,
-              created: element,
-              xml: result.xml,
-              afterImport: elementsAfterImport
-            });
-          }).catch(err => {
-            console.error('❌ Error en importación XML:', err);
-            reject(err);
-          });
-        }).catch(err => {
-          console.error('❌ Error en exportación XML:', err);
-          reject(err);
-        });
-      });
-    } catch (e) {
-      console.error(`❌ Error en test${elementType}XML:`, e);
-      reject(e);
-    }
-  });
-};
-
-// Funciones específicas de prueba
-window.testTargetXML = () => window.testElementXML('PPINOT:Target');
-window.testScopeXML = () => window.testElementXML('PPINOT:Scope');
-window.testPpiXML = () => window.testElementXML('PPINOT:Ppi');
-
-// Funciones de prueba para elementos RALph (shapes)
-window.testPersonXML = () => window.testElementXML('RALph:Person');
-window.testRoleRALphXML = () => window.testElementXML('RALph:RoleRALph');
-window.testOrgunitXML = () => window.testElementXML('RALph:Orgunit');
-window.testPositionXML = () => window.testElementXML('RALph:Position');
-
-// Función de prueba XML para conexiones (connections en lugar de shapes)
-window.testConnectionXML = function(connectionType) {
-  if (!modeler) {
-    console.error('Modeler no disponible');
-    return;
-  }
-  
-  console.log(`🔍 PRUEBA COMPLETA XML CONEXIÓN ${connectionType}`);
-  
-  return new Promise((resolve, reject) => {
-    try {
-      // 1. Limpiar diagrama
-      modeler.createDiagram().then(() => {
-        console.log('✅ Diagrama limpio creado');
-        
-        // 2. Crear dos elementos para conectar
-        const elementFactory = modeler.get('elementFactory');
-        const modeling = modeler.get('modeling');
-        const canvas = modeler.get('canvas');
-        const rootElement = canvas.getRootElement();
-        
-        // Crear elemento fuente
-        const sourceElement = elementFactory.createShape({
-          type: 'RALph:Person'
-        });
-        modeling.createShape(sourceElement, { x: 100, y: 100 }, rootElement);
-        
-        // Crear elemento destino
-        const targetElement = elementFactory.createShape({
-          type: 'RALph:Person'
-        });
-        modeling.createShape(targetElement, { x: 300, y: 100 }, rootElement);
-        
-        console.log('✅ Elementos fuente y destino creados');
-        
-        // 3. Crear la conexión
-        const connection = elementFactory.createConnection({
-          type: connectionType,
-          source: sourceElement,
-          target: targetElement,
-          waypoints: [
-            { x: sourceElement.x + sourceElement.width / 2, y: sourceElement.y + sourceElement.height / 2 },
-            { x: targetElement.x + targetElement.width / 2, y: targetElement.y + targetElement.height / 2 }
-          ]
-        });
-        
-        modeling.createConnection(sourceElement, targetElement, connection, rootElement);
-        console.log(`✅ ${connectionType} creado:`, connection.id);
-        
-        // 4. Exportar XML
-        modeler.saveXML({ format: true }).then(result => {
-          console.log('✅ XML exportado');
-          const connectionName = connectionType.split(':')[1] || connectionType;
-          console.log(`🔍 XML contiene ${connectionName}:`, result.xml.includes(connectionName));
-          console.log(`🔍 XML contiene ${connectionType}:`, result.xml.includes(connectionType));
-          
-          // Mostrar fragmento del XML con la conexión
-          const connectionMatch = result.xml.match(new RegExp(`<.*${connectionName}.*>`, 'g'));
-          if (connectionMatch) {
-            console.log(`🎯 Conexiones ${connectionName} en XML:`, connectionMatch);
-          }
-          
-          // 5. Importar XML de nuevo
-          modeler.importXML(result.xml).then(() => {
-            console.log('✅ XML reimportado');
-            
-            // 6. Verificar si la conexión existe después de importar
-            const elementRegistry = modeler.get('elementRegistry');
-            const allElements = elementRegistry.getAll();
-            
-            const connectionsAfterImport = allElements.filter(el => 
-              el.id.includes(connectionName) || 
-              (el.type && el.type.includes(connectionName)) ||
-              (el.businessObject && el.businessObject.$type && el.businessObject.$type.includes(connectionName))
-            );
-            
-            console.log(`🔍 Conexiones ${connectionName} después de importar:`, connectionsAfterImport.length);
-            connectionsAfterImport.forEach(el => {
-              console.log(`  ${connectionName} encontrada:`, {
-                id: el.id,
-                type: el.type,
-                businessObjectType: el.businessObject ? el.businessObject.$type : 'N/A',
-                source: el.source ? el.source.id : 'N/A',
-                target: el.target ? el.target.id : 'N/A'
-              });
-            });
-            
-            if (connectionsAfterImport.length === 0) {
-              console.error(`❌ PROBLEMA: ${connectionName} se perdió durante importación XML`);
-            } else {
-              console.log(`✅ SUCCESS: ${connectionName} sobrevivió el ciclo XML`);
-            }
-            
-            resolve({
-              connectionType: connectionType,
-              created: connection,
-              xml: result.xml,
-              afterImport: connectionsAfterImport
-            });
-          }).catch(err => {
-            console.error('❌ Error en importación XML:', err);
-            reject(err);
-          });
-        }).catch(err => {
-          console.error('❌ Error en exportación XML:', err);
-          reject(err);
-        });
-      });
-    } catch (e) {
-      console.error(`❌ Error en test${connectionType}XML:`, e);
-      reject(e);
-    }
-  });
-};
-
-// Funciones de prueba para conexiones RALph
-window.testReportsDirectlyXML = () => window.testConnectionXML('RALph:reportsDirectly');
-window.testReportsTransitivelyXML = () => window.testConnectionXML('RALph:reportsTransitively');
-window.testDelegatesDirectlyXML = () => window.testConnectionXML('RALph:delegatesDirectly');
-window.testDelegatesTransitivelyXML = () => window.testConnectionXML('RALph:delegatesTransitively');
-window.testReportsToXML = () => window.testConnectionXML('RALph:reportsTo');
-
-// Función para crear elementos SIN borrar el diagrama existente
-window.addElementToCurrentDiagram = function(elementType) {
-  if (!modeler) {
-    console.error('Modeler no disponible');
-    return;
-  }
-  
-  console.log(`➕ AÑADIENDO ${elementType} al diagrama actual`);
-  
-  try {
-    const elementFactory = modeler.get('elementFactory');
-    const modeling = modeler.get('modeling');
-    const canvas = modeler.get('canvas');
-    const rootElement = canvas.getRootElement();
-    
-    // Crear elemento sin limpiar el diagrama
-    const element = elementFactory.createShape({
-      type: elementType
-    });
-    
-    // Posicionar en diferentes ubicaciones para evitar solapamiento
-    const elementRegistry = modeler.get('elementRegistry');
-    const existingElements = elementRegistry.getAll().filter(el => el.parent === rootElement);
-    const yPosition = 100 + (existingElements.length * 80);
-    
-    modeling.createShape(element, { x: 100, y: yPosition }, rootElement);
-    console.log(`✅ ${elementType} añadido:`, element.id);
-    
-    // Guardar automáticamente
-    setTimeout(() => {
-      saveBpmnState();
-      console.log(`💾 Diagrama guardado con ${elementType}`);
-    }, 500);
-    
-    return element;
-  } catch (e) {
-    console.error(`❌ Error añadiendo ${elementType}:`, e);
-    return null;
-  }
-};
-
-// Funciones específicas para añadir elementos
-window.addTarget = () => window.addElementToCurrentDiagram('PPINOT:Target');
-window.addScope = () => window.addElementToCurrentDiagram('PPINOT:Scope');
-window.addPpi = () => window.addElementToCurrentDiagram('PPINOT:Ppi');
-
-// Función para crear un diagrama completo con Target, Scope y Ppi
-window.createCompleteDiagram = function() {
-  console.log('🎯 Creando diagrama completo con Target, Scope y Ppi');
-  
-  // Crear un nuevo diagrama limpio
-  modeler.createDiagram().then(() => {
-    console.log('✅ Diagrama limpio creado');
-    
-    // Añadir elementos uno por uno
-    setTimeout(() => {
-      const target = window.addElementToCurrentDiagram('PPINOT:Target');
-      console.log('Target añadido:', target ? target.id : 'error');
-      
-      setTimeout(() => {
-        const scope = window.addElementToCurrentDiagram('PPINOT:Scope');
-        console.log('Scope añadido:', scope ? scope.id : 'error');
-        
-        setTimeout(() => {
-          const ppi = window.addElementToCurrentDiagram('PPINOT:Ppi');
-          console.log('Ppi añadido:', ppi ? ppi.id : 'error');
-          
-          setTimeout(() => {
-            saveBpmnState();
-            console.log('🎉 ¡Diagrama completo creado y guardado!');
-          }, 500);
-        }, 300);
-      }, 300);
-    }, 300);
-  });
-};
-
-// Función para crear diagrama con relaciones padre-hijo
-window.createDiagramWithParentChild = function() {
-  
-  
-  modeler.createDiagram().then(() => {
-    console.log('✅ Diagrama limpio creado');
-    
-    const elementFactory = modeler.get('elementFactory');
-    const modeling = modeler.get('modeling');
-    const canvas = modeler.get('canvas');
-    const rootElement = canvas.getRootElement();
-    
-    // 1. Crear PPI primero (padre)
-    const ppiElement = elementFactory.createShape({
-      type: 'PPINOT:Ppi'
-    });
-    
-    modeling.createShape(ppiElement, { x: 200, y: 200 }, rootElement);
-    console.log('✅ PPI creado:', ppiElement.id);
-    
-    setTimeout(() => {
-      // 2. Crear Target como hijo de PPI
-      const targetElement = elementFactory.createShape({
-        type: 'PPINOT:Target'
-      });
-      
-      modeling.createShape(targetElement, { x: 50, y: 50 }, ppiElement);
-      console.log('✅ Target creado como hijo de PPI:', targetElement.id);
-      
-      setTimeout(() => {
-        // 3. Crear Scope como hijo de PPI
-        const scopeElement = elementFactory.createShape({
-          type: 'PPINOT:Scope'
-        });
-        
-        modeling.createShape(scopeElement, { x: 150, y: 50 }, ppiElement);
-        console.log('✅ Scope creado como hijo de PPI:', scopeElement.id);
-        
-        setTimeout(() => {
-          saveBpmnState();
-          console.log('🎉 ¡Diagrama con relaciones padre-hijo creado y guardado!');
-          
-          // Mostrar estado actual
-          setTimeout(() => {
-            const elementRegistry = modeler.get('elementRegistry');
-            const allElements = elementRegistry.getAll();
-            console.log('📊 Verificación de relaciones:');
-            allElements.forEach(el => {
-              if (el.parent && el.parent.id !== '__implicitroot') {
-                console.log(`  - ${el.id} (${el.type}) -> padre: ${el.parent.id} (${el.parent.type})`);
-              }
-            });
-          }, 500);
-        }, 500);
-      }, 300);
-    }, 300);
-  });
-};
-
-// Función para probar restauración automática
-window.testAutoRestore = function() {
-  console.log('🧪 PRUEBA DE RESTAURACIÓN AUTOMÁTICA');
-  
-  // 1. Crear diagrama con relaciones
-  window.createDiagramWithParentChild();
-  
-  // 2. Esperar un momento y luego simular recarga
-  setTimeout(() => {
-    console.log('⏳ Esperando 3 segundos antes de simular recarga...');
-    
-    setTimeout(() => {
-      console.log('🔄 Simulando recarga del diagrama...');
-      
-      // Simular recarga cargando el estado guardado
-      window.loadBpmnState();
-      
-      // Verificar resultado después de un momento
-      setTimeout(() => {
-        console.log('🔍 Verificando resultado de restauración automática...');
-        
-        const elementRegistry = modeler.get('elementRegistry');
-        const allElements = elementRegistry.getAll();
-        
-        console.log('📊 Estado después de restauración automática:');
-        allElements.forEach(el => {
-          if (el.parent && el.parent.id !== '__implicitroot') {
-            console.log(`✅ Relación encontrada: ${el.id} (${el.type}) -> padre: ${el.parent.id} (${el.parent.type})`);
-          }
-        });
-        
-        // Contar relaciones exitosas
-        const successfulRelations = allElements.filter(el => 
-          el.parent && 
-          el.parent.id !== '__implicitroot' && 
-          (el.type.includes('PPINOT') || el.type.includes('RALph'))
-        );
-        
-        if (successfulRelations.length > 0) {
-          console.log('🎉 ¡Restauración automática EXITOSA!');
-        } else {
-          console.log('❌ Restauración automática FALLÓ');
-        }
-      }, 5000);
-    }, 3000);
-  }, 2000);
-};
-
-// Función para limpiar relaciones huérfanas (donde faltan elementos)
-window.cleanOrphanedRelations = function() {
-  console.log('🧹 Limpiando relaciones huérfanas...');
-  
-  const savedRelations = localStorage.getItem('bpmnParentChildRelations');
-  if (!savedRelations) {
-    console.log('ℹ️ No hay relaciones guardadas');
-    return;
-  }
-  
-  if (!modeler) {
-    console.log('❌ Modeler no disponible');
-    return;
-  }
-  
-  try {
-    const relations = JSON.parse(savedRelations);
-    const elementRegistry = modeler.get('elementRegistry');
-    const allElements = elementRegistry.getAll();
-    const existingIds = allElements.map(el => el.id);
-    
-    console.log('📋 Relaciones originales:', Object.keys(relations).length);
-    console.log('📋 Elementos existentes:', existingIds.length);
-    
-    // Filtrar solo relaciones válidas
-    const validRelations = {};
-    const orphanedRelations = {};
-    
-    Object.entries(relations).forEach(([childId, relation]) => {
-      const childExists = existingIds.includes(childId);
-      const parentExists = existingIds.includes(relation.parentId);
-      
-      if (childExists && parentExists) {
-        validRelations[childId] = relation;
-      } else {
-        orphanedRelations[childId] = relation;
-        console.log(`🗑️ Relación huérfana: ${childId} -> ${relation.parentId} (child: ${childExists}, parent: ${parentExists})`);
-      }
-    });
-    
-    console.log('✅ Relaciones válidas:', Object.keys(validRelations).length);
-    console.log('🗑️ Relaciones huérfanas:', Object.keys(orphanedRelations).length);
-    
-    // Guardar solo las relaciones válidas
-    if (Object.keys(validRelations).length > 0) {
-      localStorage.setItem('bpmnParentChildRelations', JSON.stringify(validRelations));
-      console.log('💾 Relaciones limpias guardadas');
-    } else {
-      localStorage.removeItem('bpmnParentChildRelations');
-      console.log('🧹 Todas las relaciones eran huérfanas, storage limpiado');
-    }
-    
-    return {
-      original: Object.keys(relations).length,
-      valid: Object.keys(validRelations).length,
-      orphaned: Object.keys(orphanedRelations).length,
-      validRelations,
-      orphanedRelations
-    };
-  } catch (e) {
-    console.error('❌ Error limpiando relaciones:', e);
-    return null;
-  }
-};
-
-// Función para diagnosticar diferencia entre loadBpmnState y testElementXML
-window.debugLoadVsTest = function() {
-  console.log('🔍 DIAGNÓSTICO: Comparando loadBpmnState vs testElementXML');
-  
-  // 1. Guardar estado actual
-  const currentXML = localStorage.getItem('bpmnDiagram');
-  const currentRelations = localStorage.getItem('bpmnParentChildRelations');
-  
-  if (!currentXML) {
-    console.log('❌ No hay XML guardado en localStorage');
-    return;
-  }
-  
-  console.log('📄 XML guardado contiene:');
-  console.log('  - Target:', currentXML.includes('Target'));
-  console.log('  - Scope:', currentXML.includes('Scope'));
-  console.log('  - Ppi:', currentXML.includes('Ppi'));
-  console.log('  - PPINOT namespace:', currentXML.includes('xmlns:PPINOT=') || currentXML.includes('xmlns:ppinot='));
-  console.log('  - RALph namespace:', currentXML.includes('xmlns:RALph=') || currentXML.includes('xmlns:ralph='));
-  
-  // Mostrar relaciones guardadas
-  if (currentRelations) {
-    try {
-      const relations = JSON.parse(currentRelations);
-      
-      Object.entries(relations).forEach(([childId, relation]) => {
-        console.log(`  - ${childId} (${relation.childType}) -> ${relation.parentId} (${relation.parentType})`);
-      });
-    } catch (e) {
-      console.error('❌ Error parseando relaciones:', e);
-    }
-  }
-  
-  // Mostrar fragmento del XML para ver la estructura
-  console.log('\n📋 FRAGMENTO XML guardado:');
-  const lines = currentXML.split('\n');
-  lines.forEach((line, i) => {
-    if (line.includes('Scope') || line.includes('Target') || line.includes('Ppi') || line.includes('PPINOT') || line.includes('xmlns')) {
-      console.log(`${i+1}: ${line.trim()}`);
-    }
-  });
-  
-  // 2. Probar importación directa (como en loadBpmnState)
-  console.log('\n🧪 PRUEBA 1: Importación directa (método loadBpmnState)');
-  modeler.importXML(currentXML).then(() => {
-    const elementRegistry = modeler.get('elementRegistry');
-    const allElements = elementRegistry.getAll();
-    
-    console.log('📊 RESULTADO importación directa:');
-    console.log('  - Total elementos:', allElements.length);
-    
-    // Mostrar TODOS los elementos para diagnóstico
-    console.log('\n🔍 TODOS los elementos importados:');
-    allElements.forEach(el => {
-      console.log(`  - ${el.id}: ${el.type} (businessObject: ${el.businessObject ? el.businessObject.$type : 'N/A'})`);
-    });
-    
-    const ppinotElements = allElements.filter(el => {
-      return (el.type && (el.type.includes('PPINOT') || el.type.includes('RALph'))) ||
-             (el.businessObject && el.businessObject.$type && 
-              (el.businessObject.$type.includes('PPINOT') || el.businessObject.$type.includes('RALph')));
-    });
-    
-    console.log('\n📊 Elementos PPINOT/RALph encontrados:', ppinotElements.length);
-    console.log('  - Target:', ppinotElements.filter(el => el.type && el.type.includes('Target')).length);
-    console.log('  - Scope:', ppinotElements.filter(el => el.type && el.type.includes('Scope')).length);
-    console.log('  - Ppi:', ppinotElements.filter(el => el.type && el.type.includes('Ppi')).length);
-    
-    // Diagnóstico detallado de elementos específicos
-    ppinotElements.forEach(el => {
-      console.log(`🔍 Elemento PPINOT/RALph: ${el.id}`);
-      console.log(`  - Tipo: ${el.type}`);
-      console.log(`  - BusinessObject tipo: ${el.businessObject ? el.businessObject.$type : 'N/A'}`);
-      console.log(`  - Padre: ${el.parent ? el.parent.id : 'N/A'} (${el.parent ? el.parent.type : 'N/A'})`);
-      console.log(`  - Posición: x=${el.x}, y=${el.y}`);
-    });
-    
-    // Verificar qué relaciones se pueden restaurar
-    if (currentRelations) {
-      try {
-        const relations = JSON.parse(currentRelations);
-        const existingIds = allElements.map(el => el.id);
-        
-        console.log('\n🔍 ANÁLISIS DE RELACIONES:');
-        Object.entries(relations).forEach(([childId, relation]) => {
-          const childExists = existingIds.includes(childId);
-          const parentExists = existingIds.includes(relation.parentId);
-          const status = childExists && parentExists ? '✅' : '❌';
-          
-          console.log(`${status} ${childId} -> ${relation.parentId}`);
-          console.log(`    Hijo existe: ${childExists ? '✅' : '❌'}`);
-          console.log(`    Padre existe: ${parentExists ? '✅' : '❌'}`);
-        });
-      } catch (e) {
-        console.error('❌ Error analizando relaciones:', e);
-      }
-    }
-    
-    // 3. Ahora hacer la prueba testElementXML para comparar
-    console.log('\n🧪 PRUEBA 2: Creación + exportación + importación (método testElementXML)');
-    console.log('Ejecuta manualmente: testTargetXML() y testScopeXML() para comparar');
-    
-  }).catch(err => {
-    console.error('❌ Error en importación directa:', err);
-  });
-};
 
 function updateUI(message = '') {
   if (message) $('.status-item:first-child span').text(message);
@@ -1592,723 +557,738 @@ function updateUI(message = '') {
 
 // Funciones para manejo de archivos
 async function handleNewDiagram() {
-  console.log('🆕 Creando nuevo diagrama...');
-  
   try {
-    // Usar StorageManager para reset completo
-    if (window.storageManager) {
-      const success = await window.storageManager.resetStorage();
-      if (success) {
-        console.log('✅ Reset completo exitoso');
+    console.log('handleNewDiagram called');
+    showModeler();
+    
+    // Esperar a que el DOM se actualice después de mostrar el modeler
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Asegurar que el modeler esté inicializado y esperar a que esté listo
+    let modelerReady = false;
+    let attempts = 0;
+    const maxAttempts = 15;
+    
+    while (!modelerReady && attempts < maxAttempts) {
+      // Verificar si el canvas existe en el DOM
+      const canvasElement = document.getElementById('js-canvas');
+      if (!canvasElement) {
+        console.log('Canvas element not found, waiting... (attempt', attempts + 1, ')');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        attempts++;
+        continue;
+      }
+      
+      if (!window.modeler) {
+        console.log('Initializing modeler... (attempt', attempts + 1, ')');
+        try {
+          await initializeModeler();
+          // Esperar un poco más para asegurar que el DOM esté listo
+          await new Promise(resolve => setTimeout(resolve, 800));
+        } catch (error) {
+          console.warn('Error initializing modeler:', error);
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        } else {
+          // Si el modeler ya existe, verificar que esté funcionando
+          try {
+            const canvas = window.modeler.get('canvas');
+            const canvasContainer = canvas && canvas.getContainer();
+            const svg = canvasContainer && canvasContainer.querySelector('svg');
+            
+            if (!canvas || !svg || typeof svg.getCTM !== 'function') {
+              console.log('Modeler exists but canvas/SVG not accessible, reinitializing...');
+              isModelerInitialized = false;
+              await initializeModeler();
+              await new Promise(resolve => setTimeout(resolve, 800));
+            } else {
+              console.log('Modeler already functional, continuing...');
+            }
+          } catch (error) {
+            console.log('Modeler exists but not functional, reinitializing...');
+            isModelerInitialized = false;
+            await initializeModeler();
+            await new Promise(resolve => setTimeout(resolve, 800));
+          }
+        }      // Verificar si el modeler está realmente listo
+      if (window.modeler && typeof window.modeler.createDiagram === 'function') {
+        try {
+          // Intentar acceder al canvas para verificar que está completamente inicializado
+          const canvas = window.modeler.get('canvas');
+          const canvasContainer = canvas && canvas.getContainer();
+          
+          if (canvas && canvasContainer) {
+            // Verificar también que el SVG esté disponible y funcional
+            const svg = canvasContainer.querySelector('svg');
+            if (svg && typeof svg.getCTM === 'function') {
+              modelerReady = true;
+              console.log('Modeler and SVG are ready for new diagram!');
+            } else {
+              console.log('SVG not ready yet, waiting...');
+              await new Promise(resolve => setTimeout(resolve, 400));
+            }
+          } else {
+            console.log('Canvas not fully ready yet, waiting...');
+            await new Promise(resolve => setTimeout(resolve, 400));
+          }
+        } catch (e) {
+          console.log('Modeler not fully ready yet, waiting...');
+          await new Promise(resolve => setTimeout(resolve, 400));
+        }
+      }
+      
+      attempts++;
+      if (!modelerReady) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    }
+    
+    if (!modelerReady) {
+      throw new Error('No se pudo inicializar el modeler después de varios intentos');
+    }
+    
+    console.log('Creating new diagram...');
+    await createNewDiagram();
+    updateUI('Nuevo diagrama creado.');
+  } catch (error) {
+    console.error('Error in handleNewDiagram:', error);
+    updateUI('Error creando nuevo diagrama: ' + error.message);
+  }
+}
+
+function updateLastExport() {
+  const now = new Date();
+  const formatted = now.toLocaleString();
+  if ($('.status-item').length >= 3) {
+    $('.status-item:nth-child(3) span').text(`Último: ${formatted}`);
+  }
+}
+
+// Función para deshabilitar completamente el MoveCanvas antes de destruir
+function disableMoveCanvas() {
+  try {
+    console.log('Disabling MoveCanvas completely...');
+    
+    if (!window.modeler) {
+      return;
+    }
+    
+    const moveCanvas = window.modeler.get('moveCanvas');
+    if (moveCanvas) {
+      // Deshabilitar el MoveCanvas completamente
+      if (typeof moveCanvas.setEnabled === 'function') {
+        moveCanvas.setEnabled(false);
+      }
+      
+      // Remover handlers específicos del documento
+      if (moveCanvas._mouseMoveHandler) {
+        document.removeEventListener('mousemove', moveCanvas._mouseMoveHandler);
+        document.removeEventListener('mousemove', moveCanvas._mouseMoveHandler, true);
+        delete moveCanvas._mouseMoveHandler;
+      }
+      
+      if (moveCanvas._mouseUpHandler) {
+        document.removeEventListener('mouseup', moveCanvas._mouseUpHandler);
+        document.removeEventListener('mouseup', moveCanvas._mouseUpHandler, true);
+        delete moveCanvas._mouseUpHandler;
+      }
+      
+      // Limpiar cualquier handler llamado handleMove
+      const handleMove = moveCanvas.handleMove;
+      if (handleMove) {
+        document.removeEventListener('mousemove', handleMove);
+        document.removeEventListener('mousemove', handleMove, true);
+      }
+      
+      // Limpiar el estado interno del MoveCanvas
+      if (moveCanvas._dragContext) {
+        moveCanvas._dragContext = null;
+      }
+      
+      if (moveCanvas._active) {
+        moveCanvas._active = false;
+      }
+      
+      console.log('MoveCanvas disabled successfully');
+    }
+    
+  } catch (error) {
+    console.warn('Error disabling MoveCanvas:', error);
+  }
+}
+
+// Función para limpiar completamente el canvas y evitar errores getCTM
+function cleanupCanvasCompletely() {
+  try {
+    console.log('Cleaning up canvas completely...');
+    
+    const canvasElement = document.getElementById('js-canvas');
+    if (!canvasElement) {
+      return;
+    }
+    
+    // Remover todos los event listeners del elemento canvas
+    const newCanvasElement = canvasElement.cloneNode(false);
+    newCanvasElement.id = 'js-canvas';
+    
+    // Mantener las clases y estilos
+    newCanvasElement.className = canvasElement.className;
+    newCanvasElement.style.cssText = canvasElement.style.cssText;
+    
+    // Reemplazar el elemento completamente
+    canvasElement.parentNode.replaceChild(newCanvasElement, canvasElement);
+    
+    console.log('Canvas cleanup completed');
+    return true;
+  } catch (error) {
+    console.error('Error during canvas cleanup:', error);
+    return false;
+  }
+}
+
+// Función para habilitar herramientas de edición después de importar
+function enableEditingTools() {
+  try {
+    console.log('Enabling editing tools...');
+    
+    if (!window.modeler) {
+      console.warn('No modeler available');
+      return false;
+    }
+    
+    const canvas = window.modeler.get('canvas');
+    const rootElement = canvas.getRootElement();
+    
+    if (rootElement) {
+      // Seleccionar el elemento root para activar las herramientas
+      const selection = window.modeler.get('selection');
+      if (selection) {
+        selection.select([]);
+        console.log('Selection service activated');
+      }
+      
+      // Verificar que las herramientas de creación estén disponibles
+      const create = window.modeler.get('create');
+      const elementFactory = window.modeler.get('elementFactory');
+      const modeling = window.modeler.get('modeling');
+      
+      if (create && elementFactory && modeling) {
+        console.log('All editing tools are available');
+        return true;
       } else {
-        console.error('❌ Error en reset completo');
-        // Fallback: limpieza básica
-        if (window.storageManager) {
-          await window.storageManager.clearStorage();
-        }
+        console.warn('Some editing tools missing');
+        return false;
       }
-    } else {
-      console.warn('⚠️ StorageManager no disponible, usando limpieza manual');
-      // Fallback: limpieza manual
-      const keysToKeep = ['userPreferences', 'theme', 'globalSettings'];
-      const keysToRemove = [];
-      
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (!keysToKeep.includes(key)) {
-          keysToRemove.push(key);
-        }
-      }
-      
-      keysToRemove.forEach(key => {
-        console.log(`🗑️ Eliminando: ${key}`);
-        localStorage.removeItem(key);
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error enabling editing tools:', error);
+    return false;
+  }
+}
+
+// Función para reactivar servicios de edición después de importar
+function reactivateEditingServices() {
+  try {
+    console.log('Reactivating editing services...');
+    
+    if (!window.modeler) {
+      console.warn('No modeler available for reactivating services');
+      return false;
+    }
+    
+    // Obtener servicios principales
+    const canvas = window.modeler.get('canvas');
+    const eventBus = window.modeler.get('eventBus');
+    const contextPad = window.modeler.get('contextPad');
+    const palette = window.modeler.get('palette');
+    
+    // Verificar que los servicios estén disponibles
+    if (!canvas || !eventBus) {
+      console.warn('Essential services not available');
+      return false;
+    }
+    
+    // Forzar actualización del canvas
+    canvas.zoom('fit-viewport');
+    
+    // Forzar la activación de event listeners del canvas
+    const canvasContainer = canvas.getContainer();
+    if (canvasContainer) {
+      // Disparar un evento para reactivar los listeners
+      const mouseEvent = new MouseEvent('mousemove', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 0,
+        clientY: 0
       });
-      
-      // Limpiar variables globales
-      if (window.rasciRoles) window.rasciRoles = [];
-      if (window.rasciTasks) window.rasciTasks = [];
-      if (window.rasciMatrixData) window.rasciMatrixData = {};
+      canvasContainer.dispatchEvent(mouseEvent);
     }
     
-    // Forzar recarga de datos de paneles después de limpiar
-    if (window.storageManager && typeof window.storageManager.forcePanelDataReload === 'function') {
-      await window.storageManager.forcePanelDataReload();
+    // Reactivar context pad si está disponible
+    if (contextPad) {
+      contextPad.open();
+      setTimeout(() => contextPad.close(), 100); // Abrirlo y cerrarlo para reactivarlo
     }
     
-    showModeler();
-    // Actualizar la UI si se regresa a la pantalla de bienvenida
-    checkSavedDiagram();
-    // El modeler se inicializará automáticamente
+    // Reactivar palette si está disponible
+    if (palette) {
+      try {
+        palette.close();
+        palette.open();
+      } catch (paletteError) {
+        console.warn('Error reactivating palette:', paletteError);
+      }
+    }
+    
+    console.log('Editing services reactivated successfully');
+    return true;
     
   } catch (error) {
-    console.error('❌ Error en handleNewDiagram:', error);
-    // Continuar con el flujo normal incluso si hay error
-    showModeler();
-    checkSavedDiagram();
+    console.error('Error reactivating editing services:', error);
+    return false;
   }
 }
 
-function handleContinueDiagram() {
-  showModeler();
-  // El diagrama guardado se cargará automáticamente cuando se inicialice el modeler
+// Función para limpiar event listeners duplicados
+function cleanupEventListeners() {
+  const openButton = $('#openButton');
+  const newButton = $('#newDiagramButton');
+  const openFileInput = $('#openFileInput');
+
+  // Remover completamente todos los event listeners
+  if (openButton.length) {
+    openButton.off();
+  }
+  if (newButton.length) {
+    newButton.off();
+  }
+  if (openFileInput.length) {
+    openFileInput.off();
+  }
   
-  // RECARGAS AUTOMÁTICAS DESHABILITADAS TEMPORALMENTE PARA EVITAR BUCLE
-  console.log('ℹ️ Recarga automática RASCI en handleContinueDiagram deshabilitada - usar botón manual');
+  // También limpiar el file input si existe
+  const fileInput = document.getElementById('file-input');
+  if (fileInput) {
+    // Clonar y reemplazar el elemento para eliminar TODOS los listeners
+    const newFileInput = fileInput.cloneNode(true);
+    fileInput.parentNode.replaceChild(newFileInput, fileInput);
+  }
+}
+
+function setupFileHandlers() {
+  // Evitar setup múltiple
+  if (fileHandlersSetup || eventListenersRegistered) {
+    console.log('File handlers already setup, skipping... (fileHandlersSetup:', fileHandlersSetup, ', eventListenersRegistered:', eventListenersRegistered, ')');
+    return;
+  }
   
-  /*
-  // ASEGURAR que se recarga el estado RASCI después de mostrar el modelador
-  setTimeout(() => {
-    if (typeof window.ensureRasciMatrixLoaded === 'function') {
-      console.log('🔄 Usando función robusta para recargar RASCI después de continuar diagrama...');
-      window.ensureRasciMatrixLoaded();
-    } else if (typeof window.reloadRasciState === 'function') {
-      console.log('🔄 Recargando estado RASCI después de continuar diagrama...');
-      window.reloadRasciState();
-    }
-  }, 1500); // Un poco más de delay para asegurar que el modeler esté listo
-  */
-}
-
-async function handleOpenWithConfirmation() {
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay';
-  modal.innerHTML = `
-    <div class="modal-content">
-      <h3 class="modal-title">Abrir Nuevo Proyecto</h3>
-      <p class="modal-message">¿Estás seguro de que quieres abrir un nuevo proyecto?<br><br>Esto sobrescribirá todos los datos actuales y se perderá el trabajo no guardado.</p>
-      <div class="modal-actions">
-        <button class="modal-btn" id="cancel-open">Cancelar</button>
-        <button class="modal-btn danger" id="confirm-open">Abrir</button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  function closeModal() {
-    if (modal.parentNode) {
-      modal.parentNode.removeChild(modal);
-    }
+  console.log('Setting up file handlers...');
+  
+  // Limpiar listeners existentes primero
+  cleanupEventListeners();
+  
+  const fileInput = document.getElementById('file-input');
+  if (!fileInput) {
+    return;
   }
 
-  function confirmOpen() {
-    if (window.importExportManager) {
-      window.importExportManager.importProject();
-    } else {
-      handleOpenDiagram();
-    }
-    closeModal();
+  fileHandlersSetup = true; // Marcar como configurado
+
+  // Remover event listeners existentes para evitar duplicados
+  const clonedInput = fileInput.cloneNode(true);
+  fileInput.parentNode.replaceChild(clonedInput, fileInput);
+  
+  // Usar el input clonado (sin event listeners previos)
+  const cleanFileInput = document.getElementById('file-input');
+
+  const newButton = $('#new-button');
+  const openButton = $('#open-button');
+  const saveButton = $('#save-button');
+
+  if (newButton.length) {
+    newButton.off('click').on('click', handleNewDiagram);
   }
 
-  modal.querySelector('#cancel-open').addEventListener('click', closeModal);
-  modal.querySelector('#confirm-open').addEventListener('click', confirmOpen);
-
-  document.addEventListener('keydown', function handleEscape(e) {
-    if (e.key === 'Escape') {
-      closeModal();
-      document.removeEventListener('keydown', handleEscape);
-    }
-  });
-
-  modal.addEventListener('click', function handleOutsideClick(e) {
-    if (e.target === modal) {
-      closeModal();
-      modal.removeEventListener('click', handleOutsideClick);
-    }
-  });
-}
-
-async function handleOpenDiagram() {
-  try {
-    // NOTA: NO limpiar la marca de importación aquí ya que el usuario puede importar un proyecto
-    // La marca se configurará apropiadamente en handleFileSelect según el tipo de archivo
-    
-    if (window.storageManager) {
-      await window.storageManager.prepareForImport();
-      // Forzar recarga de datos de paneles después de limpiar
-      if (typeof window.storageManager.forcePanelDataReload === 'function') {
-        await window.storageManager.forcePanelDataReload();
-      }
-    } else {
-      if (window.importExportManager && window.importExportManager.clearAllProjectData) {
-        window.importExportManager.clearAllProjectData();
-      }
-    }
-    
-    showModeler();
-    
-    const fileInput = document.getElementById('file-input');
-    if (fileInput) {
-      fileInput.click();
-    }
-    
-  } catch (error) {
-    console.error('❌ Error en handleOpenDiagram:', error);
-    const fileInput = document.getElementById('file-input');
-    if (fileInput) {
-      fileInput.click();
-    }
-  }
-}
-
-function handleFileSelect(event) {
-  const file = event.target.files[0];
-  if (file) {
-    console.log('📁 Archivo seleccionado:', file.name, 'Tipo:', file.type);
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const content = e.target.result;
+  if (openButton.length) {
+    openButton.off('click').on('click', () => {
+      const now = Date.now();
       
-      // Detectar tipo de archivo basado en extensión y contenido
-      const isProjectFile = file.name.endsWith('.mmproject') || 
-                           file.name.endsWith('.json') ||
-                           content.trim().startsWith('{');
-      
-      if (isProjectFile) {
-        // ESTABLECER MARCA ANTES DE IMPORTAR PROYECTO
-        window.isImportingProject = true;
-        console.log('📦 Archivo de proyecto detectado, importando proyecto completo...');
-        handleProjectImport(content);
-      } else {
-        // LIMPIAR MARCA PARA ARCHIVOS BPMN REGULARES
-        window.isImportingProject = false;
-        console.log('📄 Archivo BPMN detectado, importando diagrama...');
-        handleBpmnImport(content);
-      }
-    };
-    reader.readAsText(file);
-  }
-  
-  // Limpiar el input para permitir reseleccionar el mismo archivo
-  event.target.value = '';
-}
-
-function handleBpmnImport(content) {
-  console.log('📁 Archivo BPMN leído, guardando en localStorage...');
-  localStorage.setItem('bpmnDiagram', content);
-  localStorage.setItem('bpmnDiagramTimestamp', Date.now().toString());
-  console.log('✅ Diagrama BPMN guardado en localStorage');
-  
-  showModeler();
-  checkSavedDiagram();
-  
-  // Cargar el diagrama después de que el modeler esté inicializado
-  const loadDiagramWithRetry = (attempts = 0, maxAttempts = 15) => {
-    console.log(`🔄 Intento ${attempts + 1} de cargar diagrama BPMN...`);
-    
-    if (window.modeler && typeof window.loadBpmnState === 'function') {
-      console.log('✅ Modeler listo, cargando diagrama BPMN...');
-      window.loadBpmnState();
-      
-      // Si se está importando un proyecto, forzar recarga de la matriz RASCI
-      if (window.isImportingProject === true) {
-        setTimeout(() => {
-          if (typeof window.forceReloadMatrix === 'function') {
-            console.log('🔄 Forzando recarga de matriz RASCI después de importación...');
-            window.forceReloadMatrix();
-          }
-        }, 1500);
-        
-        // Segunda recarga después de más tiempo para asegurar que se cargan los datos
-        setTimeout(() => {
-          if (typeof window.forceReloadMatrix === 'function') {
-            console.log('🔄 Segunda recarga de matriz RASCI para asegurar datos...');
-            window.forceReloadMatrix();
-          }
-        }, 3000);
+      // Verificar tanto el flag como el timestamp
+      if (isOpenButtonClicked || (now - lastOpenButtonClick < 3000)) {
+        console.log('Open button clicked too recently, ignoring...');
+        return;
       }
       
-      // Ejecutar diagnóstico después de cargar
+      isOpenButtonClicked = true;
+      lastOpenButtonClick = now;
+      
+      // Timeout más largo para evitar clicks múltiples
       setTimeout(() => {
-        if (typeof window.debugDiagramLoading === 'function') {
-          window.debugDiagramLoading();
-        }
-      }, 2000);
-    } else if (attempts < maxAttempts) {
-      console.log('⏳ Modeler no listo, reintentando en 500ms...');
-      setTimeout(() => loadDiagramWithRetry(attempts + 1, maxAttempts), 500);
-    } else {
-      console.error('❌ No se pudo cargar el diagrama después de múltiples intentos');
+        isOpenButtonClicked = false;
+      }, 3000); // 3 segundos en lugar de 1
       
-      // Limpiar la marca de importación si falla
-      if (window.isImportingProject === true) {
-        window.isImportingProject = false;
-        console.log('⚠️ Limpiando marca de importación debido a fallo en carga');
-      }
-    }
-  };
-  
-  // Iniciar el proceso de carga con reintentos
-  setTimeout(() => loadDiagramWithRetry(), 500);
-}
+      // Prevenir clicks adicionales por el event bubbling
+      setTimeout(() => {
+        cleanFileInput.click();
+      }, 100); // Pequeño delay para evitar problemas de timing
+    });
+  }
 
-function handleProjectImport(content) {
-  try {
-    // La marca isImportingProject ya está establecida en handleFileSelect
-    console.log('📦 Iniciando importación de proyecto...');
-    
-    const projectData = JSON.parse(content);
-    const projectName = projectData.metadata && projectData.metadata.name ? projectData.metadata.name : 'Sin nombre';
-    console.log('📦 Proyecto importado:', projectName);
-    
-    // Buscar el diagrama BPMN en diferentes ubicaciones posibles
-    let bpmnDiagram = null;
-    
-    // 1. Buscar en la ubicación estándar
-    if (projectData.bpmnDiagram) {
-      bpmnDiagram = projectData.bpmnDiagram;
-      console.log('✅ Diagrama BPMN encontrado en bpmnDiagram');
-    }
-    // 2. Buscar en panels.bpmn.diagram (estructura actual)
-    else if (projectData.panels && projectData.panels.bpmn && projectData.panels.bpmn.diagram) {
-      bpmnDiagram = projectData.panels.bpmn.diagram;
-      console.log('✅ Diagrama BPMN encontrado en panels.bpmn.diagram');
-      console.log('📄 Diagrama completo extraído del proyecto:');
-      console.log(bpmnDiagram);
-    }
-    // 3. Buscar en cualquier otra ubicación posible
-    else if (projectData.diagram) {
-      bpmnDiagram = projectData.diagram;
-      console.log('✅ Diagrama BPMN encontrado en diagram');
-    }
-    
-    if (bpmnDiagram) {
-      console.log('📄 Longitud del diagrama BPMN:', bpmnDiagram.length);
-      console.log('📄 Primeras 100 caracteres del diagrama:', bpmnDiagram.substring(0, 100));
-      
-      // Importar datos adicionales del proyecto si están disponibles
-      if (projectData.panels) {
-        console.log('📦 Importando datos adicionales del proyecto...');
-        
-        // Importar datos RASCI
-        if (projectData.panels.rasci) {
-          console.log('📊 Importando datos RASCI...');
-          if (projectData.panels.rasci.roles) {
-            localStorage.setItem('rasciRoles', JSON.stringify(projectData.panels.rasci.roles));
-            console.log('✅ Roles RASCI importados:', projectData.panels.rasci.roles);
-          }
-          if (projectData.panels.rasci.matrix) {
-            localStorage.setItem('rasciMatrixData', JSON.stringify(projectData.panels.rasci.matrix));
-            console.log('✅ Matriz RASCI importada:', projectData.panels.rasci.matrix);
-          }
-          if (projectData.panels.rasci.tasks) {
-            localStorage.setItem('rasciTasks', JSON.stringify(projectData.panels.rasci.tasks));
-            console.log('✅ Tareas RASCI importadas:', projectData.panels.rasci.tasks);
-          }
-        }
-        
-        // Importar datos PPI
-        if (projectData.panels.ppi) {
-          console.log('📊 Importando datos PPI...');
-          if (projectData.panels.ppi.indicators) {
-            localStorage.setItem('ppiIndicators', JSON.stringify(projectData.panels.ppi.indicators));
-          }
-          if (projectData.panels.ppi.relationships) {
-            localStorage.setItem('ppiRelationships', JSON.stringify(projectData.panels.ppi.relationships));
-          }
-        }
-        
-        // Importar datos BPMN adicionales (relaciones de parentesco, etc.)
-        if (projectData.panels.bpmn) {
-          console.log('📊 Importando datos BPMN adicionales...');
-          if (projectData.panels.bpmn.relationships) {
-            if (projectData.panels.bpmn.relationships.parentChild) {
-              localStorage.setItem('bpmnParentChildRelations', JSON.stringify(projectData.panels.bpmn.relationships.parentChild));
-              console.log('✅ Relaciones padre-hijo importadas');
-            }
-            if (projectData.panels.bpmn.relationships.ppinot) {
-              localStorage.setItem('bpmnPPINOTRelations', JSON.stringify(projectData.panels.bpmn.relationships.ppinot));
-              console.log('✅ Relaciones PPINOT importadas');
-            }
-          }
-          if (projectData.panels.bpmn.elements) {
-            if (projectData.panels.bpmn.elements.ppinot) {
-              localStorage.setItem('bpmnPPINOTElements', JSON.stringify(projectData.panels.bpmn.elements.ppinot));
-              console.log('✅ Elementos PPINOT importados');
-            }
-            if (projectData.panels.bpmn.elements.ralph) {
-              localStorage.setItem('bpmnRALPHElements', JSON.stringify(projectData.panels.bpmn.elements.ralph));
-              console.log('✅ Elementos RALPH importados');
-            }
-          }
-          if (projectData.panels.bpmn.canvas) {
-            localStorage.setItem('bpmnCanvasState', JSON.stringify(projectData.panels.bpmn.canvas));
-            console.log('✅ Estado del canvas importado');
-          }
-        }
-        
-        // Importar configuración de paneles
-        if (projectData.panels.configuration) {
-          console.log('📊 Importando configuración de paneles...');
-          if (projectData.panels.configuration.activePanels) {
-            localStorage.setItem('activePanels', JSON.stringify(projectData.panels.configuration.activePanels));
-          }
-          if (projectData.panels.configuration.layout) {
-            localStorage.setItem('panelLayout', projectData.panels.configuration.layout);
-          }
-        }
+  if (saveButton.length) {
+    saveButton.off('click').on('click', async () => {
+      try {
+        const result = await modeler.saveXML({ format: true });
+        const blob = new Blob([result.xml], { type: 'application/xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'diagram.bpmn';
+        a.click();
+        URL.revokeObjectURL(url);
+        updateLastExport();
+        updateUI('Diagrama exportado.');
+      } catch (error) {
+        updateUI('Error exportando diagrama');
       }
+    });
+  }
+
+  // Agregar event listener UNA SOLA VEZ al input limpio
+  cleanFileInput.addEventListener('change', async (event) => {
+    const file = event.target.files[0];
+    if (!file) {
+      // Resetear el flag si no hay archivo seleccionado
+      isProcessingFile = false;
+      return;
+    }
+    
+    // Prevenir procesamiento múltiple
+    if (isProcessingFile) {
+      console.log('Already processing a file, ignoring...');
+      // Limpiar el input para evitar que se quede "seleccionado"
+      event.target.value = '';
+      return;
+    }
+    
+    isProcessingFile = true;
+    console.log('Starting file processing for:', file.name);
+
+    try {
+      console.log('File selected:', file.name);
+      const content = await file.text();
+      console.log('File content read, length:', content.length);
       
-      // Para proyectos, guardar el diagrama directamente sin pasar por handleBpmnImport
-      // para evitar conflictos con la inicialización del panel manager
-      console.log('📁 Guardando diagrama BPMN del proyecto en localStorage...');
-      localStorage.setItem('bpmnDiagram', bpmnDiagram);
-      localStorage.setItem('bpmnDiagramTimestamp', Date.now().toString());
-      console.log('✅ Diagrama BPMN guardado en localStorage');
-      
-      // Mostrar el modeler si no está visible
+      // Mostrar el modeler primero y esperar a que esté completamente renderizado
       showModeler();
       
-      // Cargar el diagrama después de que el modeler esté inicializado
-      const loadDiagramWithRetry = (attempts = 0, maxAttempts = 15) => {
-        console.log(`🔄 Intento ${attempts + 1} de cargar diagrama BPMN...`);
-        
-        if (window.modeler && typeof window.loadBpmnState === 'function') {
-          console.log('✅ Modeler listo, cargando diagrama BPMN...');
-          window.loadBpmnState();
-          
-          // Forzar recarga de la matriz RASCI después de la importación
-          setTimeout(() => {
-            console.log('🔄 Forzando recarga de matriz RASCI después de importación...');
-            if (typeof window.forceReloadMatrix === 'function') {
-              window.forceReloadMatrix();
-            }
-          }, 100);
-          
-          // Segunda recarga para asegurar que los datos se mantienen
-          setTimeout(() => {
-            console.log('🔄 Segunda recarga de matriz RASCI para asegurar datos...');
-            if (typeof window.forceReloadMatrix === 'function') {
-              window.forceReloadMatrix();
-            }
-          }, 300);
-          
-        } else if (attempts < maxAttempts) {
-          console.log('⏳ Modeler no listo, reintentando en 500ms...');
-          setTimeout(() => loadDiagramWithRetry(attempts + 1, maxAttempts), 500);
-        } else {
-          console.error('❌ No se pudo cargar el diagrama después de múltiples intentos');
+      // Esperar a que el DOM se actualice después de mostrar el modeler
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Asegurar que el modeler esté inicializado y esperar a que esté listo
+      let modelerReady = false;
+      let attempts = 0;
+      const maxAttempts = 15;
+      
+      while (!modelerReady && attempts < maxAttempts) {
+        // Verificar si el canvas existe en el DOM
+        const canvasElement = document.getElementById('js-canvas');
+        if (!canvasElement) {
+          console.log('Canvas element not found, waiting... (attempt', attempts + 1, ')');
+          await new Promise(resolve => setTimeout(resolve, 500));
+          attempts++;
+          continue;
         }
-      };
-      
-      // Pequeña pausa para asegurar que los datos se guardan antes de cargar el diagrama
-      setTimeout(() => {
-        loadDiagramWithRetry();
-      }, 200);
-      
-    } else {
-      console.error('❌ No se encontró diagrama BPMN en el proyecto');
-      console.log('📊 Estructura del proyecto:', Object.keys(projectData));
-      if (projectData.panels) {
-        console.log('📊 Paneles disponibles:', Object.keys(projectData.panels));
+        
+        if (!window.modeler) {
+          console.log('Modeler not initialized, initializing... (attempt', attempts + 1, ')');
+          try {
+            await initializeModeler();
+            // Esperar un poco más para asegurar que el DOM esté listo
+            await new Promise(resolve => setTimeout(resolve, 800));
+          } catch (error) {
+            console.warn('Error initializing modeler:', error);
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        } else {
+          // Si el modeler ya existe, verificar que esté funcionando
+          try {
+            const canvas = window.modeler.get('canvas');
+            const canvasContainer = canvas && canvas.getContainer();
+            const svg = canvasContainer && canvasContainer.querySelector('svg');
+            
+            if (!canvas || !svg || typeof svg.getCTM !== 'function') {
+              console.log('Modeler exists but canvas/SVG not accessible, reinitializing...');
+              // Resetear el flag antes de reinicializar
+              isModelerInitialized = false;
+              await initializeModeler();
+              await new Promise(resolve => setTimeout(resolve, 800));
+            } else {
+              console.log('Modeler already functional, continuing...');
+            }
+          } catch (error) {
+            console.log('Modeler exists but not functional, reinitializing...');
+            isModelerInitialized = false;
+            await initializeModeler();
+            await new Promise(resolve => setTimeout(resolve, 800));
+          }
+        }
+        
+        // Verificar si el modeler está realmente listo
+        if (window.modeler && typeof window.modeler.importXML === 'function') {
+          try {
+            // Intentar acceder al canvas para verificar que está completamente inicializado
+            const canvas = window.modeler.get('canvas');
+            const canvasContainer = canvas && canvas.getContainer();
+            
+            if (canvas && canvasContainer) {
+              // Verificar también que el SVG esté disponible y funcional
+              const svg = canvasContainer.querySelector('svg');
+              if (svg && typeof svg.getCTM === 'function') {
+                
+                // Verificar que no hay listeners residuales que puedan causar problemas
+                try {
+                  const moveCanvas = window.modeler.get('moveCanvas');
+                  if (moveCanvas && moveCanvas._eventBus) {
+                    // Asegurar que los listeners estén correctamente configurados
+                    console.log('MoveCanvas service is properly configured');
+                  }
+                } catch (moveCanvasError) {
+                  console.warn('MoveCanvas service check failed:', moveCanvasError);
+                }
+                
+                modelerReady = true;
+                console.log('Modeler and SVG are ready!');
+              } else {
+                console.log('SVG not ready yet, waiting...');
+                await new Promise(resolve => setTimeout(resolve, 400));
+              }
+            } else {
+              console.log('Canvas not fully ready yet, waiting...');
+              await new Promise(resolve => setTimeout(resolve, 400));
+            }
+          } catch (e) {
+            console.log('Modeler not fully ready yet, waiting...');
+            await new Promise(resolve => setTimeout(resolve, 400));
+          }
+        }
+        
+        attempts++;
+        if (!modelerReady) {
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
       }
-      alert('El archivo de proyecto no contiene un diagrama BPMN válido');
       
-      // Limpiar la marca de importación en caso de error
-      window.isImportingProject = false;
-    }
-    
-    // Limpiar la marca de importación después de completar
-    setTimeout(() => {
-      window.isImportingProject = false;
-      console.log('✅ Marca de importación limpiada');
-    }, 3000);
-    
-  } catch (error) {
-    console.error('❌ Error al parsear archivo de proyecto:', error);
-    alert('Error al leer el archivo de proyecto');
-    
-    // Limpiar la marca de importación en caso de error
-    window.isImportingProject = false;
-  }
-}
-
-// Función para verificar si hay un diagrama guardado y actualizar la UI
-function checkSavedDiagram() {
-  const savedDiagram = localStorage.getItem('bpmnDiagram');
-  const savedTimestamp = localStorage.getItem('bpmnDiagramTimestamp');
-  const continueBtn = document.getElementById('continue-diagram-btn');
-  const newBtn = document.getElementById('new-diagram-btn');
-  const savedInfo = document.getElementById('saved-diagram-info');
-  const savedDate = document.getElementById('saved-diagram-date');
-  
-  if (savedDiagram && savedDiagram.trim().length > 0) {
-    // Hay un diagrama guardado, mostrar botón de continuar e información
-    if (continueBtn) {
-      continueBtn.classList.remove('hidden');
-    }
-    if (savedInfo) {
-      savedInfo.classList.remove('hidden');
-    }
-    
-    // Mostrar fecha de última modificación si está disponible
-    if (savedDate && savedTimestamp) {
-      const date = new Date(parseInt(savedTimestamp));
-      const now = new Date();
-      const diffMs = now - date;
-      const diffMins = Math.floor(diffMs / (1000 * 60));
-      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      if (!modelerReady) {
+        throw new Error('No se pudo inicializar el modeler después de varios intentos');
+      }
       
-      let timeText = '';
-      if (diffMins < 1) {
-        timeText = 'Hace menos de un minuto';
-      } else if (diffMins < 60) {
-        timeText = `Hace ${diffMins} minuto${diffMins > 1 ? 's' : ''}`;
-      } else if (diffHours < 24) {
-        timeText = `Hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
-      } else if (diffDays < 7) {
-        timeText = `Hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
+      // Detectar tipo de archivo y procesar accordingly
+      const fileExtension = file.name.split('.').pop().toLowerCase();
+      
+      if (fileExtension === 'mmproject') {
+        console.log('Detected .mmproject file, extracting BPMN...');
+        try {
+          const projectData = JSON.parse(content);
+          if (projectData.bpmn && projectData.bpmn.trim()) {
+            console.log('Found BPMN data in project, importing...');
+            await window.modeler.importXML(projectData.bpmn);
+            
+            // Reactivar servicios de edición después de la importación
+            setTimeout(() => {
+              reactivateEditingServices();
+              enableEditingTools();
+            }, 500);
+            
+            updateUI('Proyecto importado.');
+          } else {
+            console.log('No BPMN data found in project, creating new diagram...');
+            await createNewDiagram();
+            updateUI('Proyecto sin diagrama BPMN - nuevo diagrama creado.');
+          }
+        } catch (parseError) {
+          console.error('Error parsing .mmproject file:', parseError);
+          throw new Error('Archivo .mmproject no válido');
+        }
+      } else if (fileExtension === 'bpmn' || fileExtension === 'xml') {
+        console.log('Importing XML/BPMN...');
+        await window.modeler.importXML(content);
+        
+        // Reactivar servicios de edición después de la importación
+        setTimeout(() => {
+          reactivateEditingServices();
+          enableEditingTools();
+        }, 500);
+        
+        updateUI('Diagrama importado.');
       } else {
-        timeText = date.toLocaleDateString('es-ES', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric'
-        });
+        throw new Error('Tipo de archivo no soportado. Use .bpmn, .xml o .mmproject');
+      }
+
+      // Después de importar, asegurar que el canvas esté funcional
+      console.log('Ensuring canvas is functional after import...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Verificar que el canvas sigue siendo interactivo
+      try {
+        const canvas = window.modeler.get('canvas');
+        const eventBus = window.modeler.get('eventBus');
+        
+        if (canvas && eventBus) {
+          // Verificar que el SVG sigue siendo funcional antes de operar
+          const canvasContainer = canvas.getContainer();
+          const svg = canvasContainer.querySelector('svg');
+          
+          if (svg && typeof svg.getCTM === 'function') {
+            // Forzar un re-render para asegurar que el canvas está activo
+            canvas.zoom('fit-viewport');
+            
+            // Asegurar que los servicios necesarios para edición estén disponibles
+            try {
+              const modeling = window.modeler.get('modeling');
+              const elementFactory = window.modeler.get('elementFactory');
+              const create = window.modeler.get('create');
+              const palette = window.modeler.get('palette');
+              
+              if (modeling && elementFactory && create && palette) {
+                console.log('All editing services available');
+              } else {
+                console.warn('Some editing services missing:', {
+                  modeling: !!modeling,
+                  elementFactory: !!elementFactory,
+                  create: !!create,
+                  palette: !!palette
+                });
+              }
+            } catch (serviceError) {
+              console.warn('Error checking editing services:', serviceError);
+            }
+            
+            console.log('Canvas verified as functional');
+          } else {
+            console.warn('SVG not functional after import, skipping zoom operation');
+          }
+        }
+      } catch (canvasError) {
+        console.warn('Canvas verification failed:', canvasError);
       }
       
-      savedDate.textContent = `Última modificación: ${timeText}`;
-    } else if (savedDate) {
-      savedDate.textContent = 'Diagrama disponible';
+      event.target.value = ''; // Limpiar el input para permitir seleccionar el mismo archivo otra vez
+      console.log('File imported successfully');
+    } catch (error) {
+      console.error('Error importing file:', error);
+      updateUI('Error importando archivo: ' + error.message);
+    } finally {
+      // Liberar el flag para permitir procesar otro archivo
+      isProcessingFile = false;
     }
-    
-    // Cambiar el botón "Nuevo" a secundario
-    if (newBtn) {
-      newBtn.classList.remove('primary');
-      newBtn.classList.add('secondary');
-    }
-  } else {
-    // No hay diagrama guardado, ocultar botón de continuar e información
-    if (continueBtn) {
-      continueBtn.classList.add('hidden');
-    }
-    if (savedInfo) {
-      savedInfo.classList.add('hidden');
-    }
-    // Mantener el botón "Nuevo" como primario
-    if (newBtn) {
-      newBtn.classList.add('primary');
-      newBtn.classList.remove('secondary');
-    }
-  }
-}
-
-// Función de utilidad para verificar el estado de importación
-function checkImportStatus() {
-  const status = {
-    isImporting: window.isImportingProject === true,
-    storageCleared: window.storageCleared === true,
-    hasRasciRoles: localStorage.getItem('rasciRoles') !== null,
-    hasRasciMatrix: localStorage.getItem('rasciMatrixData') !== null,
-    rasciRoles: localStorage.getItem('rasciRoles'),
-    rasciMatrix: localStorage.getItem('rasciMatrixData'),
-    modelerReady: window.modeler !== undefined,
-    forceReloadMatrixAvailable: typeof window.forceReloadMatrix === 'function'
-  };
+  }, { once: false }); // Asegurar que no se ejecute solo una vez
   
-  console.log('🔍 Estado de importación:', status);
-  return status;
+  // Marcar que los event listeners han sido registrados
+  eventListenersRegistered = true;
 }
 
-// Hacer la función disponible globalmente para debugging
-window.checkImportStatus = checkImportStatus;
+function checkSavedDiagram() {
+  // Función simplificada sin localStorage
+}
 
-// Panel y modeler init principal
-$(function () {
-  // Obtener referencias a los elementos de navegación
+function initializeApp() {
+  // Evitar inicialización múltiple
+  if (appInitialized) {
+    console.log('App already initialized, skipping...');
+    return;
+  }
+  
+  console.log('Initializing app...');
+  appInitialized = true;
+  
+  appInitialized = true;
+  console.log('Initializing app...');
+  
   welcomeScreen = document.getElementById('welcome-screen');
   modelerContainer = document.getElementById('modeler-container');
   
-  // Verificar si hay un diagrama guardado y actualizar la UI
-  checkSavedDiagram();
-  
-  // Configurar event listeners para la pantalla de bienvenida
+  if (!welcomeScreen || !modelerContainer) {
+    console.error('Required DOM elements not found');
+    appInitialized = false; // Reset para permitir reintento
+    return;
+  }
+
+  setupFileHandlers();
+
+  // Botones de la pantalla de bienvenida
   const newDiagramBtn = document.getElementById('new-diagram-btn');
   const openDiagramBtn = document.getElementById('open-diagram-btn');
-  const continueDiagramBtn = document.getElementById('continue-diagram-btn');
   
-  if (newDiagramBtn) {
-    newDiagramBtn.addEventListener('click', handleNewDiagram);
-  }
-  
-  if (openDiagramBtn) {
-    openDiagramBtn.addEventListener('click', handleOpenDiagram);
-  }
-  
-  if (continueDiagramBtn) {
-    continueDiagramBtn.addEventListener('click', handleContinueDiagram);
-  }
-  
-
-  
-  // Configurar event listeners para el modelador
+  // Botones del header
   const newBtn = document.getElementById('new-btn');
   const openBtn = document.getElementById('open-btn');
-  const saveBtn = document.getElementById('save-btn');
   const backToWelcomeBtn = document.getElementById('back-to-welcome-btn');
-  const fileInput = document.getElementById('file-input');
-  
+
+  if (newDiagramBtn) {
+    newDiagramBtn.addEventListener('click', () => {
+      console.log('New diagram button clicked!');
+      handleNewDiagram();
+    });
+  }
+
+  if (openDiagramBtn) {
+    openDiagramBtn.addEventListener('click', () => {
+      console.log('Open diagram button clicked!');
+      const fileInput = document.getElementById('file-input');
+      if (fileInput) {
+        fileInput.click();
+      }
+    });
+  }
+
   if (newBtn) {
     newBtn.addEventListener('click', handleNewDiagram);
   }
-  
+
   if (openBtn) {
-    openBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      handleOpenWithConfirmation();
-    });
-  }
-  
-  if (saveBtn) {
-    saveBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (window.importExportManager) {
-        console.log('🎯 Botón Guardar clickeado (app.js) - llamando a ImportExportManager');
-        window.importExportManager.exportProject();
-      } else {
-        console.error('❌ ImportExportManager no está disponible');
-        if (modeler) {
-          saveBpmnState();
-        }
+    openBtn.addEventListener('click', () => {
+      const fileInput = document.getElementById('file-input');
+      if (fileInput) {
+        fileInput.click();
       }
     });
   }
-  
+
   if (backToWelcomeBtn) {
     backToWelcomeBtn.addEventListener('click', () => {
-      showWelcomeScreen();
+      window.showWelcomeScreen();
     });
   }
-  
-  if (fileInput) {
-    fileInput.addEventListener('change', handleFileSelect);
-  }
-  
-  // Mostrar pantalla de bienvenida por defecto
-  showWelcomeScreen();
-  
-  // Inicializar el gestor de importación/exportación
-  if (window.ImportExportManager) {
-    window.importExportManager = new window.ImportExportManager();
-  }
-  
 
+  checkSavedDiagram();
+}
+
+// Función de inicialización global
+function init() {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp, { once: true });
+  } else {
+    // DOM ya está listo, inicializar inmediatamente
+    initializeApp();
+  }
+}
+
+// Limpiar recursos cuando la página se cierre
+window.addEventListener('beforeunload', () => {
+  if (window.modeler && typeof window.modeler.destroy === 'function') {
+    try {
+      disableMoveCanvas();
+      const eventBus = window.modeler.get('eventBus');
+      if (eventBus) {
+        eventBus.off();
+      }
+      window.modeler.destroy();
+    } catch (error) {
+      console.warn('Error cleaning up on page unload:', error);
+    }
+  }
 });
 
-// Función global para forzar recarga de matriz RASCI (para debugging)
-window.forceRasciReload = function() {
-  console.log('🔧 Forzando recarga de matriz RASCI manualmente...');
-  
-  // Primero verificar y asegurar que las funciones estén disponibles
-  const status = window.ensureRasciFunctions();
-  
-  if (typeof window.forceReloadMatrix === 'function') {
-    window.forceReloadMatrix();
-  } else {
-    console.warn('⚠️ forceReloadMatrix no está disponible, intentando métodos alternativos...');
-    
-    // Intentar usar renderMatrix directamente
-    const rasciPanel = document.querySelector('#rasci-panel');
-    if (rasciPanel && typeof window.renderMatrix === 'function') {
-      console.log('🔄 Usando renderMatrix como fallback...');
-      window.renderMatrix(rasciPanel, [], null);
-    } else {
-      console.error('❌ No se pudo encontrar panel RASCI o renderMatrix no está disponible');
-      
-      // Intentar forzar la inicialización del panel RASCI
-      if (window.panelManager && typeof window.panelManager.applyConfiguration === 'function') {
-        console.log('🔄 Intentando reinicializar paneles...');
-        window.panelManager.applyConfiguration();
-        
-        // Esperar un poco y volver a intentar
-        setTimeout(() => {
-          const rasciPanel2 = document.querySelector('#rasci-panel');
-          if (rasciPanel2 && typeof window.renderMatrix === 'function') {
-            console.log('🔄 Reintentando renderMatrix después de reinicialización...');
-            window.renderMatrix(rasciPanel2, [], null);
-          }
-        }, 1000);
-      }
-    }
-  }
-};
-
-// Función global para limpiar marca de importación (para debugging)
-window.clearImportFlag = function() {
-  console.log('🔧 Limpiando marca de importación manualmente...');
-  window.isImportingProject = false;
-  window.storageCleared = false;
-};
-
-// Función de utilidad para verificar el estado de importación
-
-// Función para verificar y forzar disponibilidad de funciones RASCI
-window.ensureRasciFunctions = function() {
-  console.log('🔧 Verificando disponibilidad de funciones RASCI...');
-  
-  const status = {
-    forceReloadMatrix: typeof window.forceReloadMatrix === 'function',
-    renderMatrix: typeof window.renderMatrix === 'function',
-    rasciPanel: document.querySelector('#rasci-panel') !== null,
-    panelManager: window.panelManager !== undefined
-  };
-  
-  console.log('📊 Estado de funciones RASCI:', status);
-  
-  // Si forceReloadMatrix no está disponible, intentar crearlo
-  if (!status.forceReloadMatrix) {
-    console.log('⚠️ forceReloadMatrix no disponible, intentando crear...');
-    
-    // Intentar importar desde el módulo RASCI
-    if (typeof window.initRasciPanel === 'function') {
-      console.log('✅ initRasciPanel disponible, intentando inicializar panel...');
-      const rasciPanel = document.querySelector('#rasci-panel');
-      if (rasciPanel) {
-        try {
-          window.initRasciPanel(rasciPanel);
-          console.log('✅ Panel RASCI inicializado manualmente');
-        } catch (e) {
-          console.error('❌ Error inicializando panel RASCI:', e);
-        }
-      }
-    }
-  }
-  
-  return status;
-};
-
-// Función global para forzar recarga de matriz RASCI (para debugging)
-
-// Función para forzar inicialización completa del sistema
-window.forceSystemInit = function() {
-  console.log('🔧 Forzando inicialización completa del sistema...');
-  
-  // Limpiar marcas de importación
-  window.isImportingProject = false;
-  window.storageCleared = false;
-  
-  // Reinicializar el sistema de paneles
-  if (window.panelManager && typeof window.panelManager.applyConfiguration === 'function') {
-    console.log('🔄 Reinicializando configuración de paneles...');
-    window.panelManager.applyConfiguration();
-  }
-  
-  // Esperar y verificar funciones RASCI
-  setTimeout(() => {
-    window.ensureRasciFunctions();
-    
-    // Intentar recarga de matriz
-    setTimeout(() => {
-      if (typeof window.forceReloadMatrix === 'function') {
-        console.log('🔄 Forzando recarga de matriz después de inicialización...');
-        window.forceReloadMatrix();
-      }
-    }, 500);
-  }, 1000);
-  
-  console.log('✅ Inicialización completa del sistema completada');
-};
-
-// Función para verificar y forzar disponibilidad de funciones RASCI
+init();
