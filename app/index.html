@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="vendor/bpmn-js/bpmn-font/css/bpmn.css">
   <link rel="stylesheet" href="css/ppi-panel.css">
   <link rel="stylesheet" href="css/welcome-screen.css">
+  <link rel="stylesheet" href="css/autosave-modals.css">
   
   <style>
     :root {
@@ -529,9 +530,18 @@
           <button class="tool-btn" id="save-btn">
             <i class="fas fa-save"></i> Guardar
           </button>
-          <button class="tool-btn" id="test-export-btn" style="background-color: #10b981; color: white;" title="Probar exportación">
-            <i class="fas fa-download"></i> Probar
-          </button>
+          <div class="autosave-toolbar-toggle" id="autosave-panel">
+            <div class="autosave-toggle-container">
+              <label class="autosave-toggle" for="autosave-checkbox">
+                <input type="checkbox" id="autosave-checkbox">
+                <span class="autosave-slider"></span>
+              </label>
+              <span class="autosave-label">Autoguardado</span>
+            </div>
+            <div class="autosave-timestamp" id="autosave-timestamp">
+              <span id="timestamp-text">--:--</span>
+            </div>
+          </div>
         </div>
         
         <div class="tool-group">
@@ -583,5 +593,6 @@
   <script>
     // Application initialization is now handled in app.js
   </script>
+
 </body>
 </html>

@@ -189,41 +189,10 @@ class StorageManager {
     if (window.rasciMatrixData) window.rasciMatrixData = {};
   }
 
-  // === LIMPIEZA ESPECÍFICA DE DATOS PPI ===
+  // === LIMPIEZA ESPECÍFICA DE DATOS PPI === (ELIMINADO)
   clearPPIData() {
-    // Limpiar claves PPI del localStorage
-    this.ppiKeysToClean.forEach(key => {
-      if (localStorage.getItem(key)) {
-        localStorage.removeItem(key);
-      }
-    });
-    
-    // Limpiar variables globales PPI
-    if (window.ppiIndicators) window.ppiIndicators = [];
-    if (window.ppiRelationships) window.ppiRelationships = {};
-    if (window.ppis) window.ppis = [];
-    if (window.ppinotElements) window.ppinotElements = [];
-    
-    // Limpiar datos del PPI Manager si existe
-    if (window.ppiManager && window.ppiManager.core) {
-      try {
-        if (typeof window.ppiManager.core.clearAllPPIs === 'function') {
-          window.ppiManager.core.clearAllPPIs();
-        }
-        // Resetear arrays internos del PPI Manager
-        if (window.ppiManager.core.ppis) {
-          window.ppiManager.core.ppis = [];
-        }
-        if (window.ppiManager.core.filteredPPIs) {
-          window.ppiManager.core.filteredPPIs = [];
-        }
-        if (window.ppiManager.core.processedElements) {
-          window.ppiManager.core.processedElements.clear();
-        }
-      } catch (error) {
-        // Silenciar error
-      }
-    }
+    // Función eliminada por solicitud del usuario - PPI localStorage ya no se usa
+    console.log('🗑️ clearPPIData eliminado - PPI localStorage deshabilitado');
   }
 
   // === FORZAR RECARGA DE DATOS DE PANELES ===
