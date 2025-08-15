@@ -1142,8 +1142,8 @@ function initializeApp() {
       if (autoSaveConfigured) {
         window.saveToConfiguredLocation();
       } else {
-        // Si no hay autoguardado configurado, usar el sistema tradicional
-        window.saveFileDirectly();
+        // Nuevo: usar guardado inteligente que detecta ubicaciones anteriores
+        window.saveWithSmartDetection();
       }
     });
   }
@@ -3084,6 +3084,218 @@ window.showAutoSaveStatus = function() {
     
     showElegantNotification(message, 'info');
     return status;
+};
+
+// Función para mostrar el indicador de guardado exitoso
+function showSaveSuccessIndicator(message = 'Guardado en ubicación anterior') {
+  const indicator = document.getElementById('save-success-indicator');
+  const textSpan = document.getElementById('save-success-text');
+  
+  if (indicator && textSpan) {
+    textSpan.textContent = message;
+    indicator.classList.remove('fade-out');
+    indicator.classList.add('show');
+    
+    // Ocultar después de 3 segundos
+    setTimeout(() => {
+      indicator.classList.add('fade-out');
+      setTimeout(() => {
+        indicator.classList.remove('show', 'fade-out');
+      }, 300);
+    }, 3000);
+  }
+}
+
+// Función para actualizar referencias después de guardar
+function updateSaveReferences(fileHandle) {
+  if (fileHandle && fileHandle.name) {
+    currentFileHandle = fileHandle;
+    currentFileName = fileHandle.name;
+    localStorage.setItem('last-saved-filename', fileHandle.name);
+    localStorage.setItem('last-used-save-path', fileHandle.name);
+    console.log('✅ Referencias de guardado actualizadas:', fileHandle.name);
+  }
+}
+
+// Función de guardado inteligente que detecta ubicaciones anteriores
+window.saveWithSmartDetection = async function() {
+  try {
+    console.log('🧠 Iniciando guardado inteligente...');
+    
+    // DEBUG: Mostrar estado actual
+    console.log('📊 Estado actual:');
+    console.log('  - currentFileHandle:', currentFileHandle);
+    console.log('  - currentFileName:', currentFileName);
+    console.log('  - localStorage last-saved-filename:', localStorage.getItem('last-saved-filename'));
+    console.log('  - localStorage last-used-save-path:', localStorage.getItem('last-used-save-path'));
+    console.log('  - localStorage preferred-save-path:', localStorage.getItem('preferred-save-path'));
+    
+    // Verificar modeler primero
+    if (!modeler) {
+      throw new Error('El modeler no está disponible');
+    }
+
+    // Extraer XML del diagrama
+    const result = await modeler.saveXML({ format: true });
+    
+    if (!result || !result.xml) {
+      throw new Error('No se pudo extraer el XML del diagrama');
+    }
+    
+    console.log('✅ XML extraído correctamente');
+    
+    // PRIORIDAD 1: Si ya tenemos un fileHandle de un guardado anterior, úsalo directamente
+    if (currentFileHandle && typeof currentFileHandle.createWritable === 'function') {
+      try {
+        console.log('📁 Usando archivo anteriormente guardado:', currentFileHandle.name);
+        
+        // Verificar que el handle todavía es válido
+        const testPermission = await currentFileHandle.queryPermission({ mode: 'readwrite' });
+        if (testPermission !== 'granted') {
+          console.log('⚠️ Permisos insuficientes, solicitando permisos...');
+          const permission = await currentFileHandle.requestPermission({ mode: 'readwrite' });
+          if (permission !== 'granted') {
+            throw new Error('Permisos denegados para el archivo anterior');
+          }
+        }
+        
+        const writable = await currentFileHandle.createWritable();
+        await writable.write(result.xml);
+        await writable.close();
+        
+        console.log('✅ Archivo sobrescrito exitosamente');
+        
+        // Mostrar indicador verde
+        showSaveSuccessIndicator(`Sobrescrito: ${currentFileHandle.name}`);
+        
+        // Actualizar timestamp
+        lastAutoSaveTime = Date.now();
+        
+        return;
+        
+      } catch (fileHandleError) {
+        console.warn('⚠️ No se pudo usar el fileHandle anterior:', fileHandleError.message);
+        // Continuar con otras opciones
+        currentFileHandle = null; // Limpiar handle inválido
+      }
+    }
+    
+    // PRIORIDAD 2: Buscar ubicaciones anteriores en localStorage
+    const preferredPath = localStorage.getItem('preferred-save-path');
+    const currentProjectPath = localStorage.getItem('current-project-path');
+    const lastUsedPath = localStorage.getItem('last-used-save-path');
+    const lastFileName = localStorage.getItem('last-saved-filename');
+    
+    // Determinar si hay una ubicación conocida
+    const knownLocation = preferredPath || currentProjectPath || lastUsedPath;
+    
+    if (knownLocation || lastFileName) {
+      console.log('📁 Ubicación anterior detectada:', { knownLocation, lastFileName });
+      
+      // Intentar guardar usando File System Access API con ubicación sugerida
+      if ('showSaveFilePicker' in window) {
+        try {
+          // Usar nombre anterior si existe, sino generar uno nuevo
+          const filename = lastFileName || currentFileName || `diagrama_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.bpmn`;
+          
+          const fileHandle = await window.showSaveFilePicker({
+            suggestedName: filename,
+            startIn: 'documents', // Comenzar en documentos
+            types: [{
+              description: 'BPMN files',
+              accept: {
+                'application/xml': ['.bpmn'],
+                'text/xml': ['.bpmn'],
+              },
+            }],
+          });
+          
+          const writable = await fileHandle.createWritable();
+          await writable.write(result.xml);
+          await writable.close();
+          
+          // Actualizar referencias para próximas veces
+          updateSaveReferences(fileHandle);
+          
+          console.log('✅ Guardado exitoso en ubicación anterior');
+          
+          // Mostrar indicador verde en lugar de alerta
+          showSaveSuccessIndicator(`Guardado: ${fileHandle.name}`);
+          
+          return;
+          
+        } catch (fsError) {
+          console.log('⚠️ File System Access API falló:', fsError.message);
+          if (fsError.name === 'AbortError') {
+            console.log('❌ Usuario canceló el diálogo de guardado');
+            return;
+          }
+          // Continuar con fallback
+        }
+      }
+    }
+    
+    // PRIORIDAD 3: Si no hay ubicación anterior, usar el sistema tradicional
+    console.log('📁 No hay ubicación anterior, usando diálogo tradicional');
+    
+    if ('showSaveFilePicker' in window) {
+      try {
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+        const filename = currentFileName || `diagrama_${timestamp}.bpmn`;
+        
+        const fileHandle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{
+            description: 'BPMN files',
+            accept: {
+              'application/xml': ['.bpmn'],
+              'text/xml': ['.bpmn'],
+            },
+          }],
+        });
+        
+        const writable = await fileHandle.createWritable();
+        await writable.write(result.xml);
+        await writable.close();
+        
+        // Guardar nueva ubicación para próximas veces
+        updateSaveReferences(fileHandle);
+        localStorage.setItem('preferred-save-path', fileHandle.name);
+        
+        console.log('✅ Guardado exitoso - Nueva ubicación registrada');
+        
+        // Mostrar indicador verde
+        showSaveSuccessIndicator(`Guardado: ${fileHandle.name}`);
+        
+      } catch (fsError) {
+        if (fsError.name === 'AbortError') {
+          console.log('❌ Usuario canceló el diálogo de guardado');
+          return;
+        }
+        throw fsError;
+      }
+    } else {
+      throw new Error('File System Access API no disponible');
+    }
+    
+  } catch (error) {
+    console.error('❌ Error en guardado inteligente:', error);
+    alert(`❌ Error al guardar: ${error.message}`);
+  }
+};// Hacer las funciones globales
+window.showSaveSuccessIndicator = showSaveSuccessIndicator;
+
+// Función de debug para verificar estado
+window.debugSaveState = function() {
+  console.log('🔍 === DEBUG ESTADO DE GUARDADO ===');
+  console.log('currentFileHandle:', currentFileHandle);
+  console.log('currentFileName:', currentFileName);
+  console.log('autoSaveConfigured:', autoSaveConfigured);
+  console.log('localStorage last-saved-filename:', localStorage.getItem('last-saved-filename'));
+  console.log('localStorage last-used-save-path:', localStorage.getItem('last-used-save-path'));
+  console.log('localStorage preferred-save-path:', localStorage.getItem('preferred-save-path'));
+  console.log('localStorage current-project-path:', localStorage.getItem('current-project-path'));
+  console.log('===============================');
 };
 
 init();
