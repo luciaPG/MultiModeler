@@ -166,14 +166,14 @@ export function isRalphShape(type) {
     if (typeof type === 'object')
         type = type.type
 
-    return type.includes('RALph:') && !connections.includes(type)
+    return type && type.includes('RALph:') && !connections.includes(type)
 }
 
 export function isRalphConnection(type) {
     if (typeof type === 'object') {
         type = type.type
     }
-    return type.includes('RALph:') && connections.includes(type)
+    return type && type.includes('RALph:') && connections.includes(type)
 }
 
 export function isRalphResourceArcElement(type) {
@@ -236,5 +236,5 @@ export function isRALPHConnection(type) {
     if (typeof type === 'object') {
         type = type.type
     }
-    return type.includes('RALph:') && connections.includes(type)
+    return type && type.includes('RALph:') && connections.includes(type)
 }

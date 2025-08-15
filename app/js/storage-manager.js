@@ -387,17 +387,8 @@ class StorageManager {
     localStorage.setItem('bpmnCanvasState', JSON.stringify(canvasState));
     
     // Configuraciones por defecto
-    localStorage.setItem('bpmnPPINOTElements', JSON.stringify([]));
     localStorage.setItem('bpmnRALPHElements', JSON.stringify([]));
     localStorage.setItem('bpmnParentChildRelations', JSON.stringify({}));
-    localStorage.setItem('bpmnPPINOTRelations', JSON.stringify({}));
-    
-    // Configuraciones PPI (limpias)
-    localStorage.setItem('ppiIndicators', JSON.stringify([]));
-    localStorage.setItem('ppiRelationships', JSON.stringify({}));
-    localStorage.setItem('ppis', JSON.stringify([]));
-    localStorage.setItem('ppinotElements', JSON.stringify([]));
-    localStorage.setItem('ppiSettings', JSON.stringify({}));
     
     // Configuraciones RASCI
     localStorage.setItem('rasciRoles', JSON.stringify([]));
@@ -405,7 +396,7 @@ class StorageManager {
     localStorage.setItem('rasciTasks', JSON.stringify([]));
     localStorage.setItem('rasciSettings', JSON.stringify({}));
     
-    console.log('✅ Estado inicial configurado');
+    console.log('✅ Estado inicial configurado - PPI localStorage deshabilitado');
   }
 
   // === CONFIGURAR ESTADO DE IMPORTACIÓN ===

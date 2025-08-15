@@ -24,52 +24,17 @@ export function initRasciPanel(panel) {
   container.style.borderRadius = '8px';
   container.style.background = '#fff';
 
-  // Inicializar roles desde localStorage o usar array vacío
+  // Inicializar roles - localStorage eliminado del panel RASCI
   let roles = [];
-  // Verificar si hay datos válidos en localStorage antes de cargar
-  const savedRoles = localStorage.getItem('rasciRoles');
-  if (savedRoles && savedRoles !== '[]' && savedRoles !== 'null') {
-    try {
-      const parsedRoles = JSON.parse(savedRoles);
-      if (Array.isArray(parsedRoles) && parsedRoles.length > 0) {
-        roles = parsedRoles;
-      }
-    } catch (e) {
-      roles = [];
-    }
-  }
-
+  
   // Inicializar la matriz global si no existe
   if (!window.rasciMatrixData) {
-    // Intentar cargar desde localStorage solo si hay datos válidos
-    const savedMatrixData = localStorage.getItem('rasciMatrixData');
-    if (savedMatrixData && savedMatrixData !== '{}' && savedMatrixData !== 'null') {
-      try {
-        const parsedMatrixData = JSON.parse(savedMatrixData);
-        if (parsedMatrixData && Object.keys(parsedMatrixData).length > 0) {
-          window.rasciMatrixData = parsedMatrixData;
-        } else {
-          window.rasciMatrixData = {};
-        }
-      } catch (e) {
-        window.rasciMatrixData = {};
-      }
-    } else {
-      window.rasciMatrixData = {};
-    }
+    window.rasciMatrixData = {};
   }
 
-  // Función para guardar el estado en localStorage con indicador visual
+  // Función para guardar el estado - localStorage eliminado del panel RASCI
   function saveRasciState() {
     try {
-      // Preservar roles existentes si no hay nuevos
-      const rolesToSave = window.rasciRoles || roles || [];
-      localStorage.setItem('rasciRoles', JSON.stringify(rolesToSave));
-      
-      // Preservar matriz de datos existente
-      const matrixDataToSave = window.rasciMatrixData || {};
-      localStorage.setItem('rasciMatrixData', JSON.stringify(matrixDataToSave));
-      
       // Solo mostrar indicador cada 500ms para evitar spam con guardados tan frecuentes
       const now = Date.now();
       if (!saveRasciState.lastIndicatorTime || now - saveRasciState.lastIndicatorTime > 500) {
@@ -134,17 +99,13 @@ export function initRasciPanel(panel) {
   // Función para cargar el estado desde localStorage
   function loadRasciState() {
     try {
-      const savedRoles = localStorage.getItem('rasciRoles');
-      if (savedRoles) {
-        const parsedRoles = JSON.parse(savedRoles);
-        window.rasciRoles = parsedRoles;
-        roles = parsedRoles; // Mantener compatibilidad
+      // localStorage eliminado del panel RASCI - inicializar vacío
+      if (!window.rasciRoles) {
+        window.rasciRoles = [];
       }
       
-      const savedMatrixData = localStorage.getItem('rasciMatrixData');
-      if (savedMatrixData) {
-        const parsedMatrixData = JSON.parse(savedMatrixData);
-        window.rasciMatrixData = parsedMatrixData;
+      if (!window.rasciMatrixData) {
+        window.rasciMatrixData = {};
       }
     } catch (e) {
       console.warn('Error cargando estado RASCI:', e);
@@ -209,22 +170,19 @@ export function initRasciPanel(panel) {
             hasLoaded = true; // Evitar múltiples cargas
             console.log('📖 Panel RASCI visible por primera vez - cargando estado...');
             
-            // Cargar estado desde localStorage una sola vez
+            // localStorage eliminado del panel RASCI - inicializar vacío
             setTimeout(() => {
               try {
-                const savedRoles = localStorage.getItem('rasciRoles');
-                if (savedRoles) {
-                  window.rasciRoles = JSON.parse(savedRoles);
-                  console.log('✅ Roles cargados desde localStorage:', window.rasciRoles);
+                if (!window.rasciRoles) {
+                  window.rasciRoles = [];
                 }
                 
-                const savedMatrixData = localStorage.getItem('rasciMatrixData');
-                if (savedMatrixData) {
-                  window.rasciMatrixData = JSON.parse(savedMatrixData);
-                  console.log('✅ Matriz cargada desde localStorage');
+                if (!window.rasciMatrixData) {
+                  window.rasciMatrixData = {};
                 }
+                console.log('✅ Estado RASCI inicializado (sin localStorage)');
               } catch (e) {
-                console.warn('Error cargando estado RASCI:', e);
+                console.warn('Error inicializando estado RASCI:', e);
               }
               
               // Solo renderizar la matriz una vez
@@ -665,14 +623,12 @@ export function initRasciPanel(panel) {
     console.log('Estado actual de roles:');
     console.log('window.rasciRoles:', window.rasciRoles);
     console.log('roles:', roles);
-    console.log('localStorage rasciRoles:', localStorage.getItem('rasciRoles'));
   };
   
   // Función para limpiar y reinicializar roles RASCI
   window.resetRasciRoles = function() {
     window.rasciRoles = [];
     roles = [];
-    localStorage.removeItem('rasciRoles');
   };
   
   // Función para forzar detección y guardado inmediato
@@ -686,7 +642,6 @@ export function initRasciPanel(panel) {
         
         // Guardar inmediatamente en localStorage
         try {
-          localStorage.setItem('rasciRoles', JSON.stringify(window.rasciRoles));
         } catch (e) {
           console.warn('Error guardando roles en localStorage:', e);
         }
@@ -746,8 +701,6 @@ export function initRasciPanel(panel) {
         
         // Guardar en localStorage
         try {
-          localStorage.setItem('rasciRoles', JSON.stringify(window.rasciRoles));
-          console.log('💾 Roles guardados en localStorage:', window.rasciRoles);
         } catch (e) {
           console.warn('Error guardando roles en localStorage:', e);
         }
@@ -795,19 +748,17 @@ export function initRasciPanel(panel) {
 
   // Carga inicial de tareas (una sola vez)
   setTimeout(() => {
-    // Cargar estado desde localStorage antes de actualizar
+    // localStorage eliminado del panel RASCI - inicializar vacío
     try {
-      const savedRoles = localStorage.getItem('rasciRoles');
-      if (savedRoles) {
-        window.rasciRoles = JSON.parse(savedRoles);
+      if (!window.rasciRoles) {
+        window.rasciRoles = [];
       }
       
-      const savedMatrixData = localStorage.getItem('rasciMatrixData');
-      if (savedMatrixData) {
-        window.rasciMatrixData = JSON.parse(savedMatrixData);
+      if (!window.rasciMatrixData) {
+        window.rasciMatrixData = {};
       }
     } catch (e) {
-      console.warn('Error cargando estado RASCI:', e);
+      console.warn('Error inicializando estado RASCI:', e);
     }
     
 
@@ -828,22 +779,18 @@ export function initRasciPanel(panel) {
 
   window.addEventListener('load', () => {
     setTimeout(() => {
-      // Cargar estado desde localStorage antes de actualizar
+      // localStorage eliminado del panel RASCI - inicializar vacío
       try {
-        const savedRoles = localStorage.getItem('rasciRoles');
-        if (savedRoles) {
-          window.rasciRoles = JSON.parse(savedRoles);
+        if (!window.rasciRoles) {
+          window.rasciRoles = [];
           roles = window.rasciRoles; // Actualizar también la variable local
-  
         }
         
-        const savedMatrixData = localStorage.getItem('rasciMatrixData');
-        if (savedMatrixData) {
-          window.rasciMatrixData = JSON.parse(savedMatrixData);
-          console.log('✅ Matriz cargada desde localStorage:', Object.keys(window.rasciMatrixData).length, 'tareas');
+        if (!window.rasciMatrixData) {
+          window.rasciMatrixData = {};
         }
       } catch (e) {
-        console.warn('Error cargando estado RASCI:', e);
+        console.warn('Error inicializando estado RASCI:', e);
       }
       
 
@@ -916,19 +863,17 @@ window.initializeAutoMapping = function() {
 
 // Funciones globales de debug para RASCI
 window.forceRasciReload = function() {
-  // Cargar estado desde localStorage antes de actualizar
+  // localStorage eliminado del panel RASCI - inicializar vacío
   try {
-    const savedRoles = localStorage.getItem('rasciRoles');
-    if (savedRoles) {
-      window.rasciRoles = JSON.parse(savedRoles);
+    if (!window.rasciRoles) {
+      window.rasciRoles = [];
     }
     
-    const savedMatrixData = localStorage.getItem('rasciMatrixData');
-    if (savedMatrixData) {
-      window.rasciMatrixData = JSON.parse(savedMatrixData);
+    if (!window.rasciMatrixData) {
+      window.rasciMatrixData = {};
     }
   } catch (e) {
-    console.warn('Error cargando estado RASCI:', e);
+    console.warn('Error inicializando estado RASCI:', e);
   }
   
   if (typeof window.updateMatrixFromDiagram === 'function') {
@@ -944,25 +889,22 @@ window.forceRasciReload = function() {
   }, 100);
 };
 
-// Función global para recargar estado RASCI desde localStorage
+// Función global para recargar estado RASCI - localStorage eliminado
 window.reloadRasciState = function() {
   
-  
-  // Cargar estado desde localStorage
+  // localStorage eliminado del panel RASCI - inicializar vacío
   try {
-    const savedRoles = localStorage.getItem('rasciRoles');
-    if (savedRoles) {
-      window.rasciRoles = JSON.parse(savedRoles);
-      console.log('✅ Roles cargados:', window.rasciRoles);
+    if (!window.rasciRoles) {
+      window.rasciRoles = [];
+      console.log('✅ Roles inicializados:', window.rasciRoles);
     }
     
-    const savedMatrixData = localStorage.getItem('rasciMatrixData');
-    if (savedMatrixData) {
-      window.rasciMatrixData = JSON.parse(savedMatrixData);
-      console.log('✅ Matriz cargada:', Object.keys(window.rasciMatrixData).length, 'tareas');
+    if (!window.rasciMatrixData) {
+      window.rasciMatrixData = {};
+      console.log('✅ Matriz inicializada:', Object.keys(window.rasciMatrixData).length, 'tareas');
     }
   } catch (e) {
-    console.warn('Error cargando estado RASCI:', e);
+    console.warn('Error inicializando estado RASCI:', e);
   }
   
   const rasciPanel = document.querySelector('#rasci-panel');
@@ -978,19 +920,17 @@ window.reloadRasciState = function() {
 
 // Función global para forzar recarga del estado RASCI
 window.forceReloadRasciState = function() {
-  // Cargar estado desde localStorage
+  // localStorage eliminado del panel RASCI - inicializar vacío
   try {
-    const savedRoles = localStorage.getItem('rasciRoles');
-    if (savedRoles) {
-      window.rasciRoles = JSON.parse(savedRoles);
+    if (!window.rasciRoles) {
+      window.rasciRoles = [];
     }
     
-    const savedMatrixData = localStorage.getItem('rasciMatrixData');
-    if (savedMatrixData) {
-      window.rasciMatrixData = JSON.parse(savedMatrixData);
+    if (!window.rasciMatrixData) {
+      window.rasciMatrixData = {};
     }
   } catch (e) {
-    console.warn('Error cargando estado RASCI:', e);
+    console.warn('Error inicializando estado RASCI:', e);
   }
   
   // Forzar re-renderizado de la matriz
@@ -1025,7 +965,6 @@ window.ensureRasciMatrixLoaded = function() {
           // Asegurar que los roles detectados estén en window.rasciRoles
           if (!window.rasciRoles || window.rasciRoles.length === 0) {
             window.rasciRoles = [...detectedRoles];
-            localStorage.setItem('rasciRoles', JSON.stringify(window.rasciRoles));
             console.log('✅ Roles RALph agregados a window.rasciRoles');
           } else {
             // Agregar roles nuevos que no estén ya
@@ -1037,7 +976,6 @@ window.ensureRasciMatrixLoaded = function() {
               }
             });
             if (added) {
-              localStorage.setItem('rasciRoles', JSON.stringify(window.rasciRoles));
               console.log('✅ Nuevos roles RALph agregados');
             }
           }

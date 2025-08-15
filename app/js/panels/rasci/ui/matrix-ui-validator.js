@@ -143,7 +143,6 @@ export class RasciMatrixUIValidator {
   getCurrentRoles() {
     try {
       // Intentar obtener desde localStorage con diferentes claves
-      const localStorageKeys = ['rasciRoles', 'rasciRoleList', 'roles', 'roleList'];
       let roles = [];
       
       for (const key of localStorageKeys) {
@@ -201,8 +200,6 @@ export class RasciMatrixUIValidator {
         }
       }
       
-      // Prioridad 2: localStorage.rasciMatrixData
-      const savedMatrix = localStorage.getItem('rasciMatrixData');
       if (savedMatrix) {
         try {
           const parsedMatrix = JSON.parse(savedMatrix);

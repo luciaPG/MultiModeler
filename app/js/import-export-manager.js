@@ -123,11 +123,8 @@ class ImportExportManager {
         bpmnData.canvas = JSON.parse(canvasState);
       }
 
-      // Obtener elementos PPINOT
-      const ppinotElements = localStorage.getItem('bpmnPPINOTElements');
-      if (ppinotElements) {
-        bpmnData.elements.ppinot = JSON.parse(ppinotElements);
-      }
+      // PPI localStorage deshabilitado - elementos PPINOT se leen desde XML
+      console.log('ℹ️ Elementos PPINOT se leen desde XML, no desde localStorage');
 
       // Obtener elementos RALPH
       const ralphElements = localStorage.getItem('bpmnRALPHElements');
@@ -141,11 +138,8 @@ class ImportExportManager {
         bpmnData.relationships.parentChild = JSON.parse(parentChildRelations);
       }
 
-      // Obtener relaciones PPINOT
-      const ppinotRelations = localStorage.getItem('bpmnPPINOTRelations');
-      if (ppinotRelations) {
-        bpmnData.relationships.ppinot = JSON.parse(ppinotRelations);
-      }
+      // PPI localStorage deshabilitado - relaciones PPINOT se leen desde XML
+      console.log('ℹ️ Relaciones PPINOT se leen desde XML, no desde localStorage');
 
     } catch (error) {
       console.error('Error recopilando datos BPMN:', error);
@@ -168,17 +162,8 @@ class ImportExportManager {
         ppiData.indicators = window.ppiManager.core.getAllPPIs();
       }
 
-      // Obtener relaciones PPI-BPMN
-      const ppiRelations = localStorage.getItem('ppiRelationships');
-      if (ppiRelations) {
-        ppiData.relationships = JSON.parse(ppiRelations);
-      }
-
-      // Obtener configuraciones PPI
-      const ppiSettings = localStorage.getItem('ppiSettings');
-      if (ppiSettings) {
-        ppiData.settings = JSON.parse(ppiSettings);
-      }
+      // PPI localStorage deshabilitado - datos PPI se leen desde archivo
+      console.log('ℹ️ Datos PPI se leen desde archivo, no desde localStorage');
 
     } catch (error) {
       console.error('Error recopilando datos PPI:', error);
@@ -213,7 +198,6 @@ class ImportExportManager {
       }
 
       // Obtener configuraciones RASCI
-      const rasciSettings = localStorage.getItem('rasciSettings');
       if (rasciSettings) {
         rasciData.settings = JSON.parse(rasciSettings);
       }
@@ -475,10 +459,9 @@ class ImportExportManager {
         console.log('✅ Estado del canvas restaurado');
       }
 
-      // Restaurar elementos PPINOT
+      // PPI localStorage deshabilitado - elementos PPINOT no se guardan en localStorage
       if (bpmnData.elements && bpmnData.elements.ppinot) {
-        localStorage.setItem('bpmnPPINOTElements', JSON.stringify(bpmnData.elements.ppinot));
-        console.log('✅ Elementos PPINOT restaurados');
+        console.log('ℹ️ Elementos PPINOT encontrados pero localStorage deshabilitado');
       }
 
       // Restaurar elementos RALPH
@@ -493,9 +476,9 @@ class ImportExportManager {
           localStorage.setItem('bpmnParentChildRelations', JSON.stringify(bpmnData.relationships.parentChild));
           console.log('✅ Relaciones padre-hijo restauradas');
         }
+        // PPI localStorage deshabilitado - relaciones PPINOT no se guardan en localStorage
         if (bpmnData.relationships.ppinot) {
-          localStorage.setItem('bpmnPPINOTRelations', JSON.stringify(bpmnData.relationships.ppinot));
-          console.log('✅ Relaciones PPINOT restauradas');
+          console.log('ℹ️ Relaciones PPINOT encontradas pero localStorage deshabilitado');
         }
       }
 
@@ -542,27 +525,23 @@ class ImportExportManager {
       // Restaurar roles
       if (rasciData.roles) {
         window.rasciRoles = rasciData.roles;
-        localStorage.setItem('rasciRoles', JSON.stringify(rasciData.roles));
         console.log(`✅ ${rasciData.roles.length} roles RASCI restaurados`);
       }
 
       // Restaurar matriz
       if (rasciData.matrix) {
         window.rasciMatrixData = rasciData.matrix;
-        localStorage.setItem('rasciMatrixData', JSON.stringify(rasciData.matrix));
         console.log('✅ Matriz RASCI restaurada');
       }
 
       // Restaurar tareas
       if (rasciData.tasks) {
         window.rasciTasks = rasciData.tasks;
-        localStorage.setItem('rasciTasks', JSON.stringify(rasciData.tasks));
         console.log(`✅ ${rasciData.tasks.length} tareas RASCI restauradas`);
       }
 
       // Restaurar configuraciones
       if (rasciData.settings) {
-        localStorage.setItem('rasciSettings', JSON.stringify(rasciData.settings));
         console.log('✅ Configuraciones RASCI restauradas');
       }
 
@@ -619,7 +598,6 @@ class ImportExportManager {
       // Restaurar conexiones RASCI-BPMN
       if (connections.rasciToBpmn && connections.rasciToBpmn.tasks) {
         window.rasciTasks = connections.rasciToBpmn.tasks;
-        localStorage.setItem('rasciTasks', JSON.stringify(connections.rasciToBpmn.tasks));
       }
 
     } catch (error) {

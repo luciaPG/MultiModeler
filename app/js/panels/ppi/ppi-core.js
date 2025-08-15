@@ -233,33 +233,14 @@ class PPICore {
   }
   
   savePPIs() {
-    try {
-      if (!this.isAutoSaveEnabled()) {
-        return;
-      }
-      
-      localStorage.setItem('ppis', JSON.stringify(this.ppis));
-    } catch (e) {
-      // Error al guardar PPIs
-    }
+    // PPI localStorage deshabilitado - solo lectura desde archivo
+    console.log('ℹ️ savePPIs deshabilitado - PPI solo se lee desde archivo');
   }
 
   loadPPIs() {
-    try {
-      const saved = localStorage.getItem('ppis');
-      if (saved && saved !== '[]' && saved !== 'null') {
-        const parsedPPIs = JSON.parse(saved);
-        if (Array.isArray(parsedPPIs) && parsedPPIs.length > 0) {
-          this.ppis = parsedPPIs;
-        } else {
-          this.ppis = [];
-        }
-      } else {
-        this.ppis = [];
-      }
-    } catch (e) {
-      this.ppis = [];
-    }
+    // PPI localStorage deshabilitado - inicializar vacío
+    this.ppis = [];
+    console.log('ℹ️ loadPPIs desde localStorage deshabilitado - usar carga desde archivo');
   }
 
   // === PPINOT ELEMENTS PERSISTENCE ===
@@ -345,10 +326,11 @@ class PPICore {
         timestamp: new Date().toISOString()
       };
       
-      localStorage.setItem('ppinotElements', JSON.stringify(ppinotData));
+      // PPI localStorage deshabilitado - solo guardar en XML
+      console.log('ℹ️ localStorage deshabilitado para PPINOT - guardando solo en XML');
 
       
-      // GUARDAR TAMBIÉN EN EL XML BPMN PARA PERSISTENCIA COMPLETA
+      // GUARDAR SOLO EN EL XML BPMN PARA PERSISTENCIA COMPLETA
       this.savePPINOTRelationshipsToXML(ppinotData.parentChildRelationships);
       
     } catch (error) {
@@ -448,31 +430,9 @@ class PPICore {
   }
 
   loadPPINOTElements() {
-    try {
-      const saved = localStorage.getItem('ppinotElements');
-      if (!saved || saved === 'null' || saved === '{}') {
-        return false;
-      }
-      
-      const ppinotData = JSON.parse(saved);
-      
-      // Verificar que los datos sean válidos
-      if (!ppinotData || !ppinotData.ppiElements || !ppinotData.ppiChildren) {
-        return false;
-      }
-      
-      // Verificar que haya al menos algunos datos válidos
-      if (ppinotData.ppiElements.length === 0 && ppinotData.ppiChildren.length === 0) {
-        return false;
-      }
-
-      
-      // Marcar para restauración automática cuando el modeler esté listo
-      this.pendingPPINOTRestore = ppinotData;
-      return true;
-    } catch (e) {
-      return false;
-    }
+    // PPI localStorage deshabilitado - solo cargar desde XML
+    console.log('ℹ️ loadPPINOTElements desde localStorage deshabilitado - usar carga desde XML');
+    return false;
   }
 
   // Nuevo método para cargar relaciones desde el XML BPMN
@@ -1008,20 +968,8 @@ class PPICore {
       // Limpiar elementos procesados antiguos
       const currentTime = Date.now();
       
-      // Limpiar datos PPINOT muy antiguos (más de 7 días)
-      const ppinotData = localStorage.getItem('ppinotElements');
-      if (ppinotData) {
-        try {
-          const data = JSON.parse(ppinotData);
-          const dataAge = currentTime - new Date(data.timestamp).getTime();
-          if (dataAge > 7 * 24 * 60 * 60 * 1000) { // 7 días
-            localStorage.removeItem('ppinotElements');
-          }
-        } catch (e) {
-          // Si hay error al parsear, eliminar datos corruptos
-          localStorage.removeItem('ppinotElements');
-        }
-      }
+      // PPI localStorage deshabilitado - no hay datos que limpiar
+      console.log('ℹ️ cleanupOldData - PPI localStorage deshabilitado');
     } catch (e) {
       // Error en limpieza de datos
     }

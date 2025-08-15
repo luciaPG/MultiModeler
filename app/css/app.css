@@ -76,6 +76,23 @@ body {
   transition: all 0.3s ease;
 }
 
+#back-to-welcome-btn {
+  background: none;      
+  border: none;          
+  padding: 0;           
+  margin: 0;             
+  color: inherit;        
+  font: inherit;        
+  cursor: pointer;    
+}
+
+#back-to-welcome-btn:focus {
+  outline: none;     
+}
+
+#back-to-welcome-btn:hover {
+  background: none;      
+}
 
 
 .mode-btn.active {

@@ -1,0 +1,197 @@
+/* Modal para nombre de archivo - Siguiendo estilo de modales de paneles */
+.file-name-modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 99999 !important;
+    backdrop-filter: blur(2px) !important;
+    pointer-events: auto !important;
+}
+
+.file-name-modal-content {
+    background: white !important;
+    border-radius: 8px !important;
+    padding: 24px !important;
+    max-width: 450px !important;
+    width: 90% !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+    animation: modalSlideIn 0.3s ease-out !important;
+    pointer-events: auto !important;
+    position: relative !important;
+    z-index: 100000 !important;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.file-name-modal h3 {
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    color: #374151 !important;
+    margin: 0 0 16px 0 !important;
+    font-family: 'Segoe UI', Roboto, sans-serif !important;
+    text-align: center;
+}
+
+.file-name-input-group {
+    margin-bottom: 20px;
+}
+
+.file-name-input-group label {
+    display: block;
+    font-size: 14px !important;
+    color: #374151 !important;
+    margin-bottom: 8px !important;
+    font-weight: 500 !important;
+    font-family: 'Segoe UI', Roboto, sans-serif !important;
+}
+
+.file-name-input {
+    width: 100%;
+    padding: 12px 16px !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 6px !important;
+    background: white !important;
+    color: #374151 !important;
+    font-size: 14px !important;
+    font-family: 'Segoe UI', Roboto, sans-serif !important;
+    transition: all 0.2s ease !important;
+    box-sizing: border-box;
+}
+
+.file-name-input:focus {
+    outline: none !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+.file-name-input::placeholder {
+    color: #9ca3af !important;
+}
+
+.file-name-error {
+    color: #dc2626 !important;
+    font-size: 14px !important;
+    margin-top: 8px !important;
+    display: none;
+    padding: 8px 12px !important;
+    background: #fef2f2 !important;
+    border-radius: 6px !important;
+    border-left: 3px solid #dc2626 !important;
+    font-family: 'Segoe UI', Roboto, sans-serif !important;
+}
+
+.file-name-error.show {
+    display: block;
+}
+
+.file-name-modal-buttons {
+    display: flex !important;
+    gap: 12px !important;
+    justify-content: flex-end !important;
+    margin-top: 20px !important;
+}
+
+.file-name-btn {
+    padding: 12px 24px !important;
+    border: none !important;
+    border-radius: 12px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    font-family: 'Segoe UI', Roboto, sans-serif !important;
+    min-width: 100px !important;
+    pointer-events: auto !important;
+    position: relative !important;
+    z-index: 100000 !important;
+    overflow: hidden !important;
+    background: white !important;
+    color: #6b7280 !important;
+    border: 2px solid #d1d5db !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.file-name-btn::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: -100% !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent) !important;
+    transition: left 0.5s ease !important;
+}
+
+.file-name-btn:hover::before {
+    left: 100% !important;
+}
+
+.file-name-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.file-name-btn-save {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3) !important;
+}
+
+.file-name-btn-save:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%) !important;
+    box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4) !important;
+    transform: translateY(-2px) !important;
+}
+
+.file-name-btn:disabled {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+    background: #f9fafb !important;
+    color: #9ca3af !important;
+    border-color: #d1d5db !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.file-name-btn:disabled:hover {
+    background: #f9fafb !important;
+    border-color: #d1d5db !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.file-name-btn:disabled::before {
+    display: none !important;
+}
+
+/* Estilo para modal de confirmación de sobrescritura */
+.file-name-modal p {
+    font-size: 14px !important;
+    color: #6b7280 !important;
+    margin-bottom: 20px !important;
+    line-height: 1.5 !important;
+    font-family: 'Segoe UI', Roboto, sans-serif !important;
+}
+
+.file-name-modal p strong {
+    color: #374151 !important;
+    font-weight: 600 !important;
+}

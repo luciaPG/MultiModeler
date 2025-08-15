@@ -1,247 +1,180 @@
-/* Modales del Sistema de Autoguardado - ESTÉTICA DE LA APLICACIÓN */
-.autosave-modal {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  background: rgba(0, 0, 0, 0.5) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  z-index: 99999 !important;
-  backdrop-filter: blur(2px) !important;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
+/* Modal de autoguardado eliminado - usar solo toggle manual */
 
-.autosave-modal.show {
-  opacity: 1;
-}
-
-.autosave-modal-content {
-  background: white !important;
-  border-radius: 8px !important;
-  padding: 24px !important;
-  max-width: 450px !important;
-  width: 90% !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
-  animation: modalSlideIn 0.3s ease-out !important;
-  position: relative !important;
-  z-index: 100000 !important;
-  transform: scale(0.95);
-  transition: transform 0.3s ease;
-}
-
-.autosave-modal.show .autosave-modal-content {
-  transform: scale(1);
-}
-
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.autosave-modal-header {
-  margin-bottom: 20px;
-  border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 16px;
-}
-
-.autosave-modal-header h3 {
-  font-size: 18px !important;
-  font-weight: 600 !important;
-  color: #374151 !important;
-  margin: 0 !important;
-  font-family: 'Segoe UI', Roboto, sans-serif !important;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.autosave-modal-header .icon {
-  font-size: 20px;
-  color: #4361ee;
-}
-
-.autosave-modal-body {
-  margin-bottom: 24px;
-  line-height: 1.6;
-}
-
-.autosave-modal-body p {
-  font-size: 14px !important;
-  color: #6b7280 !important;
-  margin: 0 0 16px 0 !important;
-  font-family: 'Segoe UI', Roboto, sans-serif !important;
-}
-
-.autosave-option {
-  background: #f9fafb;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 16px;
-  margin: 12px 0;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.autosave-option:hover {
-  background: #f3f4f6;
-  border-color: #d1d5db;
-}
-
-.autosave-option.selected {
-  background: #eff6ff;
-  border-color: #4361ee;
-}
-
-.autosave-option h4 {
-  margin: 0 0 8px 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #374151;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-family: 'Segoe UI', Roboto, sans-serif;
-}
-
-.autosave-option h4 i {
-  color: #4361ee;
-  font-size: 18px;
-}
-
-.autosave-option p {
-  margin: 0;
-  font-size: 13px;
-  color: #6b7280;
-  font-family: 'Segoe UI', Roboto, sans-serif;
-}
-
-.autosave-modal-footer {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
-.autosave-btn {
-  padding: 10px 20px !important;
-  border: 1px solid #d1d5db !important;
-  border-radius: 6px !important;
-  font-size: 14px !important;
-  font-weight: 500 !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease !important;
-  font-family: 'Segoe UI', Roboto, sans-serif !important;
-  min-width: 100px !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.autosave-btn-primary {
-  background: #4361ee !important;
-  color: white !important;
-  border-color: #4361ee !important;
-}
-
-.autosave-btn-primary:hover {
-  background: rgba(67, 97, 238, 0.67) !important;
-  border-color: rgba(67, 97, 238, 0.67) !important;
-}
-
-.autosave-btn-primary:disabled {
-  background: #9ca3af !important;
-  border-color: #9ca3af !important;
-  cursor: not-allowed !important;
-}
-
-.autosave-btn-secondary {
-  background: white !important;
-  color: #374151 !important;
-}
-
-.autosave-btn-secondary:hover {
-  background: #f3f4f6 !important;
-  border-color: #9ca3af !important;
-}
-
-.filename-input {
-  width: 100%;
-  padding: 12px 16px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-  background: white;
-  color: #374151;
-  margin: 10px 0;
-  font-family: 'Segoe UI', Roboto, sans-serif;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.filename-input:focus {
-  outline: none;
-  border-color: #4361ee;
-  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
-}
-
-.path-preview {
-  background: #f9fafb;
-  padding: 12px 16px;
-  border-radius: 6px;
-  font-family: 'Courier New', monospace;
-  font-size: 12px;
-  margin: 10px 0;
-  color: #6b7280;
-  border: 1px solid #e5e7eb;
-}
-
-/* Configuración de archivo */
-.file-config-modal .autosave-modal-header .icon {
-  color: #059669;
-}
-
-/* ============================ */
-/* TOGGLE DE AUTOGUARDADO EN TOOLBAR */
-/* ============================ */
+/* ============================================
+   ESTILOS MEJORADOS PARA TOOLBAR DE AUTOGUARDADO
+   ============================================ */
 
 .autosave-toolbar-toggle {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 4px;
   padding: 6px 12px;
-  border: 1px solid #d1d5db;
+  background: #ffffff;
   border-radius: 6px;
-  background: white;
-  font-family: 'Segoe UI', Roboto, sans-serif;
-  font-size: 12px;
+  min-width: 160px;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+ 
 }
 
 .autosave-toolbar-toggle:hover {
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 
 .autosave-toggle-container {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.autosave-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #475569;
+  user-select: none;
+  transition: color 0.2s ease;
 }
 
 .autosave-toggle {
   position: relative;
   display: inline-block;
-  width: 32px;
-  height: 18px;
+  width: 40px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.autosave-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.autosave-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #cbd5e1;
+  transition: all 0.2s ease;
+  border-radius: 20px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.autosave-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background: #ffffff;
+  transition: all 0.2s ease;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.autosave-toggle input:checked + .autosave-slider {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.autosave-toggle input:checked + .autosave-slider:before {
+  transform: translateX(20px);
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.autosave-timestamp {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  color: #64748b;
+  opacity: 0.8;
+  transition: all 0.2s ease;
+}
+
+.autosave-toolbar-toggle.active .autosave-label,
+#autosave-panel.active .autosave-label {
+  color: #667eea !important;
+  font-weight: 600;
+}
+
+.autosave-toolbar-toggle.active .autosave-timestamp,
+#autosave-panel.active .autosave-timestamp {
+  color: #667eea !important;
+  opacity: 1;
+}
+
+.autosave-toolbar-toggle.active,
+#autosave-panel.active {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border-color: #667eea !important;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+}
+
+/* Estados del toggle */
+.autosave-toggle input:focus + .autosave-slider {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.autosave-toggle:hover .autosave-slider {
+  transform: scale(1.02);
+}
+
+/* Animación de carga para timestamp */
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.autosave-timestamp.loading {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Estilos del modal eliminados - usar solo toggle manual */
+
+/* ============================ */
+/* TOGGLE SIMPLE DE AUTOGUARDADO */
+/* ============================ */
+
+.autosave-panel {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: white;
+  border: 2px solid #667eea;
+  border-radius: 6px;
+  padding: 8px 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  font-family: 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  min-width: 160px;
+}
+
+.autosave-panel:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.autosave-toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.autosave-toggle {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
   cursor: pointer;
 }
 
@@ -260,32 +193,32 @@
   bottom: 0;
   background-color: #cbd5e1;
   transition: 0.3s ease;
-  border-radius: 18px;
+  border-radius: 20px;
 }
 
 .autosave-slider:before {
   position: absolute;
   content: "";
-  height: 14px;
-  width: 14px;
+  height: 16px;
+  width: 16px;
   left: 2px;
   bottom: 2px;
   background-color: white;
   transition: 0.3s ease;
   border-radius: 50%;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 input:checked + .autosave-slider {
-  background-color: #4361ee;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 input:checked + .autosave-slider:before {
-  transform: translateX(14px);
+  transform: translateX(16px);
 }
 
 .autosave-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: #374151;
   white-space: nowrap;
@@ -294,34 +227,28 @@ input:checked + .autosave-slider:before {
 .autosave-timestamp {
   font-size: 11px;
   color: #6b7280;
-  padding-left: 6px;
+  padding-left: 8px;
   border-left: 1px solid #e5e7eb;
   white-space: nowrap;
-  min-width: 30px;
+  min-width: 35px;
 }
 
 /* Estado activo */
-.autosave-toolbar-toggle.active {
-  border-color: #4361ee;
-  background: #f8faff;
-}
-
-.autosave-toolbar-toggle.active .autosave-label {
-  color: #4361ee;
+.autosave-panel.active .autosave-label {
+  color:linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
   font-weight: 600;
 }
 
 /* Estado guardando */
-.autosave-toolbar-toggle.saving {
+.autosave-panel.saving {
   border-color: #059669;
-  background: #f0fdf4;
 }
 
-.autosave-toolbar-toggle.saving .autosave-label {
+.autosave-panel.saving .autosave-label {
   color: #059669;
 }
 
-.autosave-toolbar-toggle.saving .autosave-timestamp {
+.autosave-panel.saving .autosave-timestamp {
   color: #059669;
   font-weight: 500;
 }

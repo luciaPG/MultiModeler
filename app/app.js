@@ -397,12 +397,11 @@ async function handleNewDiagram() {
   try {
     console.log('🆕 Iniciando creación de nuevo diagrama...');
     
-    // PRIMERO: Configurar nombre del archivo antes de crear el diagrama
-    const filename = await showFileConfigModal();
-    currentFileName = filename;
-    console.log("📄 Archivo configurado:", filename);
+    // Configurar nombre del archivo por defecto
+    currentFileName = 'nuevo_diagrama.bpmn';
+    console.log("📄 Archivo configurado:", currentFileName);
     
-    // SEGUNDO: Usar ubicación de MultiNotation Modeler automáticamente
+    // Usar ubicación de MultiNotation Modeler automáticamente
     console.log('📁 Configurando ubicación automática...');
     const projectPath = window.pathManager ? window.pathManager.getProjectPath() : `C:\\Users\\Usuario\\Documents\\MultiNotation Modeler`;
     
@@ -414,12 +413,11 @@ async function handleNewDiagram() {
     
     console.log('✅ Ubicación seleccionada:', projectPath);
     
-    // Guardar la ubicación como preferencia para este proyecto
-    localStorage.setItem('current-project-path', projectPath);
-    localStorage.setItem('preferred-save-path', projectPath);
-    
     // Mostrar el modeler
     showModeler();
+    
+    // Modal de autoguardado eliminado - usar solo toggle
+    console.log("💾 Modal de autoguardado eliminado - usar toggle manual");
     
     await new Promise(resolve => setTimeout(resolve, 1000));
     
@@ -497,28 +495,17 @@ async function handleNewDiagram() {
     // Crear el diagrama
     await createNewDiagram();
     
-    // Preguntar sobre autoguardado DESPUÉS de crear el diagrama
-    setTimeout(async () => {
-      const enableAutoSave = await showAutoSaveConfigModal();
-      if (enableAutoSave) {
-        // Solo configurar ubicación y activar sin mensajes flotantes
-        await window.configureAutoSaveLocationSilent();
-        if (autoSaveConfigured) {
-          window.enableAutoSaveSilent(2000); // 2 segundos
-        }
-        // Activar el toggle
-        updateAutoSaveToggle(true);
-      } else {
-        // Usuario eligió "No autoguardado" - desactivar toggle
-        console.log("💾 Usuario eligió no activar autoguardado");
-        autoSaveEnabled = false;
-        autoSaveConfigured = false;
-        updateAutoSaveToggle(false);
-      }
-    }, 1500);
+    // Autoguardado desactivado por defecto - usar toggle manual
+    console.log("💾 Autoguardado desactivado por defecto - usar toggle manual");
+    autoSaveEnabled = false;
+    autoSaveConfigured = false;
+    updateAutoSaveToggle(false);
     
-    // Confirmación silenciosa (sin modal)
-    updateUI(`Nuevo diagrama creado en: ${projectPath}`);
+      // Confirmación silenciosa (sin modal)
+  updateUI(`Nuevo diagrama creado en: ${projectPath}`);
+  
+  // Configurar event listener para el toggle manual
+  setupAutoSaveToggleListener();
     
     // No mostrar modal de confirmación (eliminado por solicitud del usuario)
     console.log(`✅ Nuevo diagrama creado en: ${projectPath}`);
@@ -1008,12 +995,17 @@ function setupFileHandlers() {
       } else if (fileExtension === 'bpmn' || fileExtension === 'xml') {
         await window.modeler.importXML(content);
         
+        // Configurar autoguardado sobre el archivo abierto
+        currentFileName = file.name;
+        console.log('📄 Archivo abierto:', currentFileName);
+        
+        // Mostrar mensaje informativo sobre autoguardado
+        updateUI(`Diagrama importado: ${currentFileName}. Activa el toggle de autoguardado para guardar automáticamente.`);
+        
         setTimeout(() => {
           reactivateEditingServices();
           enableEditingTools();
         }, 500);
-        
-        updateUI('Diagrama importado.');
       } else {
         throw new Error('Tipo de archivo no soportado. Use .bpmn, .xml o .mmproject');
       }
@@ -1172,15 +1164,55 @@ function initializeApp() {
           const directoryName = localStorage.getItem('auto-save-directory-name') || 'Ubicación no configurada';
           const lastSave = lastAutoSaveTime ? new Date(lastAutoSaveTime).toLocaleString() : 'Nunca';
           showElegantNotification(`📊 Autoguardado activo\n📁 Carpeta: ${directoryName}\n📄 Archivo: ${currentFileName}\n🕐 Último: ${lastSave}`, 'info');
-        } else {
-          showElegantNotification('ℹ️ Autoguardado desactivado\n\nActiva el toggle para guardar automáticamente cada 10 segundos', 'info');
         }
+        // Eliminado: No mostrar notificación cuando está desactivado
       }
     });
   }
 
   checkSavedDiagram();
 }
+
+// Función para actualizar el estado del proyecto
+function updateProjectStatus(status, message = '') {
+  const projectStatus = document.getElementById('project-status');
+  if (!projectStatus) return;
+  
+  const statusIcon = projectStatus.querySelector('i');
+  const statusText = projectStatus;
+  
+  // Limpiar clases anteriores
+  projectStatus.classList.remove('saved', 'unsaved', 'error');
+  
+  switch (status) {
+    case 'saved':
+      projectStatus.classList.add('saved');
+      if (statusIcon) statusIcon.className = 'fas fa-check-circle';
+      statusText.innerHTML = '<i class="fas fa-check-circle"></i> Guardado';
+      break;
+    case 'unsaved':
+      projectStatus.classList.add('unsaved');
+      if (statusIcon) statusIcon.className = 'fas fa-circle';
+      statusText.innerHTML = '<i class="fas fa-circle"></i> Sin guardar';
+      break;
+    case 'error':
+      projectStatus.classList.add('error');
+      if (statusIcon) statusIcon.className = 'fas fa-exclamation-circle';
+      statusText.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error';
+      break;
+    case 'saving':
+      if (statusIcon) statusIcon.className = 'fas fa-spinner fa-spin';
+      statusText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+      break;
+  }
+  
+  if (message) {
+    statusText.title = message;
+  }
+}
+
+// Hacer la función global
+window.updateProjectStatus = updateProjectStatus;
 
 // Función para obtener ruta de almacenamiento con modal
 async function getStoragePathWithModal(type = 'usuario') {
@@ -1788,7 +1820,7 @@ Los diagramas se pueden guardar directamente donde elijas.`);
       } catch (fsError) {
         if (fsError.name === 'AbortError') {
           console.log("ℹ️ Usuario canceló la prueba de guardado directo");
-          alert("ℹ️ Prueba cancelada\n\nPero la API funciona. Los diagramas se pueden guardar directamente.");
+          alert(" Prueba cancelada\n\nPero la API funciona. Los diagramas se pueden guardar directamente.");
         } else {
           console.error("❌ Error con File System Access API:", fsError);
           alert(`❌ Error con API de guardado directo:\n${fsError.message}\n\nUsaremos descarga tradicional.`);
@@ -1821,7 +1853,7 @@ Los diagramas se pueden guardar directamente donde elijas.`);
     
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'test-diagrama.bpmn';
+    a.download = 'test-diagram.bpmn';
     a.style.display = 'none';
     
     // Ejecutar descarga
@@ -2380,153 +2412,53 @@ window.setCorrectUserPath = function() {
 /**
  * Modal elegante para configuración inicial del archivo
  */
-function showFileConfigModal() {
-    return new Promise((resolve) => {
-        const modal = document.createElement('div');
-        modal.className = 'autosave-modal file-config-modal';
-        modal.innerHTML = `
-            <div class="autosave-modal-content">
-                <div class="autosave-modal-header">
-                    <h3><i class="fas fa-file-alt icon"></i>Configurar Archivo</h3>
-                </div>
-                <div class="autosave-modal-body">
-                    <p>¿Cómo quieres nombrar tu archivo de diagrama?</p>
-                    <input type="text" class="filename-input" id="filename-input" value="mi_diagrama.bpmn" placeholder="nombre_archivo.bpmn">
-                    <div class="path-preview" id="path-preview">
-                        Archivo: <span id="preview-filename">mi_diagrama.bpmn</span>
-                    </div>
-                </div>
-                <div class="autosave-modal-footer">
-                    <button class="autosave-btn autosave-btn-primary" id="confirm-filename">
-                        <i class="fas fa-check"></i> Continuar
-                    </button>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-        setTimeout(() => modal.classList.add('show'), 10);
-
-        const filenameInput = modal.querySelector('#filename-input');
-        const previewFilename = modal.querySelector('#preview-filename');
-        const confirmBtn = modal.querySelector('#confirm-filename');
-
-        // Actualizar preview en tiempo real
-        filenameInput.addEventListener('input', () => {
-            let filename = filenameInput.value.trim();
-            if (filename && !filename.endsWith('.bpmn')) {
-                filename += '.bpmn';
-            }
-            previewFilename.textContent = filename || 'mi_diagrama.bpmn';
-        });
-
-        confirmBtn.addEventListener('click', () => {
-            let filename = filenameInput.value.trim();
-            if (!filename) filename = 'mi_diagrama.bpmn';
-            if (!filename.endsWith('.bpmn')) filename += '.bpmn';
-            
-            modal.classList.remove('show');
-            setTimeout(() => {
-                modal.remove();
-                resolve(filename);
-            }, 300);
-        });
-
-        // Focus en input
-        filenameInput.focus();
-        filenameInput.select();
-    });
-}
+// Función showFileConfigModal eliminada - usar nombre por defecto
 
 /**
- * Modal elegante para configuración de autoguardado
+ * Modal de autoguardado eliminado - usar solo toggle manual
  */
-function showAutoSaveConfigModal() {
-    return new Promise((resolve) => {
-        const modal = document.createElement('div');
-        modal.className = 'autosave-modal';
-        modal.innerHTML = `
-            <div class="autosave-modal-content">
-                <div class="autosave-modal-header">
-                    <h3><i class="fas fa-sync-alt icon"></i>Configurar Autoguardado</h3>
-                </div>
-                <div class="autosave-modal-body">
-                    <p>¿Quieres activar el autoguardado automático para este diagrama?</p>
-                    
-                    <div class="autosave-option" data-option="yes">
-                        <h4><i class="fas fa-check-circle"></i> Sí, activar autoguardado</h4>
-                        <p>El archivo se guardará automáticamente cada 10 segundos en la ubicación que elijas.</p>
-                    </div>
-                    
-                    <div class="autosave-option" data-option="no">
-                        <h4><i class="fas fa-times-circle"></i> No, guardar manualmente</h4>
-                        <p>Podrás guardar el archivo cuando quieras usando el botón "Guardar".</p>
-                    </div>
-                </div>
-                <div class="autosave-modal-footer">
-                    <button class="autosave-btn autosave-btn-primary" id="confirm-autosave" disabled>
-                        <i class="fas fa-arrow-right"></i> Continuar
-                    </button>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-        setTimeout(() => modal.classList.add('show'), 10);
-
-        let selectedOption = null;
-        const options = modal.querySelectorAll('.autosave-option');
-        const confirmBtn = modal.querySelector('#confirm-autosave');
-
-        options.forEach(option => {
-            option.addEventListener('click', () => {
-                options.forEach(opt => opt.classList.remove('selected'));
-                option.classList.add('selected');
-                selectedOption = option.dataset.option;
-                confirmBtn.disabled = false;
-            });
-        });
-
-        confirmBtn.addEventListener('click', () => {
-            modal.classList.remove('show');
-            setTimeout(() => {
-                modal.remove();
-                resolve(selectedOption === 'yes');
-            }, 300);
-        });
-    });
-}
 
 /**
- * Configura la ubicación de autoguardado (versión silenciosa)
+ * Configura la ubicación y nombre del archivo de autoguardado (versión simplificada)
  */
 window.configureAutoSaveLocationSilent = async function() {
-    console.log("🔧 === CONFIGURANDO UBICACIÓN DE AUTOGUARDADO (SILENCIOSO) ===");
+    console.log("🔧 === CONFIGURANDO AUTOGUARDADO (SELECCIÓN ÚNICA) ===");
     
     try {
-        if (!('showDirectoryPicker' in window)) {
-            console.log('❌ Navegador no soporta selección de carpetas');
+        if (!('showSaveFilePicker' in window)) {
+            console.log('❌ Navegador no soporta selección de archivos');
             return false;
         }
 
-        // Permitir al usuario seleccionar la carpeta
+        // Pedir al usuario que seleccione la carpeta donde guardar
         const directoryHandle = await window.showDirectoryPicker();
         
-        // Guardar referencias
+        // Pedir el nombre del archivo usando el modal personalizado
+        const defaultName = currentFileName || 'diagrama.bpmn';
+        const fileName = await window.showFileNameModal(defaultName, directoryHandle);
+        
+        // Crear el archivo en la carpeta seleccionada
+        const fileHandle = await directoryHandle.getFileHandle(fileName, { create: true });
+
+        currentFileHandle = fileHandle;
+        currentFileName = fileName;
         currentDirectoryHandle = directoryHandle;
         autoSaveConfigured = true;
-        
-        // Guardar preferencia en localStorage
+
+        // Guardar configuración en localStorage
         localStorage.setItem('auto-save-directory-name', directoryHandle.name);
         localStorage.setItem('auto-save-configured', 'true');
         localStorage.setItem('current-filename', currentFileName);
         
-        console.log("✅ Carpeta de autoguardado configurada:", directoryHandle.name);
+        console.log("✅ Autoguardado configurado:", {
+            carpeta: directoryHandle,
+            archivo: currentFileName
+        });
         
-        return directoryHandle;
+        return { directoryHandle, fileHandle };
         
     } catch (error) {
-        console.error("❌ Error configurando ubicación:", error);
+        console.error("❌ Error configurando autoguardado:", error);
         return null;
     }
 };
@@ -2539,6 +2471,7 @@ window.enableAutoSaveSilent = function(frequency = 10000) {
     
     if (!autoSaveConfigured) {
         console.log("⚠️ Ubicación no configurada");
+        updateAutoSaveToggle(false);
         return false;
     }
     
@@ -2554,7 +2487,12 @@ window.enableAutoSaveSilent = function(frequency = 10000) {
     autoSaveInterval = setInterval(performAutoSave, autoSaveFrequency);
     
     console.log(`✅ Autoguardado activado cada ${frequency/1000} segundos`);
-    updateAutoSaveToggle(true);
+    
+    // Asegurar que el toggle se actualice correctamente
+    setTimeout(() => {
+        updateAutoSaveToggle(true);
+        console.log("✅ Toggle de autoguardado actualizado después de activar");
+    }, 200);
     
     return true;
 };
@@ -2668,15 +2606,14 @@ async function performAutoSave() {
             return;
         }
 
-        if (!currentDirectoryHandle) {
-            console.log("❌ Referencia de carpeta perdida");
+        if (!currentFileHandle) {
+            console.log("❌ Referencia de archivo perdida");
             window.disableAutoSave();
             showElegantNotification("❌ Ubicación perdida. Reconfigura el autoguardado.", 'error');
             return;
         }
 
-        // Crear o sobrescribir el archivo único
-        currentFileHandle = await currentDirectoryHandle.getFileHandle(currentFileName, { create: true });
+        // Escribir directamente al archivo configurado
         const writable = await currentFileHandle.createWritable();
         await writable.write(result.xml);
         await writable.close();
@@ -2789,23 +2726,90 @@ function showElegantNotification(message, type = 'info') {
  * Actualiza el toggle visual de autoguardado
  */
 function updateAutoSaveToggle(enabled) {
+    console.log(`🔄 Actualizando toggle de autoguardado: ${enabled}`);
+    
     const checkbox = document.getElementById('autosave-checkbox');
-    const panel = document.getElementById('autosave-toolbar-toggle');
+    const panel = document.getElementById('autosave-panel');
+    
+    console.log('🔍 Elementos encontrados:', {
+        checkbox: !!checkbox,
+        panel: !!panel
+    });
     
     if (checkbox) {
         checkbox.checked = enabled;
+        console.log(`✅ Checkbox actualizado: ${checkbox.checked}`);
+    } else {
+        console.warn('⚠️ Checkbox no encontrado');
     }
     
     if (panel) {
         if (enabled) {
             panel.classList.add('active');
+            console.log('✅ Panel marcado como activo');
         } else {
             panel.classList.remove('active');
+            console.log('✅ Panel marcado como inactivo');
         }
+    } else {
+        console.warn('⚠️ Panel no encontrado');
     }
     
     // Actualizar timestamp visibility
     updateTimestamp();
+    
+    // Forzar re-renderizado del toggle si es necesario
+    setTimeout(() => {
+        if (checkbox && checkbox.checked !== enabled) {
+            console.log('🔄 Forzando re-renderizado del toggle...');
+            checkbox.checked = enabled;
+            checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }, 100);
+}
+
+/**
+ * Configura el event listener para el toggle manual de autoguardado
+ */
+function setupAutoSaveToggleListener() {
+    const checkbox = document.getElementById('autosave-checkbox');
+    if (checkbox) {
+        checkbox.addEventListener('change', function() {
+            console.log(`🔄 Toggle manual cambiado: ${this.checked}`);
+            
+            if (this.checked) {
+                // Usuario activó manualmente el toggle
+                if (!autoSaveConfigured) {
+                    // Si no está configurado, configurar primero
+                    window.configureAutoSaveLocationSilent().then(result => {
+                        if (result && result.directoryHandle) {
+                            window.enableAutoSaveSilent(2000);
+                        } else {
+                            // Si no se pudo configurar, desactivar el toggle
+                            this.checked = false;
+                            updateAutoSaveToggle(false);
+                        }
+                    });
+                } else {
+                    // Si ya está configurado, solo activar
+                    window.enableAutoSaveSilent(2000);
+                }
+            } else {
+                // Usuario desactivó manualmente el toggle
+                autoSaveEnabled = false;
+                if (autoSaveInterval) {
+                    clearInterval(autoSaveInterval);
+                    autoSaveInterval = null;
+                }
+                updateAutoSaveToggle(false);
+                console.log("💾 Autoguardado desactivado manualmente");
+            }
+        });
+        
+        console.log("✅ Event listener del toggle configurado");
+    } else {
+        console.warn("⚠️ No se pudo configurar el event listener del toggle");
+    }
 }
 
 /**
@@ -2844,7 +2848,7 @@ window.saveToConfiguredLocation = async function() {
         }
 
         // Extraer XML
-        const result = await window.modeler.saveXML({ format: true });
+        const result = await modeler.saveXML({ format: true });
         if (!result || !result.xml) {
             throw new Error('No se pudo extraer el XML del diagrama');
         }
@@ -2896,7 +2900,7 @@ window.enableAutoSaveForCurrentFile = async function() {
             if (autoSaveInterval) {
                 clearInterval(autoSaveInterval);
             }
-            autoSaveInterval = setInterval(performAutoSaveToCurrentFile, 2000);
+            autoSaveInterval = setInterval(performAutoSave, 2000);
             
             updateAutoSaveToggle(true);
             // Notification removed per user request
@@ -2912,26 +2916,26 @@ window.enableAutoSaveForCurrentFile = async function() {
         
         // Crear automáticamente el archivo sin mostrar modal
         try {
-            const fileHandle = await window.showSaveFilePicker({
-                suggestedName: suggestedName,
-                types: [{
-                    description: 'BPMN files',
-                    accept: {
-                        'application/xml': ['.bpmn'],
-                        'text/xml': ['.bpmn'],
-                    },
-                }],
-            });
+            // Pedir carpeta primero
+            const directoryHandle = await window.showDirectoryPicker();
+            
+            // Pedir nombre del archivo usando el modal personalizado
+            const defaultName = suggestedName;
+            const fileName = await window.showFileNameModal(defaultName, directoryHandle);
+            
+            // Crear archivo en la carpeta seleccionada
+            const fileHandle = await directoryHandle.getFileHandle(fileName, { create: true });
             
             // Guardar referencia del archivo
             currentFileHandle = fileHandle;
-            currentFileName = fileHandle.name;
+            currentFileName = fileName;
+            currentDirectoryHandle = directoryHandle;
             autoSaveConfigured = true;
-            autoSaveEnabled = true;
-            
-            // Guardar en localStorage
-            localStorage.setItem('current-filename', currentFileName);
+
+            // Guardar configuración en localStorage
+            localStorage.setItem('auto-save-directory-name', currentDirectoryHandle.name);
             localStorage.setItem('auto-save-configured', 'true');
+            localStorage.setItem('current-filename', currentFileName);
             
             console.log("✅ Archivo configurado:", currentFileName);
             
@@ -3042,6 +3046,69 @@ function showAutoSaveVisualFeedback() {
 }
 
 /**
+ * Activa el autoguardado para el archivo actual
+ */
+window.enableAutoSaveForCurrentFile = async function() {
+    console.log("🔧 === ACTIVANDO AUTOGUARDADO PARA ARCHIVO ACTUAL ===");
+    
+    try {
+        // Si ya hay un archivo configurado, usar ese
+        if (currentFileHandle && currentFileName) {
+            console.log("✅ Usando archivo ya configurado:", currentFileName);
+            window.enableAutoSaveSilent(2000);
+            return;
+        }
+        
+        // Si no hay archivo configurado, pedir al usuario que seleccione uno
+        if ('showDirectoryPicker' in window) {
+            // Pedir carpeta primero
+            const directoryHandle = await window.showDirectoryPicker();
+            
+            // Pedir nombre del archivo usando el modal personalizado
+            const defaultName = currentFileName || 'diagrama.bpmn';
+            const fileName = await window.showFileNameModal(defaultName, directoryHandle);
+            
+            // Crear archivo en la carpeta seleccionada
+            const fileHandle = await directoryHandle.getFileHandle(fileName, { create: true });
+            
+            currentFileHandle = fileHandle;
+            currentFileName = fileName;
+            currentDirectoryHandle = directoryHandle;
+            autoSaveConfigured = true;
+
+            // Guardar configuración en localStorage
+            localStorage.setItem('auto-save-directory-name', currentDirectoryHandle.name);
+            localStorage.setItem('auto-save-configured', 'true');
+            localStorage.setItem('current-filename', currentFileName);
+            
+            console.log("✅ Archivo configurado:", currentFileName);
+            
+            // Realizar primer guardado inmediato
+            await performAutoSaveToCurrentFile();
+            
+            // Iniciar intervalo de autoguardado
+            if (autoSaveInterval) {
+                clearInterval(autoSaveInterval);
+            }
+            autoSaveInterval = setInterval(performAutoSaveToCurrentFile, 2000);
+            
+            updateAutoSaveToggle(true);
+            // Notification removed per user request
+            
+            return true;
+        } else {
+            console.warn("❌ Navegador no soporta File System Access API");
+            showElegantNotification("❌ Autoguardado no disponible en este navegador", 'error');
+            updateAutoSaveToggle(false);
+        }
+    } catch (error) {
+        console.error("❌ Error configurando autoguardado:", error);
+        showElegantNotification("❌ Error configurando autoguardado", 'error');
+        updateAutoSaveToggle(false);
+    }
+};
+
+/**
  * Desactiva el autoguardado (versión silenciosa)
  */
 window.disableAutoSaveSilent = function() {
@@ -3084,218 +3151,6 @@ window.showAutoSaveStatus = function() {
     
     showElegantNotification(message, 'info');
     return status;
-};
-
-// Función para mostrar el indicador de guardado exitoso
-function showSaveSuccessIndicator(message = 'Guardado en ubicación anterior') {
-  const indicator = document.getElementById('save-success-indicator');
-  const textSpan = document.getElementById('save-success-text');
-  
-  if (indicator && textSpan) {
-    textSpan.textContent = message;
-    indicator.classList.remove('fade-out');
-    indicator.classList.add('show');
-    
-    // Ocultar después de 3 segundos
-    setTimeout(() => {
-      indicator.classList.add('fade-out');
-      setTimeout(() => {
-        indicator.classList.remove('show', 'fade-out');
-      }, 300);
-    }, 3000);
-  }
-}
-
-// Función para actualizar referencias después de guardar
-function updateSaveReferences(fileHandle) {
-  if (fileHandle && fileHandle.name) {
-    currentFileHandle = fileHandle;
-    currentFileName = fileHandle.name;
-    localStorage.setItem('last-saved-filename', fileHandle.name);
-    localStorage.setItem('last-used-save-path', fileHandle.name);
-    console.log('✅ Referencias de guardado actualizadas:', fileHandle.name);
-  }
-}
-
-// Función de guardado inteligente que detecta ubicaciones anteriores
-window.saveWithSmartDetection = async function() {
-  try {
-    console.log('🧠 Iniciando guardado inteligente...');
-    
-    // DEBUG: Mostrar estado actual
-    console.log('📊 Estado actual:');
-    console.log('  - currentFileHandle:', currentFileHandle);
-    console.log('  - currentFileName:', currentFileName);
-    console.log('  - localStorage last-saved-filename:', localStorage.getItem('last-saved-filename'));
-    console.log('  - localStorage last-used-save-path:', localStorage.getItem('last-used-save-path'));
-    console.log('  - localStorage preferred-save-path:', localStorage.getItem('preferred-save-path'));
-    
-    // Verificar modeler primero
-    if (!modeler) {
-      throw new Error('El modeler no está disponible');
-    }
-
-    // Extraer XML del diagrama
-    const result = await modeler.saveXML({ format: true });
-    
-    if (!result || !result.xml) {
-      throw new Error('No se pudo extraer el XML del diagrama');
-    }
-    
-    console.log('✅ XML extraído correctamente');
-    
-    // PRIORIDAD 1: Si ya tenemos un fileHandle de un guardado anterior, úsalo directamente
-    if (currentFileHandle && typeof currentFileHandle.createWritable === 'function') {
-      try {
-        console.log('📁 Usando archivo anteriormente guardado:', currentFileHandle.name);
-        
-        // Verificar que el handle todavía es válido
-        const testPermission = await currentFileHandle.queryPermission({ mode: 'readwrite' });
-        if (testPermission !== 'granted') {
-          console.log('⚠️ Permisos insuficientes, solicitando permisos...');
-          const permission = await currentFileHandle.requestPermission({ mode: 'readwrite' });
-          if (permission !== 'granted') {
-            throw new Error('Permisos denegados para el archivo anterior');
-          }
-        }
-        
-        const writable = await currentFileHandle.createWritable();
-        await writable.write(result.xml);
-        await writable.close();
-        
-        console.log('✅ Archivo sobrescrito exitosamente');
-        
-        // Mostrar indicador verde
-        showSaveSuccessIndicator(`Sobrescrito: ${currentFileHandle.name}`);
-        
-        // Actualizar timestamp
-        lastAutoSaveTime = Date.now();
-        
-        return;
-        
-      } catch (fileHandleError) {
-        console.warn('⚠️ No se pudo usar el fileHandle anterior:', fileHandleError.message);
-        // Continuar con otras opciones
-        currentFileHandle = null; // Limpiar handle inválido
-      }
-    }
-    
-    // PRIORIDAD 2: Buscar ubicaciones anteriores en localStorage
-    const preferredPath = localStorage.getItem('preferred-save-path');
-    const currentProjectPath = localStorage.getItem('current-project-path');
-    const lastUsedPath = localStorage.getItem('last-used-save-path');
-    const lastFileName = localStorage.getItem('last-saved-filename');
-    
-    // Determinar si hay una ubicación conocida
-    const knownLocation = preferredPath || currentProjectPath || lastUsedPath;
-    
-    if (knownLocation || lastFileName) {
-      console.log('📁 Ubicación anterior detectada:', { knownLocation, lastFileName });
-      
-      // Intentar guardar usando File System Access API con ubicación sugerida
-      if ('showSaveFilePicker' in window) {
-        try {
-          // Usar nombre anterior si existe, sino generar uno nuevo
-          const filename = lastFileName || currentFileName || `diagrama_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.bpmn`;
-          
-          const fileHandle = await window.showSaveFilePicker({
-            suggestedName: filename,
-            startIn: 'documents', // Comenzar en documentos
-            types: [{
-              description: 'BPMN files',
-              accept: {
-                'application/xml': ['.bpmn'],
-                'text/xml': ['.bpmn'],
-              },
-            }],
-          });
-          
-          const writable = await fileHandle.createWritable();
-          await writable.write(result.xml);
-          await writable.close();
-          
-          // Actualizar referencias para próximas veces
-          updateSaveReferences(fileHandle);
-          
-          console.log('✅ Guardado exitoso en ubicación anterior');
-          
-          // Mostrar indicador verde en lugar de alerta
-          showSaveSuccessIndicator(`Guardado: ${fileHandle.name}`);
-          
-          return;
-          
-        } catch (fsError) {
-          console.log('⚠️ File System Access API falló:', fsError.message);
-          if (fsError.name === 'AbortError') {
-            console.log('❌ Usuario canceló el diálogo de guardado');
-            return;
-          }
-          // Continuar con fallback
-        }
-      }
-    }
-    
-    // PRIORIDAD 3: Si no hay ubicación anterior, usar el sistema tradicional
-    console.log('📁 No hay ubicación anterior, usando diálogo tradicional');
-    
-    if ('showSaveFilePicker' in window) {
-      try {
-        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-        const filename = currentFileName || `diagrama_${timestamp}.bpmn`;
-        
-        const fileHandle = await window.showSaveFilePicker({
-          suggestedName: filename,
-          types: [{
-            description: 'BPMN files',
-            accept: {
-              'application/xml': ['.bpmn'],
-              'text/xml': ['.bpmn'],
-            },
-          }],
-        });
-        
-        const writable = await fileHandle.createWritable();
-        await writable.write(result.xml);
-        await writable.close();
-        
-        // Guardar nueva ubicación para próximas veces
-        updateSaveReferences(fileHandle);
-        localStorage.setItem('preferred-save-path', fileHandle.name);
-        
-        console.log('✅ Guardado exitoso - Nueva ubicación registrada');
-        
-        // Mostrar indicador verde
-        showSaveSuccessIndicator(`Guardado: ${fileHandle.name}`);
-        
-      } catch (fsError) {
-        if (fsError.name === 'AbortError') {
-          console.log('❌ Usuario canceló el diálogo de guardado');
-          return;
-        }
-        throw fsError;
-      }
-    } else {
-      throw new Error('File System Access API no disponible');
-    }
-    
-  } catch (error) {
-    console.error('❌ Error en guardado inteligente:', error);
-    alert(`❌ Error al guardar: ${error.message}`);
-  }
-};// Hacer las funciones globales
-window.showSaveSuccessIndicator = showSaveSuccessIndicator;
-
-// Función de debug para verificar estado
-window.debugSaveState = function() {
-  console.log('🔍 === DEBUG ESTADO DE GUARDADO ===');
-  console.log('currentFileHandle:', currentFileHandle);
-  console.log('currentFileName:', currentFileName);
-  console.log('autoSaveConfigured:', autoSaveConfigured);
-  console.log('localStorage last-saved-filename:', localStorage.getItem('last-saved-filename'));
-  console.log('localStorage last-used-save-path:', localStorage.getItem('last-used-save-path'));
-  console.log('localStorage preferred-save-path:', localStorage.getItem('preferred-save-path'));
-  console.log('localStorage current-project-path:', localStorage.getItem('current-project-path'));
-  console.log('===============================');
 };
 
 init();
