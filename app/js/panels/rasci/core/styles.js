@@ -1,4 +1,4 @@
-// RASCI Styles - All CSS styles for the RASCI panel
+// RASCI Styles
 
 export function applyStyles() {
   if (document.getElementById('rasci-styles')) return;

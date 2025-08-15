@@ -121,7 +121,7 @@ function simpleConnection(source, target, connection) { //function to connect el
                 return { type: connection }
               }
             //if the source is reports or delegates, it can only be connected to a task
-          }else if(is(source,'RALph:reportsDirectly') || is(source,'RALph:reportsTransitively') || is(source,'RALph:delegatesDirectly') || is(source,'RALph:delegatesTransitively',)){
+          }else if(is(source,'RALph:reportsDirectly') || is(source,'RALph:reportsTransitively') || is(source,'RALph:delegatesDirectly') || is(source,'RALph:delegatesTransitively')){
             if(is(target, 'bpmn:Task')){
               return { type: connection }
             }
@@ -224,21 +224,21 @@ RALphRules.prototype.init = function() {
       }
   }
 
-  /*function connectHierarchyConnectors(source,target,type) {
+  function connectHierarchyConnectors(source,target,type) {
     
     if(is(source,'bpmn:Task') && type === "RALph:ReportsDirectlyAssignment"){
-      return {type9:'RALph:ResourceArc'}
+      return {type:'RALph:ResourceArc'}
 
     }else if(is(source,'bpmn:Task') && type === "RALph:ReportsTransitivelyAssignment"){
-      return {type10:'RALph:ResourceArc'}
+      return {type:'RALph:ResourceArc'}
       
     }else if(is(source,'bpmn:Task') && type === "RALph:delegatesTransitivelyAssignment"){
-      return {type11:'RALph:ResourceArc'}
+      return {type:'RALph:ResourceArc'}
 
     }else if(is(source,'bpmn:Task') && type==="RALph:delegatesDirectlyAssignment"){
-      return {type12:'RALph:ResourceArc'}
+      return {type:'RALph:ResourceArc'}
     }
-  }*/
+  }
 
   function canReconnect(source, target, connection) {
     if(!isRALph(connection) && !isRALph(source) && !isRALph(target))
@@ -352,16 +352,16 @@ RALphRules.prototype.init = function() {
         return connectHierarchyConnectors(source,target,type);
       }
     }else if(type==="RALph:delegatesTransitivelyAssignment" || type==="RALph:delegatesDirectlyAssignment"){//the same logic is applied for delegate connections
-      var cond=true;
-      var sourceOutgoingConnections=source.outgoing;
+      var cond2=true;
+      var sourceOutgoingConnections2=source.outgoing;
 
-      for(let connection of sourceOutgoingConnections){
+      for(let connection of sourceOutgoingConnections2){
         if(connection.businessObject.target.includes("delegates")){
-          cond=false;
+          cond2=false;
         }
       }
 
-      if(cond===true){
+      if(cond2===true){
         return connectHierarchyConnectors(source,target,type);
       }
     }

@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="vendor/bpmn-js/bpmn-font/css/bpmn.css">
   <link rel="stylesheet" href="css/ppi-panel.css">
   <link rel="stylesheet" href="css/welcome-screen.css">
+  <link rel="stylesheet" href="css/autosave-modals.css">
+  <link rel="stylesheet" href="css/file-name-modal.css">
   
   <style>
     :root {
@@ -58,13 +60,13 @@
     /* Header */
     .app-header {
       height: var(--header-height);
-      background: white;
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
       color: var(--text-dark);
       display: flex;
       align-items: center;
       padding: 0 24px;
       border-bottom: 1px solid var(--border-color);
-      box-shadow: var(--shadow-sm);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       z-index: 1001;
       position: relative;
     }
@@ -81,6 +83,63 @@
     
     .logo i {
       font-size: 1.5rem;
+    }
+    
+    /* Información del proyecto */
+    .project-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-left: 24px;
+      min-width: 300px;
+    }
+    
+    .project-name-display {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .project-label {
+      font-size: 0.875rem;
+      color: var(--text-light);
+      font-weight: 500;
+    }
+    
+    .project-name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+    
+    .project-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .status-indicator {
+      font-size: 0.75rem;
+      color: var(--text-light);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .status-indicator.saved {
+      color: #10b981;
+    }
+    
+    .status-indicator.unsaved {
+      color: #f59e0b;
+    }
+    
+    .status-indicator.error {
+      color: #ef4444;
+    }
+    
+    .status-indicator i {
+      font-size: 8px;
     }
     
     .toolbar {
@@ -146,6 +205,157 @@
       background: #d90429;
     }
     
+    /* Indicador de guardado exitoso */
+    .save-success-indicator {
+      display: none;
+      background: #10b981;
+      color: white;
+      border: 1px solid #059669;
+      padding: 6px 12px;
+      border-radius: 6px;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      box-shadow: var(--shadow-sm);
+      animation: slideInRight 0.3s ease-out;
+    }
+    
+    .save-success-indicator.show {
+      display: flex;
+    }
+    
+    .save-success-indicator i {
+      font-size: 0.9rem;
+    }
+    
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+    }
+    
+    .save-success-indicator.fade-out {
+      animation: fadeOut 0.3s ease-in forwards;
+    }
+    
+    /* Mejoras para barra de herramientas profesional */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      flex: 1;
+    }
+    
+    .tool-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 16px;
+      border-right: 1px solid var(--border-color);
+    }
+    
+    .tool-group:first-child {
+      padding-left: 0;
+    }
+    
+    .tool-group:last-child {
+      border-right: none;
+      margin-left: auto;
+      padding-right: 0;
+    }
+    
+    .tool-group.dev-tools {
+      border-left: 1px solid #fbbf24;
+      background: rgba(251, 191, 36, 0.1);
+      border-radius: 4px;
+      padding: 4px 8px;
+    }
+    
+    .tool-btn {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      color: var(--text-dark);
+      border: 1px solid var(--border-color);
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      white-space: nowrap;
+    }
+    
+    .tool-btn:hover {
+      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+      border-color: var(--primary-color);
+      box-shadow: 0 4px 12px rgba(67, 97, 238, 0.15);
+      transform: translateY(-1px);
+    }
+    
+    .tool-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .tool-btn.primary {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+      color: white;
+      border-color: var(--primary-dark);
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(67, 97, 238, 0.3);
+    }
+    
+    .tool-btn.primary:hover {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, #2d47c7 100%);
+      box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
+      transform: translateY(-2px);
+    }
+    
+    .tool-btn i {
+      font-size: 1rem;
+    }
+    
+    .restore-btn {
+      background: #f1f5f9;
+      color: var(--text-dark);
+      border: 1px solid #cbd5e1;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 500;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .restore-btn:hover {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-dark);
+    }
+
     /* Panel minimizado */
     .panel.minimized {
       display: none;
@@ -494,6 +704,7 @@
       <h1 class="welcome-title">MultiModeler</h1>
       <p class="welcome-subtitle">Herramienta híbrida para modelado de procesos BPMN, PPINOT y RASCI</p>
       <div class="welcome-buttons">
+        <!-- Botón para continuar con diagrama guardado (solo aparece si hay uno) -->
         <button class="welcome-btn primary" id="new-diagram-btn">
           <i class="fas fa-plus"></i>
           Crear Nuevo Diagrama
@@ -503,6 +714,8 @@
           Abrir Diagrama
         </button>
       </div>
+      
+
     </div>
   </div>
 
@@ -511,47 +724,60 @@
     <!-- Header con herramientas -->
     <header class="app-header">
       <div class="logo">
-        <i class="fas fa-project-diagram"></i>
-        <span>MultiModeler</span>
+         <button  class="back-to-welcome-btn" id="back-to-welcome-btn" title="Volver a la pantalla de bienvenida">
+            <i class="fas fa-project-diagram"></i>
+            <span>MultiModeler</span>
+          </button>
       </div>
       
+      <!-- Nombre del proyecto (solo lectura) -->
+     
       <div class="toolbar">
+        <!-- Grupo de acciones principales de archivo -->
+        
+        
+        <!-- Grupo de autoguardado y estado -->
         <div class="tool-group">
-          <button class="tool-btn primary" id="new-btn">
-            <i class="fas fa-file"></i> Nuevo
+          <div class="autosave-toolbar-toggle" id="autosave-panel">
+            <div class="autosave-toggle-container">
+              <label class="autosave-toggle" for="autosave-checkbox">
+                <input type="checkbox" id="autosave-checkbox">
+                <span class="autosave-slider"></span>
+              </label>
+              <span class="autosave-label">Autoguardado</span>
+            </div>
+            <div class="autosave-timestamp" id="autosave-timestamp">
+              <span id="timestamp-text"></span>
+            </div>
+          </div>
+          
+          <!-- Indicador de guardado exitoso -->
+          <div class="save-success-indicator" id="save-success-indicator">
+            <i class="fas fa-check-circle"></i>
+            <span id="save-success-text">Guardado en ubicación anterior</span>
+          </div>
+        </div>
+        
+        <!-- Grupo de herramientas de vista y paneles -->
+        <div class="tool-group">
+          <div class="tool-group">
+          <button class="tool-btn primary" id="new-btn" title="Crear nuevo diagrama">
+            <i class="fas fa-file-plus"></i> Nuevo
           </button>
-          <button class="tool-btn" id="open-btn">
+          <button class="tool-btn" id="open-btn" title="Abrir diagrama existente">
             <i class="fas fa-folder-open"></i> Abrir
           </button>
-          <button class="tool-btn" id="save-btn">
+          <button class="tool-btn" id="save-btn" title="Guardar diagrama actual">
             <i class="fas fa-save"></i> Guardar
           </button>
         </div>
-        
-        <div class="tool-group">
-          <button class="tool-btn header-panel-btn" onclick="panelManager.showSelector()">
+          <button class="tool-btn header-panel-btn" onclick="panelManager.showSelector()" title="Gestionar paneles">
             <i class="fas fa-th-large"></i> Paneles
           </button>
-          <button class="tool-btn" id="back-to-welcome-btn" title="Volver a la pantalla de bienvenida">
-            <i class="fas fa-home"></i> Inicio
-          </button>
         </div>
         
-        <!-- Botones de restaurar paneles -->
-        <div class="restore-buttons">
-          <button class="restore-btn hidden" id="restore-bpmn" data-panel="bpmn">
-            <i class="fas fa-diagram-project"></i> Restaurar BPMN
-          </button>
-          <button class="restore-btn hidden" id="restore-ppinot" data-panel="ppinot">
-            <i class="fas fa-sliders"></i> Restaurar PPINOT
-          </button>
-          <button class="restore-btn hidden" id="restore-rasci" data-panel="rasci">
-            <i class="fas fa-table"></i> Restaurar RASCI
-          </button>
-          <button class="restore-btn hidden" id="restore-ppi" data-panel="ppi">
-            <i class="fas fa-chart-line"></i> Restaurar PPI
-          </button>
-        </div>
+     
+        
       </div>
     </header>
     
@@ -563,20 +789,31 @@
     </div>
   </div>
   
-  <input type="file" id="file-input" accept=".bpmn,.xml,.cbpmn" style="display:none" />
+  <input type="file" id="file-input" accept=".bpmn,.xml,.cbpmn,.mmproject" style="display:none" />
   
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+  <script src="js/storage-manager.js"></script>
+  <script src="js/file-name-modal.js"></script>
   <script src="bundle.js"></script>
-  <script src="js/panel-manager-debug.js"></script>
-  <script src="js/panel-manager-debug2.js"></script>
   <script src="js/panels/ppi/index.js"></script>
   <script src="js/panels/ppi/bpmn-integration.js"></script>
   <script src="js/panels/ppi/natural-language-processor.js"></script>
   <script src="js/panels/ppi/example-usage.js"></script>
 
   <script>
+    // Mostrar herramientas de desarrollo solo en modo desarrollo
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+      document.addEventListener('DOMContentLoaded', () => {
+        const devTools = document.querySelector('.dev-tools');
+        if (devTools) {
+          devTools.style.display = 'flex';
+        }
+      });
+    }
+    
     // Application initialization is now handled in app.js
   </script>
+
 </body>
 </html>

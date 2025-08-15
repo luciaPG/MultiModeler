@@ -1,5 +1,4 @@
 // RASCI Validation Configuration
-// Configuración personalizable para las reglas de validación
 
 export const ValidationConfig = {
   // ============================================================================
@@ -240,7 +239,6 @@ export class ValidationConfigManager {
   // Guardar configuración en localStorage
   saveToStorage() {
     try {
-      localStorage.setItem('rasciValidationConfig', JSON.stringify(this.config));
     } catch (error) {
     }
   }
@@ -248,7 +246,6 @@ export class ValidationConfigManager {
   // Cargar configuración desde localStorage
   loadFromStorage() {
     try {
-      const savedConfig = localStorage.getItem('rasciValidationConfig');
       if (savedConfig) {
         this.config = { ...this.config, ...JSON.parse(savedConfig) };
       }
@@ -259,7 +256,6 @@ export class ValidationConfigManager {
   // Restaurar configuración por defecto
   resetToDefault() {
     this.config = { ...ValidationConfig };
-    localStorage.removeItem('rasciValidationConfig');
   }
 }
 

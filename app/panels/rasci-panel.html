@@ -20,7 +20,7 @@
     <div id="main-tab" class="tab-content active" style="display: flex;">
       <div class="rasci-controls">
         <!-- Botón de recarga manual (oculto por defecto, recarga automática activada) -->
-        <button class="btn btn-secondary btn-full-width" id="manual-reload-btn" onclick="reloadRasciMatrix()" style="display: none;">
+        <button class="btn btn-secondary btn-full-width" id="manual-reload-btn" onclick="manualReloadRasciMatrix()" style="display: none;">
           <i class="fas fa-sync-alt"></i> Recargar Matriz
         </button>
         
@@ -63,6 +63,8 @@
           <i class="fas fa-magic"></i>
           Ejecutar Mapeo Manual
         </button>
+        
+
       </div>
       <div id="matrix-container"></div>
     </div>
