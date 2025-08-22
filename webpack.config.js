@@ -36,10 +36,10 @@ module.exports = {
     resolve: {
         alias: {
             // Add aliases for the PPINOT and RALPH moddle files
-            '@ppinot-moddle': path.resolve(__dirname, 'app/PPINOT-modeler/PPINOT/PPINOTModdle.json'),
-            '@ralph-moddle': path.resolve(__dirname, 'app/RALPH-modeler/RALph/RALphModdle.json'),
+            '@ppinot-moddle': path.resolve(__dirname, 'app/modules/multinotationModeler/notations/ppinot/PPINOTModdle.json'),
+            '@ralph-moddle': path.resolve(__dirname, 'app/modules/multinotationModeler/notations/ralph/RALphModdle.json'),
             // Add alias for the MultiNotationModeler directory
-            '@multi-notation': path.resolve(__dirname, 'app/MultiNotationModeler'),
+            '@multi-notation': path.resolve(__dirname, 'app/modules/multinotationModeler'),
             // Add aliases for other directories to simplify imports
             '@app': path.resolve(__dirname, 'app'),
             '@modelers': path.resolve(__dirname, 'app/modelers'),
@@ -68,11 +68,11 @@ module.exports = {
                     to: 'css'
                 },
                                {
-                    from: 'app/PPINOT-modeler/PPINOT/PPINOTModdle.json',
+                    from: 'app/modules/multinotationModeler/notations/ppinot/PPINOTModdle.json',
                     to: 'PPINOTModdle.json'
                 },
                    {
-                    from: 'app/RALPH-modeler/RALph/RALphModdle.json',
+                    from: 'app/modules/multinotationModeler/notations/ralph/RALphModdle.json',
                     to: 'RALphModdle.json'
                 },
                 {

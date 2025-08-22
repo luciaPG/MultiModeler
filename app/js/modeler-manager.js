@@ -12,6 +12,16 @@ class ModelerManager {
     this.currentSelection = null;
     this.eventListeners = [];
   }
+  
+  /**
+   * Set the modeler instance
+   * @param {Object} modeler - The modeler instance to set
+   * @returns {Object} - The modeler instance
+   */
+  setModeler(modeler) {
+    this.modeler = modeler;
+    return this.modeler;
+  }
 
   /**
    * Initialize the modeler with the specified container

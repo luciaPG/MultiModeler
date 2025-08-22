@@ -1,6 +1,7 @@
 // === panel-manager.js ===
 // Gestor de paneles con selector de paneles y distribución
 import modelerManager from './modeler-manager.js';
+import { PanelLoader } from './panel-loader.js';
 
 class PanelManager {
   constructor() {
@@ -40,7 +41,8 @@ class PanelManager {
     // Usar valores por defecto sin localStorage
     this.currentLayout = '2v';
     this.activePanels = ['bpmn', 'rasci'];
-    this.panelLoader = null;
+    // Initialize panelLoader directly using the imported PanelLoader
+    this.panelLoader = new PanelLoader();
     // Variable eliminada - usamos solo localStorage
     this.isApplyingConfiguration = false; // Bandera para prevenir ejecuciones múltiples
     
@@ -88,6 +90,15 @@ class PanelManager {
   init() {
     this.createStyles();
     this.bindEvents();
+    
+    // Initialize the panelLoader if it doesn't exist
+    if (!this.panelLoader && window.panelLoader) {
+      this.panelLoader = window.panelLoader;
+    } else if (!this.panelLoader && window.PanelLoader) {
+      this.panelLoader = new window.PanelLoader();
+    } else if (!this.panelLoader) {
+      console.error('PanelLoader not found - panels will not work');
+    }
     
     setTimeout(() => {
       const container = document.getElementById('panel-container');
@@ -1582,6 +1593,8 @@ class PanelManager {
 }
 
 window.PanelManager = PanelManager;
+// Create an instance of PanelManager and assign it to window.panelManager
+window.panelManager = new PanelManager();
 
 // Función eliminada - el canvas se redimensiona automáticamente
 

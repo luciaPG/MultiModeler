@@ -234,12 +234,13 @@ class PPICore {
   
   savePPIs() {
     // PPI localStorage deshabilitado - solo lectura desde archivo
-    console.log('ℹ️ savePPIs deshabilitado - PPI solo se lee desde archivo');
+    // Storage operations are handled via XML
   }
 
   loadPPIs() {
     // PPI localStorage deshabilitado - inicializar vacío
     this.ppis = [];
+    // PPIs will be loaded from XML file
   }
 
   // === PPINOT ELEMENTS PERSISTENCE ===
@@ -286,10 +287,6 @@ class PPICore {
         return isChildOfPPI && isValidChildType;
       });
       
-
-      
-
-      
       const ppinotData = {
         ppiElements: ppiElements.map(el => ({
           id: el.id,
@@ -325,8 +322,8 @@ class PPICore {
         timestamp: new Date().toISOString()
       };
       
-
-
+      // PPI localStorage deshabilitado - solo guardar en XML
+      // Saving PPINOT data only to XML for persistence
       
       // GUARDAR SOLO EN EL XML BPMN PARA PERSISTENCIA COMPLETA
       this.savePPINOTRelationshipsToXML(ppinotData.parentChildRelationships);
@@ -393,14 +390,13 @@ class PPICore {
           
           // Guardar el XML actualizado en localStorage
           localStorage.setItem('bpmnDiagram', updatedXML);
-    
-          
         }
       }).catch(err => {
+        // Handle errors silently
       });
       
     } catch (e) {
-
+      // Handle errors silently
     }
   }
 
@@ -429,7 +425,7 @@ class PPICore {
 
   loadPPINOTElements() {
     // PPI localStorage deshabilitado - solo cargar desde XML
-    console.log('ℹ️ loadPPINOTElements desde localStorage deshabilitado - usar carga desde XML');
+    // PPINOT elements will be loaded from XML instead
     return false;
   }
 
@@ -440,19 +436,16 @@ class PPICore {
       
       // Prevenir cargas duplicadas
       if (this.isLoadingRelationships) {
-  
         return [];
       }
       
       // Check cache first
       const now = Date.now();
       if (this.xmlRelationshipsCache && (now - this.lastXmlCacheTime) < this.xmlCacheTimeout) {
-  
         return this.xmlRelationshipsCache;
       }
       
       this.isLoadingRelationships = true;
-
       
       // Buscar relaciones PPINOT en el XML
       const relationships = [];
@@ -490,8 +483,8 @@ class PPICore {
           const parser = new DOMParser();
           const xmlDoc = parser.parseFromString(currentXML, 'text/xml');
           
-                      // Buscar elementos de relaciones PPINOT
-            const ppinotRelationships = xmlDoc.getElementsByTagNameNS('http://www.omg.org/spec/PPINOT/20100524/MODEL', 'relationship');
+          // Buscar elementos de relaciones PPINOT
+          const ppinotRelationships = xmlDoc.getElementsByTagNameNS('http://www.omg.org/spec/PPINOT/20100524/MODEL', 'relationship');
           
           ppinotRelationships.forEach(relElement => {
             const relationship = {
@@ -512,13 +505,10 @@ class PPICore {
           // Update cache
           this.xmlRelationshipsCache = relationships;
           this.lastXmlCacheTime = now;
-          
-    
         } else {
           throw new Error('No se pudo obtener XML síncrono');
         }
       } catch (xmlError) {
-        
         // Fallback al método asíncrono
         window.modeler.saveXML({ format: true }).then(result => {
           if (result && result.xml) {
@@ -547,7 +537,6 @@ class PPICore {
             // Update cache
             this.xmlRelationshipsCache = relationships;
             this.lastXmlCacheTime = now;
-            
           }
           
           this.isLoadingRelationships = false;
@@ -596,11 +585,11 @@ class PPICore {
                 modeling.moveShape(childElement, { x: 0, y: 0 }, parentElement);
                 restoredCount++;
               } catch (error) {
+                // Handle errors silently
               }
             } else {
               skippedCount++;
             }
-          } else {
           }
         });
         
@@ -695,20 +684,7 @@ class PPICore {
       // Restaurar todas las relaciones de una vez
       if (allRelationshipsToRestore.length > 0) {
         
-        // Debug: Count scope and target elements
-        const scopeRelationships = allRelationshipsToRestore.filter(rel => 
-          rel.childData && (
-            rel.childData.childType === 'PPINOT:Scope' || 
-            rel.childData.childBusinessObjectType === 'PPINOT:Scope'
-          )
-        );
-        const targetRelationships = allRelationshipsToRestore.filter(rel => 
-          rel.childData && (
-            rel.childData.childType === 'PPINOT:Target' || 
-            rel.childData.childBusinessObjectType === 'PPINOT:Target'
-          )
-        );
-        
+        // Variables for tracking restored items
         let restoredCount = 0;
         let skippedCount = 0;
         let scopeRestored = 0;
@@ -736,18 +712,15 @@ class PPICore {
                   rel.childData.childBusinessObjectType === 'PPINOT:Target'
                 )) {
                   targetRestored++;
-                } else {
                 }
               } else {
                 skippedCount++;
               }
             } catch (error) {
+              // Handle errors silently
             }
-          } else {
           }
         });
-        
-      } else {
       }
       
       // Actualizar PPIs con información de elementos hijos restaurados
@@ -809,7 +782,6 @@ class PPICore {
             if (childData) {
               this.updatePPIWithChildInfo(parentId, childId);
             }
-          } else {
           }
         }, 100);
         
@@ -860,6 +832,7 @@ class PPICore {
       });
       
     } catch (e) {
+      // Handle errors silently
     }
   }
 
@@ -904,6 +877,7 @@ class PPICore {
       }
       
     } catch (error) {
+      // Handle errors silently
     }
     return false;
   }
@@ -956,6 +930,7 @@ class PPICore {
       // Limpiar datos pendientes
       this.pendingChildData.clear();
     } catch (e) {
+      // Handle errors silently
     }
   }
 
@@ -964,10 +939,8 @@ class PPICore {
   cleanupOldData() {
     try {
       // Limpiar elementos procesados antiguos
-      const currentTime = Date.now();
-      
       // PPI localStorage deshabilitado - no hay datos que limpiar
-      console.log('ℹ️ cleanupOldData - PPI localStorage deshabilitado');
+      // Data cleanup not needed when using XML storage
     } catch (e) {
       // Error en limpieza de datos
     }
@@ -1086,6 +1059,7 @@ class PPICore {
       }
       
     } catch (error) {
+      // Handle errors silently
     }
     
     return info;
@@ -1155,9 +1129,7 @@ class PPICore {
     if (!text) return '';
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
   }
-
-
 }
 
 // Exportar para uso global
-window.PPICore = PPICore; 
+window.PPICore = PPICore;

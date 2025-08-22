@@ -1,0 +1,124 @@
+<div class="panel" id="rasci-panel" data-panel-type="rasci">
+  <div class="panel-header">
+    <div class="panel-title">
+      <i class="fas fa-table"></i>
+      <span>Matriz RASCI</span>
+    </div>
+    <div class="panel-actions">
+      <button class="panel-btn" title="Ocultar"><i class="fas fa-eye-slash"></i></button>
+      <button class="panel-btn" title="Solo este panel"><i class="fas fa-expand"></i></button>
+    </div>
+  </div>
+
+  <div class="panel-tabs">
+    <div class="tab active" data-tab="main" onclick="cambiarPestana('main')">Matriz RASCI</div>
+    <div class="tab" data-tab="config" onclick="cambiarPestana('config')">Leyenda</div>
+  </div>
+
+  <div class="panel-content">
+    <!-- PESTAÑA 1: MATRIZ RASCI -->
+    <div id="main-tab" class="tab-content active" style="display: flex;">
+      <div class="rasci-controls">
+        <!-- Botón de recarga manual (oculto por defecto, recarga automática activada) -->
+        <button class="btn btn-secondary btn-full-width" id="manual-reload-btn" onclick="manualReloadRasciMatrix()" style="display: none;">
+          <i class="fas fa-sync-alt"></i> Recargar Matriz
+        </button>
+        
+        <!-- Indicador de recarga discreto (oculto para evitar molestias) -->
+        <div class="auto-reload-indicator" id="auto-reload-indicator" style="
+          position: absolute;
+          top: 6px;
+          right: 6px;
+          width: 16px;
+          height: 16px;
+          display: none !important;
+          align-items: center;
+          justify-content: center;
+          z-index: 10;
+        ">
+          <i class="fas fa-sync-alt fa-spin" style="
+            color: #6b7280;
+            font-size: 12px;
+            opacity: 0.5;
+          "></i>
+        </div>
+        
+        <!-- Switch para mapeo automático -->
+        <div class="auto-mapping-control">
+          <div class="switch-container">
+            <label class="switch">
+              <input type="checkbox" id="auto-mapping-switch" onchange="toggleAutoMapping()">
+              <span class="slider round"></span>
+            </label>
+            <span class="switch-label">Mapeo Automático RALph</span>
+          </div>
+          <p class="switch-description">
+            <i class="fas fa-info-circle"></i>
+            Cuando está activado, los cambios en la matriz se reflejan automáticamente en el diagrama RALph
+          </p>
+        </div>
+        
+        <!-- Botón de mapeo manual (solo visible cuando automático está desactivado) -->
+        <button class="btn btn-secondary btn-full-width" id="manual-mapping-btn" onclick="executeRasciToRalphMapping()" style="display: none;">
+          <i class="fas fa-magic"></i>
+          Ejecutar Mapeo Manual
+        </button>
+        
+
+      </div>
+      <div id="matrix-container"></div>
+    </div>
+
+    <!-- PESTAÑA 3: LEYENDA -->
+    <div id="config-tab" class="tab-content" style="display: none;">
+      <div class="rasci-legend">
+        <div class="legend-header">
+          <h3 class="legend-title">Matriz RACI - Guía de Responsabilidades</h3>
+          <p class="legend-subtitle">&emsp;Asigna claramente las responsabilidades para cada tarea del proceso</p>
+        </div>
+        
+        <div class="legend-item r">
+          <span class="legend-color r">R</span>
+          <div class="legend-content">
+            <div class="legend-name">Responsable (Responsible)</div>
+            <div class="legend-description">Persona que ejecuta y realiza la tarea. Es quien hace el trabajo necesario para completar la actividad.</div>
+          </div>
+        </div>
+        
+        <div class="legend-item a">
+          <span class="legend-color a">A</span>
+          <div class="legend-content">
+            <div class="legend-name">Aprobador (Accountable)</div>
+            <div class="legend-description">Persona que rinde cuentas del resultado. Aprueba o rechaza el trabajo y es el responsable final del éxito.</div>
+          </div>
+        </div>
+        
+        <div class="legend-item s">
+          <span class="legend-color s">S</span>
+          <div class="legend-content">
+            <div class="legend-name">Soporte (Support)</div>
+            <div class="legend-description">Persona que proporciona recursos, herramientas o asistencia necesaria para completar la tarea.</div>
+          </div>
+        </div>
+        
+        <div class="legend-item c">
+          <span class="legend-color c">C</span>
+          <div class="legend-content">
+            <div class="legend-name">Consultado (Consulted)</div>
+            <div class="legend-description">Persona cuya opinión se busca antes de tomar decisiones. Proporciona input y expertise.</div>
+          </div>
+        </div>
+        
+        <div class="legend-item i">
+          <span class="legend-color i">I</span>
+          <div class="legend-content">
+            <div class="legend-name">Informado (Informed)</div>
+            <div class="legend-description">Persona que debe ser notificada sobre las decisiones y avances, pero no participa activamente.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+</div>

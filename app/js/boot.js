@@ -9,6 +9,18 @@ import { PANEL_REGISTRY } from './panel-registry.js';
 export function bootUI(ctx) {
   const { eventBus, panelManager } = ctx;
   
+  // Skip panel mounting if panelManager is not available
+  if (!panelManager || typeof panelManager.attach !== 'function') {
+    console.log('[BPMN Boot] Panel manager not available, skipping panel mounting');
+    return;
+  }
+  
+  // Check if PANEL_REGISTRY exists
+  if (!PANEL_REGISTRY || !Array.isArray(PANEL_REGISTRY) || PANEL_REGISTRY.length === 0) {
+    console.log('[BPMN Boot] No panels registered, skipping panel mounting');
+    return;
+  }
+  
   // Mount all registered panels
   PANEL_REGISTRY.forEach(({ id, region, factory }) => {
     try {
