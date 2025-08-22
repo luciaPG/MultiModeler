@@ -4,6 +4,7 @@ import PPINOTModdle from '@ppinot-moddle';
 import RALphModdle from '@ralph-moddle';
 import { PanelLoader } from './js/panel-loader.js';
 import { initRasciPanel } from './js/panels/rasci/core/main.js';
+// Import modelerManager for use in app initialization and event handling
 import modelerManager from './js/modeler-manager.js';
 import './js/panel-manager.js';
 
@@ -14,8 +15,10 @@ import './css/app.css';
 
 import { forceReloadMatrix, renderMatrix, detectRalphRolesFromCanvas } from './js/panels/rasci/core/matrix-manager.js';
 
-// Global variables for BPMN state
-window.currentBpmnXML = null; // Stores current BPMN diagram XML for panel changes
+// Make essential modules globally available for modelerManager
+window.MultiNotationModeler = MultiNotationModeler;
+window.PPINOTModdle = PPINOTModdle;
+window.RALphModdle = RALphModdle;
 
 // RASCI related globals
 window.forceReloadMatrix = forceReloadMatrix;
@@ -138,13 +141,13 @@ function createModeler(containerElement) {
   const modelerOptions = {
     container: containerElement,
     moddleExtensions: {
-      PPINOT: modelerManager.getPPINOTModdle(),
-      RALph: modelerManager.getRALPHModdle()
+      PPINOT: window.PPINOTModdle,
+      RALph: window.RALphModdle
     }
   };
   
-  // Import from MultiNotationModeler index directly to avoid any duplication issues
-  const modeler = new (require('@multi-notation/index.js').default)(modelerOptions);
+  // Use the globally available MultiNotationModeler
+  const modeler = new window.MultiNotationModeler(modelerOptions);
   
   return modeler;
 }
@@ -1000,6 +1003,12 @@ function initializeApp() {
   }
   
   appInitialized = true;
+  
+  // Initialize modelerManager's container early
+  const canvasElement = document.getElementById('js-canvas');
+  if (canvasElement) {
+    modelerManager.initialize(canvasElement);
+  }
   
   welcomeScreen = document.getElementById('welcome-screen');
   modelerContainer = document.getElementById('modeler-container');

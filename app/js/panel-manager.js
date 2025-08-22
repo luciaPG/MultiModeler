@@ -1231,125 +1231,178 @@ class PanelManager {
   async applyConfiguration() {
     // Prevenir ejecuciones múltiples concurrentes
     if (this.isApplyingConfiguration) {
+      console.log('⚠️ Ya se está aplicando una configuración de paneles, ignorando llamada');
       return;
     }
     
     this.isApplyingConfiguration = true;
+    console.log('🔄 Aplicando nueva configuración de paneles...');
     
     try {
       const container = document.getElementById('panel-container');
       if (!container) {
+        console.error('❌ No se encontró el contenedor de paneles');
         return;
       }
 
       // Save BPMN state if we have a BPMN panel
       if (this.activePanels.includes('bpmn')) {
+        console.log('💾 Guardando estado del panel BPMN antes del cambio...');
         // Use modelerManager to save the state before changing panels
-        modelerManager.saveState().catch(err => {
-          console.error('Error saving BPMN modeler state:', err);
-        });
-      }
-
-    const existingPanels = container.querySelectorAll('.panel');
-    existingPanels.forEach(panel => {
-      this.restorePanel(panel);
-    });
-
-    // Limpiar contenedor
-    container.innerHTML = '';
-
-    // Si no hay paneles activos, ocultar completamente el contenedor
-    if (this.activePanels.length === 0) {
-      container.style.display = 'none';
-      container.style.visibility = 'hidden';
-      container.style.position = 'absolute';
-      container.style.left = '-9999px';
-      container.style.top = '-9999px';
-      container.style.width = '0';
-      container.style.height = '0';
-      container.style.overflow = 'hidden';
-      container.style.zIndex = '-1';
-      this.closeSelector();
-      return;
-    }
-
-    // Mostrar el contenedor si hay paneles
-    container.style.display = 'flex';
-    container.style.visibility = 'visible';
-    container.style.position = 'relative';
-    container.style.left = '';
-    container.style.top = '';
-    container.style.width = '';
-    container.style.height = '';
-    container.style.overflow = '';
-    container.style.zIndex = '';
-
-    // Crear paneles activos en el orden especificado
-    for (const panelKey of this.activePanels) {
-      try {
-        const panel = await this.panelLoader.createPanel(panelKey, container);
-        if (panel) {
-          panel.style.flex = '1';
-          // Asignar posición basada en el índice en activePanels para todos los layouts
-          const index = this.activePanels.indexOf(panelKey);
-          panel.setAttribute('data-position', (index + 1).toString());
+        // Using await to ensure state is saved before continuing
+        try {
+          const savedSuccessfully = await modelerManager.saveState();
+          console.log('💾 Estado BPMN guardado:', savedSuccessfully ? '✅ Exitoso' : '⚠️ Fallido');
+        } catch (err) {
+          console.error('❌ Error al guardar estado del modelador BPMN:', err);
         }
-      } catch (error) {
-        console.error('Error creating panel:', error);
       }
-    }
 
-    if (container) {
-      container.className = 'panel-container';
-      container.classList.add(`layout-${this.currentLayout}`);
-      this.adjustLayoutForVisiblePanels();
-    }
+      const existingPanels = container.querySelectorAll('.panel');
+      existingPanels.forEach(panel => {
+        this.restorePanel(panel);
+      });
 
-    // Completely reinitialize the BPMN modeler instead of trying to restore it
-    if (this.activePanels.includes('bpmn')) {
-      setTimeout(() => {
-        console.log('Restaurando el modeler BPMN con ModelerManager');
-        
-        // Find the BPMN panel and its canvas
-        const bpmnPanel = document.querySelector('[data-panel-type="bpmn"]');
-        const canvas = bpmnPanel ? bpmnPanel.querySelector('#js-canvas') : document.querySelector('#js-canvas');
-        
-        if (canvas) {
-          // Restore the modeler to the new container using our ModelerManager
-          modelerManager.restoreToNewContainer(canvas)
-            .then(() => {
-              console.log('BPMN modeler restaurado correctamente');
-            })
-            .catch(err => {
-              console.error('Error restaurando BPMN modeler:', err);
-              
-              // As fallback, initialize a new modeler
-              if (typeof window.initializeModeler === 'function') {
-                window.initializeModeler();
-              }
-            });
-        } else {
-          // Fallback to standard initialization
-          if (typeof window.initializeModeler === 'function') {
-            window.initializeModeler();
-          
-            // No need to reload - modelerManager will handle the state restoration
+      // Limpiar contenedor
+      container.innerHTML = '';
+
+      // Si no hay paneles activos, ocultar completamente el contenedor
+      if (this.activePanels.length === 0) {
+        container.style.display = 'none';
+        container.style.visibility = 'hidden';
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        container.style.top = '-9999px';
+        container.style.width = '0';
+        container.style.height = '0';
+        container.style.overflow = 'hidden';
+        container.style.zIndex = '-1';
+        this.closeSelector();
+        return;
+      }
+
+      // Mostrar el contenedor si hay paneles
+      container.style.display = 'flex';
+      container.style.visibility = 'visible';
+      container.style.position = 'relative';
+      container.style.left = '';
+      container.style.top = '';
+      container.style.width = '';
+      container.style.height = '';
+      container.style.overflow = '';
+      container.style.zIndex = '';
+
+      // Crear paneles activos en el orden especificado
+      for (const panelKey of this.activePanels) {
+        try {
+          const panel = await this.panelLoader.createPanel(panelKey, container);
+          if (panel) {
+            panel.style.flex = '1';
+            // Asignar posición basada en el índice en activePanels para todos los layouts
+            const index = this.activePanels.indexOf(panelKey);
+            panel.setAttribute('data-position', (index + 1).toString());
           }
+        } catch (error) {
+          console.error('Error creating panel:', error);
         }
-      }, 500); // Dar más tiempo para que se cree el DOM
-    }
+      }
 
-    // Recargar automáticamente el panel RASCI si está activo
-    if (this.activePanels.includes('rasci')) {
-      setTimeout(() => {
-        const rasciPanel = container.querySelector('#rasci-panel');
-        if (rasciPanel && typeof window.reloadRasciMatrix === 'function') {
-          window.reloadRasciMatrix();
-        }
-      }, 300);
-    }
+      if (container) {
+        container.className = 'panel-container';
+        container.classList.add(`layout-${this.currentLayout}`);
+        this.adjustLayoutForVisiblePanels();
+      }
 
-    this.closeSelector();
+      // Initialize the BPMN modeler with more robust error handling
+      if (this.activePanels.includes('bpmn')) {
+        setTimeout(() => {
+          console.log('Inicializando el modeler BPMN con manejo robusto');
+          
+          // Verify the BPMN panel exists and has a canvas
+          const bpmnPanel = document.querySelector('[data-panel-type="bpmn"]');
+          
+          if (!bpmnPanel) {
+            console.error('BPMN panel not found in DOM');
+            return;
+          }
+          
+          // Make sure the panel is visible
+          bpmnPanel.style.display = '';
+          bpmnPanel.style.visibility = 'visible';
+          
+          // Ensure the panel has the expected structure
+          let canvas = bpmnPanel.querySelector('#js-canvas');
+          if (!canvas) {
+            console.warn('Canvas not found in BPMN panel, creating it');
+            const panelContent = bpmnPanel.querySelector('.panel-content');
+            if (panelContent) {
+              canvas = document.createElement('div');
+              canvas.id = 'js-canvas';
+              canvas.className = 'bpmn-container';
+              panelContent.appendChild(canvas);
+              console.log('Created js-canvas element in BPMN panel');
+            } else {
+              console.error('Panel content container not found in BPMN panel');
+              return;
+            }
+          }
+          
+          // Ensure canvas has proper dimensions
+          canvas.style.width = '100%';
+          canvas.style.height = '100%';
+          canvas.style.minHeight = '400px';
+          
+          console.log('Preparando restauración del BPMN modeler al panel');
+          
+          // Force redraw before attaching modeler
+          setTimeout(async () => {
+            try {
+              // Always try to restore - this will now always create a new modeler instance
+              const restoredModeler = await modelerManager.restoreToNewContainer(canvas);
+              
+              if (restoredModeler) {
+                console.log('BPMN modeler inicializado/restaurado correctamente');
+                
+                // Force resize after a short delay to ensure proper dimensions
+                setTimeout(() => {
+                  try {
+                    const canvas = restoredModeler.get('canvas');
+                    if (canvas) {
+                      canvas.resized();
+                    }
+                  } catch (resizeErr) {
+                    console.warn('Error al redimensionar el canvas después de la restauración:', resizeErr);
+                  }
+                }, 100);
+              } else {
+                throw new Error('No se pudo restaurar el modelador');
+              }
+            } catch (err) {
+              console.error('Error restaurando BPMN modeler, intentando crear nuevo:', err);
+              
+              try {
+                // Last resort - create a completely new instance
+                modelerManager.initialize(canvas, true);
+                console.log('Nuevo modeler BPMN inicializado como fallback');
+              } catch (initErr) {
+                console.error('Error fatal al inicializar el modeler BPMN:', initErr);
+              }
+            }
+          }, 100);
+        }, 500); // Dar más tiempo para que se cree el DOM
+      }
+
+      // Recargar automáticamente el panel RASCI si está activo
+      if (this.activePanels.includes('rasci')) {
+        setTimeout(() => {
+          const rasciPanel = container.querySelector('#rasci-panel');
+          if (rasciPanel && typeof window.reloadRasciMatrix === 'function') {
+            window.reloadRasciMatrix();
+          }
+        }, 300);
+      }
+
+      this.closeSelector();
 
     } catch (error) {
       console.error('Error applying configuration:', error);

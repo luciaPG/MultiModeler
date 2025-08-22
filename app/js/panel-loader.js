@@ -790,7 +790,29 @@ class PanelLoader {
   }
 
   loadBpmnController() {
-    // El controlador BPMN se maneja principalmente en app.js
+    // Ensure the canvas exists and has the expected ID
+    const jsCanvas = document.getElementById('js-canvas');
+    if (!jsCanvas) {
+      console.error('Error: The BPMN canvas element with id "js-canvas" was not found');
+      // Create the canvas if it doesn't exist
+      const bpmnPanel = document.getElementById('bpmn-panel');
+      if (bpmnPanel) {
+        const panelContent = bpmnPanel.querySelector('.panel-content');
+        if (panelContent) {
+          const canvas = document.createElement('div');
+          canvas.id = 'js-canvas';
+          canvas.className = 'bpmn-container';
+          panelContent.appendChild(canvas);
+          console.log('Created missing js-canvas element in BPMN panel');
+        }
+      }
+    }
+    
+    // Initialize or restore the BPMN modeler
+    setTimeout(() => {
+      // Let the panel-manager handle modeler initialization
+      console.log('BPMN panel is ready for modeler initialization');
+    }, 0);
   }
 }
 

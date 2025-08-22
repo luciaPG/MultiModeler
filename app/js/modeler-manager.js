@@ -16,12 +16,10 @@ class ModelerManager {
   /**
    * Initialize the modeler with the specified container
    * @param {string|HTMLElement} container - The container element or selector
+   * @param {boolean} forceNew - Whether to force creation of a new modeler instance
    * @returns {MultiNotationModeler} - The created modeler instance
    */
-  initialize(container) {
-    // Clean up any existing modeler
-    this.cleanup();
-    
+  initialize(container, forceNew = false) {
     // Store container reference
     this.container = typeof container === 'string' ? document.querySelector(container) : container;
     
@@ -30,22 +28,78 @@ class ModelerManager {
       return null;
     }
     
-    console.log('Initializing BPMN modeler');
+    // If we already have a modeler and aren't forced to create a new one, 
+    // just update the container
+    if (this.modeler && !forceNew) {
+      console.log('Reusing existing BPMN modeler with new container');
+      
+      try {
+        // Get the canvas service
+        const canvas = this.modeler.get('canvas');
+        if (canvas) {
+          // Update the container
+          canvas._container = this.container;
+          
+          // Force resize to fit the new container
+          canvas.resized();
+        }
+        
+        return this.modeler;
+      } catch (error) {
+        console.error('Error reusing BPMN modeler:', error);
+        // Fall through to create a new one
+      }
+    }
+    
+    // Clean up any existing modeler if we're creating a new one
+    if (forceNew || !this.modeler) {
+      this.cleanup();
+    }
+    
+    console.log('Initializing new BPMN modeler');
     
     try {
-      // Import the required modules directly to avoid circular dependencies
-      const MultiNotationModeler = require('@multi-notation/index.js').default;
-      const PPINOTModdle = require('@ppinot-moddle');
-      const RALphModdle = require('@ralph-moddle');
-      
-      // Create new modeler instance
-      this.modeler = new MultiNotationModeler({
-        container: this.container,
-        moddleExtensions: {
-          PPINOT: PPINOTModdle,
-          RALph: RALphModdle
+      // Get the global imports we need from window object
+      if (!window.MultiNotationModeler || !window.PPINOTModdle || !window.RALphModdle) {
+        console.error('Required global modules not found:',
+          !window.MultiNotationModeler ? 'MultiNotationModeler missing' : '',
+          !window.PPINOTModdle ? 'PPINOTModdle missing' : '',
+          !window.RALphModdle ? 'RALphModdle missing' : ''
+        );
+        
+        // Try alternative approach using direct imports if the modules are not in the global scope
+        try {
+          const MultiNotationModeler = require('@multi-notation/index.js').default;
+          const PPINOTModdle = require('@ppinot-moddle');
+          const RALphModdle = require('@ralph-moddle');
+          
+          console.log('Modules loaded via require as fallback');
+          
+          this.modeler = new MultiNotationModeler({
+            container: this.container,
+            moddleExtensions: {
+              PPINOT: PPINOTModdle,
+              RALph: RALphModdle
+            }
+          });
+          
+          console.log('Successfully created modeler using require fallback');
+        } catch (requireError) {
+          console.error('Error loading modules via require:', requireError);
+          throw new Error('Could not load required modules via any method');
         }
-      });
+      } else {
+        // Create new modeler instance using global modules
+        this.modeler = new window.MultiNotationModeler({
+          container: this.container,
+          moddleExtensions: {
+            PPINOT: window.PPINOTModdle,
+            RALph: window.RALphModdle
+          }
+        });
+        
+        console.log('Successfully created MultiNotationModeler instance using global modules');
+      }
       
       // Make the modeler available globally (for backward compatibility)
       window.bpmnModeler = this.modeler;
@@ -54,13 +108,10 @@ class ModelerManager {
       // Set up event listeners
       this.setupEventListeners();
       
-      // Create empty diagram to ensure a valid state
-      setTimeout(() => {
-        if (this.modeler && typeof this.modeler.createDiagram === 'function') {
-          this.modeler.createDiagram()
-            .catch(err => console.error('Error creating initial diagram:', err));
-        }
-      }, 100);
+      // Only create an empty diagram if this is the first initialization and we don't have saved state
+      if (forceNew || (!this.currentXML && !this._diagramInitialized)) {
+        console.log('Planning to create empty diagram (no XML or first initialization)');
+      }
       
       return this.modeler;
     } catch (error) {
@@ -128,36 +179,94 @@ class ModelerManager {
   
   /**
    * Save the current state of the modeler
-   * @returns {Promise<void>}
+   * @returns {Promise<boolean>} - Whether the state was saved successfully
    */
   async saveState() {
-    if (!this.modeler) return;
+    if (!this.modeler) {
+      console.log('No hay instancia del modelador para guardar estado');
+      return false;
+    }
     
     try {
-      // Check if we have a diagram loaded before trying to save
+      // Verificar primero si hay definiciones cargadas
       const definitions = this.modeler._definitions;
-      if (!definitions) {
-        console.log('No BPMN definitions loaded yet - skipping state save');
-        return;
+      
+      // Si no hay definiciones pero tenemos XML guardado anteriormente, mantenerlo
+      if (!definitions && this.currentXML) {
+        console.log('No hay definiciones BPMN, manteniendo estado guardado previamente');
+        return true;
       }
       
-      // Save XML
-      const result = await this.modeler.saveXML({ format: true });
-      this.currentXML = result.xml;
+      // Intentar guardar XML con diferentes opciones
+      let savedXml = null;
       
-      // Save selection
-      const selection = this.modeler.get('selection', false);
-      if (selection && selection.get) {
-        this.currentSelection = selection.get();
+      try {
+        // Primer intento con format=true
+        const result = await this.modeler.saveXML({ format: true });
+        if (result && result.xml) {
+          savedXml = result.xml;
+        }
+      } catch (formatError) {
+        console.warn('Error al guardar XML con formato:', formatError);
       }
       
-      console.log('BPMN modeler state saved');
+      // Si el primer intento falló, intentar sin formato
+      if (!savedXml) {
+        try {
+          const fallbackResult = await this.modeler.saveXML({ format: false });
+          if (fallbackResult && fallbackResult.xml) {
+            savedXml = fallbackResult.xml;
+          }
+        } catch (noFormatError) {
+          console.warn('Error al guardar XML sin formato:', noFormatError);
+        }
+      }
+      
+      // Si tenemos XML guardado, actualizar el estado
+      if (savedXml) {
+        // Verificar que el XML no esté vacío o sea inválido
+        if (savedXml.includes('<bpmn:definitions') || savedXml.includes('<bpmn2:definitions')) {
+          this.currentXML = savedXml;
+          
+          // Guardar la selección actual
+          try {
+            const selection = this.modeler.get('selection', false);
+            if (selection && selection.get) {
+              this.currentSelection = selection.get();
+            }
+          } catch (selError) {
+            console.warn('No se pudo guardar la selección:', selError);
+          }
+          
+          console.log('✅ Estado del modelador BPMN guardado correctamente');
+          // Para debugging
+          console.log('📊 Tamaño del XML guardado:', (savedXml.length / 1024).toFixed(2) + 'KB');
+          return true;
+        } else {
+          console.warn('XML guardado parece inválido, manteniendo estado anterior');
+        }
+      }
+      
+      // Si llegamos aquí y tenemos XML guardado previamente, mantenerlo
+      if (this.currentXML) {
+        console.log('⚠️ No se pudo guardar nuevo estado, manteniendo estado previo');
+        return true;
+      }
+      
+      // No pudimos guardar y no hay estado previo
+      console.warn('⛔ No se pudo guardar el estado del modelador BPMN');
+      return false;
     } catch (error) {
-      console.error('Error saving BPMN modeler state:', error);
+      console.error('❌ Error al guardar estado del modelador BPMN:', error);
       
-      // If we failed to save, don't try to restore later
-      this.currentXML = null;
-      this.currentSelection = null;
+      // Solo limpiar XML si no tenemos estado guardado previamente
+      if (!this.currentXML) {
+        this.currentSelection = null;
+        return false;
+      } else {
+        console.log('Manteniendo estado previo a pesar del error');
+        return true;
+      }
     }
   }
   
@@ -174,72 +283,146 @@ class ModelerManager {
       return null;
     }
     
-    // Initialize a new modeler with the new container
-    const modeler = this.initialize(newContainerEl);
+    console.log('Restaurando modelador BPMN a nuevo contenedor');
     
-    // Restore the saved XML if available
-    if (this.currentXML && modeler) {
+    // ALWAYS save state if we have an existing modeler
+    if (this.modeler) {
       try {
-        await modeler.importXML(this.currentXML);
-        
-        // Restore selection if available
-        if (this.currentSelection && this.currentSelection.length > 0) {
-          const selection = modeler.get('selection', false);
-          if (selection && selection.select) {
-            selection.select(this.currentSelection);
-          }
-        }
-        
-        console.log('BPMN modeler state restored to new container');
+        await this.saveState();
+        console.log('Estado actual guardado antes de restaurar');
       } catch (error) {
-        console.error('Error restoring BPMN modeler state:', error);
-        
-        // If we failed to restore, create an empty diagram
-        try {
-          await modeler.createDiagram();
-          console.log('Created empty diagram after restore failure');
-        } catch (createErr) {
-          console.error('Error creating empty diagram:', createErr);
-        }
-      }
-    } else {
-      // No saved state, create an empty diagram
-      try {
-        await modeler.createDiagram();
-        console.log('Created new empty diagram (no previous state)');
-      } catch (createErr) {
-        console.error('Error creating empty diagram:', createErr);
+        console.warn('No se pudo guardar el estado antes de cambiar de contenedor:', error);
       }
     }
     
-    return modeler;
+    // ALWAYS create a new modeler instance for better reliability
+    this.cleanup(); // Clean up the old modeler instance
+    
+    // Create a new modeler instance
+    try {
+      console.log('Creando nueva instancia del modelador BPMN');
+      const modeler = this.initialize(newContainerEl, true);
+      
+      // If we have saved XML, import it
+      if (this.currentXML && modeler) {
+        try {
+          console.log('Importando XML guardado a la nueva instancia del modelador');
+          await modeler.importXML(this.currentXML);
+          
+          // Restore selection if available
+          if (this.currentSelection && this.currentSelection.length > 0) {
+            const selection = modeler.get('selection', false);
+            if (selection && selection.select) {
+              selection.select(this.currentSelection);
+              console.log('Selección restaurada');
+            }
+          }
+          
+          console.log('✅ Estado del modelador BPMN restaurado correctamente');
+        } catch (importError) {
+          console.error('Error al importar XML guardado:', importError);
+          
+          // If we failed to restore, create an empty diagram
+          try {
+            await modeler.createDiagram();
+            console.log('Diagrama vacío creado después de un error de restauración');
+          } catch (createErr) {
+            console.error('Error al crear diagrama vacío:', createErr);
+          }
+        }
+      } else if (modeler) {
+        // No saved state, so create an empty diagram
+        try {
+          await modeler.createDiagram();
+          console.log('Nuevo diagrama vacío creado (sin estado previo)');
+        } catch (createErr) {
+          console.error('Error al crear diagrama vacío:', createErr);
+        }
+      }
+      
+      return modeler;
+    } catch (error) {
+      console.error('Error al inicializar nuevo modelador BPMN:', error);
+      return null;
+    }
   }
   
   /**
    * Clean up the modeler instance and resources
    */
   cleanup() {
-    if (!this.modeler) return;
+    if (!this.modeler) {
+      console.log('No hay instancia del modelador para limpiar');
+      return;
+    }
+    
+    console.log('Limpiando instancia del modelador BPMN...');
     
     // Remove event listeners
-    this.eventListeners.forEach(({ eventBus, events, handler }) => {
-      if (eventBus && eventBus.off) {
-        events.forEach(event => eventBus.off(event, handler));
-      }
-    });
-    this.eventListeners = [];
+    try {
+      this.eventListeners.forEach(({ eventBus, events, handler }) => {
+        if (eventBus && eventBus.off) {
+          events.forEach(event => {
+            try {
+              eventBus.off(event, handler);
+            } catch (e) {
+              console.warn(`Error al eliminar listener para ${event}:`, e);
+            }
+          });
+        }
+      });
+      this.eventListeners = [];
+    } catch (listenerError) {
+      console.warn('Error al limpiar event listeners:', listenerError);
+    }
     
     // Destroy modeler if it has a destroy method
     if (typeof this.modeler.destroy === 'function') {
       try {
         this.modeler.destroy();
+        console.log('Modelador BPMN destruido correctamente');
       } catch (error) {
-        console.error('Error destroying BPMN modeler:', error);
+        console.error('Error al destruir modelador BPMN:', error);
+        
+        // Additional cleanup attempts if destroy fails
+        try {
+          // Try to clean up references that might prevent garbage collection
+          const canvas = this.modeler.get('canvas', false);
+          if (canvas) {
+            // Clear container reference
+            canvas._container = null;
+          }
+          
+          // Remove global references
+          window.bpmnModeler = null;
+          window.modeler = null;
+        } catch (e) {
+          console.warn('Error en limpieza adicional:', e);
+        }
+      }
+    } else {
+      console.warn('El modelador no tiene método destroy, realizando limpieza manual');
+      
+      // Manual cleanup if no destroy method is available
+      try {
+        // Remove global references
+        window.bpmnModeler = null;
+        window.modeler = null;
+        
+        // Try to clean up DOM elements
+        if (this.container) {
+          // Clear content but keep the container
+          while (this.container.firstChild) {
+            this.container.removeChild(this.container.firstChild);
+          }
+        }
+      } catch (manualError) {
+        console.error('Error en limpieza manual:', manualError);
       }
     }
     
     this.modeler = null;
-    console.log('BPMN modeler cleaned up');
+    console.log('✅ Modelador BPMN limpiado completamente');
   }
 }
 
