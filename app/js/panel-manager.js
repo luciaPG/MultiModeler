@@ -40,7 +40,7 @@ class PanelManager {
     
     // Usar valores por defecto sin localStorage
     this.currentLayout = '2v';
-    this.activePanels = ['bpmn', 'rasci'];
+    this.activePanels = ['bpmn']; // Solo abrir panel BPMN por defecto
     // Initialize panelLoader directly using the imported PanelLoader
     this.panelLoader = new PanelLoader();
     // Variable eliminada - usamos solo localStorage

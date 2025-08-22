@@ -69,10 +69,59 @@ if (typeof window.PPIUI === 'undefined') {
     div.style.opacity = '1';
     div.style.visibility = 'visible';
     
+    // Add click handler to select PPI in canvas
+    div.style.cursor = 'pointer';
+    div.addEventListener('click', (e) => {
+      // Only select if clicking on the card itself, not on buttons
+      if (!e.target.closest('button')) {
+        // Marcar inmediatamente esta tarjeta como seleccionada
+        if (window.ppiManager && window.ppiManager.ui) {
+          window.ppiManager.ui.selectPPI(ppi.id);
+        }
+        
+        // También seleccionar en el canvas
+        if (window.ppiManager && typeof window.ppiManager.selectPPIInCanvas === 'function') {
+          window.ppiManager.selectPPIInCanvas(ppi.id);
+        }
+      }
+    });
+    
+    // Add specific click handler for the selection dot
+    const selectionDot = div.querySelector('.selection-dot');
+    if (selectionDot) {
+      selectionDot.style.cursor = 'pointer';
+      selectionDot.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent card click
+        
+        // Toggle selection
+        const isCurrentlySelected = div.classList.contains('selected');
+        
+        if (isCurrentlySelected) {
+          // Deseleccionar
+          if (window.ppiManager && window.ppiManager.ui) {
+            window.ppiManager.ui.clearPPISelection();
+          }
+        } else {
+          // Seleccionar
+          if (window.ppiManager && window.ppiManager.ui) {
+            window.ppiManager.ui.selectPPI(ppi.id);
+          }
+          
+          // También seleccionar en el canvas
+          if (window.ppiManager && typeof window.ppiManager.selectPPIInCanvas === 'function') {
+            window.ppiManager.selectPPIInCanvas(ppi.id);
+          }
+        }
+      });
+    }
+    
     div.innerHTML = `
       <div class="card-header">
         <div class="type-indicator" style="--type-color: ${typeColors[measureTypeKey]}">
           <i class="${measureType.icon}"></i>
+        </div>
+        <div class="selection-indicator" id="selection-indicator-${ppi.id}">
+          <div class="selection-dot"></div>
         </div>
         <div class="header-content">
           <h3 class="card-title">${this.core.truncateText(cardTitle, 50)}</h3>
@@ -283,7 +332,7 @@ if (typeof window.PPIUI === 'undefined') {
     if (!this._throttledRefresh) {
       this._throttledRefresh = this.throttle(() => {
         this._refreshPPIListImpl();
-      }, 1000); // Only refresh every 1 second at most
+      }, 300); // Reduced to 300ms for faster updates
     }
     
     this._throttledRefresh();
@@ -330,6 +379,10 @@ if (typeof window.PPIUI === 'undefined') {
 
         // Solo actualizar si hay cambios reales
         if (storedData !== currentData) {
+          console.log(`[PPI-UI] Detectado cambio en PPI ${ppi.id}:`);
+          console.log(`[PPI-UI] Datos almacenados: ${storedData}`);
+          console.log(`[PPI-UI] Datos actuales: ${currentData}`);
+          
           // Prevent any movement during update
           ppiElement.style.position = 'relative';
           ppiElement.style.visibility = 'visible';
@@ -1188,6 +1241,48 @@ if (typeof window.PPIUI === 'undefined') {
         border-bottom: 1px solid var(--bg-muted);
         background: linear-gradient(135deg, #fafbff 0%, #ffffff 100%);
         min-height: 70px;
+        position: relative;
+      }
+
+      /* Selection indicator - punto en la esquina superior derecha */
+      .selection-indicator {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 10;
+      }
+
+      .selection-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: #dc3545 !important; /* Rojo por defecto */
+        transition: all 0.3s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        border: 2px solid white;
+        cursor: pointer;
+        position: relative;
+        z-index: 5;
+      }
+
+      /* Punto verde cuando está seleccionado - mayor especificidad */
+      .ppi-card.selected .selection-dot {
+        background-color: #28a745 !important; /* Verde cuando seleccionado */
+        transform: scale(1.2) !important;
+        box-shadow: 0 2px 6px rgba(40, 167, 69, 0.4) !important;
+        border-color: white !important;
+      }
+
+      /* Efecto hover en el punto - solo cuando no está seleccionado */
+      .ppi-card:not(.selected) .selection-dot:hover {
+        transform: scale(1.1);
+        box-shadow: 0 2px 4px rgba(220, 53, 69, 0.4);
+      }
+
+      /* Efecto hover cuando está seleccionado */
+      .ppi-card.selected .selection-dot:hover {
+        transform: scale(1.3);
+        box-shadow: 0 3px 8px rgba(40, 167, 69, 0.6);
       }
 
       .type-indicator {
@@ -1654,6 +1749,99 @@ if (typeof window.PPIUI === 'undefined') {
         transform: none !important;
         animation: none !important;
       }
+
+      /* Selected PPI state - highlight when selected in canvas */
+      .ppi-card.selected {
+        border: 3px solid #4361ee !important;
+        background: linear-gradient(135deg, #e8f0ff 0%, #f0f6ff 100%) !important;
+        box-shadow: 0 4px 12px rgba(67, 97, 238, 0.25) !important;
+        transform: none !important;
+        position: relative;
+      }
+
+      .ppi-card.selected::before {
+        content: '';
+        position: absolute;
+        top: -3px;
+        left: -3px;
+        right: -3px;
+        bottom: -3px;
+        background: linear-gradient(45deg, #4361ee, #667eea);
+        border-radius: inherit;
+        z-index: -1;
+      }
+
+      .ppi-card.selected .card-header {
+        background: linear-gradient(135deg, #e8f0ff 0%, #ffffff 100%);
+        border-bottom-color: #4361ee;
+      }
+
+      .ppi-card.selected .card-title {
+        color: #4361ee;
+        font-weight: 600;
+      }
+
+      /* Hover effect for clickable cards */
+      .ppi-card:hover {
+        transform: none !important;
+        animation: none !important;
+        border-color: #dee2e6 !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+        cursor: pointer;
+      }
+
+      .ppi-card:hover:not(.selected) {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+      }
+
+      /* Sync status indicator styles */
+      #ppi-sync-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+        border: 1px solid #c3e6c3;
+        border-radius: 6px;
+        font-size: 0.9em;
+      }
+
+      .sync-indicator {
+        display: flex;
+        align-items: center;
+        margin-left: auto;
+      }
+
+      .sync-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #28a745;
+        animation: pulse-sync 2s infinite;
+      }
+
+      @keyframes pulse-sync {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+      }
+
+      /* Selection indicator for individual PPIs */
+      .selection-indicator {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 10;
+      }
+
+      /* Sync disabled state */
+      .sync-disabled .sync-dot {
+        background: #dc3545;
+        animation: none;
+      }
+
+      .sync-warning .sync-dot {
+        background: #ffc107;
+      }
     `;
 
     document.head.appendChild(styles);
@@ -2082,5 +2270,197 @@ if (typeof window.PPIUI === 'undefined') {
     
     return null;
   }
+
+  // === PPI SELECTION MANAGEMENT ===
+  
+  /**
+   * Marca un PPI como seleccionado en la lista
+   * @param {string} ppiId - ID del PPI a seleccionar
+   */
+  selectPPI(ppiId) {
+    console.log(`🟢 [PPI-UI] Seleccionando PPI: ${ppiId}`);
+    
+    // Primero deseleccionar todos los PPIs
+    this.clearPPISelection();
+    
+    const container = document.getElementById('ppi-list');
+    if (!container) {
+      console.warn('🟢 [PPI-UI] Container ppi-list no encontrado');
+      return;
+    }
+    
+    const ppiCard = container.querySelector(`.ppi-card[data-ppi-id="${ppiId}"]`);
+    if (ppiCard) {
+      console.log(`🟢 [PPI-UI] Tarjeta PPI encontrada, añadiendo clase selected`);
+      ppiCard.classList.add('selected');
+      
+      // Actualizar el indicador visual
+      const selectionIndicator = ppiCard.querySelector('.selection-dot');
+      if (selectionIndicator) {
+        console.log(`🟢 [PPI-UI] Actualizando punto de selección a verde`);
+        console.log(`🟢 [PPI-UI] Punto actual - color:`, selectionIndicator.style.backgroundColor);
+        
+        // Remove any existing classes and styles
+        selectionIndicator.className = 'selection-dot';
+        selectionIndicator.style.removeProperty('background');
+        selectionIndicator.style.removeProperty('background-color');
+        
+        // Add selected state
+        selectionIndicator.classList.add('selected');
+        selectionIndicator.style.backgroundColor = '#28a745';
+        selectionIndicator.style.transform = 'scale(1.2)';
+        selectionIndicator.style.boxShadow = '0 2px 6px rgba(40, 167, 69, 0.4)';
+        selectionIndicator.style.border = '2px solid #fff';
+        
+        console.log(`🟢 [PPI-UI] Punto después - color:`, selectionIndicator.style.backgroundColor);
+        console.log(`🟢 [PPI-UI] Punto después - classes:`, selectionIndicator.className);
+      } else {
+        console.warn(`🟢 [PPI-UI] Punto de selección no encontrado para PPI: ${ppiId}`);
+        // Let's check if the dot exists at all
+        const allDots = ppiCard.querySelectorAll('.selection-dot, .selection-indicator');
+        console.log(`🟢 [PPI-UI] Dots found in card:`, allDots.length);
+        allDots.forEach((dot, index) => {
+          console.log(`🟢 [PPI-UI] Dot ${index}:`, dot.className, dot);
+        });
+      }
+      
+      // Scroll suave hacia el elemento seleccionado
+      ppiCard.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'nearest'
+      });
+      
+      console.log(`🟢 PPI seleccionado en la lista: ${ppiId}`);
+    } else {
+      console.warn(`🟢 [PPI-UI] Tarjeta PPI no encontrada para ID: ${ppiId}`);
+      // Debug: let's see what cards exist
+      const allCards = container.querySelectorAll('.ppi-card');
+      console.log(`🟢 [PPI-UI] Total cards found:`, allCards.length);
+      allCards.forEach((card, index) => {
+        console.log(`🟢 [PPI-UI] Card ${index} ID:`, card.getAttribute('data-ppi-id'));
+      });
+    }
+  }
+  
+  /**
+   * Deselecciona todos los PPIs en la lista
+   */
+  clearPPISelection() {
+    console.log(`🔴 [PPI-UI] Limpiando selección de PPIs`);
+    
+    const container = document.getElementById('ppi-list');
+    if (!container) return;
+    
+    const selectedCards = container.querySelectorAll('.ppi-card.selected');
+    console.log(`🔴 [PPI-UI] Encontradas ${selectedCards.length} tarjetas seleccionadas`);
+    
+    selectedCards.forEach(card => {
+      card.classList.remove('selected');
+      
+      // Resetear el indicador visual
+      const selectionIndicator = card.querySelector('.selection-dot');
+      if (selectionIndicator) {
+        console.log(`🔴 [PPI-UI] Restableciendo punto de selección a rojo`);
+        
+        // Remove any existing classes and styles
+        selectionIndicator.classList.remove('selected');
+        selectionIndicator.style.removeProperty('background');
+        selectionIndicator.style.removeProperty('background-color');
+        
+        // Reset to red state
+        selectionIndicator.style.backgroundColor = '#dc3545';
+        selectionIndicator.style.transform = 'scale(1)';
+        selectionIndicator.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.2)';
+        selectionIndicator.style.border = '1px solid #fff';
+      }
+    });
+  }
+  
+  /**
+   * Obtiene el PPI actualmente seleccionado
+   * @returns {string|null} ID del PPI seleccionado o null si no hay ninguno
+   */
+  getSelectedPPI() {
+    const container = document.getElementById('ppi-list');
+    if (!container) return null;
+    
+    const selectedCard = container.querySelector('.ppi-card.selected');
+    return selectedCard ? selectedCard.getAttribute('data-ppi-id') : null;
+  }
+  
+  /**
+   * Verifica si un PPI está seleccionado
+   * @param {string} ppiId - ID del PPI a verificar
+   * @returns {boolean} true si está seleccionado, false en caso contrario
+   */
+  isPPISelected(ppiId) {
+    const container = document.getElementById('ppi-list');
+    if (!container) return false;
+    
+    const ppiCard = container.querySelector(`.ppi-card[data-ppi-id="${ppiId}"]`);
+    return ppiCard ? ppiCard.classList.contains('selected') : false;
+  }
+
+  // === SYNC STATUS MANAGEMENT ===
+  
+  /**
+   * Actualiza el estado del indicador de sincronización
+   * @param {string} status - 'active', 'warning', 'disabled'
+   * @param {string} message - Mensaje a mostrar
+   */
+  updateSyncStatus(status = 'active', message = 'Sincronización automática activa') {
+    const syncStatusElement = document.getElementById('ppi-sync-status');
+    const syncTextElement = document.getElementById('sync-status-text');
+    const syncIndicator = document.getElementById('sync-indicator');
+    
+    if (syncTextElement) {
+      syncTextElement.textContent = message;
+    }
+    
+    if (syncStatusElement && syncIndicator) {
+      // Remover clases previas
+      syncStatusElement.classList.remove('sync-disabled', 'sync-warning');
+      
+      switch (status) {
+        case 'active':
+          syncStatusElement.style.background = 'linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%)';
+          syncStatusElement.style.borderColor = '#c3e6c3';
+          break;
+        case 'warning':
+          syncStatusElement.classList.add('sync-warning');
+          syncStatusElement.style.background = 'linear-gradient(135deg, #fff3cd 0%, #fef8e7 100%)';
+          syncStatusElement.style.borderColor = '#f0c36d';
+          break;
+        case 'disabled':
+          syncStatusElement.classList.add('sync-disabled');
+          syncStatusElement.style.background = 'linear-gradient(135deg, #f8d7da 0%, #fce6e7 100%)';
+          syncStatusElement.style.borderColor = '#f1a5a8';
+          break;
+      }
+    }
+  }
+  
+  /**
+   * Marca la sincronización como activa
+   */
+  setSyncActive() {
+    this.updateSyncStatus('active', 'Sincronización automática activa');
+  }
+  
+  /**
+   * Marca la sincronización con advertencia
+   */
+  setSyncWarning(message = 'Sincronización con problemas') {
+    this.updateSyncStatus('warning', message);
+  }
+  
+  /**
+   * Marca la sincronización como deshabilitada
+   */
+  setSyncDisabled(message = 'Sincronización deshabilitada') {
+    this.updateSyncStatus('disabled', message);
+  }
+
   };
 } 

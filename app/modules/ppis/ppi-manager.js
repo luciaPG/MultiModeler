@@ -79,6 +79,13 @@ class PPIManager {
         
         // Inicializar UI de sincronización
         this.setupSyncUI();
+        
+        // Inicializar estado de sincronización visual
+        setTimeout(() => {
+          if (this.ui && typeof this.ui.setSyncActive === 'function') {
+            this.ui.setSyncActive();
+          }
+        }, 500);
       }
     } catch (error) {
       // Error configurando sync manager
@@ -134,8 +141,15 @@ class PPIManager {
   }
 
   setupBpmnEventListeners() {
+    console.log(`[PPI-Manager] Configurando event listeners BPMN`);
     try {
+      if (!window.modeler) {
+        console.warn(`[PPI-Manager] window.modeler no disponible`);
+        return;
+      }
+      
       const eventBus = window.modeler.get('eventBus');
+      console.log(`[PPI-Manager] EventBus obtenido:`, eventBus);
       
       // Listener para eliminación de PPIs del canvas
       eventBus.on('element.removed', (event) => {
@@ -157,9 +171,65 @@ class PPIManager {
 
       // Listener para cambios en elementos PPI del canvas
       eventBus.on('element.changed', (event) => {
+        console.log('📝 Element changed event:', event);
         const element = event.element;
         if (element && this.core.isPPIElement(element)) {
+          console.log('📝 PPI element changed:', element.id, element.businessObject && element.businessObject.name);
           this.updatePPIFromElement(element);
+        }
+      });
+
+      // Listener adicional para cambios de propiedades
+      eventBus.on('commandStack.element.updateProperties.executed', (event) => {
+        console.log('📝 Properties updated event:', event);
+        const element = event.context && event.context.element;
+        if (element && this.core.isPPIElement(element)) {
+          console.log('📝 PPI properties updated:', element.id, element.businessObject && element.businessObject.name);
+          setTimeout(() => this.updatePPIFromElement(element), 50);
+        }
+      });
+
+      // Listener para cambios en el modelo
+      eventBus.on('shape.changed', (event) => {
+        console.log('📝 Shape changed event:', event);
+        const element = event.element;
+        if (element && this.core.isPPIElement(element)) {
+          console.log('📝 PPI shape changed:', element.id, element.businessObject && element.businessObject.name);
+          this.updatePPIFromElement(element);
+        }
+      });
+
+      // Listener para selección de elementos en el canvas
+      eventBus.on('selection.changed', (event) => {
+        console.log(`[PPI-Manager] Selección cambiada en canvas:`, event);
+        const selectedElements = event.newSelection || [];
+        console.log(`[PPI-Manager] Elementos seleccionados:`, selectedElements.length);
+        
+        if (selectedElements.length === 1) {
+          const selectedElement = selectedElements[0];
+          console.log(`[PPI-Manager] Elemento seleccionado:`, selectedElement.id, selectedElement.type);
+          
+          // Buscar si el elemento seleccionado corresponde a un PPI
+          const ppi = this.findPPIByElement(selectedElement);
+          if (ppi) {
+            // Marcar el PPI como seleccionado en la lista
+            console.log(`[PPI-Manager] Marcando PPI como seleccionado: ${ppi.id}`);
+            this.ui.selectPPI(ppi.id);
+            
+            // También forzar actualización del nombre al seleccionar
+            console.log(`[PPI-Manager] Forzando actualización de nombre al seleccionar`);
+            this.updatePPIFromElement(selectedElement);
+            
+            console.log(`PPI seleccionado en canvas: ${ppi.id} (${ppi.title || 'Sin título'})`);
+          } else {
+            // Si no es un PPI, limpiar la selección
+            console.log(`[PPI-Manager] Elemento no es PPI, limpiando selección`);
+            this.ui.clearPPISelection();
+          }
+        } else {
+          // Si no hay selección o hay múltiples elementos, limpiar la selección
+          console.log(`[PPI-Manager] Múltiples elementos o sin selección, limpiando`);
+          this.ui.clearPPISelection();
         }
       });
     } catch (error) {
@@ -168,6 +238,63 @@ class PPIManager {
   }
 
   // === PPI ELEMENT DETECTION ===
+
+  /**
+   * Busca un PPI por su elemento del canvas
+   * @param {Object} element - Elemento del canvas BPMN
+   * @returns {Object|null} PPI encontrado o null
+   */
+  findPPIByElement(element) {
+    if (!element) return null;
+    
+    console.log(`[PPI-Manager] Buscando PPI para elemento:`, element.id, element.type);
+    
+    try {
+      // Buscar por elementId
+      let ppi = this.core.ppis.find(p => p.elementId === element.id);
+      if (ppi) {
+        console.log(`[PPI-Manager] PPI encontrado por elementId:`, ppi.id, ppi.title);
+        return ppi;
+      }
+      
+      // Buscar por nombre del elemento
+      if (element.businessObject && element.businessObject.name) {
+        ppi = this.core.ppis.find(p => p.title === element.businessObject.name);
+        if (ppi) {
+          console.log(`[PPI-Manager] PPI encontrado por nombre:`, ppi.id, ppi.title);
+          return ppi;
+        }
+      }
+      
+      // Buscar en el elemento padre si no se encuentra directamente
+      if (element.parent) {
+        const parentElement = element.parent;
+        console.log(`[PPI-Manager] Buscando en elemento padre:`, parentElement.id, parentElement.type);
+        
+        // Buscar por elementId del padre
+        ppi = this.core.ppis.find(p => p.elementId === parentElement.id);
+        if (ppi) {
+          console.log(`[PPI-Manager] PPI encontrado por elementId del padre:`, ppi.id, ppi.title);
+          return ppi;
+        }
+        
+        // También buscar por nombre del padre
+        if (parentElement.businessObject && parentElement.businessObject.name) {
+          ppi = this.core.ppis.find(p => p.title === parentElement.businessObject.name);
+          if (ppi) {
+            console.log(`[PPI-Manager] PPI encontrado por nombre del padre:`, ppi.id, ppi.title);
+            return ppi;
+          }
+        }
+      }
+      
+      console.log(`[PPI-Manager] No se encontró PPI para elemento:`, element.id);
+    } catch (error) {
+      console.error('Error finding PPI by element:', error);
+    }
+    
+    return null;
+  }
 
   // === SCOPE AND TARGET SPECIFIC HANDLING ===
 
@@ -277,30 +404,80 @@ class PPIManager {
   }
 
   updatePPIFromElement(element) {
+    console.log('📝 UpdatePPIFromElement called with:', element);
     try {
       const elementId = element.id;
+      console.log('📝 Element ID:', elementId);
+      
       const existingPPI = this.core.ppis.find(ppi => ppi.elementId === elementId);
-      if (!existingPPI) return;
+      console.log('📝 Existing PPI found:', existingPPI);
+      
+      if (!existingPPI) {
+        console.log('📝 No existing PPI found for element');
+        return;
+      }
       
       let newTitle = '';
       if (element.businessObject && element.businessObject.name && element.businessObject.name.trim()) {
         newTitle = element.businessObject.name.trim();
+      } else if (element.businessObject && element.businessObject.id) {
+        newTitle = element.businessObject.id; // Use ID as fallback
       }
       
-      // Only update if we have a meaningful title and it's different
-      if (!newTitle || newTitle === existingPPI.title) return;
+      console.log('📝 Current PPI title:', existingPPI.title);
+      console.log('📝 New title from element:', newTitle);
       
-      const updatedData = {
-        title: newTitle,
-        updatedAt: new Date().toISOString()
-      };
-      
-      if (this.core.updatePPI(existingPPI.id, updatedData)) {
-        this.updatePPIElementInDOM(existingPPI.id, updatedData);
-        this.ui.refreshPPIList();
+      // Always update if we have a new title, be more aggressive
+      if (newTitle) {
+        // Force update even if titles appear to be the same (might have whitespace differences)
+        const titleChanged = newTitle.trim() !== (existingPPI.title || '').trim();
+        
+        if (titleChanged || !existingPPI.title) {
+          console.log('📝 Updating PPI title from', existingPPI.title, 'to', newTitle);
+          
+          const updatedData = {
+            title: newTitle,
+            updatedAt: new Date().toISOString()
+          };
+          
+          if (this.core.updatePPI(existingPPI.id, updatedData)) {
+            console.log('📝 PPI updated successfully in core');
+            
+            // Force immediate DOM update
+            this.updatePPIElementInDOM(existingPPI.id, updatedData);
+            
+            // Force UI refresh with multiple attempts
+            setTimeout(() => {
+              console.log('📝 Forcing UI refresh attempt 1...');
+              this.ui.refreshPPIList();
+            }, 10);
+            
+            setTimeout(() => {
+              console.log('📝 Forcing UI refresh attempt 2...');
+              this.ui.refreshPPIList();
+            }, 100);
+            
+            // Also try to update the card directly
+            setTimeout(() => {
+              console.log('📝 Direct card update attempt...');
+              const cardElement = document.querySelector(`[data-ppi-id="${existingPPI.id}"] .ppi-title`);
+              if (cardElement) {
+                cardElement.textContent = newTitle;
+                console.log('📝 Card title updated directly');
+              }
+            }, 50);
+            
+          } else {
+            console.log('📝 Failed to update PPI in core');
+          }
+        } else {
+          console.log('📝 No title change detected');
+        }
+      } else {
+        console.log('📝 No valid title found');
       }
     } catch (error) {
-      // Error actualizando PPI
+      console.error('📝 Error updating PPI from element:', error);
     }
   }
 
@@ -771,6 +948,58 @@ class PPIManager {
       
     } catch (error) {
       // Error forzando refresh de canvas
+    }
+  }
+
+  /**
+   * Selecciona un PPI en el canvas BPMN
+   * @param {string} ppiId - ID del PPI a seleccionar
+   */
+  selectPPIInCanvas(ppiId) {
+    try {
+      const ppi = this.core.ppis.find(p => p.id === ppiId);
+      if (!ppi || !ppi.elementId) {
+        console.warn(`No se encontró elemento en canvas para PPI: ${ppiId}`);
+        return;
+      }
+
+      if (!window.modeler) {
+        console.warn('Modeler no disponible para selección');
+        return;
+      }
+
+      const elementRegistry = window.modeler.get('elementRegistry');
+      const selection = window.modeler.get('selection');
+      
+      const element = elementRegistry.get(ppi.elementId);
+      if (element) {
+        // Seleccionar el elemento en el canvas
+        selection.select(element);
+        
+        // Hacer zoom hacia el elemento si está disponible
+        try {
+          const canvas = window.modeler.get('canvas');
+          if (canvas && typeof canvas.zoom === 'function') {
+            canvas.zoom('fit-viewport', element);
+          }
+        } catch (zoomError) {
+          // Si el zoom falla, al menos intentar scrollTo
+          try {
+            const canvas = window.modeler.get('canvas');
+            if (canvas && typeof canvas.scrollToElement === 'function') {
+              canvas.scrollToElement(element);
+            }
+          } catch (scrollError) {
+            console.log('Zoom/scroll no disponible, pero elemento seleccionado');
+          }
+        }
+        
+        console.log(`Elemento seleccionado en canvas: ${ppi.elementId} (PPI: ${ppiId})`);
+      } else {
+        console.warn(`Elemento no encontrado en canvas: ${ppi.elementId}`);
+      }
+    } catch (error) {
+      console.error('Error seleccionando PPI en canvas:', error);
     }
   }
 }

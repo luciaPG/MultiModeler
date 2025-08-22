@@ -888,7 +888,18 @@ class PPISyncManager {
   // === AUTO-SYNC ===
 
   startAutoSync() {
-    if (!this.syncConfig.autoSync) return;
+    if (!this.syncConfig.autoSync) {
+      // Marcar como deshabilitado si no está configurado para auto sync
+      if (this.ui && typeof this.ui.setSyncDisabled === 'function') {
+        this.ui.setSyncDisabled('Sincronización automática deshabilitada');
+      }
+      return;
+    }
+    
+    // Marcar como activo
+    if (this.ui && typeof this.ui.setSyncActive === 'function') {
+      this.ui.setSyncActive();
+    }
     
     this.syncTimer = setInterval(() => {
       if (!this.syncState.isSyncing && this.syncState.pendingChanges.size === 0) {
@@ -901,6 +912,11 @@ class PPISyncManager {
     if (this.syncTimer) {
       clearInterval(this.syncTimer);
       this.syncTimer = null;
+    }
+    
+    // Marcar como deshabilitado
+    if (this.ui && typeof this.ui.setSyncDisabled === 'function') {
+      this.ui.setSyncDisabled('Sincronización detenida');
     }
   }
 
