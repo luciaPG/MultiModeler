@@ -1,13 +1,11 @@
 import $ from 'jquery';
-import MultiNotationModeler from './MultiNotationModeler/index.js';
-import PPINOTModdle from './PPINOT-modeler/PPINOT/PPINOTModdle.json';
-import RALphModdle from './RALPH-modeler/RALph/RALphModdle.json';
+import MultiNotationModeler from '@multi-notation/index.js';
+import PPINOTModdle from '@ppinot-moddle';
+import RALphModdle from '@ralph-moddle';
 import { PanelLoader } from './js/panel-loader.js';
 import { initRasciPanel } from './js/panels/rasci/core/main.js';
-import StoragePathManager from './js/storage-path-manager.js';
+import modelerManager from './js/modeler-manager.js';
 import './js/panel-manager.js';
-import './js/import-export-manager.js';
-import './js/storage-manager.js';
 
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
@@ -16,6 +14,10 @@ import './css/app.css';
 
 import { forceReloadMatrix, renderMatrix, detectRalphRolesFromCanvas } from './js/panels/rasci/core/matrix-manager.js';
 
+// Global variables for BPMN state
+window.currentBpmnXML = null; // Stores current BPMN diagram XML for panel changes
+
+// RASCI related globals
 window.forceReloadMatrix = forceReloadMatrix;
 window.renderMatrix = renderMatrix;
 window.detectRalphRolesFromCanvas = detectRalphRolesFromCanvas;
@@ -23,9 +25,6 @@ window.rasciRoles = [];
 window.rasciTasks = [];
 window.rasciMatrixData = {};
 window.initRasciPanel = initRasciPanel;
-
-// Inicializar gestión de rutas de almacenamiento
-window.storagePathManager = new StoragePathManager();
 
 // Variables para autoguardado
 let autoSaveEnabled = false;
@@ -127,6 +126,32 @@ function validateAndSanitizeWaypoints(waypoints) {
 const container = $('.panel:first-child');
 const body = $('body');
 
+/**
+ * Creates a new MultiNotationModeler instance
+ * This function is used by both the initializeModeler function and the modelerManager
+ * to ensure consistent modeler creation
+ * 
+ * @param {HTMLElement|string} containerElement - The container element or selector for the modeler
+ * @returns {Object} The created modeler instance
+ */
+function createModeler(containerElement) {
+  const modelerOptions = {
+    container: containerElement,
+    moddleExtensions: {
+      PPINOT: modelerManager.getPPINOTModdle(),
+      RALph: modelerManager.getRALPHModdle()
+    }
+  };
+  
+  // Import from MultiNotationModeler index directly to avoid any duplication issues
+  const modeler = new (require('@multi-notation/index.js').default)(modelerOptions);
+  
+  return modeler;
+}
+
+// Make the function available globally
+window.createModeler = createModeler;
+
 async function initializeModeler() {
   try {
     const canvasElement = document.getElementById('js-canvas');
@@ -162,122 +187,23 @@ async function initializeModeler() {
       canvasElement.offsetHeight;
     }
     
-    if (window.modeler && typeof window.modeler.destroy === 'function') {
-      // Solo destruir si el modeler no está funcionando correctamente
-      try {
-        const canvas = window.modeler.get('canvas');
-        const canvasContainer = canvas && canvas.getContainer();
-        const svg = canvasContainer && canvasContainer.querySelector('svg');
-        
-        // Si el modeler ya está funcionando Y inicializado, no lo destruyas
-        if (canvas && canvasContainer && svg && typeof svg.getCTM === 'function' && isModelerInitialized) {
-          return Promise.resolve(window.modeler);
-        } else {
-          disableMoveCanvas();
-          
-          // Estrategia más agresiva para limpiar event listeners
-          try {
-            const eventBus = window.modeler.get('eventBus');
-            if (eventBus) {
-              // Remover todos los event listeners del eventBus
-              eventBus.off();
-            }
-            
-            // Limpiar específicamente los listeners del MoveCanvas que causan el error getCTM
-            const moveCanvas = window.modeler.get('moveCanvas');
-            if (moveCanvas) {
-              // Acceder a los listeners internos del MoveCanvas y limpiarlos
-              if (moveCanvas._eventBus) {
-                moveCanvas._eventBus.off();
-              }
-              
-              // Limpiar handlers específicos del documento
-              const handleMove = moveCanvas.handleMove;
-              const handleEnd = moveCanvas.handleEnd;
-              
-              if (handleMove) {
-                document.removeEventListener('mousemove', handleMove);
-                document.removeEventListener('mousemove', handleMove, true);
-              }
-              if (handleEnd) {
-                document.removeEventListener('mouseup', handleEnd);
-                document.removeEventListener('mouseup', handleEnd, true);
-              }
-              
-              // Si tiene un método de cleanup, llamarlo
-              if (typeof moveCanvas.cleanup === 'function') {
-                moveCanvas.cleanup();
-              }
-              if (typeof moveCanvas.deactivate === 'function') {
-                moveCanvas.deactivate();
-              }
-            }
-            
-            // Limpiar event listeners del canvas y contenedor
-            if (canvas && canvasContainer) {
-              const svg = canvasContainer.querySelector('svg');
-              if (svg) {
-                // Clonar y reemplazar el SVG para eliminar todos los listeners
-                const newSvg = svg.cloneNode(true);
-                svg.parentNode.replaceChild(newSvg, svg);
-              }
-              
-              // También limpiar listeners del contenedor
-              const newContainer = canvasContainer.cloneNode(true);
-              canvasContainer.parentNode.replaceChild(newContainer, canvasContainer);
-            }
-            
-          } catch (eventError) {
-            console.warn('Error cleaning event listeners:', eventError);
-          }
-          
-          // Esperar más tiempo para que se limpien completamente los listeners
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          window.modeler.destroy();
-          isModelerInitialized = false; // Marcar como no inicializado
-        }
-      } catch (e) {
-        console.warn('Error checking/destroying previous modeler:', e);
-        try {
-          // Limpieza de emergencia
-          disableMoveCanvas();
-          
-          const eventBus = window.modeler.get && window.modeler.get('eventBus');
-          if (eventBus && eventBus.off) {
-            eventBus.off();
-          }
-          
-          // Remover todos los event listeners del documento que puedan estar relacionados
-          document.removeEventListener('mousemove', function() {});
-          
-          await new Promise(resolve => setTimeout(resolve, 500));
-          window.modeler.destroy();
-          isModelerInitialized = false; // Marcar como no inicializado
-        } catch (destroyError) {
-          console.warn('Error destroying modeler:', destroyError);
-          isModelerInitialized = false;
-          // Como último recurso, simplemente remover la referencia
-          window.modeler = null;
-        }
-      }
-    }
+    // Clean up canvas completely
+    cleanupCanvasCompletely();
     
     return new Promise((resolve, reject) => {
-      // Limpiar completamente el canvas antes de crear un nuevo modeler
-      cleanupCanvasCompletely();
-      
-      // Dar más tiempo para que el DOM esté completamente renderizado
       setTimeout(() => {
         try {
-          modeler = new MultiNotationModeler({
+          // Create the modeler directly instead of using modelerManager
+          const modeler = new MultiNotationModeler({
             container: '#js-canvas',
             moddleExtensions: {
               PPINOT: PPINOTModdle,
               RALph: RALphModdle
             }
-            // Removida configuración keyboard.bindTo deprecated
           });
+          
+          // Make the modeler available globally (for compatibility with existing code)
+          window.modeler = modeler;
           window.bpmnModeler = modeler;
 
           const eventBus = modeler.get('eventBus');

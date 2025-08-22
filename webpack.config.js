@@ -33,6 +33,21 @@ module.exports = {
             }
         ]
     },
+    resolve: {
+        alias: {
+            // Add aliases for the PPINOT and RALPH moddle files
+            '@ppinot-moddle': path.resolve(__dirname, 'app/PPINOT-modeler/PPINOT/PPINOTModdle.json'),
+            '@ralph-moddle': path.resolve(__dirname, 'app/RALPH-modeler/RALph/RALphModdle.json'),
+            // Add alias for the MultiNotationModeler directory
+            '@multi-notation': path.resolve(__dirname, 'app/MultiNotationModeler'),
+            // Add aliases for other directories to simplify imports
+            '@app': path.resolve(__dirname, 'app'),
+            '@modelers': path.resolve(__dirname, 'app/modelers'),
+            '@core': path.resolve(__dirname, 'app/core'),
+            '@infra': path.resolve(__dirname, 'app/infra'),
+            '@panels': path.resolve(__dirname, 'app/panels')
+        }
+    },
     plugins: [
         new CopyWebpackPlugin({
             patterns: [

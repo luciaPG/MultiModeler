@@ -1,5 +1,6 @@
 // === panel-manager.js ===
 // Gestor de paneles con selector de paneles y distribución
+import modelerManager from './modeler-manager.js';
 
 class PanelManager {
   constructor() {
@@ -36,9 +37,9 @@ class PanelManager {
       }
     };
     
-    // Cargar configuración guardada o usar valores por defecto
-    this.currentLayout = localStorage.getItem('panelLayout') || '2v';
-    this.activePanels = this.loadActivePanels();
+    // Usar valores por defecto sin localStorage
+    this.currentLayout = '2v';
+    this.activePanels = ['bpmn', 'rasci'];
     this.panelLoader = null;
     // Variable eliminada - usamos solo localStorage
     this.isApplyingConfiguration = false; // Bandera para prevenir ejecuciones múltiples
@@ -99,24 +100,15 @@ class PanelManager {
   }
 
   loadActivePanels() {
-    try {
-      const saved = localStorage.getItem('activePanels');
-      if (saved) {
-        const panels = JSON.parse(saved);
-        const validPanels = panels.filter(panel => this.availablePanels[panel]);
-        return validPanels;
-      }
-    } catch (e) {
-      console.error('Error loading active panels:', e);
-    }
-    
-    return ['bpmn'];
+    // Default panels instead of using localStorage
+    return ['bpmn', 'rasci'];
   }
 
   savePanelConfiguration() {
+    // No-op function - no longer using localStorage
     try {
-      localStorage.setItem('activePanels', JSON.stringify(this.activePanels));
-      localStorage.setItem('panelLayout', this.currentLayout);
+      // Just logging for debugging purposes
+      console.log('Panel configuration updated (in memory)');
     } catch (e) {   
       console.error('Error saving panel configuration:', e);
     }
@@ -1075,7 +1067,7 @@ class PanelManager {
       newLayout = '4v';
     }
     
-    // El localStorage se maneja automáticamente
+    // No longer using localStorage
     
     this.currentLayout = newLayout;
     
@@ -1250,7 +1242,13 @@ class PanelManager {
         return;
       }
 
-    // NOTA: Eliminamos preservación - usamos solo localStorage como antes
+      // Save BPMN state if we have a BPMN panel
+      if (this.activePanels.includes('bpmn')) {
+        // Use modelerManager to save the state before changing panels
+        modelerManager.saveState().catch(err => {
+          console.error('Error saving BPMN modeler state:', err);
+        });
+      }
 
     const existingPanels = container.querySelectorAll('.panel');
     existingPanels.forEach(panel => {
@@ -1307,27 +1305,35 @@ class PanelManager {
       this.adjustLayoutForVisiblePanels();
     }
 
-    // Reinicializar el modeler siempre que se active el panel BPMN (enfoque simple y robusto)
+    // Completely reinitialize the BPMN modeler instead of trying to restore it
     if (this.activePanels.includes('bpmn')) {
       setTimeout(() => {
-        console.log('Activando panel BPMN, inicializando modeler');
+        console.log('Restaurando el modeler BPMN con ModelerManager');
         
-        if (typeof window.initializeModeler === 'function') {
-          window.initializeModeler();
-          
-          if (typeof window.debugBpmnState === 'function') {
-            window.debugBpmnState();
-          }
-          
-          // NO cargar estado automáticamente si se está importando un proyecto
-          if (window.isImportingProject === true) {
-            console.log('⏸️ Importación de proyecto en curso, omitiendo carga automática de estado BPMN');
-          } else {
-            setTimeout(() => {
-              if (typeof window.loadBpmnState === 'function') {
-                window.loadBpmnState();
+        // Find the BPMN panel and its canvas
+        const bpmnPanel = document.querySelector('[data-panel-type="bpmn"]');
+        const canvas = bpmnPanel ? bpmnPanel.querySelector('#js-canvas') : document.querySelector('#js-canvas');
+        
+        if (canvas) {
+          // Restore the modeler to the new container using our ModelerManager
+          modelerManager.restoreToNewContainer(canvas)
+            .then(() => {
+              console.log('BPMN modeler restaurado correctamente');
+            })
+            .catch(err => {
+              console.error('Error restaurando BPMN modeler:', err);
+              
+              // As fallback, initialize a new modeler
+              if (typeof window.initializeModeler === 'function') {
+                window.initializeModeler();
               }
-            }, 200);
+            });
+        } else {
+          // Fallback to standard initialization
+          if (typeof window.initializeModeler === 'function') {
+            window.initializeModeler();
+          
+            // No need to reload - modelerManager will handle the state restoration
           }
         }
       }, 500); // Dar más tiempo para que se cree el DOM
