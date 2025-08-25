@@ -1,7 +1,7 @@
 // RASCI Core
 import { renderMatrix, addNewRole, editRole, showDeleteConfirmModal, getBpmnTasks, forceReloadMatrix } from './matrix-manager.js';
 import { applyStyles } from './styles.js';
-import { initRasciMapping, executeSimpleRasciMapping } from '../mapping/index.js';
+import { initRasciMapping, executeSimpleRasciMapping, rasciAutoMapping } from '../mapping/index.js';
 import { rasciUIValidator } from '../ui/matrix-ui-validator.js';
 
 export function initRasciPanel(panel) {
@@ -812,7 +812,8 @@ export function initRasciPanel(panel) {
 }
 
 // Global function for toggling auto-mapping
-window.toggleAutoMapping = function() {
+// Función modular para togglear auto-mapping
+function toggleAutoMapping() {
   const switchElement = document.getElementById('auto-mapping-switch');
   const manualBtn = document.getElementById('manual-mapping-btn');
   
@@ -820,31 +821,34 @@ window.toggleAutoMapping = function() {
   
   const isEnabled = switchElement.checked;
   
-  if (window.rasciAutoMapping) {
+  if (rasciAutoMapping) {
     if (isEnabled) {
-      window.rasciAutoMapping.enable();
+      rasciAutoMapping.enable();
       if (manualBtn) manualBtn.style.display = 'none';
       
       // Show notification
       
       // Trigger initial mapping if matrix exists
-      if (window.rasciMatrixData && Object.keys(window.rasciMatrixData).length > 0) {
+      if (rasciAutoMapping.enabled) {
         setTimeout(() => {
-          window.rasciAutoMapping.triggerMapping();
+          rasciAutoMapping.triggerMapping();
         }, 100);
       }
     } else {
-      window.rasciAutoMapping.disable();
+      rasciAutoMapping.disable();
       if (manualBtn) manualBtn.style.display = 'block';
       
     }
   }
   
   return isEnabled;
-};
+}
 
-// Initialize auto-mapping state when panel loads
-window.initializeAutoMapping = function() {
+// Asignar a window para compatibilidad
+window.toggleAutoMapping = toggleAutoMapping;
+
+// Función modular para inicializar auto-mapping
+function initializeAutoMapping() {
   const switchElement = document.getElementById('auto-mapping-switch');
   const manualBtn = document.getElementById('manual-mapping-btn');
   
@@ -853,13 +857,16 @@ window.initializeAutoMapping = function() {
     switchElement.checked = true;
     
     // Initialize auto-mapping
-    if (window.rasciAutoMapping) {
-      window.rasciAutoMapping.enable();
+    if (rasciAutoMapping) {
+      rasciAutoMapping.enable();
       if (manualBtn) manualBtn.style.display = 'none';
     }
     
   }
-};
+}
+
+// Asignar a window para compatibilidad
+window.initializeAutoMapping = initializeAutoMapping;
 
 // Funciones globales de debug para RASCI
 window.forceRasciReload = function() {

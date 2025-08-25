@@ -1,6 +1,8 @@
 // RASCI Mapping Main - Clean Version
 // Main orchestration functions for RASCI to RALph mapping
 
+import { rasciManager } from '../core/matrix-manager.js';
+import { executeRasciToRalphMapping } from './auto-mapper.js';
 import { 
   getElementName, 
   saveOriginalFlow, 
@@ -506,12 +508,12 @@ export function executeSmartRasciMapping(modeler, matrix) {
 }
 
 function checkAllTasksForDirectConnectionRestoration(modeler) {
-  if (!window.rasciMatrixData) return;
+  if (!rasciManager.rasciMatrixData) return;
   
-  Object.keys(window.rasciMatrixData).forEach(taskName => {
+  Object.keys(rasciManager.rasciMatrixData).forEach(taskName => {
     const bpmnTask = findBpmnTaskByName(modeler, taskName);
     if (bpmnTask) {
-      const taskRoles = window.rasciMatrixData[taskName];
+      const taskRoles = rasciManager.rasciMatrixData[taskName];
       const responsibleRoles = Object.keys(taskRoles).filter(roleName => 
         taskRoles[roleName] === 'R'
       );
@@ -627,10 +629,10 @@ function fixMissingLabels(modeler) {
       const sourceElement = incomingConnections[0].source;
       const sourceName = getElementName(sourceElement);
       
-      if (window.rasciMatrixData) {
-        Object.keys(window.rasciMatrixData).forEach(taskName => {
+      if (rasciManager.rasciMatrixData) {
+        Object.keys(rasciManager.rasciMatrixData).forEach(taskName => {
           if (sourceName.includes(taskName) || taskName.includes(sourceName)) {
-            const taskRoles = window.rasciMatrixData[taskName];
+            const taskRoles = rasciManager.rasciMatrixData[taskName];
             Object.keys(taskRoles).forEach(roleName => {
               const responsibility = taskRoles[roleName];
               let labelName = '';
@@ -717,11 +719,11 @@ function restoreDirectConnectionIfNeeded(modeler, bpmnTask) {
 }
 
 function findResponsibleRoleForTask(taskName) {
-  if (!window.rasciMatrixData || !window.rasciMatrixData[taskName]) {
+  if (!rasciManager.rasciMatrixData || !rasciManager.rasciMatrixData[taskName]) {
     return null;
   }
   
-  const taskRoles = window.rasciMatrixData[taskName];
+  const taskRoles = rasciManager.rasciMatrixData[taskName];
   const responsibleRoles = [];
   
   Object.keys(taskRoles).forEach(roleKey => {
@@ -734,11 +736,11 @@ function findResponsibleRoleForTask(taskName) {
 }
 
 function getSupportRolesForTask(taskName) {
-  if (!window.rasciMatrixData || !window.rasciMatrixData[taskName]) {
+  if (!rasciManager.rasciMatrixData || !rasciManager.rasciMatrixData[taskName]) {
     return [];
   }
   
-  const taskRoles = window.rasciMatrixData[taskName];
+  const taskRoles = rasciManager.rasciMatrixData[taskName];
   const supportRoles = [];
   
   Object.keys(taskRoles).forEach(roleKey => {
@@ -751,9 +753,9 @@ function getSupportRolesForTask(taskName) {
 }
 
 function setupElementDeletionListener() {
-  if (window.bpmnModeler && !window.rasciEventListenerConfigured) {
-    const eventBus = window.bpmnModeler.get('eventBus');
-    const elementRegistry = window.bpmnModeler.get('elementRegistry');
+  if (rasciManager.getBpmnModeler() && !rasciManager.rasciEventListenerConfigured) {
+    const eventBus = rasciManager.getBpmnModeler().get('eventBus');
+    const elementRegistry = rasciManager.getBpmnModeler().get('elementRegistry');
     
     const pendingAndGateInfo = new Map();
     
@@ -823,7 +825,7 @@ function setupElementDeletionListener() {
         
         if (elementName && elementName.startsWith('Aprobar ') && removedElement.type === 'bpmn:UserTask') {
           setTimeout(() => {
-            executeSmartReconnection(window.bpmnModeler, removedElement.id);
+            executeSmartReconnection(rasciManager.getBpmnModeler(), removedElement.id);
           }, 100);
         }
         
@@ -831,19 +833,19 @@ function setupElementDeletionListener() {
           const andGateInfo = pendingAndGateInfo.get(removedElement.id);
           if (andGateInfo) {
             setTimeout(() => {
-              checkAndRestoreDirectConnectionsAfterAndGateDeletion(window.bpmnModeler, removedElement);
+              checkAndRestoreDirectConnectionsAfterAndGateDeletion(rasciManager.getBpmnModeler(), removedElement);
             }, 100);
             pendingAndGateInfo.delete(removedElement.id);
           } else {
             setTimeout(() => {
-              checkAndRestoreDirectConnectionsAfterAndGateDeletion(window.bpmnModeler, removedElement);
+              checkAndRestoreDirectConnectionsAfterAndGateDeletion(rasciManager.getBpmnModeler(), removedElement);
             }, 100);
           }
         }
       });
     });
     
-    window.rasciEventListenerConfigured = true;
+    rasciManager.rasciEventListenerConfigured = true;
   }
 }
 
@@ -885,12 +887,12 @@ function executeSmartReconnection(modeler, deletedElementId) {
 }
 
 function checkAndRestoreDirectConnectionsAfterAndGateDeletion(modeler, deletedAndGate) {
-  if (!window.rasciMatrixData) {
+  if (!rasciManager.rasciMatrixData) {
     return;
   }
   
-  Object.keys(window.rasciMatrixData).forEach(taskName => {
-    const taskRoles = window.rasciMatrixData[taskName];
+  Object.keys(rasciManager.rasciMatrixData).forEach(taskName => {
+    const taskRoles = rasciManager.rasciMatrixData[taskName];
     const bpmnTask = findBpmnTaskByName(modeler, taskName);
     
     if (!bpmnTask) return;
@@ -1021,23 +1023,23 @@ export function initRasciMapping() {
       button.removeAttribute('onclick');
       button.addEventListener('click', (e) => {
         e.preventDefault();
-        window.executeRasciToRalphMapping();
+        // Llamada directa usando el manager sin window
+        try {
+          if (typeof executeRasciToRalphMapping === 'function') {
+            executeRasciToRalphMapping();
+          } else {
+            executeSimpleRasciMapping(rasciManager.getBpmnModeler(), rasciManager.rasciMatrixData);
+          }
+        } catch (error) {
+          console.warn('Error executing RASCI mapping:', error);
+          executeSimpleRasciMapping(rasciManager.getBpmnModeler(), rasciManager.rasciMatrixData);
+        }
       });
     });
 
     setupElementDeletionListener();
     
-    if (!window.rasciAutoMapping) {
-      window.rasciAutoMapping = {
-        enabled: false,
-        debounceTimer: null,
-        smartTimer: null,
-        enable() { this.enabled = true; },
-        disable() { this.enabled = false; },
-        toggle() { this.enabled = !this.enabled; return this.enabled; },
-        triggerMapping() { if(this.enabled) window.onRasciMatrixUpdated(); },
-        triggerSmartMapping() { if(this.enabled) window.onRasciMatrixUpdated(); }
-      };
-    }
+    // Auto-mapping se maneja a través del sistema de módulos
+    // ya no necesitamos crear instancias locales en window
   }, 1000);
 } 

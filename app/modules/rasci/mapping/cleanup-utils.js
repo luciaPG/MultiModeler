@@ -1,6 +1,7 @@
 // RASCI Mapping Cleanup - Clean Version
 // Cleanup functionality for RASCI mapping
 
+import { rasciManager } from '../core/matrix-manager.js';
 import { getElementName, originalFlowMap } from './core-functions.js';
 
 // Función auxiliar para verificar si un elemento está conectado a alguna de las tareas esperadas
@@ -38,9 +39,9 @@ function cleanupOrphanedElements(modeler) {
   const connectionsToRemove = [];
   
   const activeRoles = new Set();
-  if (window.rasciMatrixData) {
-    Object.keys(window.rasciMatrixData).forEach(taskName => {
-      const taskRoles = window.rasciMatrixData[taskName];
+  if (rasciManager.rasciMatrixData) {
+    Object.keys(rasciManager.rasciMatrixData).forEach(taskName => {
+      const taskRoles = rasciManager.rasciMatrixData[taskName];
       Object.keys(taskRoles).forEach(roleName => {
         const responsibility = taskRoles[roleName];
         if (responsibility && responsibility !== '-' && responsibility !== '') {
@@ -62,9 +63,9 @@ function cleanupOrphanedElements(modeler) {
     if (isSpecialElement) {
       let shouldExist = false;
       
-      if (window.rasciMatrixData) {
-        Object.keys(window.rasciMatrixData).forEach(taskName => {
-          const taskRoles = window.rasciMatrixData[taskName];
+      if (rasciManager.rasciMatrixData) {
+        Object.keys(rasciManager.rasciMatrixData).forEach(taskName => {
+          const taskRoles = rasciManager.rasciMatrixData[taskName];
           Object.keys(taskRoles).forEach(roleName => {
             const responsibility = taskRoles[roleName];
             
@@ -144,12 +145,12 @@ function cleanupOrphanedElements(modeler) {
         shouldRemoveConnection = true;
       }
       
-      if (!shouldRemoveConnection && window.rasciMatrixData) {
+      if (!shouldRemoveConnection && rasciManager.rasciMatrixData) {
         const isTaskToRole = (conn.source.type.includes('Task') && 
                              (conn.target.type === 'RALph:RoleRALph' || conn.target.type === 'ralph:Role'));
         
         if (isTaskToRole && sourceName && targetName) {
-          const taskRoles = window.rasciMatrixData[sourceName];
+          const taskRoles = rasciManager.rasciMatrixData[sourceName];
           if (taskRoles) {
             const responsibility = taskRoles[targetName];
             if (!responsibility || responsibility === '-' || responsibility === '') {
@@ -412,7 +413,7 @@ function completeRasciCleanup(modeler, matrix) {
 }
 
 function cleanupUnusedRoles(modeler) {
-  if (!window.rasciMatrixData) return;
+  if (!rasciManager.rasciMatrixData) return;
   
   const modeling = modeler.get('modeling');
   const elementRegistry = modeler.get('elementRegistry');
@@ -422,8 +423,8 @@ function cleanupUnusedRoles(modeler) {
   );
   
   const rolesWithResponsibilities = new Set();
-  Object.keys(window.rasciMatrixData).forEach(taskName => {
-    const taskRoles = window.rasciMatrixData[taskName];
+  Object.keys(rasciManager.rasciMatrixData).forEach(taskName => {
+    const taskRoles = rasciManager.rasciMatrixData[taskName];
     Object.keys(taskRoles).forEach(roleName => {
       if (taskRoles[roleName] && ['R', 'A', 'S', 'C', 'I'].includes(taskRoles[roleName])) {
         rolesWithResponsibilities.add(roleName);

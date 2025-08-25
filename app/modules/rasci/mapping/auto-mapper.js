@@ -2,6 +2,7 @@
 // Automatic mapping functionality
 
 import { executeSimpleRasciMapping } from './main-mapper.js';
+import { rasciManager } from '../core/matrix-manager.js';
 
 // Función unificada que usa la misma lógica para manual y automático
 function executeAutoMappingWithCleanup(modeler, matrix) {
@@ -17,7 +18,7 @@ const rasciAutoMapping = {
   
   enable() {
     this.enabled = true;
-    if (window.bpmnModeler && window.rasciMatrixData && Object.keys(window.rasciMatrixData).length > 0) {
+    if (rasciManager.getBpmnModeler() && rasciManager.rasciMatrixData && Object.keys(rasciManager.rasciMatrixData).length > 0) {
       this.triggerMapping();
     }
   },
@@ -65,9 +66,9 @@ const rasciAutoMapping = {
     }
     
     this.smartTimer = setTimeout(() => {
-      if (window.bpmnModeler && window.rasciMatrixData) {
+      if (rasciManager.getBpmnModeler() && rasciManager.rasciMatrixData) {
         try {
-          executeSimpleRasciMapping(window.bpmnModeler, window.rasciMatrixData);
+          executeSimpleRasciMapping(rasciManager.getBpmnModeler(), rasciManager.rasciMatrixData);
         } catch (error) {
           // Handle error silently
         }
@@ -82,17 +83,17 @@ function onRasciMatrixUpdated() {
     return;
   }
   
-  if (!window.bpmnModeler) {
+  if (!rasciManager.getBpmnModeler()) {
     return;
   }
   
-  if (!window.rasciMatrixData || Object.keys(window.rasciMatrixData).length === 0) {
+  if (!rasciManager.rasciMatrixData || Object.keys(rasciManager.rasciMatrixData).length === 0) {
     return;
   }
   
   let hasActiveResponsibilities = false;
-  Object.keys(window.rasciMatrixData).forEach(taskName => {
-    const taskRoles = window.rasciMatrixData[taskName];
+  Object.keys(rasciManager.rasciMatrixData).forEach(taskName => {
+    const taskRoles = rasciManager.rasciMatrixData[taskName];
     Object.keys(taskRoles).forEach(roleName => {
       const responsibility = taskRoles[roleName];
       if (responsibility && responsibility !== '-' && responsibility !== '') {
@@ -104,7 +105,7 @@ function onRasciMatrixUpdated() {
   if (!hasActiveResponsibilities) {
     // Si no hay responsabilidades activas, solo hacer limpieza
     try {
-      executeSimpleRasciMapping(window.bpmnModeler, window.rasciMatrixData);
+      executeSimpleRasciMapping(rasciManager.getBpmnModeler(), rasciManager.rasciMatrixData);
     } catch (error) {
       // Handle error silently
     }
@@ -116,7 +117,7 @@ function onRasciMatrixUpdated() {
       clearTimeout(rasciAutoMapping.debounceTimer);
     }
     
-    executeAutoMappingWithCleanup(window.bpmnModeler, window.rasciMatrixData);
+    executeAutoMappingWithCleanup(rasciManager.getBpmnModeler(), rasciManager.rasciMatrixData);
     
   } catch (error) {
     setTimeout(() => {
@@ -131,16 +132,16 @@ function onRasciMatrixUpdated() {
 
 // Define as local function first
 function executeRasciToRalphMapping() {
-  if (!window.bpmnModeler) {
+  if (!rasciManager.getBpmnModeler()) {
     return;
   }
 
-  if (!window.rasciMatrixData || Object.keys(window.rasciMatrixData).length === 0) {
+  if (!rasciManager.rasciMatrixData || Object.keys(rasciManager.rasciMatrixData).length === 0) {
     return;
   }
   
   try {
-    executeSimpleRasciMapping(window.bpmnModeler, window.rasciMatrixData);
+    executeSimpleRasciMapping(rasciManager.getBpmnModeler(), rasciManager.rasciMatrixData);
   } catch (error) {
     // Handle error silently
   }
@@ -148,16 +149,16 @@ function executeRasciToRalphMapping() {
 
 // Define as local function first
 function syncRasciConnections() {
-  if (!window.bpmnModeler) {
+  if (!rasciManager.getBpmnModeler()) {
     return;
   }
   
-  if (!window.rasciMatrixData) {
+  if (!rasciManager.rasciMatrixData) {
     return;
   }
   
   try {
-    executeSimpleRasciMapping(window.bpmnModeler, window.rasciMatrixData);
+    executeSimpleRasciMapping(rasciManager.getBpmnModeler(), rasciManager.rasciMatrixData);
   } catch (error) {
     // Handle error silently
   }
@@ -172,10 +173,5 @@ export {
   syncRasciConnections
 };
 
-// Assign to window for backward compatibility
-if (typeof window !== 'undefined') {
-  window.rasciAutoMapping = rasciAutoMapping;
-  window.onRasciMatrixUpdated = onRasciMatrixUpdated;
-  window.executeRasciToRalphMapping = executeRasciToRalphMapping;
-  window.syncRasciConnections = syncRasciConnections;
-} 
+// Para compatibilidad con el sistema, usar el rasciManager como puente
+// En lugar de usar window, integramos directamente con el manager 

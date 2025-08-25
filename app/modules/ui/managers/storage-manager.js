@@ -9,7 +9,7 @@ let renderMatrix = null;
 async function loadRasciFunctions() {
   try {
     if (!forceReloadMatrix || !renderMatrix) {
-      const rasciModule = await import('./panels/rasci/core/matrix-manager.js');
+      const rasciModule = await import('../../rasci/core/matrix-manager.js');
       forceReloadMatrix = rasciModule.forceReloadMatrix;
       renderMatrix = rasciModule.renderMatrix;
       console.log('✅ Funciones RASCI cargadas dinámicamente');
@@ -579,7 +579,7 @@ class StorageManager {
 }
 
 // Exportar la clase
-window.StorageManager = StorageManager;
+export { StorageManager };
 
 // Crear instancia global
 window.storageManager = new StorageManager(); 

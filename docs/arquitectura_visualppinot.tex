@@ -1,0 +1,105 @@
+%========================
+% 6. ARQUITECTURA DEL SISTEMA
+%========================
+\chapter{Arquitectura del Sistema}
+\label{sec:arquitectura}
+
+Este capítulo describe la arquitectura de \textbf{VisualPPINOT}, concebida como un \textbf{monolito modular}. El objetivo principal es ofrecer una herramienta unificada y fácil de usar que integre la validación y visualización de indicadores \textbf{PPI} (PPINOT) y matrices \textbf{RASCI}, evitando el uso de múltiples herramientas aisladas.
+
+\section{Objetivos de diseño y alcance}
+\label{subsec:objetivos}
+\begin{itemize}
+  \item \textbf{Unificación}: una sola herramienta que coordine PPIs (PPINOT) y RASCI.
+  \item \textbf{Modularidad}: responsabilidades claras en cada módulo (PPINOT/RASCI/paneles).
+  \item \textbf{Simplicidad operativa}: construcción y despliegue de un único artefacto web (SPA).
+  \item \textbf{Mantenibilidad}: contratos estables entre módulos y paneles.
+  \item \textbf{Usabilidad}: paneles coherentes, configuración por defecto sensata y curva de aprendizaje baja.
+\end{itemize}
+
+Este capítulo se centra en la estructura de la solución; la implementación detallada se aborda en el Cap.~\ref{sec:implementacion}.
+
+\section{Estilo arquitectónico adoptado}
+\label{subsec:monolito}
+\textbf{VisualPPINOT} se distribuye como un \emph{único artefacto} (SPA) organizado en módulos internos. La \textbf{composición es estática}: los paneles se \emph{cargan manualmente} en el arranque, sin descubrimiento dinámico de plugins en tiempo de ejecución.  
+
+\section{Componentes principales}
+\label{subsec:componentes}
+
+\paragraph{Núcleo de aplicación (App Shell)}
+\begin{description}
+  \item[App Shell (\texttt{index.html}, \texttt{app.js})] Inicializa la sesión, orquesta la UI y gestiona el ciclo de vida.
+  \item[Panel Manager] Gestiona regiones de interfaz (derecha, inferior, lateral) y controla el acoplamiento de paneles.
+  \item[Storage Manager] Fachada de persistencia (LocalStorage, IndexedDB, File System Access API).
+\end{description}
+
+\paragraph{Modeladores}
+\begin{itemize}
+  \item \textbf{PPINOT (principal):} añade metamodelo y validación de PPIs, vinculándolos a elementos BPMN.
+  \item \textbf{RASCI (auxiliar):} asignación \textit{Responsible, Accountable, Support, Consulted, Informed}, sincronizado con PPIs.
+\end{itemize}
+
+\paragraph{Paneles}
+\begin{itemize}
+  \item \textbf{PPI Panel:} definición y edición de indicadores (medidas base/derivadas, ventanas temporales, umbrales).
+  \item \textbf{RASCI Panel:} gestión de responsabilidades y roles.
+  \item \textbf{Properties/Validation:} paneles transversales montados directamente por el núcleo.
+\end{itemize}
+
+\section{Organización del repositorio}
+\label{subsec:repo}
+\begin{verbatim}
+VisualPPINOT/
+├─ app/             # App Shell, PanelManager, Storage
+├─ modules/         # Módulos específicos (PPINOT, RASCI)
+├─ panels/          # Paneles de PPI y RASCI
+├─ public/          # index.html, css, imágenes, bundles
+├─ docs/            # diagramas y documentación
+├─ decode/          # scripts Python para decodificación
+└─ infra/           # utilidades y adaptadores
+\end{verbatim}
+
+\section{Decisiones tecnológicas}
+\label{subsec:tecnologia}
+\begin{itemize}
+  \item \textbf{JavaScript/HTML/CSS} con empaquetado (\textbf{Webpack}) y \emph{code splitting} estático.
+  \item \textbf{Persistencia web}: LocalStorage, IndexedDB y File System Access API tras el \textit{Storage Manager}.
+\end{itemize}
+
+\section{Extensibilidad y contratos}
+\label{subsec:extensibilidad}
+En lugar de carga dinámica, el sistema utiliza un \textbf{registro estático} de paneles con \textbf{contratos claros}:
+
+\begin{verbatim}
+// panel-registry.js (resumen)
+export const PANEL_REGISTRY = [
+  { id: 'panel-ppi',   region: 'right',  factory: createPpiPanel },
+  { id: 'panel-rasci', region: 'bottom', factory: createRasciPanel }
+];
+
+// app.js (montaje de paneles)
+import { PANEL_REGISTRY } from './panel-registry';
+PANEL_REGISTRY.forEach(({ id, region, factory }) => {
+  const panel = factory();
+  panelManager.attach(id, panel.mount(), { region });
+});
+\end{verbatim}
+
+Todos los paneles implementan la misma \emph{API} sencilla:  
+\texttt{mount(ctx):HTMLElement}, \texttt{update(evt)}, \texttt{unmount()}.
+
+\section{Calidad, riesgos y mitigaciones}
+\label{subsec:calidad}
+
+\textbf{Ventajas del monolito modular:} simplicidad en build/despliegue, menor sobrecarga, interfaz coherente y menor superficie de fallos.
+
+\medskip
+\noindent\textbf{Riesgos y mitigación}:
+\begin{itemize}
+  \item \emph{Extensibilidad limitada en caliente} $\rightarrow$ uso de contratos estables y registro estático versionado.
+  \item \emph{Acoplamiento accidental} $\rightarrow$ comunicación mediante Panel Manager y \emph{facades} en lugar de llamadas directas.
+  \item \emph{Inconsistencias entre RASCI y PPIs} $\rightarrow$ validadores cruzados y reglas de integridad en los paneles de inspección.
+\end{itemize}
+
+\section{Resumen}
+\label{subsec:resumen}
+\textbf{VisualPPINOT} adopta un \textbf{monolito modular} en el que los paneles de \textbf{RASCI} y \textbf{PPINOT} son componentes clave. Este enfoque ofrece simplicidad, coherencia de interfaz y una base sólida para evolucionar en el futuro.

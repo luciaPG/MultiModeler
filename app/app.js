@@ -6,9 +6,9 @@
 
 import $ from 'jquery';
 import { initializeApplication, MultiNotationModeler } from './modules/index.js';
-import { PanelLoader } from './js/panel-loader.js';
-import modelerManager from './js/modeler-manager.js';
-import './js/panel-manager.js';
+import { PanelLoader } from './modules/ui/components/panel-loader.js';
+import modelerManager from './modules/ui/managers/modeler-manager.js';
+import './modules/ui/managers/panel-manager.js';
 
 // Import required JSON files for moddle extensions
 import PPINOTModdle from './modules/multinotationModeler/notations/ppinot/PPINOTModdle.json';

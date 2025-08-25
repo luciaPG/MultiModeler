@@ -97,7 +97,7 @@ class PPIManager {
   
     
     const script = document.createElement('script');
-    script.src = `js/panels/ppi/ppi-sync-manager.js?v=${Date.now()}`;
+    script.src = `modules/ppis/ppi-sync-manager.js?v=${Date.now()}`;
     script.onload = () => {
      
       setTimeout(() => this.setupSyncManager(), 100);
@@ -125,12 +125,12 @@ class PPIManager {
 
   loadSyncUIScript() {
     // Prevent multiple loading attempts
-    if (document.querySelector('script[src="js/panels/ppi/ppi-sync-ui.js"]')) {
+    if (document.querySelector('script[src="modules/ppis/ppi-sync-ui.js"]')) {
       return;
     }
     
     const script = document.createElement('script');
-    script.src = `js/panels/ppi/ppi-sync-ui.js?v=${Date.now()}`;
+    script.src = `modules/ppis/ppi-sync-ui.js?v=${Date.now()}`;
     script.onload = () => {
       setTimeout(() => this.setupSyncUI(), 100);
     };

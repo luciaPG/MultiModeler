@@ -76,8 +76,8 @@ module.exports = {
                     to: 'RALphModdle.json'
                 },
                 {
-                    from: 'app/js',
-                    to: 'js'
+                    from: 'app/modules',
+                    to: 'modules'
                 },
                 {
                     from: 'app/panels',

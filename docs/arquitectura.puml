@@ -1,0 +1,62 @@
+
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam component {
+  BackgroundColor<<core>> #E3F2FD
+  BackgroundColor<<model>> #FFF3E0
+  BackgroundColor<<panel>> #E8F5E9
+  BackgroundColor<<registry>> #F3E5F5
+  BorderColor black
+}
+
+package "Núcleo" {
+  [App Shell] <<core>>
+  [Panel Manager] <<core>>
+  [Storage Manager] <<core>>
+}
+
+[MultiNotation Modeler] <<core>>
+
+package "Modeladores" {
+  [BPMN Modeler] <<model>>
+  [PPINOT] <<model>>
+  [RALPH] <<model>>
+}
+
+package "Paneles" {
+  [Panel PPI] <<panel>>
+  [Panel RASCI] <<panel>>
+  [Panel RALPH] <<panel>>
+}
+
+[PANEL_REGISTRY] <<registry>>
+
+' Relaciones principales
+[App Shell] --> [MultiNotation Modeler] : Inicializa estructura
+[Panel Manager] --> [MultiNotation Modeler] : Provee gestión de paneles
+[Storage Manager] --> [MultiNotation Modeler] : Provee persistencia
+
+[MultiNotation Modeler] --> [BPMN Modeler] : Activa notaciones
+[MultiNotation Modeler] --> [PPINOT]
+[MultiNotation Modeler] --> [RALPH]
+
+[Panel Manager] --> [Panel PPI] : Monta paneles
+[Panel Manager] --> [Panel RASCI]
+[Panel Manager] --> [Panel RALPH]
+[PANEL_REGISTRY] --> [Panel Manager] : Define paneles disponibles
+
+note right of [MultiNotation Modeler]
+  Coordinador global de la aplicación
+end note
+
+note right of [Panel Manager]
+  Gestiona el montaje y actualización de paneles
+end note
+
+note bottom of [PANEL_REGISTRY]
+  Registro estático de paneles
+end note
+@enduml

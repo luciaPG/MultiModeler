@@ -1,7 +1,7 @@
 // === panel-manager.js ===
 // Gestor de paneles con selector de paneles y distribución
 import modelerManager from './modeler-manager.js';
-import { PanelLoader } from './panel-loader.js';
+import { PanelLoader } from '../components/panel-loader.js';
 
 class PanelManager {
   constructor() {

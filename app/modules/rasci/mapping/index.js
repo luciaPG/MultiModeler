@@ -1,6 +1,7 @@
 // RASCI Mapping Index - Main exports for RASCI to RALph mapping system
 // Clean, organized RASCI to RALph mapping system
 
+import { rasciManager } from '../core/matrix-manager.js';
 import { 
   getElementName, 
   saveOriginalFlow, 
@@ -37,10 +38,10 @@ import {
 import { 
   executeAutoMappingWithCleanup,
   rasciAutoMapping,
-  onRasciMatrixUpdated,
-  executeRasciToRalphMapping,
-  syncRasciConnections
+  onRasciMatrixUpdated
 } from './auto-mapper.js';
+
+import { mappingBridge } from './integration-bridge.js';
 
 // Export all functions for external use
 export {
@@ -77,23 +78,17 @@ export {
   // Auto mapping functions
   rasciAutoMapping,
   onRasciMatrixUpdated,
-  executeRasciToRalphMapping,
-  syncRasciConnections
+  
+  // Integration bridge
+  mappingBridge
 };
 
 // Initialize the system when this module is loaded
-if (typeof window !== 'undefined') {
-  // Set up global functions for backward compatibility
-  window.executeSimpleRasciMapping = executeSimpleRasciMapping;
-  window.executeSmartRasciMapping = executeSmartRasciMapping;
-  window.executeAutoMappingWithCleanup = executeAutoMappingWithCleanup;
-  window.initRasciMapping = initRasciMapping;
-  window.rasciAutoMapping = rasciAutoMapping;
-  window.onRasciMatrixUpdated = onRasciMatrixUpdated;
-  window.executeRasciToRalphMapping = executeRasciToRalphMapping;
-  window.syncRasciConnections = syncRasciConnections;
-  
-  // Initialize when DOM is ready
+// El sistema modular maneja las funciones sin necesidad de window global
+// Las funciones están disponibles a través de exports
+
+// Initialize when DOM is ready
+if (typeof document !== 'undefined') {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       initRasciMapping();

@@ -1,7 +1,7 @@
 // Panel Registry - Static configuration for MultiNotation Modeler panels
 // This registry provides a central place to define all available panels and their factories
 
-import { initRasciPanel } from './panels/rasci/core/main.js';
+import { initRasciPanel } from '../../rasci/core/main.js';
 
 /**
  * Create a PPI panel
@@ -33,7 +33,7 @@ function createPpiPanel() {
           } else {
             // Load PPI components if not already loaded
             const script = document.createElement('script');
-            script.src = './js/panels/ppi/index.js';
+            script.src = './modules/ppis/index.js';
             script.onload = () => {
               if (window.loadPPIComponents) {
                 window.loadPPIComponents();

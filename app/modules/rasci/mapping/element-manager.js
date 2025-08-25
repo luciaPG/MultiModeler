@@ -1,6 +1,7 @@
 // RASCI Mapping Elements - Clean Version
 // Special element creation and flow restoration functionality
 
+import { rasciManager } from '../core/matrix-manager.js';
 import { getElementName, originalFlowMap, saveOriginalFlow } from './core-functions.js';
 
 function findNextTaskInOriginalFlow(modeler, currentTask) {
@@ -419,7 +420,7 @@ function handleApprovalTaskReconnection(modeler, approvalTask, approvalTaskName)
     }
   }
   
-  if (originalTaskName && window.rasciMatrixData && window.rasciMatrixData[originalTaskName]) {
+  if (originalTaskName && rasciManager.rasciMatrixData && rasciManager.rasciMatrixData[originalTaskName]) {
     const originalNextElements = originalFlowMap.get(originalTaskName);
     if (originalNextElements && originalNextElements.length > 0) {
       attemptReconnection(modeler, approvalTask, originalNextElements);

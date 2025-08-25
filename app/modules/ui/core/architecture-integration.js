@@ -2,8 +2,8 @@
 // This file shows how to gradually integrate the new architecture components
 
 // 1. Import the new architecture components
-import { getEventBus } from './js/event-bus.js';
-import { MultiNotationModelerCore } from './js/MultiNotationModelerCore.js';
+import { getEventBus } from './event-bus.js';
+import { MultiNotationModelerCore } from '../../multinotationModeler/core/MultiNotationModelerCore.js';
 
 // 2. After your existing app.js initialization code, add:
 function initializeNewArchitecture() {

@@ -1,10 +1,10 @@
 // MultiNotationModelerCore - Central coordinator for the monolithic modular architecture
 // This module orchestrates the interaction between all notations and panels
 
-import { getEventBus } from '../../../js/event-bus.js';
-import { bootUI } from '../../../js/boot.js';
-import { StorageManager } from '../../../infra/storage-manager.js';
-import { initBpmnModeler } from '../../../js/boot.js';
+import { getEventBus } from '../../ui/core/event-bus.js';
+import { bootUI } from '../../ui/core/boot.js';
+import { StorageManager } from '../../ui/managers/storage-manager.js';
+import { initBpmnModeler } from '../../ui/core/boot.js';
 
 /**
  * MultiNotation Modeler Core
