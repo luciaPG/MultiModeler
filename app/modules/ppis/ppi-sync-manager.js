@@ -1,9 +1,16 @@
-if (typeof window.PPISyncManager === 'undefined') {
+// Importar el sistema de comunicación centralizado
+import ppiAdapter from './PPIAdapter.js';
+import { getEventBus } from '../ui/core/event-bus.js';
+
 class PPISyncManager {
   constructor(ppiManager) {
     this.ppiManager = ppiManager;
     this.core = ppiManager.core;
     this.ui = ppiManager.ui;
+    
+    // Inicializar sistema de comunicación
+    this.eventBus = getEventBus();
+    this.adapter = ppiAdapter;
     
     this.syncState = {
       isSyncing: false,
@@ -34,11 +41,14 @@ class PPISyncManager {
   }
 
   setupEventListeners() {
-    if (!window.modeler) {
+    // Obtener modelador del nuevo sistema o fallback a window
+    const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+    
+    if (!modeler) {
       return;
     }
 
-    const eventBus = window.modeler.get('eventBus');
+    const eventBus = modeler.get('eventBus');
     
     // Eventos de elementos PPINOT
     eventBus.on('element.changed', (event) => {
@@ -290,20 +300,20 @@ class PPISyncManager {
     if (ppiChildren.length > 0) {
       
       // Notificar al UI que hay un elemento PPI activo
-      if (window.ppiManager && window.ppiManager.ui && window.ppiManager.ui.setActivePPI) {
+      if (this.ppiManager && this.ppiManager.ui && this.ppiManager.ui.setActivePPI) {
         // Usar el primer elemento hijo seleccionado
-        window.ppiManager.ui.setActivePPI(ppiChildren[0].id);
+        this.ppiManager.ui.setActivePPI(ppiChildren[0].id);
       }
     } else if (ppiElements.length > 0) {
       
       // Notificar al UI que hay un elemento PPI principal activo
-      if (window.ppiManager && window.ppiManager.ui && window.ppiManager.ui.setActivePPI) {
-        window.ppiManager.ui.setActivePPI(ppiElements[0].id);
+      if (this.ppiManager && this.ppiManager.ui && this.ppiManager.ui.setActivePPI) {
+        this.ppiManager.ui.setActivePPI(ppiElements[0].id);
       }
     } else {
       // Si no hay elementos PPI seleccionados, limpiar estado activo
-      if (window.ppiManager && window.ppiManager.ui && window.ppiManager.ui.clearAllActivePPIs) {
-        window.ppiManager.ui.clearAllActivePPIs();
+      if (this.ppiManager && this.ppiManager.ui && this.ppiManager.ui.clearAllActivePPIs) {
+        this.ppiManager.ui.clearAllActivePPIs();
       }
     }
   }
@@ -559,9 +569,12 @@ class PPISyncManager {
   // === MÉTODOS AUXILIARES ===
 
   getElementFromRegistry(elementId) {
-    if (!window.modeler) return null;
+    // Obtener modelador del nuevo sistema o fallback a window
+    const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
     
-    const elementRegistry = window.modeler.get('elementRegistry');
+    if (!modeler) return null;
+    
+    const elementRegistry = modeler.get('elementRegistry');
     return elementRegistry.get(elementId);
   }
 
@@ -767,10 +780,12 @@ class PPISyncManager {
            // NUEVO: Verificar todos los elementos hijo para cambios de padre
     checkAllParentChanges() {
       try {
-        if (!window.modeler) return;
+        // Obtener modelador del nuevo sistema o fallback a window
+        const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+        
+        if (!modeler) return;
 
-
-        const elementRegistry = window.modeler.get('elementRegistry');
+        const elementRegistry = modeler.get('elementRegistry');
         const allElements = elementRegistry.getAll();
         
         // Buscar todos los elementos que pueden ser hijos de PPI
@@ -795,9 +810,12 @@ class PPISyncManager {
     }
 
   updateElementCache() {
-    if (!window.modeler) return;
+    // Obtener modelador del nuevo sistema o fallback a window
+    const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
     
-    const elementRegistry = window.modeler.get('elementRegistry');
+    if (!modeler) return;
+    
+    const elementRegistry = modeler.get('elementRegistry');
     const allElements = elementRegistry.getAll();
     
     // NUEVO: Preservar información histórica del cache
@@ -855,9 +873,12 @@ class PPISyncManager {
   }
 
   getChildElements(parentId) {
-    if (!window.modeler) return [];
+    // Obtener modelador del nuevo sistema o fallback a window
+    const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
     
-    const elementRegistry = window.modeler.get('elementRegistry');
+    if (!modeler) return [];
+    
+    const elementRegistry = modeler.get('elementRegistry');
     const allElements = elementRegistry.getAll();
     
     return allElements.filter(element => 
@@ -922,9 +943,12 @@ class PPISyncManager {
 
   async performFullSync() {
     
-    if (!window.modeler) return;
+    // Obtener modelador del nuevo sistema o fallback a window
+    const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
     
-    const elementRegistry = window.modeler.get('elementRegistry');
+    if (!modeler) return;
+    
+    const elementRegistry = modeler.get('elementRegistry');
     const allElements = elementRegistry.getAll();
     
     // Sincronizar PPIs
@@ -975,7 +999,10 @@ class PPISyncManager {
      // NUEVO: Sincronización inteligente que verifica cambios de padre
    async performSmartSync() {
      
-     if (!window.modeler) return;
+     // Obtener modelador del nuevo sistema o fallback a window
+     const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+     
+     if (!modeler) return;
      
      // Primero verificar cambios de padre (más rápido)
      this.checkAllParentChanges();
@@ -988,7 +1015,10 @@ class PPISyncManager {
    // NUEVO: Sincronización rápida solo para cambios de padre
    performQuickParentSync() {
      
-     if (!window.modeler) return;
+     // Obtener modelador del nuevo sistema o fallback a window
+     const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+     
+     if (!modeler) return;
      
      // Solo verificar cambios de padre y actualizar UI
      this.checkAllParentChanges();
@@ -999,7 +1029,10 @@ class PPISyncManager {
    // NUEVO: Método más robusto para detectar elementos que dejaron de ser hijos
    checkOrphanedElements() {
      
-     if (!window.modeler) {
+     // Obtener modelador del nuevo sistema o fallback a window
+     const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+     
+     if (!modeler) {
        return;
      }
      
@@ -1095,6 +1128,22 @@ class PPISyncManager {
   }
 }
 
-// Exportar para uso global
-window.PPISyncManager = PPISyncManager;
-} 
+// Exportar para uso global (temporal para compatibilidad)
+if (typeof window !== 'undefined') {
+  window.PPISyncManager = PPISyncManager;
+}
+
+// Registrar en ServiceRegistry si está disponible
+setTimeout(() => {
+  try {
+    // Intentar acceder al ServiceRegistry global
+    if (typeof window !== 'undefined' && window.serviceRegistry) {
+      window.serviceRegistry.register('PPISyncManager', PPISyncManager, {
+        description: 'Gestor de sincronización de PPIs'
+      });
+      console.log('✅ PPISyncManager registrado en ServiceRegistry');
+    }
+  } catch (error) {
+    console.log('ℹ️ ServiceRegistry no disponible para PPISyncManager');
+  }
+}, 0);

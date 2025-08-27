@@ -9,6 +9,7 @@ import { initializeApplication, MultiNotationModeler } from './modules/index.js'
 import { PanelLoader } from './modules/ui/components/panel-loader.js';
 import modelerManager from './modules/ui/managers/modeler-manager.js';
 import './modules/ui/managers/panel-manager.js';
+import { initializeCommunicationSystem } from './modules/ui/core/CommunicationSystem.js';
 
 // Import required JSON files for moddle extensions
 import PPINOTModdle from './modules/multinotationModeler/notations/ppinot/PPINOTModdle.json';
@@ -252,19 +253,23 @@ function exposeAPIs() {
     window.MultiNotationModeler = MultiNotationModeler;
   }
   
-  if (!window.PPINOTModdle) {
-    window.PPINOTModdle = PPINOTModdle;
-  }
-  
-  if (!window.RALphModdle) {
-    window.RALphModdle = RALphModdle;
+  if (typeof window !== 'undefined') {
+    if (!window.PPINOTModdle) {
+      window.PPINOTModdle = PPINOTModdle;
+    }
+    
+    if (!window.RALphModdle) {
+      window.RALphModdle = RALphModdle;
+    }
   }
   
   // Make modeler available globally
-  window.modeler = modeler;
+  if (typeof window !== 'undefined') {
+    window.modeler = modeler;
+  }
   
   // Exponer APIs de RASCI desde el módulo
-  if (app.rasci) {
+  if (app.rasci && typeof window !== 'undefined') {
     window.forceReloadMatrix = app.rasci.forceReloadMatrix;
     window.renderMatrix = app.rasci.renderMatrix;
     window.detectRalphRolesFromCanvas = app.rasci.detectRalphRolesFromCanvas;
@@ -272,7 +277,7 @@ function exposeAPIs() {
   }
   
   // Exponer APIs de PPI desde el módulo
-  if (app.ppis) {
+  if (app.ppis && typeof window !== 'undefined') {
     window.loadPPIComponents = app.ppis.loadPPIComponents;
   }
 }
@@ -327,7 +332,9 @@ async function initModeler() {
     // Forzar actualización de la vista y ajustar zoom
     setTimeout(() => {
       console.log('[DEBUG] Ejecutando actualizaciones post-inicialización...');
-      $(window).trigger('resize');
+      if (typeof window !== 'undefined' && typeof $ !== 'undefined') {
+        $(window).trigger('resize');
+      }
       
       try {
         // Ajustar zoom para ver todo el diagrama
@@ -354,7 +361,7 @@ async function openFile() {
     let file, contents;
     
     // Comprobar si el navegador soporta la File System Access API
-    if ('showOpenFilePicker' in window) {
+    if (typeof window !== 'undefined' && 'showOpenFilePicker' in window) {
       // Usar la moderna File System Access API
       const fileHandle = await window.showOpenFilePicker({
         types: [
@@ -380,38 +387,40 @@ async function openFile() {
       currentFileHandle = fileHandle[0];
     } else {
       // Usar el método tradicional para navegadores que no soportan File System Access API
-      // Crear un input file oculto
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.bpmn,.xml';
-      
-      // Promesa para manejar la selección de archivo
-      const fileSelected = new Promise((resolve, reject) => {
-        input.onchange = (event) => {
-          if (event.target.files && event.target.files[0]) {
-            resolve(event.target.files[0]);
-          } else {
-            reject(new Error('No se seleccionó ningún archivo'));
-          }
-        };
+      if (typeof document !== 'undefined') {
+        // Crear un input file oculto
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.bpmn,.xml';
         
-        // Si el usuario cancela el diálogo
-        input.oncancel = () => reject(new Error('Operación cancelada'));
-      });
-      
-      // Disparar el diálogo de selección de archivo
-      input.click();
-      
-      // Esperar a que el usuario seleccione un archivo
-      file = await fileSelected;
-      
-      // Leer el contenido del archivo
-      contents = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => reject(new Error('Error al leer el archivo'));
-        reader.readAsText(file);
-      });
+        // Promesa para manejar la selección de archivo
+        const fileSelected = new Promise((resolve, reject) => {
+          input.onchange = (event) => {
+            if (event.target.files && event.target.files[0]) {
+              resolve(event.target.files[0]);
+            } else {
+              reject(new Error('No se seleccionó ningún archivo'));
+            }
+          };
+          
+          // Si el usuario cancela el diálogo
+          input.oncancel = () => reject(new Error('Operación cancelada'));
+        });
+        
+        // Disparar el diálogo de selección de archivo
+        input.click();
+        
+        // Esperar a que el usuario seleccione un archivo
+        file = await fileSelected;
+        
+        // Leer el contenido del archivo
+        contents = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error('Error al leer el archivo'));
+          reader.readAsText(file);
+        });
+      }
     }
     
     // Actualizar el modelo con el contenido del archivo
@@ -439,15 +448,22 @@ async function openFile() {
 // Función para guardar un archivo
 async function saveFile() {
   // Implementación de guardar archivo...
+  if (typeof console !== 'undefined') {
+    console.log('Función saveFile no implementada');
+  }
 }
 
 // Función para mostrar mensajes de error
 function showErrorMessage(message) {
   // Implementación de mostrar mensaje de error...
-  console.error(message);
+  if (typeof console !== 'undefined') {
+    console.error(message);
+  }
 }
 
 // Inicializar la aplicación cuando el DOM esté listo
-$(document).ready(function() {
-  initializeApp();
-});
+if (typeof $ !== 'undefined' && typeof document !== 'undefined') {
+  $(document).ready(function() {
+    initializeApp();
+  });
+}

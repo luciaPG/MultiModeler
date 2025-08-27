@@ -1,8 +1,6 @@
 // === PPI Sync UI Manager ===
 // Componente para manejar la UI de sincronización en tiempo real
 
-// Prevent duplicate class declaration
-if (typeof window.PPISyncUI === 'undefined') {
 class PPISyncUI {
   constructor(ppiManager) {
     this.ppiManager = ppiManager;
@@ -162,6 +160,22 @@ class PPISyncUI {
   }
 }
 
-// Exportar para uso global
-window.PPISyncUI = PPISyncUI;
-} 
+// Exportar para uso global (temporal para compatibilidad)
+if (typeof window !== 'undefined') {
+  window.PPISyncUI = PPISyncUI;
+}
+
+// Registrar en ServiceRegistry si está disponible
+setTimeout(() => {
+  try {
+    // Intentar acceder al ServiceRegistry global
+    if (typeof window !== 'undefined' && window.serviceRegistry) {
+      window.serviceRegistry.register('PPISyncUI', PPISyncUI, {
+        description: 'UI de sincronización de PPIs'
+      });
+      console.log('✅ PPISyncUI registrado en ServiceRegistry');
+    }
+  } catch (error) {
+    console.log('ℹ️ ServiceRegistry no disponible para PPISyncUI');
+  }
+}, 0);

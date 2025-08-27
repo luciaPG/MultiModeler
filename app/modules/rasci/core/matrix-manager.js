@@ -1,6 +1,11 @@
 // RASCI Matrix Manager
 import { rasciUIValidator } from '../ui/matrix-ui-validator.js';
 
+// Importar el sistema de comunicación centralizado
+import rasciAdapter from '../RASCIAdapter.js';
+import { getEventBus } from '../../ui/core/event-bus.js';
+import serviceRegistry from '../../ui/core/ServiceRegistry.js';
+
 // Importar función de auto-mapping para evitar referencias a window
 let onRasciMatrixUpdatedFunction = null;
 
@@ -17,11 +22,18 @@ class RasciMatrixManager {
     this.rasciUIValidator = null;
     this.isImportingProject = false;
     this.storageCleared = false;
+    this.eventBus = getEventBus();
+    this.adapter = rasciAdapter;
   }
 
   // Métodos para inyección de dependencias
   setBpmnModeler(modeler) {
     this.bpmnModeler = modeler;
+    
+    // Registrar el modelador en el adaptador
+    if (this.adapter && this.adapter.bridge) {
+      this.adapter.bridge.registerModeler('bpmn', modeler);
+    }
   }
 
   setRasciUIValidator(validator) {
@@ -46,7 +58,8 @@ class RasciMatrixManager {
   }
 
   getBpmnModeler() {
-    return this.bpmnModeler;
+    // Usar el adaptador para obtener el modelador
+    return this.adapter ? this.adapter.getBpmnModeler() : this.bpmnModeler;
   }
 
   // Métodos para callbacks
@@ -1156,10 +1169,211 @@ export function deleteRole(roleIndex, panel) {
   }, 1000);
 }
 
+// Configurar funciones a través del ServiceRegistry en lugar de window
+function setupServiceRegistry() {
+  // Registrar las funciones principales
+  serviceRegistry.registerFunction('updateMatrixFromDiagram', updateMatrixFromDiagram, {
+    alias: 'updateMatrixFromDiagram',
+    description: 'Actualiza la matriz RASCI desde el diagrama BPMN'
+  });
+  
+  serviceRegistry.registerFunction('detectRalphRolesFromCanvas', detectRalphRolesFromCanvas, {
+    alias: 'detectRalphRolesFromCanvas', 
+    description: 'Detecta roles RALPH desde el canvas BPMN'
+  });
+  
+  serviceRegistry.registerFunction('forceDetectRalphRoles', forceDetectRalphRoles, {
+    alias: 'forceDetectRalphRoles',
+    description: 'Fuerza la detección de roles RALPH'
+  });
+
+  // Registrar función de recarga de matriz
+  serviceRegistry.registerFunction('reloadRasciMatrix', function() {
+    console.log('🔄 Recargando matriz RASCI...');
+    try {
+      if (rasciManager && rasciManager.rasciMatrixData) {
+        rasciManager.renderMatrix();
+        console.log('✅ Matriz RASCI recargada exitosamente');
+      } else {
+        console.warn('⚠️ No hay datos de matriz RASCI para recargar');
+      }
+    } catch (error) {
+      console.error('❌ Error al recargar matriz RASCI:', error);
+    }
+  }, {
+    alias: 'reloadRasciMatrix',
+    description: 'Recarga la matriz RASCI'
+  });
+
+  // Registrar función de recarga manual
+  serviceRegistry.registerFunction('manualReloadRasciMatrix', function() {
+    console.log('🔄 Recarga manual de matriz RASCI...');
+    try {
+      if (rasciManager) {
+        rasciManager.forceReloadMatrix();
+        console.log('✅ Recarga manual completada');
+      } else {
+        console.warn('⚠️ RASCI Manager no disponible');
+      }
+    } catch (error) {
+      console.error('❌ Error en recarga manual:', error);
+    }
+  }, {
+    alias: 'manualReloadRasciMatrix',
+    description: 'Recarga manual de la matriz RASCI'
+  });
+
+  // Registrar función de detección forzada de nuevas tareas
+  serviceRegistry.registerFunction('forceDetectNewTasks', forceDetectNewTasks, {
+    alias: 'forceDetectNewTasks',
+    description: 'Fuerza la detección de nuevas tareas'
+  });
+
+  // Registrar función de detección y validación
+  serviceRegistry.registerFunction('forceDetectAndValidate', () => {
+    console.log('🔍 Ejecutando detección y validación completa...');
+    try {
+      if (rasciManager) {
+        rasciManager.forceDetectRalphRoles();
+        rasciManager.validateMatrix();
+        console.log('✅ Detección y validación completadas');
+      } else {
+        console.warn('⚠️ RASCI Manager no disponible');
+      }
+    } catch (error) {
+      console.error('❌ Error en detección y validación:', error);
+    }
+  }, {
+    alias: 'forceDetectAndValidate',
+    description: 'Ejecuta detección y validación completa'
+  });
+
+  // Registrar función de diagnóstico
+  serviceRegistry.registerFunction('diagnoseRasciState', () => {
+    console.log('🔍 === Diagnóstico del Estado RASCI ===');
+    console.log('  - rasciManager disponible:', !!rasciManager);
+    console.log('  - rasciMatrixData:', !!(rasciManager && rasciManager.rasciMatrixData));
+    console.log('  - rasciRoles:', !!(rasciManager && rasciManager.rasciRoles));
+    console.log('  - bpmnModeler:', !!window.bpmnModeler);
+    
+    if (rasciManager) {
+      console.log('  - Tareas detectadas:', (rasciManager.rasciMatrixData && rasciManager.rasciMatrixData.tasks && rasciManager.rasciMatrixData.tasks.length) || 0);
+      console.log('  - Roles detectados:', (rasciManager.rasciRoles && rasciManager.rasciRoles.length) || 0);
+    }
+    console.log('=====================================');
+  }, {
+    alias: 'diagnoseRasciState',
+    description: 'Diagnostica el estado del sistema RASCI'
+  });
+
+  // Registrar función de sincronización completa
+  serviceRegistry.registerFunction('forceFullSync', () => {
+    console.log('🔄 Sincronización completa del sistema...');
+    try {
+      if (rasciManager) {
+        rasciManager.forceReloadMatrix();
+        rasciManager.forceDetectRalphRoles();
+        rasciManager.validateMatrix();
+        console.log('✅ Sincronización completa finalizada');
+      } else {
+        console.warn('⚠️ RASCI Manager no disponible');
+      }
+    } catch (error) {
+      console.error('❌ Error en sincronización completa:', error);
+    }
+  }, {
+    alias: 'forceFullSync',
+    description: 'Ejecuta sincronización completa del sistema'
+  });
+
+  // Registrar función de reparación de mapeo
+  serviceRegistry.registerFunction('repairRasciRalphMapping', () => {
+    console.log('🔧 Reparando mapeo RASCI-RALPH...');
+    try {
+      // Reconfigurar el manager con las referencias actuales
+      rasciManager.setBpmnModeler(window.bpmnModeler || null);
+      rasciManager.setRasciUIValidator(window.rasciUIValidator || null);
+      
+      // Recargar datos si están disponibles
+      if (window.rasciMatrixData) {
+        rasciManager.rasciMatrixData = { ...window.rasciMatrixData };
+      }
+      if (window.rasciRoles) {
+        rasciManager.rasciRoles = [...window.rasciRoles];
+      }
+      
+      // Forzar detección y validación
+      rasciManager.forceDetectRalphRoles();
+      rasciManager.validateMatrix();
+      
+      console.log('✅ Mapeo RASCI-RALPH reparado');
+    } catch (error) {
+      console.error('❌ Error al reparar mapeo:', error);
+    }
+  }, {
+    alias: 'repairRasciRalphMapping',
+    description: 'Repara el mapeo entre RASCI y RALPH'
+  });
+
+  // Registrar función de reparación de mapeo
+  serviceRegistry.registerFunction('repairRasciRalphMapping', repairRasciRalphMapping, {
+    alias: 'repairRasciRalphMapping',
+    description: 'Repara y sincroniza el mapeo RASCI-RALPH'
+  });
+
+  console.log('✅ ServiceRegistry configurado para RASCI Matrix Manager');
+}
+
+// Mantener compatibilidad temporal con window para funciones de reparación
+window.repairRasciRalphMapping = repairRasciRalphMapping;
+
 // Configurar función global para actualizar matriz
-  window.updateMatrixFromDiagram = updateMatrixFromDiagram;
-  window.detectRalphRolesFromCanvas = detectRalphRolesFromCanvas;
-  window.forceDetectRalphRoles = forceDetectRalphRoles;
+setupServiceRegistry();
+
+// Registrar funciones en el ServiceRegistry para el nuevo sistema
+if (rasciManager.adapter && rasciManager.adapter.bridge && rasciManager.adapter.bridge.serviceRegistry) {
+  const serviceRegistry = rasciManager.adapter.bridge.serviceRegistry;
+  
+  serviceRegistry.registerFunction('updateMatrixFromDiagram', updateMatrixFromDiagram, {
+    alias: 'updateMatrixFromDiagram',
+    description: 'Actualiza la matriz RASCI desde el diagrama BPMN'
+  });
+  
+  serviceRegistry.registerFunction('detectRalphRolesFromCanvas', detectRalphRolesFromCanvas, {
+    alias: 'detectRalphRolesFromCanvas',
+    description: 'Detecta roles RALph desde el canvas'
+  });
+  
+  serviceRegistry.registerFunction('forceDetectRalphRoles', forceDetectRalphRoles, {
+    alias: 'forceDetectRalphRoles',
+    description: 'Fuerza la detección de roles RALph'
+  });
+  
+  serviceRegistry.registerFunction('reloadRasciMatrix', function() {
+    const rasciPanel = document.querySelector('#rasci-panel');
+    if (rasciPanel) {
+      renderMatrix(rasciPanel, rasciManager.rasciRoles || [], null);
+    }
+  }, {
+    alias: 'reloadRasciMatrix',
+    description: 'Recarga la matriz RASCI preservando datos'
+  });
+  
+  serviceRegistry.registerFunction('manualReloadRasciMatrix', function() {
+    const rasciPanel = document.querySelector('#rasci-panel');
+    if (rasciPanel) {
+      renderMatrix(rasciPanel, rasciManager.rasciRoles || [], null);
+    }
+  }, {
+    alias: 'manualReloadRasciMatrix',
+    description: 'Recarga manual de la matriz RASCI'
+  });
+}
+
+// Mantener compatibilidad temporal con window (migración gradual)
+window.updateMatrixFromDiagram = updateMatrixFromDiagram;
+window.detectRalphRolesFromCanvas = detectRalphRolesFromCanvas;
+window.forceDetectRalphRoles = forceDetectRalphRoles;
 
 // Función global para recargar la matriz RASCI (preserva datos)
 window.reloadRasciMatrix = function() {
@@ -1239,8 +1453,8 @@ window.forceDetectAndValidate = () => {
   }, 200);
 };
 
-// Función global para diagnóstico completo del estado
-window.diagnoseRasciState = () => {
+// Función para diagnóstico completo del estado
+function diagnoseRasciState() {
   console.log('=== DIAGNÓSTICO RASCI-RALPH ===');
   
   // 1. Estado del manager
@@ -1249,7 +1463,7 @@ window.diagnoseRasciState = () => {
   console.log('  - rasciRoles:', rasciManager.rasciRoles);
   console.log('  - bpmnModeler disponible:', !!rasciManager.getBpmnModeler());
   
-  // 2. Estado del window
+  // 2. Estado del window (compatibilidad)
   console.log('2. Variables globales window:');
   console.log('  - window.rasciMatrixData:', window.rasciMatrixData);
   console.log('  - window.rasciRoles:', window.rasciRoles);
@@ -1281,9 +1495,21 @@ window.diagnoseRasciState = () => {
   console.log('  - Contenedor matriz encontrado:', !!matrixContainer);
   
   console.log('=== FIN DIAGNÓSTICO ===');
-};
+}
 
-window.forceFullSync = () => {
+// Registrar función de diagnóstico en el ServiceRegistry
+if (rasciManager.adapter && rasciManager.adapter.bridge && rasciManager.adapter.bridge.serviceRegistry) {
+  rasciManager.adapter.bridge.serviceRegistry.registerFunction('diagnoseRasciState', diagnoseRasciState, {
+    alias: 'diagnoseRasciState',
+    description: 'Diagnóstico completo del estado RASCI-RALPH'
+  });
+}
+
+// Mantener compatibilidad temporal con window
+window.diagnoseRasciState = diagnoseRasciState;
+
+// Función para sincronización completa
+function forceFullSync() {
   const bpmnTasks = getBpmnTasks();
   
   // 2. Asegurar que rasciManager.rasciMatrixData existe
@@ -1328,7 +1554,18 @@ window.forceFullSync = () => {
       }
     }
   }, 100);
-};
+}
+
+// Registrar función de sincronización en el ServiceRegistry
+if (rasciManager.adapter && rasciManager.adapter.bridge && rasciManager.adapter.bridge.serviceRegistry) {
+  rasciManager.adapter.bridge.serviceRegistry.registerFunction('forceFullSync', forceFullSync, {
+    alias: 'forceFullSync',
+    description: 'Sincronización completa de la matriz RASCI'
+  });
+}
+
+// Mantener compatibilidad temporal con window
+window.forceFullSync = forceFullSync;
 
 // Función para forzar la recarga completa de la matriz
 export function forceReloadMatrix() {
@@ -1596,11 +1833,11 @@ export function forceDetectRalphRoles() {
 }
 
 // Función para reparar y sincronizar el mapeo RASCI-RALPH
-window.repairRasciRalphMapping = () => {
+function repairRasciRalphMapping() {
   console.log('=== INICIANDO REPARACIÓN RASCI-RALPH ===');
   
   try {
-    // 1. Sincronizar manager con window
+    // 1. Sincronizar manager con window (compatibilidad)
     if (typeof window !== 'undefined') {
       rasciManager.setBpmnModeler(window.bpmnModeler || null);
       rasciManager.setRasciUIValidator(window.rasciUIValidator || null);
@@ -1651,7 +1888,7 @@ window.repairRasciRalphMapping = () => {
       });
     });
     
-    // 7. Sincronizar de vuelta a window
+    // 7. Sincronizar de vuelta a window (compatibilidad)
     if (typeof window !== 'undefined') {
       window.rasciMatrixData = rasciManager.rasciMatrixData;
       window.rasciRoles = rasciManager.rasciRoles;
@@ -1682,7 +1919,7 @@ window.repairRasciRalphMapping = () => {
       error: error.message
     };
   }
-};
+}
 
 // Exportar el manager y utilidades para uso externo
 export { rasciManager, setOnRasciMatrixUpdatedCallback };

@@ -25,22 +25,81 @@ function createPpiPanel() {
       fetch('panels/ppi-panel.html')
         .then(response => response.text())
         .then(html => {
+          // First, inject the HTML content
           panel.innerHTML = html;
+          console.log('[Panel Registry] PPI panel HTML content injected');
+          console.log('[Panel Registry] HTML content length:', html.length);
+          console.log('[Panel Registry] Panel element after injection:', panel);
           
-          // Initialize PPI functionality
-          if (window.ppiManagerInstance && typeof window.ppiManagerInstance.refreshPPIList === 'function') {
-            window.ppiManagerInstance.refreshPPIList();
-          } else {
-            // Load PPI components if not already loaded
-            const script = document.createElement('script');
-            script.src = './modules/ppis/index.js';
-            script.onload = () => {
-              if (window.loadPPIComponents) {
-                window.loadPPIComponents();
-              }
-            };
-            document.head.appendChild(script);
+          // Verificar inmediatamente si el ppi-list existe
+          const ppiListElement = document.getElementById('ppi-list');
+          console.log('[Panel Registry] ppi-list element immediately after injection:', ppiListElement);
+          
+          // Define loadScript function first
+          function loadScript(src) {
+            return new Promise((resolve, reject) => {
+              const script = document.createElement('script');
+              script.src = src;
+              script.type = 'module';
+              script.onload = () => {
+                console.log(`[Panel Registry] Script loaded: ${src}`);
+                resolve();
+              };
+              script.onerror = (error) => {
+                console.error(`[Panel Registry] Error loading script ${src}:`, error);
+                reject(error);
+              };
+              document.head.appendChild(script);
+            });
           }
+          
+          // Give the browser time to render the HTML before initializing PPI functionality
+          setTimeout(() => {
+            console.log('[Panel Registry] Starting PPI initialization after DOM render delay');
+            
+            // Now that HTML is injected, initialize PPI functionality
+            console.log('[Panel Registry] Checking PPI manager availability...');
+            console.log('[Panel Registry] window.ppiManagerInstance:', window.ppiManagerInstance);
+            console.log('[Panel Registry] window.PPIManager:', window.PPIManager);
+            
+            if (window.ppiManagerInstance && typeof window.ppiManagerInstance.refreshPPIList === 'function') {
+              console.log('[Panel Registry] PPI manager found, refreshing list...');
+              window.ppiManagerInstance.refreshPPIList();
+            } else {
+              console.log('[Panel Registry] PPI manager not found, loading components...');
+              // Load PPI components in the correct order
+              const loadScripts = async () => {
+                try {
+                  // First, load core components
+                  await loadScript('./modules/ppis/ppi-core.js');
+                  await loadScript('./modules/ppis/ppi-ui.js');
+                  await loadScript('./modules/ppis/ppi-manager.js');
+                  
+                  // Finally, load the main index
+                  await loadScript('./modules/ppis/index.js');
+                  
+                  console.log('[Panel Registry] All PPI scripts loaded, calling loadPPIComponents...');
+                  if (window.loadPPIComponents) {
+                    window.loadPPIComponents();
+                    
+                    // Wait for components to initialize before refreshing
+                    setTimeout(() => {
+                      if (window.ppiManagerInstance && typeof window.ppiManagerInstance.refreshPPIList === 'function') {
+                        console.log('[Panel Registry] Refreshing PPI list after initialization...');
+                        window.ppiManagerInstance.refreshPPIList();
+                      }
+                    }, 500);
+                  } else {
+                    console.warn('[Panel Registry] loadPPIComponents not available');
+                  }
+                } catch (error) {
+                  console.error('[Panel Registry] Error loading PPI scripts:', error);
+                }
+              };
+              
+              loadScripts();
+            }
+          }, 100); // 100ms delay to ensure DOM is rendered
           
           // Subscribe to relevant events from the event bus
           if (ctx.eventBus) {
@@ -50,7 +109,7 @@ function createPpiPanel() {
               }
             });
             
-            ctx.eventBus.subscribe('model.changed', (event) => {
+            ctx.eventBus.subscribe('model.changed', () => {
               if (window.ppiManagerInstance && typeof window.ppiManagerInstance.refreshPPIList === 'function') {
                 window.ppiManagerInstance.refreshPPIList();
               }
@@ -138,7 +197,7 @@ function createRasciPanel() {
               }
             });
             
-            ctx.eventBus.subscribe('model.changed', (event) => {
+            ctx.eventBus.subscribe('model.changed', () => {
               if (typeof window.forceReloadMatrix === 'function') {
                 window.forceReloadMatrix();
               }

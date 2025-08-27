@@ -152,8 +152,8 @@ class BpmnIntegration {
                         element.type === 'PPINOT:Measure' ||
                         element.type === 'PPINOT:Condition';
     
-    if (isPPIElement && window.ppiManager && window.ppiManager.ui && window.ppiManager.ui.setActivePPI) {
-      window.ppiManager.ui.setActivePPI(element.id);
+    if (isPPIElement && this.ppiManager && this.ppiManager.ui && this.ppiManager.ui.setActivePPI) {
+      this.ppiManager.ui.setActivePPI(element.id);
     }
   }
 
@@ -576,5 +576,22 @@ class BpmnIntegration {
   }
 }
 
-// Exportar para uso global
-window.BpmnIntegration = BpmnIntegration; 
+// Exportar para uso global (temporal para compatibilidad)
+if (typeof window !== 'undefined') {
+  window.BpmnIntegration = BpmnIntegration;
+}
+
+// Registrar en ServiceRegistry si está disponible
+setTimeout(() => {
+  try {
+    // Intentar acceder al ServiceRegistry global
+    if (typeof window !== 'undefined' && window.serviceRegistry) {
+      window.serviceRegistry.register('BpmnIntegration', BpmnIntegration, {
+        description: 'Integración BPMN con PPIs'
+      });
+      console.log('✅ BpmnIntegration registrado en ServiceRegistry');
+    }
+  } catch (error) {
+    console.log('ℹ️ ServiceRegistry no disponible para BpmnIntegration');
+  }
+}, 0); 

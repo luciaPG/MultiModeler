@@ -2,12 +2,13 @@
 // Funcionalidad principal del gestor de PPIs
 
 class PPICore {
-  constructor() {
+  constructor(adapter = null) {
     this.ppis = [];
     this.filteredPPIs = [];
     this.processedElements = new Set();
     this.pendingPPINOTRestore = null;
     this.autoSaveEnabled = true; // Explicitly enable auto-save by default
+    this.adapter = adapter;
     this.measureTypes = {
       time: { name: 'Medida de Tiempo', icon: 'fas fa-clock' },
       count: { name: 'Medida de Conteo', icon: 'fas fa-hashtag' },
@@ -63,7 +64,9 @@ class PPICore {
   }
 
   addPPI(ppi) {
+    console.log('[PPICore] addPPI called with:', ppi);
     this.ppis.push(ppi);
+    console.log('[PPICore] PPI added to list. Total PPIs:', this.ppis.length);
     this.savePPIs();
     return ppi;
   }
@@ -104,9 +107,12 @@ class PPICore {
 
   deletePPIFromCanvas(ppiId, ppiData = null) {
     try {
-          if (!window.modeler) {
-      return;
-    }
+      // Obtener modelador del nuevo sistema o fallback a window
+      const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+      
+      if (!modeler) {
+        return;
+      }
       
       // Use provided PPI data or find it in the list
       let ppi = ppiData;
@@ -123,8 +129,8 @@ class PPICore {
         return;
       }
       
-      const elementRegistry = window.modeler.get('elementRegistry');
-      const modeling = window.modeler.get('modeling');
+      const elementRegistry = modeler.get('elementRegistry');
+      const modeling = modeler.get('modeling');
       
       // Find the PPI element on the canvas using elementId
       const ppiElement = elementRegistry.get(elementId);
@@ -251,12 +257,15 @@ class PPICore {
         return;
       }
       
-      if (!window.modeler) return;
+      // Obtener modelador del nuevo sistema o fallback a window
+      const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+      
+      if (!modeler) return;
       
       // Update last save time
       this.lastSaveTime = Date.now();
       
-      const elementRegistry = window.modeler.get('elementRegistry');
+      const elementRegistry = modeler.get('elementRegistry');
       const allElements = elementRegistry.getAll();
       
       // Guardar elementos PPINOT principales (solo información esencial)
@@ -336,13 +345,16 @@ class PPICore {
   // Nuevo método para guardar relaciones en el XML BPMN
   savePPINOTRelationshipsToXML(relationships) {
     try {
-      if (!window.modeler) return;
+      // Obtener modelador del nuevo sistema o fallback a window
+      const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+      
+      if (!modeler) return;
       
       // Clear cache before saving
       this.clearXmlCache();
 
       // Obtener el XML actual
-      window.modeler.saveXML({ format: true }).then(result => {
+      modeler.saveXML({ format: true }).then(result => {
         if (result && result.xml) {
           // Crear un parser para modificar el XML
           const parser = new DOMParser();
@@ -432,7 +444,10 @@ class PPICore {
   // Nuevo método para cargar relaciones desde el XML BPMN
   loadPPINOTRelationshipsFromXML() {
     try {
-      if (!window.modeler) return [];
+      // Obtener modelador del nuevo sistema o fallback a window
+      const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+      
+      if (!modeler) return [];
       
       // Prevenir cargas duplicadas
       if (this.isLoadingRelationships) {
@@ -456,23 +471,23 @@ class PPICore {
         let currentXML = null;
         
         // Método 1: Intentar obtener desde el modeler directamente
-        if (window.modeler.getXML) {
-          currentXML = window.modeler.getXML();
+        if (modeler.getXML) {
+          currentXML = modeler.getXML();
         }
         
         // Método 2: Intentar obtener desde el canvas
-        if (!currentXML && window.modeler.get('canvas')) {
-          const rootElement = window.modeler.get('canvas').getRootElement();
+        if (!currentXML && modeler.get('canvas')) {
+          const rootElement = modeler.get('canvas').getRootElement();
           if (rootElement && rootElement.businessObject && rootElement.businessObject.$model) {
             currentXML = rootElement.businessObject.$model.serialize();
           }
         }
         
         // Método 3: Intentar obtener desde el moddle
-        if (!currentXML && window.modeler.get('moddle')) {
-          const moddle = window.modeler.get('moddle');
+        if (!currentXML && modeler.get('moddle')) {
+          const moddle = modeler.get('moddle');
           if (moddle && moddle.serialize) {
-            const rootElement = window.modeler.get('canvas').getRootElement();
+            const rootElement = modeler.get('canvas').getRootElement();
             if (rootElement && rootElement.businessObject) {
               currentXML = moddle.serialize(rootElement.businessObject);
             }
@@ -510,7 +525,7 @@ class PPICore {
         }
       } catch (xmlError) {
         // Fallback al método asíncrono
-        window.modeler.saveXML({ format: true }).then(result => {
+        modeler.saveXML({ format: true }).then(result => {
           if (result && result.xml) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(result.xml, 'text/xml');
@@ -556,7 +571,10 @@ class PPICore {
   // Método para restaurar relaciones desde XML
   restorePPINOTRelationshipsFromXML(relationships) {
     try {
-      if (!window.modeler || !relationships.length) return;
+      // Obtener modelador del nuevo sistema o fallback a window
+      const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+      
+      if (!modeler || !relationships.length) return;
       
       // Prevenir restauraciones duplicadas
       if (this.isRestoringRelationships) {
@@ -565,8 +583,8 @@ class PPICore {
       
       this.isRestoringRelationships = true;
       
-      const elementRegistry = window.modeler.get('elementRegistry');
-      const modeling = window.modeler.get('modeling');
+      const elementRegistry = modeler.get('elementRegistry');
+      const modeling = modeler.get('modeling');
       
       // Procesar todas las relaciones de una vez sin delays
       const restoreAllRelationships = () => {
@@ -606,7 +624,10 @@ class PPICore {
 
   restorePPINOTElements() {
     try {
-      if (!window.modeler) {
+      // Obtener modelador del nuevo sistema o fallback a window
+      const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+      
+      if (!modeler) {
         return false;
       }
       
@@ -617,8 +638,8 @@ class PPICore {
       
       this.isRestoringElements = true;
       
-      const elementRegistry = window.modeler.get('elementRegistry');
-      const modeling = window.modeler.get('modeling');
+      const elementRegistry = modeler.get('elementRegistry');
+      const modeling = modeler.get('modeling');
       
       // PRIMERO: Intentar cargar relaciones desde el XML BPMN (esto ya incluye la restauración)
       const xmlRelationships = this.loadPPINOTRelationshipsFromXML();
@@ -748,11 +769,14 @@ class PPICore {
 
   restoreParentChildRelationship(childId, parentId, childData = null) {
     try {
-      if (!window.modeler) return false;
+      // Obtener modelador del nuevo sistema o fallback a window
+      const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
       
-      const elementRegistry = window.modeler.get('elementRegistry');
-      const modeling = window.modeler.get('modeling');
-      const eventBus = window.modeler.get('eventBus');
+      if (!modeler) return false;
+      
+      const elementRegistry = modeler.get('elementRegistry');
+      const modeling = modeler.get('modeling');
+      const eventBus = modeler.get('eventBus');
       
       const childElement = elementRegistry.get(childId);
       const parentElement = elementRegistry.get(parentId);
@@ -838,9 +862,12 @@ class PPICore {
 
   updatePPIWithChildInfo(parentPPIId, childElementId) {
     try {
-      if (!window.modeler) return;
+      // Obtener modelador del nuevo sistema o fallback a window
+      const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
       
-      const elementRegistry = window.modeler.get('elementRegistry');
+      if (!modeler) return;
+      
+      const elementRegistry = modeler.get('elementRegistry');
       const childElement = elementRegistry.get(childElementId);
       
       if (!childElement) {
@@ -992,17 +1019,34 @@ class PPICore {
   isPPIElement(element) {
     if (!element) return false;
     
+    console.log('[PPICore] Checking if element is PPI:', {
+      id: element.id,
+      type: element.type,
+      businessObjectType: element.businessObject ? element.businessObject.$type : 'none'
+    });
+    
+    // Verificar por businessObject.$type (más confiable)
     if (element.businessObject && element.businessObject.$type) {
       const type = element.businessObject.$type;
-      if (type === 'PPINOT:Ppi' || type.includes('Ppi')) {
+      if (type === 'PPINOT:Ppi') {
+        console.log('[PPICore] Element is PPI by businessObject.$type');
         return true;
       }
     }
     
-    if (element.type && (element.type === 'PPINOT:Ppi' || element.type.includes('Ppi'))) {
+    // Verificar por element.type
+    if (element.type === 'PPINOT:Ppi') {
+      console.log('[PPICore] Element is PPI by element.type');
       return true;
     }
     
+    // Verificar variantes comunes
+    if (element.type && element.type.includes('PPINOT') && element.type.includes('Ppi')) {
+      console.log('[PPICore] Element is PPI by type pattern');
+      return true;
+    }
+    
+    console.log('[PPICore] Element is NOT a PPI');
     return false;
   }
 
@@ -1024,8 +1068,11 @@ class PPICore {
     const info = {};
     
     try {
-      if (window.modeler) {
-        const elementRegistry = window.modeler.get('elementRegistry');
+      // Obtener modelador del nuevo sistema o fallback a window
+      const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+      
+      if (modeler) {
+        const elementRegistry = modeler.get('elementRegistry');
         const element = elementRegistry.get(childElementId);
         
         if (element && element.businessObject) {
@@ -1131,5 +1178,22 @@ class PPICore {
   }
 }
 
-// Exportar para uso global
-window.PPICore = PPICore;
+// Exportar para uso global (temporal para compatibilidad)
+if (typeof window !== 'undefined') {
+  window.PPICore = PPICore;
+}
+
+// Registrar en ServiceRegistry si está disponible
+setTimeout(() => {
+  try {
+    // Intentar acceder al ServiceRegistry global
+    if (typeof window !== 'undefined' && window.serviceRegistry) {
+      window.serviceRegistry.register('PPICore', PPICore, {
+        description: 'Clase core de funcionalidad PPIs'
+      });
+      console.log('✅ PPICore registrado en ServiceRegistry');
+    }
+  } catch (error) {
+    console.log('ℹ️ ServiceRegistry no disponible para PPICore');
+  }
+}, 0);

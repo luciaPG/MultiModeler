@@ -22,6 +22,7 @@ import { rasciAutoMapping } from './mapping/auto-mapper.js';
 class RASCIManager {
   constructor(options = {}) {
     this.eventBus = options.eventBus;
+    this.adapter = options.adapter;
     this.matrixData = {
       roles: [],
       tasks: [],
@@ -45,7 +46,13 @@ class RASCIManager {
     }
     
     // Get initial data if available
-    if (window.rasciMatrixData) {
+    // Obtener datos del adaptador o fallback a window
+    if (this.adapter) {
+      const matrixData = this.adapter.getMatrixData();
+      if (matrixData) {
+        this.matrixData = matrixData;
+      }
+    } else if (typeof window !== 'undefined' && window.rasciMatrixData) {
       this.matrixData = window.rasciMatrixData;
     }
     
@@ -105,13 +112,22 @@ class RASCIManager {
   updateMatrix(matrixData) {
     this.matrixData = { ...this.matrixData, ...matrixData };
     
+    // Update data through adapter if available
+    if (this.adapter) {
+      this.adapter.updateMatrixData(this.matrixData);
+    }
+    
     // Update global variable for backward compatibility
-    window.rasciMatrixData = this.matrixData;
+    if (typeof window !== 'undefined') {
+      window.rasciMatrixData = this.matrixData;
+    }
     
     this.eventBus.publish('rasci.matrix.updated', { matrix: this.matrixData });
     
-    // Trigger UI update if function exists
-    if (typeof window.forceReloadMatrix === 'function') {
+    // Trigger UI update through adapter or fallback to window
+    if (this.adapter && this.adapter.forceReloadMatrix) {
+      this.adapter.forceReloadMatrix();
+    } else if (typeof window !== 'undefined' && typeof window.forceReloadMatrix === 'function') {
       window.forceReloadMatrix();
     }
   }
