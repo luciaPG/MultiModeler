@@ -392,7 +392,16 @@ class PPIManager {
           const existingPPI = this.core.ppis && this.core.ppis.find(ppi => ppi.elementId === element.id);
           if (!existingPPI) {
             console.log('📝 Creating PPI from shape.changed:', element.id);
-            setTimeout(() => this.createPPIFromElement(element.id), 100);
+            // Usar un flag para evitar creación duplicada
+            if (!this._creatingPPI) {
+              this._creatingPPI = true;
+              setTimeout(() => {
+                this.createPPIFromElement(element.id);
+                this._creatingPPI = false;
+              }, 100);
+            } else {
+              console.log('📝 Skipping duplicate PPI creation for:', element.id);
+            }
           } else {
             console.log('📝 Updating existing PPI from shape.changed:', element.id);
             this.updatePPIFromElement(element);

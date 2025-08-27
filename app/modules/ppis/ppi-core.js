@@ -107,11 +107,14 @@ class PPICore {
 
   deletePPIFromCanvas(ppiId, ppiData = null) {
     try {
+      console.log('🗑️ [deletePPIFromCanvas] Iniciando eliminación del canvas para PPI:', ppiId);
+      
       // Obtener modelador del nuevo sistema o fallback a window
       const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
       
       if (!modeler) {
-        return;
+        console.log('❌ [deletePPIFromCanvas] Modeler no disponible');
+        return false;
       }
       
       // Use provided PPI data or find it in the list
@@ -121,24 +124,50 @@ class PPICore {
       }
       
       if (!ppi) {
-        return;
+        console.log('❌ [deletePPIFromCanvas] PPI no encontrado:', ppiId);
+        return false;
       }
+      
+      console.log('📋 [deletePPIFromCanvas] PPI encontrado:', { id: ppi.id, title: ppi.title, elementId: ppi.elementId });
       
       const elementId = ppi.elementId;
       if (!elementId) {
-        return;
+        console.log('❌ [deletePPIFromCanvas] PPI no tiene elementId');
+        return false;
       }
       
       const elementRegistry = modeler.get('elementRegistry');
       const modeling = modeler.get('modeling');
       
+      console.log('🔍 [deletePPIFromCanvas] Buscando elemento en canvas con ID:', elementId);
+      
       // Find the PPI element on the canvas using elementId
-      const ppiElement = elementRegistry.get(elementId);
+      let ppiElement = elementRegistry.get(elementId);
+      
+      if (!ppiElement) {
+        console.log('⚠️ [deletePPIFromCanvas] Elemento no encontrado por ID, buscando por nombre...');
+        // Try to find by searching all elements for PPINOT types
+        const allElements = elementRegistry.getAll();
+        const ppiElements = allElements.filter(el => 
+          el.type && el.type.startsWith('PPINOT:') && 
+          (el.businessObject && el.businessObject.name === ppi.title)
+        );
+        
+        if (ppiElements.length > 0) {
+          ppiElement = ppiElements[0];
+          console.log('✅ [deletePPIFromCanvas] Elemento encontrado por nombre:', ppiElement.id);
+        }
+      } else {
+        console.log('✅ [deletePPIFromCanvas] Elemento encontrado por ID:', ppiElement.id);
+      }
+      
       if (ppiElement) {
+        console.log('🔍 [deletePPIFromCanvas] Buscando elementos hijos...');
+        
         // Find all child elements (scope, target, measure, condition)
         const allElements = elementRegistry.getAll();
         const childElements = allElements.filter(el => 
-          el.parent && el.parent.id === elementId && (
+          el.parent && el.parent.id === ppiElement.id && (
             el.type === 'PPINOT:Scope' || 
             el.type === 'PPINOT:Target' || 
             el.type === 'PPINOT:Measure' || 
@@ -152,40 +181,37 @@ class PPICore {
           )
         );
         
+        console.log(`🎯 [deletePPIFromCanvas] Encontrados ${childElements.length} elementos hijos:`, 
+          childElements.map(el => ({ id: el.id, type: el.type })));
+        
         // Remove child elements first
-        childElements.forEach(child => {
+        if (childElements.length > 0) {
           try {
-            modeling.removeElements([child]);
+            console.log('🗑️ [deletePPIFromCanvas] Eliminando elementos hijos...');
+            modeling.removeElements(childElements);
+            console.log('✅ [deletePPIFromCanvas] Elementos hijos eliminados exitosamente');
           } catch (error) {
-            // Error eliminando hijo
+            console.error('❌ [deletePPIFromCanvas] Error eliminando elementos hijos:', error);
           }
-        });
+        }
         
         // Remove the PPI element
         try {
+          console.log('🗑️ [deletePPIFromCanvas] Eliminando elemento PPI principal...');
           modeling.removeElements([ppiElement]);
+          console.log('✅ [deletePPIFromCanvas] Elemento PPI eliminado exitosamente');
+          return true;
         } catch (error) {
-          // Error eliminando PPI
+          console.error('❌ [deletePPIFromCanvas] Error eliminando elemento PPI:', error);
+          return false;
         }
       } else {
-        // Try to find by searching all elements for PPINOT types
-        const allElements = elementRegistry.getAll();
-        const ppiElements = allElements.filter(el => 
-          el.type && el.type.startsWith('PPINOT:') && 
-          el.id !== elementId && 
-          (el.businessObject && el.businessObject.name === ppi.title)
-        );
-        
-        if (ppiElements.length > 0) {
-          try {
-            modeling.removeElements([ppiElements[0]]);
-          } catch (error) {
-            // Error eliminando PPI alternativo
-          }
-        }
+        console.log('❌ [deletePPIFromCanvas] No se encontró elemento PPI en el canvas');
+        return false;
       }
     } catch (error) {
-      // Error eliminando PPI del canvas
+      console.error('💥 [deletePPIFromCanvas] Error general:', error);
+      return false;
     }
   }
 
@@ -403,9 +429,9 @@ class PPICore {
           // Guardar el XML actualizado en localStorage
           localStorage.setItem('bpmnDiagram', updatedXML);
         }
-      }).catch(err => {
-        // Handle errors silently
-      });
+              }).catch(() => {
+          // Handle errors silently
+        });
       
     } catch (e) {
       // Handle errors silently
@@ -555,7 +581,7 @@ class PPICore {
           }
           
           this.isLoadingRelationships = false;
-        }).catch(err => {
+        }).catch(() => {
           this.isLoadingRelationships = false;
         });
       }
@@ -586,28 +612,22 @@ class PPICore {
       const elementRegistry = modeler.get('elementRegistry');
       const modeling = modeler.get('modeling');
       
-      // Procesar todas las relaciones de una vez sin delays
-      const restoreAllRelationships = () => {
-        let restoredCount = 0;
-        let skippedCount = 0;
-        
-        relationships.forEach(rel => {
+              // Procesar todas las relaciones de una vez sin delays
+        const restoreAllRelationships = () => {
+          relationships.forEach(rel => {
           const childElement = elementRegistry.get(rel.childId);
           const parentElement = elementRegistry.get(rel.parentId);
           
           if (childElement && parentElement) {
             // Verificar si la relación ya existe
             if (!childElement.parent || childElement.parent.id !== rel.parentId) {
-              try {
-                // Usar modeling service para establecer la relación
-                modeling.moveShape(childElement, { x: 0, y: 0 }, parentElement);
-                restoredCount++;
-              } catch (error) {
-                // Handle errors silently
+                              try {
+                  // Usar modeling service para establecer la relación
+                  modeling.moveShape(childElement, { x: 0, y: 0 }, parentElement);
+                } catch (error) {
+                  // Handle errors silently
+                }
               }
-            } else {
-              skippedCount++;
-            }
           }
         });
         
@@ -705,12 +725,6 @@ class PPICore {
       // Restaurar todas las relaciones de una vez
       if (allRelationshipsToRestore.length > 0) {
         
-        // Variables for tracking restored items
-        let restoredCount = 0;
-        let skippedCount = 0;
-        let scopeRestored = 0;
-        let targetRestored = 0;
-        
         allRelationshipsToRestore.forEach(rel => {
           const childElement = elementRegistry.get(rel.childId);
           const parentElement = elementRegistry.get(rel.parentId);
@@ -718,25 +732,9 @@ class PPICore {
           if (childElement && parentElement) {
             try {
               // Verificar si la relación ya existe
-              if (!childElement.parent || childElement.parent.id !== rel.parentId) {
-                modeling.moveShape(childElement, { x: 0, y: 0 }, parentElement);
-                restoredCount++;
-                
-                // Track scope and target restorations
-                if (rel.childData && (
-                  rel.childData.childType === 'PPINOT:Scope' || 
-                  rel.childData.childBusinessObjectType === 'PPINOT:Scope'
-                )) {
-                  scopeRestored++;
-                } else if (rel.childData && (
-                  rel.childData.childType === 'PPINOT:Target' || 
-                  rel.childData.childBusinessObjectType === 'PPINOT:Target'
-                )) {
-                  targetRestored++;
+                              if (!childElement.parent || childElement.parent.id !== rel.parentId) {
+                  modeling.moveShape(childElement, { x: 0, y: 0 }, parentElement);
                 }
-              } else {
-                skippedCount++;
-              }
             } catch (error) {
               // Handle errors silently
             }

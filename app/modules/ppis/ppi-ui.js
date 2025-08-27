@@ -123,15 +123,11 @@ class PPIUI {
         <div class="type-indicator" style="--type-color: ${typeColors[measureTypeKey]}">
           <i class="${measureType.icon}"></i>
         </div>
-        <div class="selection-indicator" id="selection-indicator-${ppi.id}">
-          <div class="selection-dot"></div>
-        </div>
+        
         <div class="header-content">
           <h3 class="card-title">${this.core.truncateText(cardTitle, 50)}</h3>
           <div class="meta-info">
-            <div class="badges-container">
-              <!-- Sin badges de completitud -->
-            </div>
+           
           </div>
         </div>
         <div class="actions-panel">

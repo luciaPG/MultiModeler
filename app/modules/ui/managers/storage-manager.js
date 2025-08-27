@@ -367,13 +367,13 @@ class StorageManager {
   setInitialState() {
     console.log('⚙️ Configurando estado inicial...');
     
-    // Limpiar datos PPI antes de configurar estado inicial
+    // Limpiar datos PPM antes de configurar estado inicial
     this.clearPPIData();
     
     // Limpiar datos RASCI antes de configurar estado inicial
     this.clearRasciData();
     
-    // Configurar paneles por defecto
+    // Configurar paneles por defecto - SOLO BPMN activo
     localStorage.setItem('activePanels', JSON.stringify(['bpmn']));
     localStorage.setItem('panelLayout', '2v');
     localStorage.setItem('panelOrder', JSON.stringify(['bpmn']));
@@ -396,7 +396,7 @@ class StorageManager {
     localStorage.setItem('rasciTasks', JSON.stringify([]));
     localStorage.setItem('rasciSettings', JSON.stringify({}));
     
-    console.log('✅ Estado inicial configurado - PPI localStorage deshabilitado');
+    console.log('✅ Estado inicial configurado - Solo panel BPMN activo por defecto');
   }
 
   // === CONFIGURAR ESTADO DE IMPORTACIÓN ===

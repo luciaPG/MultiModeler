@@ -9,6 +9,7 @@ import { initializeApplication, MultiNotationModeler } from './modules/index.js'
 import { PanelLoader } from './modules/ui/components/panel-loader.js';
 import modelerManager from './modules/ui/managers/modeler-manager.js';
 import './modules/ui/managers/panel-manager.js';
+import './modules/ui/managers/cookie-autosave-manager.js';
 import { initializeCommunicationSystem } from './modules/ui/core/CommunicationSystem.js';
 
 // Import required JSON files for moddle extensions
@@ -295,6 +296,18 @@ async function initModeler() {
       return;
     }
     
+    // NUEVO: Configurar panel BPMN INMEDIATAMENTE (antes de importar XML)
+    console.log('[DEBUG] Configurando panel BPMN inmediatamente...');
+    if (window.panelManager) {
+      // Configurar paneles activos para incluir solo BPMN
+      window.panelManager.activePanels = ['bpmn'];
+      window.panelManager.currentLayout = '2v';
+      
+      // Aplicar configuración de paneles INMEDIATAMENTE
+      console.log('[DEBUG] Aplicando configuración de paneles inmediatamente...');
+      await window.panelManager.applyConfiguration();
+    }
+    
     // Crear un diagrama BPMN básico con todos los namespaces necesarios
     const initialXml = `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" 
@@ -329,26 +342,24 @@ async function initModeler() {
     isModelerInitialized = true;
     console.log('[DEBUG] Modeler inicializado correctamente.');
     
-    // Forzar actualización de la vista y ajustar zoom
-    setTimeout(() => {
-      console.log('[DEBUG] Ejecutando actualizaciones post-inicialización...');
-      if (typeof window !== 'undefined' && typeof $ !== 'undefined') {
-        $(window).trigger('resize');
+    // OPTIMIZADO: Actualización inmediata sin delays
+    console.log('[DEBUG] Ejecutando actualizaciones inmediatas...');
+    if (typeof window !== 'undefined' && typeof $ !== 'undefined') {
+      $(window).trigger('resize');
+    }
+    
+    try {
+      // Ajustar zoom para ver todo el diagrama INMEDIATAMENTE
+      const canvas = modeler.get('canvas');
+      if (canvas && typeof canvas.zoom === 'function') {
+        console.log('[DEBUG] Ajustando zoom inmediatamente');
+        canvas.zoom('fit-viewport');
       }
-      
-      try {
-        // Ajustar zoom para ver todo el diagrama
-        const canvas = modeler.get('canvas');
-        if (canvas && typeof canvas.zoom === 'function') {
-          console.log('[DEBUG] Ajustando zoom');
-          canvas.zoom('fit-viewport');
-        }
-      } catch (error) {
-        console.warn('Error al ajustar zoom:', error);
-      }
-      
-      console.log('[DEBUG] Actualización completa');
-    }, 500);
+    } catch (error) {
+      console.warn('Error al ajustar zoom:', error);
+    }
+    
+    console.log('[DEBUG] Inicialización completada');
   } catch (error) {
     console.error('[ERROR] Error al inicializar el modeler:', error);
     showErrorMessage('Error al inicializar el modelador: ' + error.message);

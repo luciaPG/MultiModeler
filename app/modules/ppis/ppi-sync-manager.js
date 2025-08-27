@@ -80,10 +80,18 @@ class PPISyncManager {
     // NUEVOS EVENTOS para detectar cambios de padre
     eventBus.on('element.updateParent', (event) => {
       this.handleParentUpdate(event);
+      // Verificar cambios de padre después de actualización
+      setTimeout(() => {
+        this.checkAllParentChanges();
+      }, 100);
     });
 
     eventBus.on('modeling.updateProperties', (event) => {
       this.handlePropertiesUpdate(event);
+      // Verificar cambios después de actualización de propiedades
+      setTimeout(() => {
+        this.checkAllParentChanges();
+      }, 100);
     });
 
     // Eventos de drag & drop
@@ -99,13 +107,13 @@ class PPISyncManager {
     eventBus.on('modeling.moveShape', () => {
       setTimeout(() => {
         this.checkAllParentChanges();
-      }, 50);
+      }, 100);
     });
 
     eventBus.on('elements.move', () => {
       setTimeout(() => {
         this.checkAllParentChanges();
-      }, 50);
+      }, 100);
     });
 
     // Eventos de selección para detectar cambios
@@ -118,7 +126,7 @@ class PPISyncManager {
       if (event.element && this.isPPIChildElement(event.element)) {
         setTimeout(() => {
           this.checkAllParentChanges();
-        }, 50);
+        }, 100);
       }
     });
 
@@ -126,19 +134,7 @@ class PPISyncManager {
     eventBus.on('shape.move', () => {
       setTimeout(() => {
         this.checkAllParentChanges();
-      }, 50);
-    });
-
-    eventBus.on('element.updateParent', () => {
-      setTimeout(() => {
-        this.checkAllParentChanges();
-      }, 50);
-    });
-
-    eventBus.on('modeling.updateProperties', () => {
-      setTimeout(() => {
-        this.checkAllParentChanges();
-      }, 50);
+      }, 100);
     });
   }
 
@@ -266,13 +262,8 @@ class PPISyncManager {
         return;
       }
       
-      
-      // NUEVO: Siempre verificar cambios de padre después de un drag, no solo para hijos PPI
-      // porque el elemento podría haber dejado de ser hijo PPI durante el drag
-      setTimeout(() => {
-        // Usar checkAllParentChanges que maneja tanto elementos actuales como huérfanos
-        this.checkAllParentChanges();
-      }, 100); // Aumentar delay para asegurar que el DOM se actualice
+      // NUEVO: Usar el método robusto para verificar después del drag
+      this.forceDropCheck();
     }
 
            handleDropEnd(event) {
@@ -282,13 +273,8 @@ class PPISyncManager {
         return;
       }
       
-      
-      // NUEVO: Siempre verificar cambios de padre después de un drop, no solo para hijos PPI
-      // porque el elemento podría haber dejado de ser hijo PPI durante el drop
-      setTimeout(() => {
-        // Usar checkAllParentChanges que maneja tanto elementos actuales como huérfanos
-        this.checkAllParentChanges();
-      }, 100); // Aumentar delay para asegurar que el DOM se actualice
+      // NUEVO: Usar el método robusto para verificar después del drop
+      this.forceDropCheck();
     }
 
   handleSelectionChange(event) {
@@ -795,11 +781,20 @@ class PPISyncManager {
         ppiChildElements.forEach(element => {
           const hasPPIParent = this.hasPPIParent(element);
           
-          if (!hasPPIParent) {
+          if (hasPPIParent) {
+            // Si tiene padre PPI, actualizar la información del PPI padre
+            const parentPPI = this.findParentPPI(element);
+            if (parentPPI) {
+              this.updatePPIWithChildInfo(parentPPI.elementId, element.id);
+            }
+          } else {
             // Si no tiene padre PPI, limpiar de todos los PPIs
             this.clearChildInfoFromAllPPIs(element.id);
           }
         });
+
+        // También verificar elementos huérfanos que podrían haber perdido su padre PPI
+        this.checkOrphanedElements();
 
         // Actualizar la UI inmediatamente
         this.syncUI();
@@ -996,6 +991,21 @@ class PPISyncManager {
      this.performQuickParentSync();
    }
 
+   // NUEVO: Método para forzar verificación después de drop
+   forceDropCheck() {
+     setTimeout(() => {
+       this.checkAllParentChanges();
+     }, 100);
+     
+     setTimeout(() => {
+       this.checkAllParentChanges();
+     }, 300);
+     
+     setTimeout(() => {
+       this.checkAllParentChanges();
+     }, 500);
+   }
+
      // NUEVO: Sincronización inteligente que verifica cambios de padre
    async performSmartSync() {
      
@@ -1131,6 +1141,13 @@ class PPISyncManager {
 // Exportar para uso global (temporal para compatibilidad)
 if (typeof window !== 'undefined') {
   window.PPISyncManager = PPISyncManager;
+  
+  // NUEVO: Exponer método para verificación manual
+  window.forcePPIDropCheck = () => {
+    if (window.ppiManagerInstance && window.ppiManagerInstance.syncManager) {
+      window.ppiManagerInstance.syncManager.forceDropCheck();
+    }
+  };
 }
 
 // Registrar en ServiceRegistry si está disponible

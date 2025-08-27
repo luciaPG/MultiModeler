@@ -64,6 +64,28 @@ class PanelLoader {
                          container.querySelector(`[data-panel-type="${panelType}"]`);
     
     if (existingPanel) {
+      // Si el panel existe pero está oculto, restaurarlo
+      if (this.isPanelHidden(existingPanel)) {
+        console.log(`[PanelLoader] Restaurando panel ${panelType} existente`);
+        
+        // Restaurar visibilidad del panel
+        this.restorePanelVisibility(existingPanel);
+        
+        // Para el panel PPI, solo refrescar la lista sin recrear
+        if (panelType === 'ppi' && window.ppiManager) {
+          console.log('[PanelLoader] Refrescando lista PPI sin recrear controladores');
+          if (typeof window.ppiManager.refreshPPIList === 'function') {
+            // Pequeño delay para asegurar que el panel esté completamente visible
+            setTimeout(() => {
+              window.ppiManager.refreshPPIList();
+            }, 100);
+          }
+        }
+        
+        return existingPanel;
+      }
+      
+      // Si el panel ya está visible, retornarlo sin hacer nada
       return existingPanel;
     }
 
@@ -585,7 +607,42 @@ class PanelLoader {
     }
   }
 
+  // Método para detectar si un panel está oculto
+  isPanelHidden(panel) {
+    return panel.style.display === 'none' || 
+           panel.style.visibility === 'hidden' ||
+           (panel.style.position === 'absolute' && panel.style.left === '-9999px') ||
+           panel.style.flex === '0' ||
+           panel.style.width === '0' ||
+           panel.style.height === '0' ||
+           panel.style.opacity === '0';
+  }
 
+  // Método para restaurar la visibilidad de un panel
+  restorePanelVisibility(panel) {
+    // Restaurar estilos de visibilidad
+    panel.style.display = '';
+    panel.style.visibility = '';
+    panel.style.position = '';
+    panel.style.left = '';
+    panel.style.top = '';
+    panel.style.width = '';
+    panel.style.height = '';
+    panel.style.flex = '';
+    panel.style.overflow = '';
+    panel.style.zIndex = '';
+    panel.style.opacity = '';
+    
+    // Asegurar que el panel sea visible
+    panel.style.display = 'flex';
+    panel.style.visibility = 'visible';
+    panel.style.position = 'relative';
+    panel.style.flex = '1';
+    panel.style.opacity = '1';
+    
+    // Forzar reflow para asegurar que los cambios se apliquen
+    panel.offsetHeight;
+  }
 
   loadPanelController(panelType, panel) {
     // Cargar controladores específicos según el tipo de panel
@@ -625,18 +682,68 @@ class PanelLoader {
         window.ppiManager.setupEventListeners();
       }
       
-      // Create sample PPIs if none exist
+      // Create sample PPIs if none exist - SOLO si es la primera vez
       if (typeof window.ppiManager.createSamplePPIs === 'function') {
-        window.ppiManager.createSamplePPIs();
+        // Verificar si ya hay PPIs en el core antes de crear muestras
+        const existingPPIs = window.ppiManager.core ? window.ppiManager.core.getAllPPIs() : [];
+        if (existingPPIs.length === 0) {
+          console.log('[PanelLoader] No hay PPIs existentes, creando muestras');
+          window.ppiManager.createSamplePPIs();
+        } else {
+          console.log(`[PanelLoader] Ya existen ${existingPPIs.length} PPIs, saltando creación de muestras`);
+        }
       }
       
-      // Forzar actualización de la lista de PPIs
+      // OPTIMIZADO: Actualización inmediata sin delays
       if (typeof window.ppiManager.refreshPPIList === 'function') {
-        setTimeout(() => {
-          window.ppiManager.refreshPPIList();
-        }, 100);
+        console.log('[PanelLoader] Refrescando lista PPI');
+        window.ppiManager.refreshPPIList();
+      }
+
+      // DEBUG: Verificar estado de sincronización
+      this.debugPPISyncStatus();
+    } else {
+      console.warn('[PanelLoader] PPI Manager no disponible');
+    }
+  }
+
+  // Método de debugging para verificar el estado de sincronización PPI
+  debugPPISyncStatus() {
+    if (!window.ppiManager || !window.ppiManager.core) {
+      console.log('[PanelLoader] PPI Manager o Core no disponible para debugging');
+      return;
+    }
+
+    const ppis = window.ppiManager.core.getAllPPIs();
+    console.log(`[PanelLoader] DEBUG: ${ppis.length} PPIs en el core`);
+
+    // Verificar elementos en el canvas
+    if (window.modeler) {
+      try {
+        const elementRegistry = window.modeler.get('elementRegistry');
+        const allElements = elementRegistry.getAll();
+        const ppiElements = allElements.filter(el => 
+          el.businessObject && el.businessObject.$type && 
+          el.businessObject.$type.includes('PPINOT')
+        );
+        
+        console.log(`[PanelLoader] DEBUG: ${allElements.length} elementos totales en canvas`);
+        console.log(`[PanelLoader] DEBUG: ${ppiElements.length} elementos PPI en canvas`);
+        
+        // Verificar sincronización
+        ppis.forEach(ppi => {
+          const canvasElement = elementRegistry.get(ppi.elementId);
+          if (canvasElement) {
+            console.log(`[PanelLoader] ✅ PPI ${ppi.id} (${ppi.title}) sincronizado con canvas`);
+          } else {
+            console.log(`[PanelLoader] ❌ PPI ${ppi.id} (${ppi.title}) NO encontrado en canvas`);
+          }
+        });
+      } catch (error) {
+        console.log('[PanelLoader] Error verificando elementos del canvas:', error);
       }
     } else {
+      console.log('[PanelLoader] Modeler no disponible para debugging');
     }
   }
 

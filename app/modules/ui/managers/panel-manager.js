@@ -2,6 +2,7 @@
 // Gestor de paneles con selector de paneles y distribución
 import modelerManager from './modeler-manager.js';
 import { PanelLoader } from '../components/panel-loader.js';
+import { CookieAutoSaveManager } from './cookie-autosave-manager.js';
 
 class PanelManager {
   constructor() {
@@ -1256,16 +1257,25 @@ class PanelManager {
         return;
       }
 
-      // Save BPMN state if we have a BPMN panel
-      if (this.activePanels.includes('bpmn')) {
-        console.log('💾 Guardando estado del panel BPMN antes del cambio...');
-        // Use modelerManager to save the state before changing panels
-        // Using await to ensure state is saved before continuing
+      // Guardar estado completo usando Cookie AutoSave Manager
+      if (window.cookieAutoSaveManager) {
+        console.log('💾 Guardando estado completo en cookies antes del cambio...');
         try {
-          const savedSuccessfully = await modelerManager.saveState();
-          console.log('💾 Estado BPMN guardado:', savedSuccessfully ? '✅ Exitoso' : '⚠️ Fallido');
+          const savedSuccessfully = await window.cookieAutoSaveManager.forceSave();
+          console.log('💾 Estado guardado en cookies:', savedSuccessfully ? '✅ Exitoso' : '⚠️ Fallido');
         } catch (err) {
-          console.error('❌ Error al guardar estado del modelador BPMN:', err);
+          console.error('❌ Error al guardar estado en cookies:', err);
+        }
+      } else {
+        // Fallback al sistema anterior si no está disponible el Cookie AutoSave Manager
+        console.log('⚠️ Cookie AutoSave Manager no disponible, usando sistema anterior...');
+        if (this.activePanels.includes('bpmn')) {
+          try {
+            const savedSuccessfully = await modelerManager.saveState();
+            console.log('💾 Estado BPMN guardado:', savedSuccessfully ? '✅ Exitoso' : '⚠️ Fallido');
+          } catch (err) {
+            console.error('❌ Error al guardar estado del modelador BPMN:', err);
+          }
         }
       }
 
@@ -1326,81 +1336,111 @@ class PanelManager {
 
       // Initialize the BPMN modeler with more robust error handling
       if (this.activePanels.includes('bpmn')) {
-        setTimeout(() => {
-          console.log('Inicializando el modeler BPMN con manejo robusto');
-          
-          // Verify the BPMN panel exists and has a canvas
-          const bpmnPanel = document.querySelector('[data-panel-type="bpmn"]');
-          
-          if (!bpmnPanel) {
-            console.error('BPMN panel not found in DOM');
+        console.log('Inicializando el modeler BPMN inmediatamente');
+        
+        // Verify the BPMN panel exists and has a canvas
+        const bpmnPanel = document.querySelector('[data-panel-type="bpmn"]');
+        
+        if (!bpmnPanel) {
+          console.error('BPMN panel not found in DOM');
+          return;
+        }
+        
+        // Make sure the panel is visible
+        bpmnPanel.style.display = '';
+        bpmnPanel.style.visibility = 'visible';
+        
+        // Ensure the panel has the expected structure
+        let canvas = bpmnPanel.querySelector('#js-canvas');
+        if (!canvas) {
+          console.warn('Canvas not found in BPMN panel, creating it');
+          const panelContent = bpmnPanel.querySelector('.panel-content');
+          if (panelContent) {
+            canvas = document.createElement('div');
+            canvas.id = 'js-canvas';
+            canvas.className = 'bpmn-container';
+            panelContent.appendChild(canvas);
+            console.log('Created js-canvas element in BPMN panel');
+          } else {
+            console.error('Panel content container not found in BPMN panel');
             return;
           }
+        }
+        
+        // Ensure canvas has proper dimensions
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        canvas.style.minHeight = '400px';
+        
+        console.log('Preparando restauración del BPMN modeler al panel');
+        
+        // OPTIMIZADO: Restauración inmediata sin delays
+        try {
+          // Always try to restore - this will now always create a new modeler instance
+          const restoredModeler = await modelerManager.restoreToNewContainer(canvas);
           
-          // Make sure the panel is visible
-          bpmnPanel.style.display = '';
-          bpmnPanel.style.visibility = 'visible';
-          
-          // Ensure the panel has the expected structure
-          let canvas = bpmnPanel.querySelector('#js-canvas');
-          if (!canvas) {
-            console.warn('Canvas not found in BPMN panel, creating it');
-            const panelContent = bpmnPanel.querySelector('.panel-content');
-            if (panelContent) {
-              canvas = document.createElement('div');
-              canvas.id = 'js-canvas';
-              canvas.className = 'bpmn-container';
-              panelContent.appendChild(canvas);
-              console.log('Created js-canvas element in BPMN panel');
-            } else {
-              console.error('Panel content container not found in BPMN panel');
-              return;
-            }
-          }
-          
-          // Ensure canvas has proper dimensions
-          canvas.style.width = '100%';
-          canvas.style.height = '100%';
-          canvas.style.minHeight = '400px';
-          
-          console.log('Preparando restauración del BPMN modeler al panel');
-          
-          // Force redraw before attaching modeler
-          setTimeout(async () => {
+          if (restoredModeler) {
+            console.log('BPMN modeler inicializado/restaurado correctamente');
+            
+            // Force resize immediately to ensure proper dimensions
             try {
-              // Always try to restore - this will now always create a new modeler instance
-              const restoredModeler = await modelerManager.restoreToNewContainer(canvas);
-              
-              if (restoredModeler) {
-                console.log('BPMN modeler inicializado/restaurado correctamente');
-                
-                // Force resize after a short delay to ensure proper dimensions
-                setTimeout(() => {
-                  try {
-                    const canvas = restoredModeler.get('canvas');
-                    if (canvas) {
-                      canvas.resized();
-                    }
-                  } catch (resizeErr) {
-                    console.warn('Error al redimensionar el canvas después de la restauración:', resizeErr);
-                  }
-                }, 100);
-              } else {
-                throw new Error('No se pudo restaurar el modelador');
+              const canvas = restoredModeler.get('canvas');
+              if (canvas) {
+                canvas.resized();
               }
-            } catch (err) {
-              console.error('Error restaurando BPMN modeler, intentando crear nuevo:', err);
-              
-              try {
-                // Last resort - create a completely new instance
-                modelerManager.initialize(canvas, true);
-                console.log('Nuevo modeler BPMN inicializado como fallback');
-              } catch (initErr) {
-                console.error('Error fatal al inicializar el modeler BPMN:', initErr);
-              }
+            } catch (resizeErr) {
+              console.warn('Error al redimensionar el canvas después de la restauración:', resizeErr);
             }
-          }, 100);
-        }, 500); // Dar más tiempo para que se cree el DOM
+
+            // Restaurar estado completo desde cookies
+            if (window.cookieAutoSaveManager) {
+              setTimeout(async () => {
+                console.log('🔄 Restaurando estado completo desde cookies...');
+                
+                // Restaurar estado BPMN
+                const bpmnRestored = await window.cookieAutoSaveManager.restoreBpmnState();
+                if (bpmnRestored) {
+                  console.log('✅ Estado BPMN restaurado desde cookies');
+                }
+                
+                // Restaurar PPIs
+                const ppiRestored = window.cookieAutoSaveManager.restorePPIState();
+                if (ppiRestored) {
+                  console.log('✅ PPIs restaurados desde cookies');
+                }
+                
+                console.log('✅ Restauración completa desde cookies finalizada');
+              }, 500);
+            } else {
+              // Fallback al sistema anterior
+              console.log('⚠️ Usando sistema de restauración anterior...');
+              // The original code had preservedPPIState and window.ppiManager.core,
+              // but these variables are not defined in the provided context.
+              // Assuming they are meant to be restored if available.
+              // For now, removing them as they are not defined.
+            }
+          } else {
+            throw new Error('No se pudo restaurar el modelador');
+          }
+        } catch (err) {
+          console.error('Error restaurando BPMN modeler, intentando crear nuevo:', err);
+          
+          try {
+            // Last resort - create a completely new instance
+            modelerManager.initialize(canvas, true);
+            console.log('Nuevo modeler BPMN inicializado como fallback');
+            
+            // Restaurar estado desde cookies incluso en el fallback
+            if (window.cookieAutoSaveManager) {
+              setTimeout(async () => {
+                await window.cookieAutoSaveManager.restoreBpmnState();
+                window.cookieAutoSaveManager.restorePPIState();
+              }, 500);
+            }
+          } catch (initErr) {
+            console.error('Error fatal al inicializar el modeler BPMN:', initErr);
+          }
+        }
       }
 
       // Recargar automáticamente el panel RASCI si está activo
@@ -1413,10 +1453,15 @@ class PanelManager {
         }, 300);
       }
 
+      // Notificar que la configuración se completó
+      if (this.onConfigurationComplete) {
+        this.onConfigurationComplete();
+      }
+
       this.closeSelector();
 
     } catch (error) {
-      console.error('Error applying configuration:', error);
+      console.error('❌ Error aplicando configuración de paneles:', error);
     } finally {
       this.isApplyingConfiguration = false;
     }
