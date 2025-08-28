@@ -109,11 +109,29 @@ class PPICore {
     try {
       console.log('🗑️ [deletePPIFromCanvas] Iniciando eliminación del canvas para PPI:', ppiId);
       
-      // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+      // MEJORADO: Obtener modelador de múltiples fuentes
+      let modeler = null;
+      
+      // Intentar obtener del adapter primero
+      if (this.adapter && typeof this.adapter.getBpmnModeler === 'function') {
+        modeler = this.adapter.getBpmnModeler();
+        console.log('🗑️ [deletePPIFromCanvas] Modeler obtenido desde adapter:', !!modeler);
+      }
+      
+      // Fallback a window.modeler
+      if (!modeler && typeof window !== 'undefined' && window.modeler) {
+        modeler = window.modeler;
+        console.log('🗑️ [deletePPIFromCanvas] Modeler obtenido desde window.modeler:', !!modeler);
+      }
+      
+      // Fallback a window.ppiManager.adapter
+      if (!modeler && typeof window !== 'undefined' && window.ppiManager && window.ppiManager.adapter) {
+        modeler = window.ppiManager.adapter.getBpmnModeler();
+        console.log('🗑️ [deletePPIFromCanvas] Modeler obtenido desde window.ppiManager.adapter:', !!modeler);
+      }
       
       if (!modeler) {
-        console.log('❌ [deletePPIFromCanvas] Modeler no disponible');
+        console.log('❌ [deletePPIFromCanvas] Modeler no disponible después de intentar múltiples fuentes');
         return false;
       }
       
@@ -139,23 +157,44 @@ class PPICore {
       const elementRegistry = modeler.get('elementRegistry');
       const modeling = modeler.get('modeling');
       
+      if (!elementRegistry || !modeling) {
+        console.log('❌ [deletePPIFromCanvas] ElementRegistry o Modeling no disponibles');
+        return false;
+      }
+      
       console.log('🔍 [deletePPIFromCanvas] Buscando elemento en canvas con ID:', elementId);
       
-      // Find the PPI element on the canvas using elementId
+      // MEJORADO: Buscar elemento de múltiples formas
       let ppiElement = elementRegistry.get(elementId);
       
       if (!ppiElement) {
         console.log('⚠️ [deletePPIFromCanvas] Elemento no encontrado por ID, buscando por nombre...');
-        // Try to find by searching all elements for PPINOT types
+        
+        // Buscar por nombre en elementos PPINOT
         const allElements = elementRegistry.getAll();
         const ppiElements = allElements.filter(el => 
           el.type && el.type.startsWith('PPINOT:') && 
+          el.type !== 'PPINOT:Target' && 
+          el.type !== 'PPINOT:Scope' && 
+          el.type !== 'PPINOT:Measure' && 
+          el.type !== 'PPINOT:Condition' &&
           (el.businessObject && el.businessObject.name === ppi.title)
         );
         
         if (ppiElements.length > 0) {
           ppiElement = ppiElements[0];
           console.log('✅ [deletePPIFromCanvas] Elemento encontrado por nombre:', ppiElement.id);
+        } else {
+          // Buscar por tipo PPINOT:Ppi
+          const ppiTypeElements = allElements.filter(el => 
+            el.type === 'PPINOT:Ppi' || 
+            (el.businessObject && el.businessObject.$type === 'PPINOT:Ppi')
+          );
+          
+          if (ppiTypeElements.length > 0) {
+            ppiElement = ppiTypeElements[0];
+            console.log('✅ [deletePPIFromCanvas] Elemento encontrado por tipo PPINOT:Ppi:', ppiElement.id);
+          }
         }
       } else {
         console.log('✅ [deletePPIFromCanvas] Elemento encontrado por ID:', ppiElement.id);
@@ -164,45 +203,87 @@ class PPICore {
       if (ppiElement) {
         console.log('🔍 [deletePPIFromCanvas] Buscando elementos hijos...');
         
-        // Find all child elements (scope, target, measure, condition)
+        // MEJORADO: Buscar elementos hijos de forma más robusta
         const allElements = elementRegistry.getAll();
-        const childElements = allElements.filter(el => 
-          el.parent && el.parent.id === ppiElement.id && (
-            el.type === 'PPINOT:Scope' || 
-            el.type === 'PPINOT:Target' || 
-            el.type === 'PPINOT:Measure' || 
-            el.type === 'PPINOT:Condition' ||
-            (el.businessObject && (
-              el.businessObject.$type === 'PPINOT:Scope' ||
-              el.businessObject.$type === 'PPINOT:Target' ||
-              el.businessObject.$type === 'PPINOT:Measure' ||
-              el.businessObject.$type === 'PPINOT:Condition'
-            ))
-          )
-        );
+        const childElements = allElements.filter(el => {
+          // Verificar si es hijo directo del elemento PPI
+          if (el.parent && el.parent.id === ppiElement.id) {
+            return el.type === 'PPINOT:Scope' || 
+                   el.type === 'PPINOT:Target' || 
+                   el.type === 'PPINOT:Measure' || 
+                   el.type === 'PPINOT:Condition' ||
+                   (el.businessObject && (
+                     el.businessObject.$type === 'PPINOT:Scope' ||
+                     el.businessObject.$type === 'PPINOT:Target' ||
+                     el.businessObject.$type === 'PPINOT:Measure' ||
+                     el.businessObject.$type === 'PPINOT:Condition'
+                   ));
+          }
+          return false;
+        });
         
         console.log(`🎯 [deletePPIFromCanvas] Encontrados ${childElements.length} elementos hijos:`, 
           childElements.map(el => ({ id: el.id, type: el.type })));
         
-        // Remove child elements first
+        // MEJORADO: Eliminar elementos hijos con mejor manejo de errores
         if (childElements.length > 0) {
           try {
             console.log('🗑️ [deletePPIFromCanvas] Eliminando elementos hijos...');
-            modeling.removeElements(childElements);
+            
+            // Eliminar elementos uno por uno para mejor control
+            childElements.forEach(childElement => {
+              try {
+                modeling.removeElements([childElement]);
+                console.log(`✅ [deletePPIFromCanvas] Elemento hijo eliminado: ${childElement.id}`);
+              } catch (childError) {
+                console.warn(`⚠️ [deletePPIFromCanvas] Error eliminando elemento hijo ${childElement.id}:`, childError);
+              }
+            });
+            
             console.log('✅ [deletePPIFromCanvas] Elementos hijos eliminados exitosamente');
           } catch (error) {
             console.error('❌ [deletePPIFromCanvas] Error eliminando elementos hijos:', error);
           }
         }
         
-        // Remove the PPI element
+        // MEJORADO: Eliminar elemento PPI principal con mejor manejo de errores
         try {
           console.log('🗑️ [deletePPIFromCanvas] Eliminando elemento PPI principal...');
+          
+          // Intentar eliminar con modeling.removeElements
           modeling.removeElements([ppiElement]);
           console.log('✅ [deletePPIFromCanvas] Elemento PPI eliminado exitosamente');
+          
+          // MEJORADO: Forzar actualización del canvas
+          try {
+            const canvas = modeler.get('canvas');
+            if (canvas && typeof canvas.resized === 'function') {
+              canvas.resized();
+              console.log('✅ [deletePPIFromCanvas] Canvas actualizado');
+            }
+          } catch (canvasError) {
+            console.warn('⚠️ [deletePPIFromCanvas] Error actualizando canvas:', canvasError);
+          }
+          
           return true;
         } catch (error) {
           console.error('❌ [deletePPIFromCanvas] Error eliminando elemento PPI:', error);
+          
+          // MEJORADO: Intentar método alternativo de eliminación
+          try {
+            console.log('🔄 [deletePPIFromCanvas] Intentando método alternativo de eliminación...');
+            
+            // Intentar eliminar usando el command stack
+            const commandStack = modeler.get('commandStack');
+            if (commandStack) {
+              commandStack.execute('element.delete', { elements: [ppiElement] });
+              console.log('✅ [deletePPIFromCanvas] Elemento PPI eliminado con command stack');
+              return true;
+            }
+          } catch (altError) {
+            console.error('❌ [deletePPIFromCanvas] Error con método alternativo:', altError);
+          }
+          
           return false;
         }
       } else {

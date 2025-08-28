@@ -331,11 +331,11 @@ class PPIUI {
     console.log('[PPI-UI] Core PPIs count:', this.core.ppis ? this.core.ppis.length : 0);
     console.log('[PPI-UI] Filtered PPIs count:', this.core.filteredPPIs ? this.core.filteredPPIs.length : 0);
     
-    // Implement throttled refresh to prevent excessive calls
+    // MEJORADO: Implement throttled refresh to prevent excessive calls
     if (!this._throttledRefresh) {
       this._throttledRefresh = this.throttle(() => {
         this._refreshPPIListImpl();
-      }, 300); // Reduced to 300ms for faster updates
+      }, 200); // Reduced to 200ms for faster updates
     }
     
     this._throttledRefresh();
@@ -344,7 +344,7 @@ class PPIUI {
   _refreshPPIListImpl(retryCount = 0) {
     console.log('[PPI-UI] _refreshPPIListImpl called');
     
-    // Buscar el contenedor de múltiples formas para mayor robustez
+    // MEJORADO: Buscar el contenedor de múltiples formas para mayor robustez
     let container = document.getElementById('ppi-list');
     
     // Si no lo encuentra, intentar con querySelector
@@ -359,26 +359,48 @@ class PPIUI {
       console.log('[PPI-UI] Trying querySelector .ppi-list:', !!container);
     }
     
+    // MEJORADO: Buscar en el panel PPI específico
+    if (!container) {
+      const ppiPanel = document.getElementById('ppi-panel');
+      if (ppiPanel) {
+        container = ppiPanel.querySelector('#ppi-list') || ppiPanel.querySelector('.ppi-list');
+        console.log('[PPI-UI] Trying ppi-panel container:', !!container);
+      }
+    }
+    
     console.log(`[PPI-UI] Container search result (attempt ${retryCount + 1}):`, !!container);
     
     if (!container) {
-      if (retryCount < 10) { // Maximum 10 retries (2 seconds total)
-        console.warn(`[PPI-UI] ppi-list container not found, retrying in 200ms... (attempt ${retryCount + 1}/10)`);
+      if (retryCount < 15) { // MEJORADO: Maximum 15 retries (3 seconds total)
+        console.warn(`[PPI-UI] ppi-list container not found, retrying in 200ms... (attempt ${retryCount + 1}/15)`);
         // Retry mechanism for when container is not yet available
         setTimeout(() => {
           this._refreshPPIListImpl(retryCount + 1);
         }, 200);
       } else {
-        console.error('[PPI-UI] ppi-list container not found after 10 retries, giving up');
+        console.error('[PPI-UI] ppi-list container not found after 15 retries, giving up');
+        // MEJORADO: Intentar crear el contenedor si no existe
+        this.createPPIListContainer();
+      }
+      return;
+    }
+
+    // MEJORADO: Verificar que el core esté disponible
+    if (!this.core || !this.core.ppis) {
+      console.warn('[PPI-UI] Core or PPIs not available');
+      if (retryCount < 5) {
+        setTimeout(() => {
+          this._refreshPPIListImpl(retryCount + 1);
+        }, 500);
       }
       return;
     }
 
     // Use filtered PPIs if available, otherwise use all PPIs
-    const ppisToShow = this.core.filteredPPIs.length > 0 ? this.core.filteredPPIs : this.core.ppis;
+    const ppisToShow = this.core.filteredPPIs && this.core.filteredPPIs.length > 0 ? this.core.filteredPPIs : this.core.ppis;
     console.log('[PPI-UI] PPIs to show:', ppisToShow.length);
 
-    // Crear un mapa de PPIs existentes para evitar recrear elementos innecesariamente
+    // MEJORADO: Crear un mapa de PPIs existentes para evitar recrear elementos innecesariamente
     const existingCards = new Map();
     container.querySelectorAll('.ppi-card[data-ppi-id]').forEach(card => {
       const ppiId = card.getAttribute('data-ppi-id');
@@ -399,7 +421,7 @@ class PPIUI {
       let ppiElement = existingCards.get(ppi.id);
 
       if (ppiElement) {
-        // Solo actualizar si los datos han cambiado realmente
+        // MEJORADO: Solo actualizar si los datos han cambiado realmente
         const storedData = ppiElement.getAttribute('data-ppi-data') || '';
         const currentData = JSON.stringify({
           title: ppi.title,
@@ -428,7 +450,7 @@ class PPIUI {
         newCards.add(ppi.id);
 
       } else {
-        // Crear nuevo elemento solo si realmente es nuevo
+        // MEJORADO: Crear nuevo elemento solo si realmente es nuevo
         const newElement = this.createPPIElement(ppi);
         const currentData = JSON.stringify({
           title: ppi.title,
@@ -447,7 +469,7 @@ class PPIUI {
       }
     });
 
-    // Limpiar elementos que ya no existen
+    // MEJORADO: Limpiar elementos que ya no existen
     const elementsToRemove = [];
     existingCards.forEach((card, ppiId) => {
       if (!newCards.has(ppiId)) {
@@ -468,6 +490,50 @@ class PPIUI {
 
     // Restore scroll position to prevent jumping
     container.scrollTop = scrollTop;
+    
+    // MEJORADO: Notificar que la lista se ha actualizado
+    console.log(`[PPI-UI] Lista PPI actualizada: ${ppisToShow.length} PPIs mostrados`);
+  }
+
+  // NUEVO: Método para crear el contenedor de lista PPI si no existe
+  createPPIListContainer() {
+    console.log('[PPI-UI] Intentando crear contenedor de lista PPI');
+    
+    // Buscar el panel PPI
+    let ppiPanel = document.getElementById('ppi-panel');
+    if (!ppiPanel) {
+      console.warn('[PPI-UI] Panel PPI no encontrado');
+      return;
+    }
+    
+    // Buscar el contenedor principal
+    let mainContainer = ppiPanel.querySelector('.ppi-main-container');
+    if (!mainContainer) {
+      console.warn('[PPI-UI] Contenedor principal PPI no encontrado');
+      return;
+    }
+    
+    // Buscar el contenedor de lista
+    let listContainer = mainContainer.querySelector('.ppi-list-container');
+    if (!listContainer) {
+      console.warn('[PPI-UI] Contenedor de lista PPI no encontrado');
+      return;
+    }
+    
+    // Crear el contenedor de lista si no existe
+    let ppiList = listContainer.querySelector('#ppi-list');
+    if (!ppiList) {
+      ppiList = document.createElement('div');
+      ppiList.id = 'ppi-list';
+      ppiList.className = 'ppi-list';
+      listContainer.appendChild(ppiList);
+      console.log('[PPI-UI] Contenedor de lista PPI creado');
+    }
+    
+    // Intentar refrescar la lista nuevamente
+    setTimeout(() => {
+      this._refreshPPIListImpl(0);
+    }, 100);
   }
 
   filterPPIs() {

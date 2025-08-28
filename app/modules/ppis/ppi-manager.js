@@ -296,15 +296,16 @@ class PPIManager {
       
       console.log(`[PPI-Manager] window.modeler disponible:`, !!(typeof window !== 'undefined' && window.modeler));
       
-      // Obtener modelador del nuevo sistema o fallback a window
+      // MEJORADO: Obtener modelador de múltiples fuentes
       let modeler = null;
       
-      if (this.adapter) {
+      // Intentar obtener del adapter primero
+      if (this.adapter && typeof this.adapter.getBpmnModeler === 'function') {
         modeler = this.adapter.getBpmnModeler();
-        console.log(`[PPI-Manager] Modeler desde adapter:`, !!modeler);
+        console.log(`[PPI-Manager] Modeler obtenido desde adapter:`, !!modeler);
       }
       
-      // Si el adapter no funciona, usar window.modeler directamente
+      // Fallback a window.modeler
       if (!modeler && typeof window !== 'undefined' && window.modeler) {
         modeler = window.modeler;
         console.log(`[PPI-Manager] Usando window.modeler como fallback`);
@@ -312,33 +313,49 @@ class PPIManager {
       
       if (!modeler) {
         console.warn(`[PPI-Manager] Modelador BPMN no disponible`);
+        // MEJORADO: Programar reintento
+        setTimeout(() => {
+          console.log(`[PPI-Manager] Reintentando configuración de event listeners...`);
+          this.setupBpmnEventListeners();
+        }, 2000);
         return;
       }
       
       console.log(`[PPI-Manager] Modelador encontrado:`, !!modeler);
       
       const eventBus = modeler.get('eventBus');
-      console.log(`[PPI-Manager] EventBus obtenido:`, eventBus);
+      console.log(`[PPI-Manager] EventBus obtenido:`, !!eventBus);
+      
+      if (!eventBus) {
+        console.warn(`[PPI-Manager] EventBus no disponible`);
+        return;
+      }
       
       // Limpiar listeners previos para evitar duplicados
       if (this._bpmnListeners) {
         console.log(`[PPI-Manager] Limpiando listeners previos`);
         this._bpmnListeners.forEach(({ event, handler }) => {
-          eventBus.off(event, handler);
+          try {
+            eventBus.off(event, handler);
+          } catch (error) {
+            console.warn(`[PPI-Manager] Error limpiando listener ${event}:`, error);
+          }
         });
       }
       this._bpmnListeners = [];
       
-      // Listener para eliminación de PPIs del canvas
+      // MEJORADO: Listener para eliminación de PPIs del canvas
       const removeHandler = (event) => {
+        console.log('[PPI-Manager] Element removed event:', event);
         if (event.element && this.core && this.core.isPPIElement && this.core.isPPIElement(event.element)) {
+          console.log('[PPI-Manager] PPINOT element removed:', event.element.id);
           this.removePPIFromList(event.element.id);
         }
       };
       eventBus.on('element.removed', removeHandler);
       this._bpmnListeners.push({ event: 'element.removed', handler: removeHandler });
 
-      // Listener para adición de PPIs al canvas
+      // MEJORADO: Listener para adición de PPIs al canvas
       const addHandler = (event) => {
         console.log('[PPI-Manager] Element added event:', event);
         const element = event.element;
@@ -347,7 +364,8 @@ class PPIManager {
           const existingPPI = this.core.ppis && this.core.ppis.find(ppi => ppi.elementId === element.id);
           if (!existingPPI) {
             console.log('[PPI-Manager] Creating PPI from element:', element.id);
-            setTimeout(() => this.createPPIFromElement(element.id), 100);
+            // MEJORADO: Usar delay más corto para respuesta más rápida
+            setTimeout(() => this.createPPIFromElement(element.id), 50);
           } else {
             console.log('[PPI-Manager] PPI already exists for element:', element.id);
           }
@@ -359,33 +377,37 @@ class PPIManager {
       this._bpmnListeners.push({ event: 'element.added', handler: addHandler });
       console.log(`[PPI-Manager] ✅ Listener 'element.added' registrado exitosamente`);
 
-      // Listener para cambios en elementos PPI del canvas
-      eventBus.on('element.changed', (event) => {
+      // MEJORADO: Listener para cambios en elementos PPI del canvas
+      const changeHandler = (event) => {
         console.log('📝 Element changed event:', event);
         const element = event.element;
         if (element && this.core && this.core.isPPIElement && this.core.isPPIElement(element)) {
           console.log('📝 PPI element changed:', element.id, element.businessObject && element.businessObject.name);
           this.updatePPIFromElement(element);
         }
-      });
+      };
+      eventBus.on('element.changed', changeHandler);
+      this._bpmnListeners.push({ event: 'element.changed', handler: changeHandler });
 
-      // Listener adicional para cambios de propiedades
-      eventBus.on('commandStack.element.updateProperties.executed', (event) => {
+      // MEJORADO: Listener adicional para cambios de propiedades
+      const propertiesHandler = (event) => {
         console.log('📝 Properties updated event:', event);
         const element = event.context && event.context.element;
-        if (element && this.core.isPPIElement(element)) {
+        if (element && this.core.isPPIElement && this.core.isPPIElement(element)) {
           console.log('📝 PPI properties updated:', element.id, element.businessObject && element.businessObject.name);
           setTimeout(() => this.updatePPIFromElement(element), 50);
         }
-      });
+      };
+      eventBus.on('commandStack.element.updateProperties.executed', propertiesHandler);
+      this._bpmnListeners.push({ event: 'commandStack.element.updateProperties.executed', handler: propertiesHandler });
 
-      // Listener para cambios en el modelo
-      eventBus.on('shape.changed', (event) => {
+      // MEJORADO: Listener para cambios en el modelo
+      const shapeChangeHandler = (event) => {
         console.log('📝 Shape changed event:', event);
         const element = event.element;
         
         // Detectar elementos PPI principales
-        if (element && this.core.isPPIElement(element)) {
+        if (element && this.core.isPPIElement && this.core.isPPIElement(element)) {
           console.log('📝 PPI shape changed:', element.id, element.businessObject && element.businessObject.name);
           
           // Verificar si el PPI existe, si no, crearlo
@@ -398,7 +420,7 @@ class PPIManager {
               setTimeout(() => {
                 this.createPPIFromElement(element.id);
                 this._creatingPPI = false;
-              }, 100);
+              }, 50);
             } else {
               console.log('📝 Skipping duplicate PPI creation for:', element.id);
             }
@@ -424,13 +446,15 @@ class PPIManager {
                 console.log('📝 Refreshing UI after Target/Scope update');
                 this.ui.refreshPPIList();
               }
-            }, 100);
+            }, 50);
           }
         }
-      });
+      };
+      eventBus.on('shape.changed', shapeChangeHandler);
+      this._bpmnListeners.push({ event: 'shape.changed', handler: shapeChangeHandler });
 
-      // Listener para selección de elementos en el canvas
-      eventBus.on('selection.changed', (event) => {
+      // MEJORADO: Listener para selección de elementos en el canvas
+      const selectionHandler = (event) => {
         console.log(`[PPI-Manager] Selección cambiada en canvas:`, event);
         const selectedElements = event.newSelection || [];
         console.log(`[PPI-Manager] Elementos seleccionados:`, selectedElements.length);
@@ -461,9 +485,11 @@ class PPIManager {
           console.log(`[PPI-Manager] Múltiples elementos o sin selección, limpiando`);
           this.ui.clearPPISelection();
         }
-      });
+      };
+      eventBus.on('selection.changed', selectionHandler);
+      this._bpmnListeners.push({ event: 'selection.changed', handler: selectionHandler });
 
-      // NUEVO: Listener específico para cambios de propiedades (nombres)
+      // MEJORADO: Listener específico para cambios de propiedades (nombres)
       const elementChangedHandler = (event) => {
         console.log('🔄 Element changed event:', event);
         const element = event.element;
@@ -479,7 +505,7 @@ class PPIManager {
               if (this.ui) {
                 this.ui.refreshPPIList();
               }
-            }, 150);
+            }, 50);
           }
         }
       };
@@ -489,8 +515,52 @@ class PPIManager {
       console.log(`[PPI-Manager] 🎉 Setup de event listeners completado exitosamente`);
       console.log(`[PPI-Manager] Total listeners registrados: ${this._bpmnListeners.length}`);
       
+      // MEJORADO: Verificar PPIs existentes en el canvas después de configurar listeners
+      this.verifyExistingPPIsInCanvas();
+      
     } catch (error) {
       console.error('[PPI-Manager] Error configurando listeners BPMN:', error);
+    }
+  }
+
+  // NUEVO: Método para verificar PPIs existentes en el canvas
+  verifyExistingPPIsInCanvas() {
+    try {
+      const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+      if (!modeler) {
+        console.log('[PPI-Manager] Modeler no disponible para verificación');
+        return;
+      }
+
+      const elementRegistry = modeler.get('elementRegistry');
+      const allElements = elementRegistry.getAll();
+      
+      // Buscar elementos PPINOT en el canvas
+      const ppiElements = allElements.filter(el => 
+        el.type && el.type.startsWith('PPINOT:') && 
+        el.type !== 'PPINOT:Target' && 
+        el.type !== 'PPINOT:Scope' && 
+        el.type !== 'PPINOT:Measure' && 
+        el.type !== 'PPINOT:Condition'
+      );
+
+      console.log(`[PPI-Manager] Verificación: ${ppiElements.length} elementos PPINOT encontrados en canvas`);
+
+      // Verificar si cada elemento PPINOT tiene un PPI correspondiente
+      ppiElements.forEach(element => {
+        const existingPPI = this.core.ppis.find(ppi => ppi.elementId === element.id);
+        if (!existingPPI) {
+          console.log(`[PPI-Manager] Elemento PPINOT sin PPI correspondiente: ${element.id}, creando PPI`);
+          setTimeout(() => {
+            this.createPPIFromElement(element.id);
+          }, 100);
+        } else {
+          console.log(`[PPI-Manager] Elemento PPINOT ya tiene PPI: ${element.id} -> ${existingPPI.id}`);
+        }
+      });
+
+    } catch (error) {
+      console.error('[PPI-Manager] Error verificando PPIs existentes en canvas:', error);
     }
   }
 

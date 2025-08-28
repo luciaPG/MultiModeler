@@ -682,6 +682,15 @@ class PanelLoader {
         window.ppiManager.setupEventListeners();
       }
       
+      // MEJORADO: Forzar configuración de event listeners BPMN
+      if (typeof window.ppiManager.setupBpmnEventListeners === 'function') {
+        console.log('[PanelLoader] Forzando configuración de event listeners BPMN');
+        window.ppiManager.setupBpmnEventListeners();
+      }
+      
+      // MEJORADO: Verificar y crear PPIs desde elementos existentes en el canvas
+      this.syncExistingPPIsFromCanvas();
+      
       // Create sample PPIs if none exist - SOLO si es la primera vez
       if (typeof window.ppiManager.createSamplePPIs === 'function') {
         // Verificar si ya hay PPIs en el core antes de crear muestras
@@ -704,6 +713,67 @@ class PanelLoader {
       this.debugPPISyncStatus();
     } else {
       console.warn('[PanelLoader] PPI Manager no disponible');
+    }
+  }
+
+  // NUEVO: Método para sincronizar PPIs existentes desde el canvas
+  syncExistingPPIsFromCanvas() {
+    if (!window.ppiManager || !window.ppiManager.core) {
+      console.log('[PanelLoader] PPI Manager no disponible para sincronización');
+      return;
+    }
+
+    // Obtener modelador
+    const modeler = window.modeler || (window.ppiManager.adapter && window.ppiManager.adapter.getBpmnModeler());
+    if (!modeler) {
+      console.log('[PanelLoader] Modeler no disponible para sincronización');
+      return;
+    }
+
+    try {
+      const elementRegistry = modeler.get('elementRegistry');
+      const allElements = elementRegistry.getAll();
+      
+      // Buscar elementos PPINOT en el canvas
+      const ppiElements = allElements.filter(el => 
+        el.type && el.type.startsWith('PPINOT:') && 
+        el.type !== 'PPINOT:Target' && 
+        el.type !== 'PPINOT:Scope' && 
+        el.type !== 'PPINOT:Measure' && 
+        el.type !== 'PPINOT:Condition'
+      );
+
+      console.log(`[PanelLoader] Encontrados ${ppiElements.length} elementos PPINOT en el canvas`);
+
+      // Verificar si cada elemento PPINOT tiene un PPI correspondiente
+      ppiElements.forEach(element => {
+        const existingPPI = window.ppiManager.core.ppis.find(ppi => ppi.elementId === element.id);
+        if (!existingPPI) {
+          console.log(`[PanelLoader] Elemento PPINOT sin PPI correspondiente: ${element.id}, creando PPI`);
+          if (typeof window.ppiManager.createPPIFromElement === 'function') {
+            window.ppiManager.createPPIFromElement(element.id);
+          }
+        } else {
+          console.log(`[PanelLoader] Elemento PPINOT ya tiene PPI: ${element.id} -> ${existingPPI.id}`);
+        }
+      });
+
+      // Verificar PPIs huérfanos (PPIs sin elementos en el canvas)
+      const orphanPPIs = window.ppiManager.core.ppis.filter(ppi => {
+        if (!ppi.elementId) return true;
+        const canvasElement = elementRegistry.get(ppi.elementId);
+        return !canvasElement;
+      });
+
+      if (orphanPPIs.length > 0) {
+        console.log(`[PanelLoader] Encontrados ${orphanPPIs.length} PPIs huérfanos (sin elementos en canvas)`);
+        orphanPPIs.forEach(ppi => {
+          console.log(`[PanelLoader] PPI huérfano: ${ppi.id} (${ppi.title})`);
+        });
+      }
+
+    } catch (error) {
+      console.error('[PanelLoader] Error sincronizando PPIs desde canvas:', error);
     }
   }
 
