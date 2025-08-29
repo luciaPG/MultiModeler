@@ -4,6 +4,8 @@
  * when panel configurations change
  */
 
+import { getServiceRegistry } from '../core/ServiceRegistry.js';
+
 class ModelerManager {
   constructor() {
     this.modeler = null;
@@ -69,12 +71,17 @@ class ModelerManager {
     console.log('Initializing new BPMN modeler');
     
     try {
-      // Get the global imports we need from window object
-      if (!window.MultiNotationModeler || !window.PPINOTModdle || !window.RALphModdle) {
-        console.error('Required global modules not found:',
-          !window.MultiNotationModeler ? 'MultiNotationModeler missing' : '',
-          !window.PPINOTModdle ? 'PPINOTModdle missing' : '',
-          !window.RALphModdle ? 'RALphModdle missing' : ''
+      // Get modules from ServiceRegistry
+      const registry = getServiceRegistry();
+      const MultiNotationModeler = registry && registry.get ? registry.get('MultiNotationModeler') : null;
+      const PPINOTModdle = registry && registry.get ? registry.get('PPINOTModdle') : null;
+      const RALphModdle = registry && registry.get ? registry.get('RALphModdle') : null;
+      
+      if (!MultiNotationModeler || !PPINOTModdle || !RALphModdle) {
+        console.error('Required modules not found in ServiceRegistry:',
+          !MultiNotationModeler ? 'MultiNotationModeler missing' : '',
+          !PPINOTModdle ? 'PPINOTModdle missing' : '',
+          !RALphModdle ? 'RALphModdle missing' : ''
         );
         
         // Try alternative approach using direct imports if the modules are not in the global scope
@@ -99,21 +106,30 @@ class ModelerManager {
           throw new Error('Could not load required modules via any method');
         }
       } else {
-        // Create new modeler instance using global modules
-        this.modeler = new window.MultiNotationModeler({
+        // Create new modeler instance using registry modules
+        this.modeler = new MultiNotationModeler({
           container: this.container,
           moddleExtensions: {
-            PPINOT: window.PPINOTModdle,
-            RALph: window.RALphModdle
+            PPINOT: PPINOTModdle,
+            RALph: RALphModdle
           }
         });
         
         console.log('Successfully created MultiNotationModeler instance using global modules');
       }
       
-      // Make the modeler available globally (for backward compatibility)
-      window.bpmnModeler = this.modeler;
-      window.modeler = this.modeler;
+      // Register the modeler in the service registry
+      const sr = getServiceRegistry();
+      if (sr) {
+        sr.register('BpmnModeler', this.modeler);
+        sr.register('bpmnModeler', this.modeler); // backward compatibility
+      }
+      
+      // Debug exposure only in development
+      if (process.env.NODE_ENV !== 'production') {
+        // eslint-disable-next-line no-undef
+        globalThis.__debug = { ...(globalThis.__debug || {}), bpmnModeler: this.modeler, modeler: this.modeler };
+      }
       
       // Set up event listeners
       this.setupEventListeners();
@@ -403,9 +419,12 @@ class ModelerManager {
             canvas._container = null;
           }
           
-          // Remove global references
-          window.bpmnModeler = null;
-          window.modeler = null;
+          // Unregister from service registry
+          const registry = getServiceRegistry();
+          if (registry) {
+            registry.unregister('BpmnModeler');
+            registry.unregister('bpmnModeler');
+          }
         } catch (e) {
           console.warn('Error en limpieza adicional:', e);
         }
@@ -415,9 +434,12 @@ class ModelerManager {
       
       // Manual cleanup if no destroy method is available
       try {
-        // Remove global references
-        window.bpmnModeler = null;
-        window.modeler = null;
+        // Unregister from service registry
+        const sr = getServiceRegistry();
+        if (sr) {
+          sr.unregister('BpmnModeler');
+          sr.unregister('bpmnModeler');
+        }
         
         // Try to clean up DOM elements
         if (this.container) {

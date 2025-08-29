@@ -6,6 +6,7 @@ import {
 } from 'min-dash';
 
 import CommandInterceptor from 'diagram-js/lib/command/CommandInterceptor';
+import { getServiceRegistry } from '../../../ui/core/ServiceRegistry.js';
 
 import {
   add as collectionAdd,
@@ -97,10 +98,7 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
     if (element && isPPINOT(element)) {
       
       // Try to remove from PPI list
-      if (window.ppiManager) {
-        window.ppiManager.removePPIFromList(element.id);
-      } else {
-      }
+      this.tryRemoveFromPPIList(element.id);
     } else {
     }
   });
@@ -114,11 +112,10 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
     elements.forEach(element => {
       if (element && isPPINOT(element)) {
         
-        // Try to remove from PPI list
-        if (window.ppiManager) {
-          window.ppiManager.removePPIFromList(element.id);
-        } else {
-        }
+        // Try to remove from PPI list without window
+        const sr = getServiceRegistry?.();
+        const ppiMgr = sr?.get('PPIManager') || this.adapter?.getPPIManager?.();
+        ppiMgr?.removePPIFromList?.(element.id);
       }
     });
   });
@@ -345,6 +342,20 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
 
   this.postExecute('canvas.updateRoot', updatePPINOTElementsRoot);
 }
+
+/**
+ * Try to remove element from PPI list
+ */
+PPINOTUpdater.prototype.tryRemoveFromPPIList = async function(elementId) {
+  try {
+    const ppiManager = getServiceRegistry()?.get('PPIManagerInstance');
+    if (ppiManager) {
+      ppiManager.removePPIFromList(elementId);
+    }
+  } catch (error) {
+    console.warn('Could not access PPI manager:', error);
+  }
+};
 
 inherits(PPINOTUpdater, CommandInterceptor);
 

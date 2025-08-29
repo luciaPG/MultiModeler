@@ -2,6 +2,8 @@
 // Módulo para integrar PPIs con elementos BPMN
 // Permite vincular PPIs a tareas, eventos y otros elementos del diagrama
 
+import { getServiceRegistry } from '../ui/core/ServiceRegistry.js';
+
 class BpmnIntegration {
   constructor(ppiManager, bpmnModeler) {
     this.ppiManager = ppiManager;
@@ -576,19 +578,21 @@ class BpmnIntegration {
   }
 }
 
-// Exportar para uso global (temporal para compatibilidad)
-if (typeof window !== 'undefined') {
-  window.BpmnIntegration = BpmnIntegration;
-}
+// Register BpmnIntegration in ServiceRegistry
 
-// Registrar en ServiceRegistry si está disponible
 setTimeout(() => {
   try {
-    // Intentar acceder al ServiceRegistry global
-    if (typeof window !== 'undefined' && window.serviceRegistry) {
-      window.serviceRegistry.register('BpmnIntegration', BpmnIntegration, {
+    const registry = getServiceRegistry();
+    if (registry) {
+      registry.register('BpmnIntegration', BpmnIntegration, {
         description: 'Integración BPMN con PPIs'
       });
+      
+      // Debug exposure only in development
+      if (process.env.NODE_ENV !== 'production') {
+        globalThis.__debug = { ...(globalThis.__debug || {}), BpmnIntegration };
+      }
+      
       console.log('✅ BpmnIntegration registrado en ServiceRegistry');
     }
   } catch (error) {

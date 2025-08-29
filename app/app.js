@@ -11,15 +11,22 @@ import modelerManager from './modules/ui/managers/modeler-manager.js';
 import './modules/ui/managers/panel-manager.js';
 import './modules/ui/managers/cookie-autosave-manager.js';
 import { initializeCommunicationSystem } from './modules/ui/core/CommunicationSystem.js';
+import { getServiceRegistry } from './modules/ui/core/ServiceRegistry.js';
+import { resolve } from './services/global-access.js';
 
 // Import required JSON files for moddle extensions
 import PPINOTModdle from './modules/multinotationModeler/notations/ppinot/PPINOTModdle.json';
 import RALphModdle from './modules/multinotationModeler/notations/ralph/RALphModdle.json';
 
-// Expose required modules to the global scope for legacy compatibility
-window.MultiNotationModeler = MultiNotationModeler;
-window.PPINOTModdle = PPINOTModdle;
-window.RALphModdle = RALphModdle;
+// Register required modules in service registry instead of window
+const registerModules = () => {
+  const registry = getServiceRegistry();
+  if (registry) {
+    registry.register('MultiNotationModeler', MultiNotationModeler);
+    registry.register('PPINOTModdle', PPINOTModdle);
+    registry.register('RALphModdle', RALphModdle);
+  }
+};
 
 // Import CSS
 import 'bpmn-js/dist/assets/diagram-js.css';
@@ -54,6 +61,13 @@ async function initializeApp() {
   
   try {
     console.log('Inicializando aplicación VisualPPINOT...');
+
+    
+    // Initialize communication system first
+    initializeCommunicationSystem();
+    
+    // Register modules in service registry
+    registerModules();
     
     // Configurar elementos UI
     setupUIElements();
@@ -69,8 +83,12 @@ async function initializeApp() {
       }
     });
     
-    // Make modeler available globally for legacy compatibility
-    window.modeler = modeler;
+    // Register BpmnModeler in service registry (following bpmn-js patterns)
+    const serviceRegistry = getServiceRegistry();
+    if (serviceRegistry) {
+      serviceRegistry.register('BpmnModeler', modeler);
+    }
+  
     
     // Inicializar aplicación modular
     app = await initializeApplication({
@@ -78,19 +96,22 @@ async function initializeApp() {
       bpmnModeler: modeler // Pasar el modeler a la aplicación
     });
     
-    // Expose modules globally for compatibility with modeler-manager.js
-    window.MultiNotationModeler = MultiNotationModeler;
-    
     // Actualizar las extensiones del modeler con las proporcionadas por la app
     if (app.multinotationModeler) {
       // Añadir extensiones de moddle si están disponibles
       if (app.multinotationModeler.ppinot) {
         modeler.get('moddle').registerPackage({ ppinot: app.multinotationModeler.ppinot });
-        window.PPINOTModdle = app.multinotationModeler.ppinot;
+        const sr = getServiceRegistry();
+        if (sr) {
+          sr.register('PPINOTModdle', app.multinotationModeler.ppinot);
+        }
       }
       if (app.multinotationModeler.ralph) {
         modeler.get('moddle').registerPackage({ ralph: app.multinotationModeler.ralph });
-        window.RALphModdle = app.multinotationModeler.ralph;
+        const sr = getServiceRegistry();
+        if (sr) {
+          sr.register('RALphModdle', app.multinotationModeler.ralph);
+        }
       }
     }
     
@@ -99,9 +120,11 @@ async function initializeApp() {
       app.core.eventBus.publish('bpmn.modeler.created', { modeler: modeler });
     }
     
-    // Configurar panel loader y otros componentes necesarios
-    // Crear instancia global para usar en todo el código
-    window.panelLoader = new PanelLoader();
+    // Register panel loader in service registry
+    const sr = getServiceRegistry();
+    if (sr) {
+      sr.register('PanelLoader', new PanelLoader());
+    }
     
     // Registrar paneles disponibles en el panel manager
     if (app.core && app.core.panelManager) {
@@ -109,12 +132,6 @@ async function initializeApp() {
         // No-op para compatibilidad
         console.log('[App] Panel loading is now handled by the panel-loader');
       };
-    }
-    
-    // Ensure window.panelManager is available
-    if (!window.panelManager) {
-      console.error('[App] Panel manager not found, creating instance');
-      window.panelManager = new window.PanelManager();
     }
     
     // Configurar manejadores de eventos
@@ -153,76 +170,98 @@ function setupUIElements() {
 
 // Configurar eventos de UI
 function setupUIEvents() {
-  // Botón de nuevo diagrama
-  $('#new-diagram-btn').on('click', function() {
-    console.log('[DEBUG] Botón Nuevo Diagrama clickeado');
-    
-    try {
-      // Preparar UI
-      welcomeScreen.hide();
-      modelerContainer.show();
-      
-      // Crear nuevo modelo
-      console.log('[DEBUG] Iniciando creación del modelo...');
-      initModeler().then(() => {
-        console.log('[DEBUG] Modelo creado correctamente');
-      }).catch(err => {
-        console.error('[ERROR] Error creando el modelo:', err);
-        showErrorMessage('Error al crear nuevo modelo: ' + err.message);
+  $(function() {
+    // Botón de nuevo diagrama
+    $('#new-diagram-btn').on('click', function() {
+      console.log('[DEBUG] Botón Nuevo Diagrama clickeado');
+      console.log('[DEBUG] Elementos DOM:', {
+        welcomeScreen: welcomeScreen,
+        modelerContainer: modelerContainer,
+        modeler: modeler
       });
-    } catch (e) {
-      console.error('[ERROR] Error al procesar click en Nuevo Diagrama:', e);
-      showErrorMessage('Error al iniciar nuevo diagrama: ' + e.message);
-    }
-  });
-  
-  // Botón de abrir diagrama
-  $('#open-diagram-btn').on('click', async function() {
-    console.log('[DEBUG] Botón Abrir Diagrama clickeado');
-    if (isOpenButtonClicked) {
-      console.log('[DEBUG] Evitando doble clic en Abrir');
-      return; // Evitar doble clic
-    }
-    isOpenButtonClicked = true;
-    
-    try {
-      console.log('[DEBUG] Abriendo archivo...');
-      const xml = await openFile();
-      console.log('[DEBUG] Archivo abierto:', xml ? xml.substring(0, 50) + '...' : 'sin contenido');
-      
-      welcomeScreen.hide();
-      modelerContainer.show();
-      
-      console.log('[DEBUG] Visibilidad actualizada. Container visible:', modelerContainer.is(':visible'));
-      
-      // Trigger reflow
-      setTimeout(() => {
-        console.log('[DEBUG] Ejecutando actualizaciones post-carga...');
-        $(window).trigger('resize');
-        
-        try {
-          if (modeler && modeler.get('canvas')) {
-            console.log('[DEBUG] Ajustando zoom');
-            modeler.get('canvas').zoom('fit-viewport');
-          }
-        } catch (zoomErr) {
-          console.warn('[WARN] Error al ajustar zoom:', zoomErr);
-        }
-      }, 500);
-    } catch (error) {
-      if (error.message !== 'Operación cancelada') {
-        console.error('[ERROR] Error al abrir el archivo:', error);
-        showErrorMessage('Error al abrir el archivo: ' + error.message);
-      } else {
-        console.log('[DEBUG] Operación cancelada por el usuario');
+
+      try {
+        // Preparar UI
+        console.log('[DEBUG] Ocultando welcome screen y mostrando modeler container');
+        welcomeScreen.hide();
+        modelerContainer.show();
+
+        // Crear nuevo modelo
+        console.log('[DEBUG] Iniciando creación del modelo...');
+        initModeler().then(() => {
+          console.log('[DEBUG] Modelo creado correctamente');
+        }).catch(err => {
+          console.error('[ERROR] Error creando el modelo:', err);
+          showErrorMessage('Error al crear nuevo modelo: ' + err.message);
+        });
+      } catch (e) {
+        console.error('[ERROR] Error al procesar click en Nuevo Diagrama:', e);
+        showErrorMessage('Error al iniciar nuevo diagrama: ' + e.message);
       }
-    } finally {
-      console.log('[DEBUG] Finalizando operación de apertura');
-      isOpenButtonClicked = false;
-    }
+    });
+
+    // Botón de abrir diagrama
+    $('#open-diagram-btn').on('click', function() {
+      openDiagramHandler();
+    });
+
+    // Botón de selector de paneles
+    $('#panel-selector-btn').on('click', function() {
+      const panelManager = resolve('PanelManagerInstance');
+      if (panelManager && panelManager.showSelector) {
+        panelManager.showSelector();
+      } else {
+        console.warn('[WARN] PanelManager no disponible');
+      }
+    });
+
+    // ...otros eventos de UI...
   });
-  
-  // Otros eventos de UI...
+}
+
+// Handler asíncrono para abrir diagrama
+async function openDiagramHandler() {
+  console.log('[DEBUG] Botón Abrir Diagrama clickeado');
+  if (isOpenButtonClicked) {
+    console.log('[DEBUG] Evitando doble clic en Abrir');
+    return; // Evitar doble clic
+  }
+  isOpenButtonClicked = true;
+  try {
+    console.log('[DEBUG] Abriendo archivo...');
+    const xml = await openFile();
+    console.log('[DEBUG] Archivo abierto:', xml ? xml.substring(0, 50) + '...' : 'sin contenido');
+    welcomeScreen.hide();
+    modelerContainer.show();
+    await modeler.importXML(xml);
+    modelerManager.setModeler(modeler);
+    isModelerInitialized = true;
+    console.log('[DEBUG] Diagrama abierto correctamente.');
+
+    // Ajustes de interfaz tras cargar
+    setTimeout(() => {
+      if (typeof window !== 'undefined' && typeof $ !== 'undefined') {
+        $(window).trigger('resize');
+      }
+      try {
+        if (modeler && modeler.get('canvas')) {
+          modeler.get('canvas').zoom('fit-viewport');
+        }
+      } catch (zoomErr) {
+        console.warn('[WARN] Error al ajustar zoom:', zoomErr);
+      }
+    }, 500);
+
+  } catch (e) {
+    if (e && e.message === 'Operación cancelada') {
+      console.log('[DEBUG] Operación cancelada por el usuario');
+    } else {
+      console.error('[ERROR] Error al abrir diagrama:', e);
+      showErrorMessage('Error al abrir diagrama: ' + e.message);
+    }
+  } finally {
+    isOpenButtonClicked = false;
+  }
 }
 
 // Configurar manejadores de eventos para el modeler
@@ -244,42 +283,25 @@ function setupEventHandlers() {
   // Otros manejadores de eventos...
 }
 
-// Exponer APIs necesarias para componentes legacy
+// Register APIs in service registry instead of window
 function exposeAPIs() {
-  // Hacer disponibles APIs esenciales globalmente para compatibilidad
-  window.app = app;
+  const sr = getServiceRegistry();
+  if (!sr) return;
   
-  // Ensure the global modules are always available (in case they were cleared)
-  if (!window.MultiNotationModeler) {
-    window.MultiNotationModeler = MultiNotationModeler;
+  // Register app instance
+  sr.register('App', app);
+  
+  // Register RASCI APIs from module
+  if (app.rasci) {
+    sr.registerFunction('forceReloadMatrix', app.rasci.forceReloadMatrix);
+    sr.registerFunction('renderMatrix', app.rasci.renderMatrix);
+    sr.registerFunction('detectRalphRolesFromCanvas', app.rasci.detectRalphRolesFromCanvas);
+    sr.registerFunction('initRasciPanel', app.rasci.initRasciPanel);
   }
   
-  if (typeof window !== 'undefined') {
-    if (!window.PPINOTModdle) {
-      window.PPINOTModdle = PPINOTModdle;
-    }
-    
-    if (!window.RALphModdle) {
-      window.RALphModdle = RALphModdle;
-    }
-  }
-  
-  // Make modeler available globally
-  if (typeof window !== 'undefined') {
-    window.modeler = modeler;
-  }
-  
-  // Exponer APIs de RASCI desde el módulo
-  if (app.rasci && typeof window !== 'undefined') {
-    window.forceReloadMatrix = app.rasci.forceReloadMatrix;
-    window.renderMatrix = app.rasci.renderMatrix;
-    window.detectRalphRolesFromCanvas = app.rasci.detectRalphRolesFromCanvas;
-    window.initRasciPanel = app.rasci.initRasciPanel;
-  }
-  
-  // Exponer APIs de PPI desde el módulo
-  if (app.ppis && typeof window !== 'undefined') {
-    window.loadPPIComponents = app.ppis.loadPPIComponents;
+  // Register PPI APIs from module
+  if (app.ppis) {
+    sr.registerFunction('loadPPIComponents', app.ppis.loadPPIComponents);
   }
 }
 
@@ -296,16 +318,21 @@ async function initModeler() {
       return;
     }
     
-    // NUEVO: Configurar panel BPMN INMEDIATAMENTE (antes de importar XML)
+    // Configure BPMN panel through service registry
     console.log('[DEBUG] Configurando panel BPMN inmediatamente...');
-    if (window.panelManager) {
+    const panelManager = resolve('PanelManagerInstance');
+    console.log('[DEBUG] PanelManager obtenido:', panelManager);
+    if (panelManager) {
       // Configurar paneles activos para incluir solo BPMN
-      window.panelManager.activePanels = ['bpmn'];
-      window.panelManager.currentLayout = '2v';
+      panelManager.activePanels = ['bpmn'];
+      panelManager.currentLayout = '2v';
       
       // Aplicar configuración de paneles INMEDIATAMENTE
       console.log('[DEBUG] Aplicando configuración de paneles inmediatamente...');
-      await window.panelManager.applyConfiguration();
+      await panelManager.applyConfiguration();
+      console.log('[DEBUG] Configuración de paneles aplicada');
+    } else {
+      console.warn('[WARN] PanelManager no encontrado en ServiceRegistry');
     }
     
     // Crear un diagrama BPMN básico con todos los namespaces necesarios

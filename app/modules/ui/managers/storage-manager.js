@@ -1,6 +1,10 @@
 // === Storage Manager ===
 // Gestor centralizado de localStorage para MultiModeler
 
+import { resolve } from '../../../services/global-access.js';
+import { RasciStore } from '../../rasci/store.js';
+import { getServiceRegistry } from '../core/ServiceRegistry.js';
+
 // Importar funciones RASCI directamente
 let forceReloadMatrix = null;
 let renderMatrix = null;
@@ -32,6 +36,9 @@ class StorageManager {
       'bpmnPPINOTRelations',
       'ppiSettings'
     ];
+    // Internal state instead of window globals
+    this.isImportingProject = false;
+    this.storageCleared = false;
     this.init();
   }
 
@@ -40,12 +47,15 @@ class StorageManager {
   }
 
   setupGlobalMethods() {
-    // Hacer disponibles los métodos globalmente
-    window.storageManager = this;
-    window.resetStorage = () => this.resetStorage();
-    window.clearStorage = () => this.clearStorage();
-    window.getStorageInfo = () => this.getStorageInfo();
-    window.clearPPIData = () => this.clearPPIData();
+    // Register in service registry instead of window
+    const registry = getServiceRegistry();
+    if (registry) {
+      registry.register('StorageManager', this);
+      registry.registerFunction('resetStorage', () => this.resetStorage());
+      registry.registerFunction('clearStorage', () => this.clearStorage());
+      registry.registerFunction('getStorageInfo', () => this.getStorageInfo());
+      registry.registerFunction('clearPPIData', () => this.clearPPIData());
+    }
   }
 
   // === RESETEO COMPLETO ===
@@ -101,13 +111,13 @@ class StorageManager {
   async prepareForImport() {
     try {
       // Verificar si se está importando un proyecto
-      if (window.isImportingProject === true) {
+      if (this.isImportingProject === true) {
         console.log('📦 Proyecto en importación detectado, saltando limpieza para importación...');
         return true;
       }
-      
+
       // Limpiar cualquier marca de storageCleared anterior
-      window.storageCleared = false;
+      this.storageCleared = false;
       
       // Limpiar localStorage sin marcar storageCleared
       await this.clearStorageForImport();
@@ -127,15 +137,15 @@ class StorageManager {
     console.log('🧹 Limpiando localStorage...');
     
     // Verificar si se está importando un proyecto
-    if (window.isImportingProject === true) {
+    if (this.isImportingProject === true) {
       console.log('📦 Proyecto en importación detectado, saltando limpieza automática...');
       return;
     }
-    
+
     this.logStorageState();
-    
+
     // Marcar que se está haciendo una limpieza
-    window.storageCleared = true;
+    this.storageCleared = true;
     
     // Primero limpiar datos PPI específicos
     this.clearPPIData();
@@ -160,10 +170,10 @@ class StorageManager {
     
     // Forzar recarga de datos de paneles
     await this.forcePanelDataReload();
-    
+
     // Limpiar la marca después de un tiempo
     setTimeout(() => {
-      window.storageCleared = false;
+      this.storageCleared = false;
     }, 5000);
   }
 
@@ -184,9 +194,8 @@ class StorageManager {
     });
     
     // Limpiar variables globales RASCI
-    if (window.rasciRoles) window.rasciRoles = [];
-    if (window.rasciTasks) window.rasciTasks = [];
-    if (window.rasciMatrixData) window.rasciMatrixData = {};
+    RasciStore.setRoles([]);
+    RasciStore.setMatrix({});
   }
 
   // === LIMPIEZA ESPECÍFICA DE DATOS PPI === (ELIMINADO)
@@ -199,38 +208,32 @@ class StorageManager {
   async forcePanelDataReload() {
     // Cargar funciones RASCI si no están disponibles
     await loadRasciFunctions();
-    
+
     // Solo limpiar datos si no se está importando un proyecto
-    if (!window.isImportingProject) {
+    if (!this.isImportingProject) {
       // Forzar recarga de datos RASCI
-      if (window.rasciRoles) {
-        window.rasciRoles = [];
-      }
-      if (window.rasciTasks) {
-        window.rasciTasks = [];
-      }
-      if (window.rasciMatrixData) {
-        window.rasciMatrixData = {};
-      }
-      
+      RasciStore.setRoles([]);
+      RasciStore.setMatrix({});
+
       // Forzar recarga de datos PPI
-      if (window.ppiManager && window.ppiManager.core) {
+      const ppiManager = resolve('PPIManagerInstance');
+      if (ppiManager && ppiManager.core) {
         try {
           // Limpiar arrays internos
-          if (window.ppiManager.core.ppis) {
-            window.ppiManager.core.ppis = [];
+          if (ppiManager.core.ppis) {
+            ppiManager.core.ppis = [];
           }
-          if (window.ppiManager.core.filteredPPIs) {
-            window.ppiManager.core.filteredPPIs = [];
+          if (ppiManager.core.filteredPPIs) {
+            ppiManager.core.filteredPPIs = [];
           }
-          if (window.ppiManager.core.processedElements) {
-            window.ppiManager.core.processedElements.clear();
+          if (ppiManager.core.processedElements) {
+            ppiManager.core.processedElements.clear();
           }
           
           // Forzar recarga de la interfaz PPI
-          if (typeof window.ppiManager.refreshPPIList === 'function') {
+          if (typeof ppiManager.refreshPPIList === 'function') {
             setTimeout(() => {
-              window.ppiManager.refreshPPIList();
+              ppiManager.refreshPPIList();
             }, 100);
           }
         } catch (error) {
@@ -263,14 +266,14 @@ class StorageManager {
   // === RESETEO DE VARIABLES GLOBALES ===
   resetGlobalVariables() {
     // Variables RASCI
-    if (window.rasciRoles) window.rasciRoles = [];
-    if (window.rasciTasks) window.rasciTasks = [];
-    if (window.rasciMatrixData) window.rasciMatrixData = {};
+    RasciStore.setRoles([]);
+    RasciStore.setMatrix({});
     
     // Variables PPI
-    if (window.ppiManager && window.ppiManager.core && typeof window.ppiManager.core.clearAllPPIs === 'function') {
+    const ppiManager = resolve('PPIManagerInstance');
+    if (ppiManager && ppiManager.core && typeof ppiManager.core.clearAllPPIs === 'function') {
       try {
-        window.ppiManager.core.clearAllPPIs();
+        ppiManager.core.clearAllPPIs();
       } catch (error) {
         // Silenciar error
       }
@@ -280,7 +283,8 @@ class StorageManager {
   // === CREAR DIAGRAMA BPMN LIMPIO ===
   async createCleanBpmnDiagram() {
     try {
-      if (window.modeler) {
+      const modeler = resolve('BpmnModeler');
+      if (modeler) {
         // Crear diagrama BPMN básico
         const cleanXml = `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" 
@@ -334,7 +338,7 @@ class StorageManager {
 </bpmn:definitions>`;
         
         // Importar el diagrama limpio
-        await window.modeler.importXML(cleanXml);
+        await modeler.importXML(cleanXml);
         
         // Guardar el diagrama limpio en localStorage
         localStorage.setItem('bpmnDiagram', cleanXml);
@@ -515,39 +519,33 @@ class StorageManager {
     await loadRasciFunctions();
     
     // Solo resetear datos si no se está importando un proyecto
-    if (!window.isImportingProject) {
+    if (!this.isImportingProject) {
       // Forzar reset de datos RASCI
-      if (window.rasciRoles) {
-        window.rasciRoles = [];
-      }
-      if (window.rasciTasks) {
-        window.rasciTasks = [];
-      }
-      if (window.rasciMatrixData) {
-        window.rasciMatrixData = {};
-      }
-      
+      RasciStore.setRoles([]);
+      RasciStore.setMatrix({});
+
       // Forzar reset de datos PPI
-      if (window.ppiManager && window.ppiManager.core) {
+      const ppiManager = resolve('PPIManagerInstance');
+      if (ppiManager && ppiManager.core) {
         try {
           // Limpiar arrays internos
-          if (window.ppiManager.core.ppis) {
-            window.ppiManager.core.ppis = [];
+          if (ppiManager.core.ppis) {
+            ppiManager.core.ppis = [];
           }
-          if (window.ppiManager.core.filteredPPIs) {
-            window.ppiManager.core.filteredPPIs = [];
+          if (ppiManager.core.filteredPPIs) {
+            ppiManager.core.filteredPPIs = [];
           }
-          if (window.ppiManager.core.processedElements) {
-            window.ppiManager.core.processedElements.clear();
+          if (ppiManager.core.processedElements) {
+            ppiManager.core.processedElements.clear();
           }
-          if (window.ppiManager.core.pendingPPINOTRestore) {
-            window.ppiManager.core.pendingPPINOTRestore = null;
+          if (ppiManager.core.pendingPPINOTRestore) {
+            ppiManager.core.pendingPPINOTRestore = null;
           }
           
           // Forzar recarga de la interfaz PPI
-          if (typeof window.ppiManager.refreshPPIList === 'function') {
+          if (typeof ppiManager.refreshPPIList === 'function') {
             setTimeout(() => {
-              window.ppiManager.refreshPPIList();
+              ppiManager.refreshPPIList();
             }, 100);
           }
         } catch (error) {
@@ -581,5 +579,8 @@ class StorageManager {
 // Exportar la clase
 export { StorageManager };
 
-// Crear instancia global
-window.storageManager = new StorageManager(); 
+// Register in service registry
+const sr = getServiceRegistry();
+if (sr) {
+  sr.register('StorageManager', new StorageManager(), { description: 'Storage manager' });
+} 

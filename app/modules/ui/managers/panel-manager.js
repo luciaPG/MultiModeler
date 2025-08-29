@@ -2,7 +2,18 @@
 // Gestor de paneles con selector de paneles y distribución
 import modelerManager from './modeler-manager.js';
 import { PanelLoader } from '../components/panel-loader.js';
-import { CookieAutoSaveManager } from './cookie-autosave-manager.js';
+// CookieAutoSaveManager is now accessed via ServiceRegistry
+import { resolve } from '../../../services/global-access.js';
+import { getServiceRegistry } from '../core/ServiceRegistry.js';
+import { onResize } from '../core/dom-events.js';
+import { registerDebug } from '../../../shared/debug-registry.js';
+
+// Bootstrap SR
+const sr = (typeof getServiceRegistry === 'function') ? getServiceRegistry() : undefined;
+const eventBus = sr && sr.get ? sr.get('EventBus') : undefined;
+const rasciAdapter = sr && sr.get ? sr.get('RASCIAdapter') : undefined;
+const validator = sr && sr.get ? sr.get('RASCIUIValidator') : undefined;
+const bpmnModeler = sr && sr.get ? sr.get('BPMNModeler') : (rasciAdapter && rasciAdapter.getBpmnModeler ? rasciAdapter.getBpmnModeler() : undefined);
 
 class PanelManager {
   constructor() {
@@ -58,17 +69,15 @@ class PanelManager {
   
   setupWindowResizeListener() {
     let resizeTimeout;
-    window.addEventListener('resize', () => {
+    onResize(() => {
       // Debounce para evitar muchas llamadas
       clearTimeout(resizeTimeout);
       resizeTimeout = setTimeout(() => {
         // En el commit anterior no se hacía resize manual del canvas
-        // El canvas se redimensiona automáticamente
-      }, 250);
+      // El canvas se redimensiona automáticamente
+    }, 250);
     });
-  }
-
-  cleanupExistingModals() {
+  }  cleanupExistingModals() {
     const existingOverlay = document.getElementById('panel-selector-overlay');
     const existingSelector = document.getElementById('panel-selector');
     
@@ -92,13 +101,10 @@ class PanelManager {
     this.createStyles();
     this.bindEvents();
     
-    // Initialize the panelLoader if it doesn't exist
-    if (!this.panelLoader && window.panelLoader) {
-      this.panelLoader = window.panelLoader;
-    } else if (!this.panelLoader && window.PanelLoader) {
-      this.panelLoader = new window.PanelLoader();
-    } else if (!this.panelLoader) {
-      console.error('PanelLoader not found - panels will not work');
+    // Initialize the panelLoader using service registry
+    if (!this.panelLoader) {
+      const sr = getServiceRegistry();
+      this.panelLoader = sr && sr.get('PanelLoader') || sr && sr.get('PanelLoaderClass') && new (sr.get('PanelLoaderClass'))() || new PanelLoader();
     }
     
     setTimeout(() => {
@@ -902,7 +908,7 @@ class PanelManager {
     selector.innerHTML = `
       <div class="panel-selector-header">
         <div class="panel-selector-title">Configurar Paneles</div>
-                <button class="panel-selector-close" id="panel-selector-close-btn" onclick="window.closePanelSelector()">×</button>
+                <button class="panel-selector-close" id="panel-selector-close-btn">×</button>
       </div>
       
       <div class="panel-selector-section">
@@ -1258,10 +1264,12 @@ class PanelManager {
       }
 
       // Guardar estado completo usando Cookie AutoSave Manager
-      if (window.cookieAutoSaveManager) {
+      const sr = getServiceRegistry();
+      const cookieManager = sr && sr.get('cookieAutoSaveManager');
+      if (cookieManager) {
         console.log('💾 Guardando estado completo en cookies antes del cambio...');
         try {
-          const savedSuccessfully = await window.cookieAutoSaveManager.forceSave();
+          const savedSuccessfully = await cookieManager.forceSave();
           console.log('💾 Estado guardado en cookies:', savedSuccessfully ? '✅ Exitoso' : '⚠️ Fallido');
         } catch (err) {
           console.error('❌ Error al guardar estado en cookies:', err);
@@ -1393,18 +1401,20 @@ class PanelManager {
             }
 
             // Restaurar estado completo desde cookies
-            if (window.cookieAutoSaveManager) {
+            const sr = getServiceRegistry();
+            const cookieManager = sr && sr.get('cookieAutoSaveManager');
+            if (cookieManager) {
               setTimeout(async () => {
                 console.log('🔄 Restaurando estado completo desde cookies...');
-                
+
                 // Restaurar estado BPMN
-                const bpmnRestored = await window.cookieAutoSaveManager.restoreBpmnState();
+                const bpmnRestored = await cookieManager.restoreBpmnState();
                 if (bpmnRestored) {
                   console.log('✅ Estado BPMN restaurado desde cookies');
                 }
-                
+
                 // Restaurar PPIs
-                const ppiRestored = window.cookieAutoSaveManager.restorePPIState();
+                const ppiRestored = cookieManager.restorePPIState();
                 if (ppiRestored) {
                   console.log('✅ PPIs restaurados desde cookies');
                 }
@@ -1414,10 +1424,8 @@ class PanelManager {
             } else {
               // Fallback al sistema anterior
               console.log('⚠️ Usando sistema de restauración anterior...');
-              // The original code had preservedPPIState and window.ppiManager.core,
-              // but these variables are not defined in the provided context.
-              // Assuming they are meant to be restored if available.
-              // For now, removing them as they are not defined.
+              // Legacy note: previous implementation referenced preservedPPIState and a global PPI core.
+              // These variables are not defined in the current context and have been removed.
             }
           } else {
             throw new Error('No se pudo restaurar el modelador');
@@ -1431,10 +1439,12 @@ class PanelManager {
             console.log('Nuevo modeler BPMN inicializado como fallback');
             
             // Restaurar estado desde cookies incluso en el fallback
-            if (window.cookieAutoSaveManager) {
+            const sr = getServiceRegistry();
+            const cookieManager = sr && sr.get('cookieAutoSaveManager');
+            if (cookieManager) {
               setTimeout(async () => {
-                await window.cookieAutoSaveManager.restoreBpmnState();
-                window.cookieAutoSaveManager.restorePPIState();
+                await cookieManager.restoreBpmnState();
+                cookieManager.restorePPIState();
               }, 500);
             }
           } catch (initErr) {
@@ -1447,9 +1457,7 @@ class PanelManager {
       if (this.activePanels.includes('rasci')) {
         setTimeout(() => {
           const rasciPanel = container.querySelector('#rasci-panel');
-          if (rasciPanel && typeof window.reloadRasciMatrix === 'function') {
-            window.reloadRasciMatrix();
-          }
+          if (rasciPanel) eventBus && eventBus.publish ? eventBus.publish('rasci.matrix.reload', {}) : console.warn('⚠️ EventBus no disponible para recargar RASCI');
         }, 300);
       }
 
@@ -1468,7 +1476,9 @@ class PanelManager {
   }
 
   async adjustLayoutForVisiblePanels() {
-    if (!window.snapSystem) return;
+    const sr = getServiceRegistry();
+    const snap = sr && sr.get('SnapSystem');
+    if (!snap) return;
     
     // Contar paneles visibles correctamente
     const container = document.getElementById('panel-container');
@@ -1503,7 +1513,11 @@ class PanelManager {
     if (newLayout && newLayout !== this.currentLayout) {
       console.log(`Ajustando layout automáticamente de ${this.currentLayout} a ${newLayout}`);
       this.currentLayout = newLayout;
-      window.snapSystem.changeLayout(newLayout);
+      const sr = getServiceRegistry();
+      const snap = sr && sr.get('SnapSystem');
+      if (snap) {
+        snap.changeLayout(newLayout);
+      }
     }
   }
 
@@ -1534,20 +1548,26 @@ class PanelManager {
       panel.style.opacity = '';
       panel.style.pointerEvents = '';
       
-      if (wasHidden && panelType === 'rasci' && typeof window.reloadRasciMatrix === 'function') {
-        setTimeout(() => {
-          window.reloadRasciMatrix();
-        }, 100);
+      if (wasHidden && panelType === 'rasci') {
+        const sr = getServiceRegistry();
+        const eb = sr && sr.get('EventBus');
+        if (eb) {
+          setTimeout(() => {
+            eb.publish('rasci.matrix.reload', {});
+          }, 100);
+        }
       }
       
       // Manejar restauración específica para panel BPMN
-      if (wasHidden && panelType === 'bpmn' && window.modeler) {
-        setTimeout(() => {
-          // Usar el método simple como en el commit anterior
-          if (typeof window.loadBpmnState === 'function') {
-            window.loadBpmnState();
-          }
-        }, 100);
+      const modeler = resolve('BpmnModeler');
+      if (wasHidden && panelType === 'bpmn' && modeler) {
+        const sr = getServiceRegistry();
+        const eb = sr && sr.get('EventBus');
+        if (eb) {
+          setTimeout(() => {
+            eb.publish('bpmn.state.load', {});
+          }, 100);
+        }
       }
     }
   }
@@ -1559,11 +1579,13 @@ class PanelManager {
           mutation.addedNodes.forEach((node) => {
             if (node.nodeType === Node.ELEMENT_NODE) {
               if (node.id === 'rasci-panel' || node.querySelector('#rasci-panel')) {
-                setTimeout(() => {
-                  if (typeof window.reloadRasciMatrix === 'function') {
-                    window.reloadRasciMatrix();
-                  }
-                }, 200);
+                const sr = getServiceRegistry();
+                const eb = sr && sr.get('EventBus');
+                if (eb) {
+                  setTimeout(() => {
+                    eb.publish('rasci.matrix.reload', {});
+                  }, 200);
+                }
               }
             }
           });
@@ -1637,19 +1659,33 @@ class PanelManager {
   }
 }
 
-window.PanelManager = PanelManager;
-// Create an instance of PanelManager and assign it to window.panelManager
-window.panelManager = new PanelManager();
+// Create an instance of PanelManager and register it
+const panelManager = new PanelManager();
 
-// Función eliminada - el canvas se redimensiona automáticamente
+// Register in service registry
+const registry = getServiceRegistry();
+if (registry) {
+  registry.register('PanelManagerInstance', panelManager);
+}
 
-window.closePanelSelector = function() {
-  if (window.panelManager && typeof window.panelManager.closeSelector === 'function') {
-    window.panelManager.closeSelector();
+// Debug exposure only in development
+registerDebug('panelManager', panelManager);
+registerDebug('PanelManager', PanelManager);
+
+// Panel selector close function
+const closePanelSelector = function() {
+  const panelManager = resolve('PanelManagerInstance');
+  if (panelManager && typeof panelManager.closeSelector === 'function') {
+    panelManager.closeSelector();
   } else {
     const overlay = document.getElementById('panel-selector-overlay');
     if (overlay && overlay.parentNode) {
       overlay.remove();
     }
   }
-}; 
+};
+
+// Register in service registry
+if (registry) {
+  registry.register('closePanelSelector', closePanelSelector);
+} 

@@ -1,6 +1,15 @@
 // Architecture Adapter - Connects the new monolithic modular architecture to existing code
 import { getEventBus } from './event-bus.js';
 import MultiNotationModelerCore from '../core/MultiNotationModelerCore.js';
+import { getServiceRegistry } from './ServiceRegistry.js';
+import { registerDebug } from '../../../shared/debug-registry.js';
+
+// Bootstrap SR
+const serviceRegistry = (typeof getServiceRegistry === 'function') ? getServiceRegistry() : undefined;
+const eventBusInstance = serviceRegistry && serviceRegistry.get ? serviceRegistry.get('EventBus') : undefined;
+const rasciAdapterInstance = serviceRegistry && serviceRegistry.get ? serviceRegistry.get('RASCIAdapter') : undefined;
+const validatorInstance = serviceRegistry && serviceRegistry.get ? serviceRegistry.get('RASCIUIValidator') : undefined;
+const bpmnModelerInstance = serviceRegistry && serviceRegistry.get ? serviceRegistry.get('BPMNModeler') : (rasciAdapterInstance && rasciAdapterInstance.getBpmnModeler ? rasciAdapterInstance.getBpmnModeler() : undefined);
 
 /**
  * This adapter provides a bridge between the existing app.js and the new architecture.
@@ -24,9 +33,9 @@ export class ArchitectureAdapter {
     try {
       console.log('[ArchitectureAdapter] Initializing new architecture');
 
-      // Get references to existing components
-      const modeler = window.modeler || this.options.modeler;
-      const panelManager = window.panelManager || this.options.panelManager;
+      // Get references from service registry or options
+      const modeler = this.options.modeler || (serviceRegistry && serviceRegistry.get ? serviceRegistry.get('BpmnModeler') : undefined);
+      const panelManager = this.options.panelManager || (serviceRegistry && serviceRegistry.get ? serviceRegistry.get('PanelManagerInstance') : undefined);
 
       if (!modeler) {
         throw new Error('No modeler found. Make sure the modeler is initialized first.');
@@ -46,8 +55,13 @@ export class ArchitectureAdapter {
       // Initialize the core component
       await this.core.initialize();
 
-      // Make core available globally for development/debugging
-      window.mnmCore = this.core;
+      // Register core in service registry
+      if (serviceRegistry) {
+        serviceRegistry.register('MnmCore', this.core);
+      }
+      
+      // Debug exposure only in development
+      registerDebug('mnmCore', this.core);
 
       // Connect event bus to existing events
       this.connectEvents();
@@ -68,8 +82,9 @@ export class ArchitectureAdapter {
    */
   connectEvents() {
     // Example: Connect BPMN selection events to EventBus
-    if (window.modeler && window.modeler.get('eventBus')) {
-      const bpmnEventBus = window.modeler.get('eventBus');
+    const modeler = serviceRegistry && serviceRegistry.get ? serviceRegistry.get('BPMNModeler') : this.options.modeler;
+    if (modeler && modeler.get && modeler.get('eventBus')) {
+      const bpmnEventBus = modeler.get('eventBus');
 
       // Selection changed events
       bpmnEventBus.on('selection.changed', (e) => {
@@ -98,20 +113,22 @@ export class ArchitectureAdapter {
       console.log('[ArchitectureAdapter] Connected to existing events');
     }
 
-    // Connect existing RASCI events
-    if (window.forceReloadMatrix) {
-      const originalReloadMatrix = window.forceReloadMatrix;
-      window.forceReloadMatrix = (...args) => {
-        originalReloadMatrix(...args);
+    // Connect existing RASCI events via service registry
+    const forceReloadMatrix = serviceRegistry && serviceRegistry.getFunction ? serviceRegistry.getFunction('forceReloadMatrix') : undefined;
+    if (forceReloadMatrix) {
+      // Wrap the function to publish events
+      serviceRegistry.registerFunction('forceReloadMatrix', (...args) => {
+        forceReloadMatrix(...args);
         this.eventBus.publish('rasci.matrix.changed', { source: 'rasci' });
-      };
+      });
     }
 
     // Connect existing PPI events
-    if (window.ppiManagerInstance) {
-      const originalRefreshPPIList = window.ppiManagerInstance.refreshPPIList;
-      window.ppiManagerInstance.refreshPPIList = (...args) => {
-        originalRefreshPPIList.apply(window.ppiManagerInstance, args);
+    const ppiManager = serviceRegistry && serviceRegistry.get ? serviceRegistry.get('PPIManagerInstance') : undefined;
+    if (ppiManager && ppiManager.refreshPPIList) {
+      const originalRefreshPPIList = ppiManager.refreshPPIList;
+      ppiManager.refreshPPIList = (...args) => {
+        originalRefreshPPIList.apply(ppiManager, args);
         this.eventBus.publish('ppi.list.changed', { source: 'ppi' });
       };
     }
@@ -154,5 +171,11 @@ export async function initializeArchitecture() {
   return adapter.initialize();
 }
 
-// Expose to global scope for easy integration
-window.initializeArchitecture = initializeArchitecture;
+// Register in service registry instead of window
+const sr = getServiceRegistry();
+if (sr) {
+  sr.register('ArchitectureInitializer', initializeArchitecture, { description: 'Connect BPMN to EventBus' });
+}
+
+// Expose in debug for development
+registerDebug('ArchitectureInitializer', initializeArchitecture);

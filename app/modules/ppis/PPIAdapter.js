@@ -1,6 +1,5 @@
 /**
- * PPI Adapter - Adaptador para comunicación PPIs sin usar window
- * Reemplaza las referencias a window.modeler, window.ppiManager, etc.
+ * PPI Adapter - Adaptador para comunicación PPIs
  */
 
 import moduleBridge from '../ui/core/ModuleBridge.js';
@@ -64,12 +63,14 @@ class PPIAdapter {
    */
   registerPPIServices() {
     // Servicio para obtener el modelador BPMN
-    this.bridge.serviceRegistry?.registerFunction('getBpmnModeler', () => {
-      return this.getBpmnModeler();
-    }, {
-      alias: 'getBpmnModeler',
-      description: 'Obtiene el modelador BPMN para PPIs'
-    });
+    if (this.bridge.serviceRegistry && typeof this.bridge.serviceRegistry.registerFunction === 'function') {
+      this.bridge.serviceRegistry.registerFunction('getBpmnModeler', () => {
+        return this.getBpmnModeler();
+      }, {
+        alias: 'getBpmnModeler',
+        description: 'Obtiene el modelador BPMN para PPIs'
+      });
+    }
 
     // Servicio para obtener datos RASCI
     this.bridge.serviceRegistry?.registerFunction('getRasciData', () => {
@@ -96,7 +97,7 @@ class PPIAdapter {
    * @returns {Object|null} - Instancia del modelador BPMN
    */
   getBpmnModeler() {
-    return this.bridge.getModeler('bpmn');
+  return this.bridge && typeof this.bridge.getModeler === 'function' ? this.bridge.getModeler('bpmn') : null;
   }
 
   /**
@@ -182,7 +183,7 @@ class PPIAdapter {
     // Establecer datos compartidos específicos de PPIs
     this.bridge.setSharedData('ppiManager', ppiManager);
     
-    console.log('✅ PPI Manager registrado en Module Bridge');
+
   }
 
   /**
@@ -190,7 +191,7 @@ class PPIAdapter {
    * @returns {Object|null} - Instancia del PPI Manager
    */
   getPPIManager() {
-    return this.bridge.getModule('ppis') || this.bridge.getSharedData('ppiManager');
+  return (this.bridge && typeof this.bridge.getModule === 'function' ? this.bridge.getModule('ppis') : null) || (this.bridge && typeof this.bridge.getSharedData === 'function' ? this.bridge.getSharedData('ppiManager') : null); 
   }
 
   /**

@@ -4,11 +4,12 @@
  */
 
 import { getEventBus } from './event-bus.js';
-import serviceRegistry from './ServiceRegistry.js';
+import { getServiceRegistry } from './ServiceRegistry.js';
 
 class ModuleBridge {
   constructor() {
     this.eventBus = getEventBus();
+    this.serviceRegistry = getServiceRegistry();
     this.modules = new Map();
     this.sharedData = new Map();
     this.modelers = new Map();
@@ -74,7 +75,7 @@ class ModuleBridge {
    */
   setupSharedServices() {
     // Servicio para obtener modeladores
-    serviceRegistry.registerFunction('getModeler', (type = 'bpmn') => {
+    this.serviceRegistry.registerFunction('getModeler', (type = 'bpmn') => {
       return this.getModeler(type);
     }, {
       alias: 'getModeler',
@@ -82,7 +83,7 @@ class ModuleBridge {
     });
 
     // Servicio para obtener módulos
-    serviceRegistry.registerFunction('getModule', (name) => {
+    this.serviceRegistry.registerFunction('getModule', (name) => {
       return this.getModule(name);
     }, {
       alias: 'getModule',
@@ -90,14 +91,14 @@ class ModuleBridge {
     });
 
     // Servicio para datos compartidos
-    serviceRegistry.registerFunction('getSharedData', (key) => {
+    this.serviceRegistry.registerFunction('getSharedData', (key) => {
       return this.getSharedData(key);
     }, {
       alias: 'getSharedData',
       description: 'Obtiene datos compartidos'
     });
 
-    serviceRegistry.registerFunction('setSharedData', (key, data) => {
+    this.serviceRegistry.registerFunction('setSharedData', (key, data) => {
       return this.setSharedData(key, data);
     }, {
       alias: 'setSharedData',
@@ -119,7 +120,7 @@ class ModuleBridge {
       modeler: modeler
     });
 
-    console.log(`✅ Modelador ${type} registrado en Module Bridge`);
+
   }
 
   /**
@@ -159,7 +160,7 @@ class ModuleBridge {
       instance: instance
     });
 
-    console.log(`✅ Módulo ${name} registrado en Module Bridge`);
+
   }
 
   /**

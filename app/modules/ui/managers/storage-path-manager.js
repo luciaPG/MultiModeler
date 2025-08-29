@@ -2,6 +2,8 @@
  * Simplified Storage Path Manager - Solo maneja C:/Users/[username]/Documents/MultiNotation Modeler
  */
 
+import { getServiceRegistry } from '../core/ServiceRegistry.js';
+
 class StoragePathManager {
   constructor() {
     this.defaultFolder = 'MultiNotation Modeler';
@@ -82,8 +84,20 @@ class StoragePathManager {
   }
 }
 
-// Crear instancia global
-window.pathManager = new StoragePathManager();
+// Register in ServiceRegistry
+
+const pathManagerInstance = new StoragePathManager();
+const registry = getServiceRegistry();
+if (registry) {
+  registry.register('StoragePathManager', pathManagerInstance, {
+    description: 'Cross-platform storage path manager'
+  });
+}
+
+// Debug exposure only in development
+if (process.env.NODE_ENV !== 'production') {
+  globalThis.__debug = { ...(globalThis.__debug || {}), pathManager: pathManagerInstance };
+}
 
 // Exportar para uso en módulos
 export default StoragePathManager;

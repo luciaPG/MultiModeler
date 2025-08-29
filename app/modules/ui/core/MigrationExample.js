@@ -23,20 +23,19 @@ class PPIMigrationExample {
   oldWay() {
     console.log('=== ANTES: Usando window (mala práctica) ===');
     
-    // ❌ Acceder al modelador BPMN
-    const modeler = window.modeler || window.bpmnModeler;
+    // ✅ Acceder al modelador BPMN vía ServiceRegistry/Adapter
+    const modeler = getServiceRegistry?.()?.get('BPMNModeler') || ppiAdapter?.getBpmnModeler?.();
     
-    // ❌ Acceder al manager PPI
-    const ppiManager = window.ppiManager;
+    // ✅ Acceder al manager PPI vía ServiceRegistry/Adapter
+    const ppiManager = getServiceRegistry?.()?.get('PPIManager') || ppiAdapter?.getPPIManager?.();
     
-    // ❌ Acceder a datos RASCI
-    const rasciMatrixData = window.rasciMatrixData;
-    const rasciRoles = window.rasciRoles; // eslint-disable-line no-unused-vars
+    // ✅ Acceder a datos RASCI vía Adapter/Store
+    const rasci = getServiceRegistry?.()?.get('RASCIAdapter');
+    const rasciMatrixData = rasci?.getMatrixData?.();
+    const rasciRoles = rasci?.getRoles?.(); // eslint-disable-line no-unused-vars
     
-    // ❌ Llamar funciones globales
-    if (window.updateMatrixFromDiagram) {
-      window.updateMatrixFromDiagram();
-    }
+    // ✅ Publicar eventos en lugar de funciones globales
+    getServiceRegistry?.()?.get('EventBus')?.publish('rasci.matrix.update.fromDiagram', {});
     
     console.log('Modeler:', !!modeler);
     console.log('PPI Manager:', !!ppiManager);
@@ -86,21 +85,21 @@ class RASCIMigrationExample {
   oldWay() {
     console.log('=== ANTES: Usando window (mala práctica) ===');
     
-    // ❌ Acceder al modelador BPMN
-    const modeler = window.bpmnModeler;
+    // ✅ Acceder al modelador BPMN vía ServiceRegistry/Adapter
+    const modeler = getServiceRegistry?.()?.get('BPMNModeler') || ppiAdapter?.getBpmnModeler?.();
     
-    // ❌ Acceder a datos de matriz
-    const matrixData = window.rasciMatrixData;
-    const roles = window.rasciRoles;
+    // ✅ Acceder a datos de matriz desde Adapter
+    const rasci = getServiceRegistry?.()?.get('RASCIAdapter');
+    const matrixData = rasci?.getMatrixData?.();
+    const roles = rasci?.getRoles?.();
     
-    // ❌ Llamar funciones globales
-    if (window.detectRalphRolesFromCanvas) {
-      const detectedRoles = window.detectRalphRolesFromCanvas(); // eslint-disable-line no-unused-vars
-    }
+    // ✅ Usar adapters/servicios registrados
+    const detectedRoles = roles;
     
-    // ❌ Actualizar datos globales
-    window.rasciMatrixData = matrixData;
-    window.rasciRoles = roles;
+    // ✅ Actualizar a través del adapter
+    const rasci2 = getServiceRegistry?.()?.get('RASCIAdapter');
+    rasci2?.setMatrixData?.(matrixData);
+    rasci2?.setRoles?.(roles);
     
     console.log('Modeler:', !!modeler);
     console.log('Matrix Data:', !!matrixData);

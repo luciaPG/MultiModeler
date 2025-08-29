@@ -1,6 +1,7 @@
 // Importar el sistema de comunicación centralizado
 import ppiAdapter from './PPIAdapter.js';
 import { getEventBus } from '../ui/core/event-bus.js';
+import { getServiceRegistry } from '../ui/core/ServiceRegistry.js';
 
 class PPISyncManager {
   constructor(ppiManager) {
@@ -41,8 +42,8 @@ class PPISyncManager {
   }
 
   setupEventListeners() {
-    // Obtener modelador del nuevo sistema o fallback a window
-    const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+    // Obtener modelador solo del adapter
+    const modeler = this.adapter && this.adapter.getBpmnModeler();
     
     if (!modeler) {
       return;
@@ -555,8 +556,8 @@ class PPISyncManager {
   // === MÉTODOS AUXILIARES ===
 
   getElementFromRegistry(elementId) {
-    // Obtener modelador del nuevo sistema o fallback a window
-    const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+    // Obtener modelador del adapter
+    const modeler = this.adapter.getBpmnModeler();
     
     if (!modeler) return null;
     
@@ -766,8 +767,8 @@ class PPISyncManager {
            // NUEVO: Verificar todos los elementos hijo para cambios de padre
     checkAllParentChanges() {
       try {
-        // Obtener modelador del nuevo sistema o fallback a window
-        const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+        // Obtener modelador del adapter
+        const modeler = this.adapter && this.adapter.getBpmnModeler();
         
         if (!modeler) return;
 
@@ -805,8 +806,8 @@ class PPISyncManager {
     }
 
   updateElementCache() {
-    // Obtener modelador del nuevo sistema o fallback a window
-    const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+    // Obtener modelador del adapter
+    const modeler = this.adapter.getBpmnModeler();
     
     if (!modeler) return;
     
@@ -868,8 +869,8 @@ class PPISyncManager {
   }
 
   getChildElements(parentId) {
-    // Obtener modelador del nuevo sistema o fallback a window
-    const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+    // Obtener modelador del adapter
+    const modeler = this.adapter.getBpmnModeler();
     
     if (!modeler) return [];
     
@@ -938,8 +939,8 @@ class PPISyncManager {
 
   async performFullSync() {
     
-    // Obtener modelador del nuevo sistema o fallback a window
-    const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+    // Obtener modelador del adapter
+    const modeler = this.adapter.getBpmnModeler();
     
     if (!modeler) return;
     
@@ -1009,8 +1010,8 @@ class PPISyncManager {
      // NUEVO: Sincronización inteligente que verifica cambios de padre
    async performSmartSync() {
      
-     // Obtener modelador del nuevo sistema o fallback a window
-     const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+     // Obtener modelador del adapter
+     const modeler = this.adapter.getBpmnModeler();
      
      if (!modeler) return;
      
@@ -1025,8 +1026,8 @@ class PPISyncManager {
    // NUEVO: Sincronización rápida solo para cambios de padre
    performQuickParentSync() {
      
-     // Obtener modelador del nuevo sistema o fallback a window
-     const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+     // Obtener modelador del adapter
+     const modeler = this.adapter.getBpmnModeler();
      
      if (!modeler) return;
      
@@ -1039,8 +1040,8 @@ class PPISyncManager {
    // NUEVO: Método más robusto para detectar elementos que dejaron de ser hijos
    checkOrphanedElements() {
      
-     // Obtener modelador del nuevo sistema o fallback a window
-     const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+     // Obtener modelador del adapter
+     const modeler = this.adapter.getBpmnModeler();
      
      if (!modeler) {
        return;
@@ -1138,29 +1139,19 @@ class PPISyncManager {
   }
 }
 
-// Exportar para uso global (temporal para compatibilidad)
-if (typeof window !== 'undefined') {
-  window.PPISyncManager = PPISyncManager;
+// Register in ServiceRegistry
+const registry = getServiceRegistry();
+if (registry) {
+  registry.register('PPISyncManager', PPISyncManager, { 
+    description: 'Sync PPIs' 
+  });
   
-  // NUEVO: Exponer método para verificación manual
-  window.forcePPIDropCheck = () => {
-    if (window.ppiManagerInstance && window.ppiManagerInstance.syncManager) {
-      window.ppiManagerInstance.syncManager.forceDropCheck();
-    }
-  };
+  registry.register('forcePPIDropCheck', () => {
+    const mgr = registry.get('PPIManagerInstance') && registry.get('PPIManagerInstance').syncManager;
+    if (mgr) mgr.forceDropCheck();
+  }, { description: 'Forzar verificación de drop PPI' });
+  
+  console.log('✅ PPISyncManager registrado en ServiceRegistry');
+} else {
+  console.log('ℹ️ ServiceRegistry no disponible para PPISyncManager');
 }
-
-// Registrar en ServiceRegistry si está disponible
-setTimeout(() => {
-  try {
-    // Intentar acceder al ServiceRegistry global
-    if (typeof window !== 'undefined' && window.serviceRegistry) {
-      window.serviceRegistry.register('PPISyncManager', PPISyncManager, {
-        description: 'Gestor de sincronización de PPIs'
-      });
-      console.log('✅ PPISyncManager registrado en ServiceRegistry');
-    }
-  } catch (error) {
-    console.log('ℹ️ ServiceRegistry no disponible para PPISyncManager');
-  }
-}, 0);

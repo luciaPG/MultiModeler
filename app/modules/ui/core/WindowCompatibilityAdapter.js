@@ -4,12 +4,13 @@
  * manteniendo compatibilidad con código existente
  */
 
-import serviceRegistry from './ServiceRegistry.js';
+import { getServiceRegistry } from './ServiceRegistry.js';
 import { getEventBus } from './event-bus.js';
 
 class WindowCompatibilityAdapter {
   constructor() {
     this.eventBus = getEventBus();
+    this.serviceRegistry = getServiceRegistry();
     this.migratedFunctions = new Set();
     this.originalWindowFunctions = new Map();
     this.setupEventListeners();
@@ -40,7 +41,7 @@ class WindowCompatibilityAdapter {
     }
 
     // Registrar en el ServiceRegistry
-    serviceRegistry.registerFunction(functionName, functionImpl, {
+    this.serviceRegistry.registerFunction(functionName, functionImpl, {
       alias: functionName,
       migrated: true,
       ...options
@@ -49,7 +50,7 @@ class WindowCompatibilityAdapter {
     // Reemplazar en window con un wrapper que use el ServiceRegistry
     window[functionName] = (...args) => {
       try {
-        return serviceRegistry.executeFunction(functionName, ...args);
+        return this.serviceRegistry.call(functionName, ...args);
       } catch (error) {
         console.error(`Error ejecutando función migrada ${functionName}:`, error);
         
@@ -65,7 +66,7 @@ class WindowCompatibilityAdapter {
     };
 
     this.migratedFunctions.add(functionName);
-    console.log(`✅ Función migrada: ${functionName}`);
+    
   }
 
   /**
@@ -83,16 +84,16 @@ class WindowCompatibilityAdapter {
    */
   migrateRasciFunctions() {
     const rasciFunctions = {
-      'updateMatrixFromDiagram': () => serviceRegistry.executeFunction('updateMatrixFromDiagram'),
-      'detectRalphRolesFromCanvas': () => serviceRegistry.executeFunction('detectRalphRolesFromCanvas'),
-      'forceDetectRalphRoles': () => serviceRegistry.executeFunction('forceDetectRalphRoles'),
-      'reloadRasciMatrix': () => serviceRegistry.executeFunction('reloadRasciMatrix'),
-      'manualReloadRasciMatrix': () => serviceRegistry.executeFunction('manualReloadRasciMatrix'),
-      'forceDetectNewTasks': () => serviceRegistry.executeFunction('forceDetectNewTasks'),
-      'forceDetectAndValidate': () => serviceRegistry.executeFunction('forceDetectAndValidate'),
-      'diagnoseRasciState': () => serviceRegistry.executeFunction('diagnoseRasciState'),
-      'forceFullSync': () => serviceRegistry.executeFunction('forceFullSync'),
-      'repairRasciRalphMapping': () => serviceRegistry.executeFunction('repairRasciRalphMapping')
+      'updateMatrixFromDiagram': () => this.serviceRegistry.executeFunction('updateMatrixFromDiagram'),
+      'detectRalphRolesFromCanvas': () => this.serviceRegistry.executeFunction('detectRalphRolesFromCanvas'),
+      'forceDetectRalphRoles': () => this.serviceRegistry.executeFunction('forceDetectRalphRoles'),
+      'reloadRasciMatrix': () => this.serviceRegistry.executeFunction('reloadRasciMatrix'),
+      'manualReloadRasciMatrix': () => this.serviceRegistry.executeFunction('manualReloadRasciMatrix'),
+      'forceDetectNewTasks': () => this.serviceRegistry.executeFunction('forceDetectNewTasks'),
+      'forceDetectAndValidate': () => this.serviceRegistry.executeFunction('forceDetectAndValidate'),
+      'diagnoseRasciState': () => this.serviceRegistry.executeFunction('diagnoseRasciState'),
+      'forceFullSync': () => this.serviceRegistry.executeFunction('forceFullSync'),
+      'repairRasciRalphMapping': () => this.serviceRegistry.executeFunction('repairRasciRalphMapping')
     };
 
     this.migrateFunctions(rasciFunctions);
@@ -103,11 +104,11 @@ class WindowCompatibilityAdapter {
    */
   migratePpiFunctions() {
     const ppiFunctions = {
-      'showPPIModal': () => serviceRegistry.executeFunction('showPPIModal'),
-      'createPPI': () => serviceRegistry.executeFunction('createPPI'),
-      'editPPI': () => serviceRegistry.executeFunction('editPPI'),
-      'deletePPI': () => serviceRegistry.executeFunction('deletePPI'),
-      'refreshPPIList': () => serviceRegistry.executeFunction('refreshPPIList')
+      'showPPIModal': () => this.serviceRegistry.executeFunction('showPPIModal'),
+      'createPPI': () => this.serviceRegistry.executeFunction('createPPI'),
+      'editPPI': () => this.serviceRegistry.executeFunction('editPPI'),
+      'deletePPI': () => this.serviceRegistry.executeFunction('deletePPI'),
+      'refreshPPIList': () => this.serviceRegistry.executeFunction('refreshPPIList')
     };
 
     this.migrateFunctions(ppiFunctions);
@@ -118,11 +119,11 @@ class WindowCompatibilityAdapter {
    */
   migrateUIFunctions() {
     const uiFunctions = {
-      'showFileNameModal': () => serviceRegistry.executeFunction('showFileNameModal'),
-      'showPanelSelector': () => serviceRegistry.executeFunction('showPanelSelector'),
-      'closePanelSelector': () => serviceRegistry.executeFunction('closePanelSelector'),
-      'resetStorage': () => serviceRegistry.executeFunction('resetStorage'),
-      'clearStorage': () => serviceRegistry.executeFunction('clearStorage')
+      'showFileNameModal': () => this.serviceRegistry.executeFunction('showFileNameModal'),
+      'showPanelSelector': () => this.serviceRegistry.executeFunction('showPanelSelector'),
+      'closePanelSelector': () => this.serviceRegistry.executeFunction('closePanelSelector'),
+      'resetStorage': () => this.serviceRegistry.executeFunction('resetStorage'),
+      'clearStorage': () => this.serviceRegistry.executeFunction('clearStorage')
     };
 
     this.migrateFunctions(uiFunctions);

@@ -1,6 +1,6 @@
 /**
- * RASCI Adapter - Adaptador para comunicación RASCI sin usar window
- * Reemplaza las referencias a window.bpmnModeler, window.rasciMatrixData, etc.
+ * RASCI Adapter - Adaptador para comunicación RASCI
+
  */
 
 import moduleBridge from '../ui/core/ModuleBridge.js';
@@ -203,7 +203,7 @@ class RASCIAdapter {
     // Establecer datos compartidos específicos de RASCI
     this.bridge.setSharedData('rasciManager', rasciManager);
     
-    console.log('✅ RASCI Manager registrado en Module Bridge');
+
   }
 
   /**
@@ -355,10 +355,10 @@ class RASCIAdapter {
         return true;
       }
       
-      // Fallback a window si está disponible
-      if (typeof window.forceReloadMatrix === 'function') {
-        window.forceReloadMatrix();
-        console.log('🔄 Matriz RASCI recargada a través de window (fallback)');
+      // Publicar evento en EventBus
+      const eb = getServiceRegistry?.()?.get('EventBus');
+      if (eb) {
+        eb.publish('rasci.matrix.reload', {});
         return true;
       }
       

@@ -4,11 +4,18 @@
 // 1. Import the new architecture components
 import { getEventBus } from './event-bus.js';
 import { MultiNotationModelerCore } from '../../multinotationModeler/core/MultiNotationModelerCore.js';
+import { getServiceRegistry } from './ServiceRegistry.js';
 
 // 2. After your existing app.js initialization code, add:
 function initializeNewArchitecture() {
-  // Get references to existing components
-  const panelManager = window.panelManager;
+  // Get references from service registry
+  const registry = getServiceRegistry();
+  const panelManager = registry?.get('PanelManagerInstance');
+  const modeler = registry?.get('BpmnModeler');
+  
+  if (!modeler) {
+    throw new Error('TODO: registrar/inyectar BpmnModeler en ServiceRegistry');
+  }
   
   // Create the event bus
   const eventBus = getEventBus();
@@ -17,15 +24,17 @@ function initializeNewArchitecture() {
   const core = new MultiNotationModelerCore({
     eventBus,
     panelManager,
-    bpmnModeler: window.modeler // Use the existing modeler
+    bpmnModeler: modeler
   });
   
   // Initialize the core component
   core.initialize().then(() => {
     console.log('MultiNotation Modeler Core initialized successfully');
     
-    // Make core available globally for development/debugging
-    window.mnmCore = core;
+    // Register core in service registry instead of window
+    if (registry) {
+      registry.register('MnmCore', core);
+    }
   }).catch(error => {
     console.error('Failed to initialize MultiNotation Modeler Core:', error);
   });
@@ -39,7 +48,11 @@ function initializeModeler() {
   
   // Initialize the new architecture after the modeler is ready
   setTimeout(() => {
-    initializeNewArchitecture();
+    try {
+      initializeNewArchitecture();
+    } catch (error) {
+      console.error('Error initializing architecture:', error);
+    }
   }, 1000);
 }
 */

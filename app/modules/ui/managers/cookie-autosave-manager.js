@@ -1,6 +1,10 @@
 // === Cookie AutoSave Manager ===
 // Sistema de autoguardado basado en cookies que se integra con el panel manager
 
+import { resolve } from '../../../services/global-access.js';
+import { RasciStore } from '../../rasci/store.js';
+import { getServiceRegistry } from '../core/ServiceRegistry.js';
+
 class CookieAutoSaveManager {
   constructor() {
     this.cookieName = 'bpmn_autosave_data';
@@ -113,11 +117,11 @@ class CookieAutoSaveManager {
           // Intentar descomprimir si es necesario
           try {
             return JSON.parse(decoded);
-          } catch {
+          } catch (error) {
             // Si falla JSON.parse, intentar descomprimir
             try {
               return this.decompressData(decoded);
-            } catch {
+            } catch (error2) {
               console.warn('⚠️ No se pudo descomprimir cookie, usando valor raw');
               return decoded;
             }
@@ -197,7 +201,7 @@ class CookieAutoSaveManager {
         return false;
       }
       
-      console.log('💾 Guardando estado en cookies...');
+  
       
       // Actualizar estado del BPMN
       await this.updateBpmnState();
@@ -220,7 +224,7 @@ class CookieAutoSaveManager {
       if (success) {
         this.lastSaveTime = now;
         this.showSaveIndicator();
-        console.log('✅ Estado guardado en cookies exitosamente');
+    
         return true;
       } else {
         console.warn('⚠️ No se pudo guardar estado en cookies');
@@ -261,25 +265,23 @@ class CookieAutoSaveManager {
   applyLoadedState() {
     try {
       // Aplicar estado de paneles
-      if (this.projectState.panels && window.panelManager) {
-        window.panelManager.activePanels = this.projectState.panels.activePanels || ['bpmn'];
-        window.panelManager.currentLayout = this.projectState.panels.layout || '2v';
+      const panelManager = resolve('PanelManagerInstance');
+      if (this.projectState.panels && panelManager) {
+        panelManager.activePanels = this.projectState.panels.activePanels || ['bpmn'];
+        panelManager.currentLayout = this.projectState.panels.layout || '2v';
       }
       
       // Aplicar estado de PPIs
-      if (this.projectState.ppi && window.ppiManager && window.ppiManager.core) {
+      const ppiManager = resolve('PPIManagerInstance');
+      if (this.projectState.ppi && ppiManager && ppiManager.core) {
         // Los PPIs se restaurarán cuando el modeler esté listo
         console.log('🔄 PPIs marcados para restauración cuando el modeler esté listo');
       }
       
       // Aplicar estado de RASCI
       if (this.projectState.rasci) {
-        if (window.rasciRoles) {
-          window.rasciRoles = this.projectState.rasci.roles || [];
-        }
-        if (window.rasciMatrixData) {
-          window.rasciMatrixData = this.projectState.rasci.matrixData || {};
-        }
+        RasciStore.setRoles(this.projectState.rasci.roles || []);
+        RasciStore.setMatrix(this.projectState.rasci.matrixData || {});
       }
       
       console.log('✅ Estado aplicado correctamente');
@@ -293,16 +295,40 @@ class CookieAutoSaveManager {
   
   async updateBpmnState() {
     try {
-      if (window.modeler) {
+      const modeler = resolve('BpmnModeler');
+      if (modeler) {
+        // Verificar si hay definiciones cargadas antes de intentar guardar
+        try {
+          const elementRegistry = modeler.get('elementRegistry');
+          if (!elementRegistry) {
+            console.log('ℹ️ ElementRegistry no disponible, omitiendo guardado de XML');
+            return;
+          }
+          
+          // Buscar elementos BPMN en el registro
+          const bpmnElements = elementRegistry.filter(element => 
+            element.type && element.type.includes('bpmn:')
+          );
+          
+          if (bpmnElements.length === 0) {
+        
+            return;
+          }
+          
+          console.log(`ℹ️ Encontrados ${bpmnElements.length} elementos BPMN, procediendo con guardado`);
+        } catch (checkError) {
+          console.log('ℹ️ No se pudo verificar elementos BPMN, continuando con guardado...');
+        }
+        
         // Guardar XML
-        const xmlResult = await window.modeler.saveXML({ format: true });
+        const xmlResult = await modeler.saveXML({ format: true });
         if (xmlResult && xmlResult.xml) {
           this.projectState.bpmn.xml = xmlResult.xml;
         }
         
         // Guardar estado del canvas
         try {
-          const canvas = window.modeler.get('canvas');
+          const canvas = modeler.get('canvas');
           if (canvas) {
             this.projectState.bpmn.zoom = canvas.zoom();
             this.projectState.bpmn.position = canvas.viewbox();
@@ -313,7 +339,7 @@ class CookieAutoSaveManager {
         
         // Guardar selección
         try {
-          const selection = window.modeler.get('selection');
+          const selection = modeler.get('selection');
           if (selection) {
             this.projectState.bpmn.selection = selection.get();
           }
@@ -328,8 +354,9 @@ class CookieAutoSaveManager {
   
   updatePPIState() {
     try {
-      if (window.ppiManager && window.ppiManager.core) {
-        const ppis = window.ppiManager.core.getAllPPIs();
+      const ppiManager = resolve('PPIManagerInstance');
+      if (ppiManager && ppiManager.core) {
+        const ppis = ppiManager.core.getAllPPIs();
         this.projectState.ppi.indicators = ppis;
         this.projectState.ppi.lastUpdate = Date.now();
       }
@@ -340,12 +367,8 @@ class CookieAutoSaveManager {
   
   updateRasciState() {
     try {
-      if (window.rasciRoles) {
-        this.projectState.rasci.roles = window.rasciRoles;
-      }
-      if (window.rasciMatrixData) {
-        this.projectState.rasci.matrixData = window.rasciMatrixData;
-      }
+      this.projectState.rasci.roles = RasciStore.getRoles();
+      this.projectState.rasci.matrixData = RasciStore.getMatrix();
     } catch (error) {
       console.error('❌ Error actualizando estado RASCI:', error);
     }
@@ -353,9 +376,10 @@ class CookieAutoSaveManager {
   
   updatePanelState() {
     try {
-      if (window.panelManager) {
-        this.projectState.panels.activePanels = window.panelManager.activePanels || ['bpmn'];
-        this.projectState.panels.layout = window.panelManager.currentLayout || '2v';
+      const panelManager = resolve('PanelManagerInstance');
+      if (panelManager) {
+        this.projectState.panels.activePanels = panelManager.activePanels || ['bpmn'];
+        this.projectState.panels.layout = panelManager.currentLayout || '2v';
       }
     } catch (error) {
       console.error('❌ Error actualizando estado de paneles:', error);
@@ -390,12 +414,14 @@ class CookieAutoSaveManager {
   
   setupModelerListeners() {
     // Los listeners se configurarán cuando el modeler esté disponible
-    if (window.modeler) {
+    const modeler = resolve('BpmnModeler');
+    if (modeler) {
       this.attachModelerListeners();
     } else {
       // Esperar a que el modeler esté disponible
       const checkModeler = setInterval(() => {
-        if (window.modeler) {
+        const modeler = resolve('BpmnModeler');
+        if (modeler) {
           this.attachModelerListeners();
           clearInterval(checkModeler);
         }
@@ -405,7 +431,8 @@ class CookieAutoSaveManager {
   
   attachModelerListeners() {
     try {
-      const eventBus = window.modeler.get('eventBus');
+      const modeler = resolve('BpmnModeler');
+      const eventBus = modeler.get('eventBus');
       
       // Eventos que disparan autoguardado
       const autoSaveEvents = [
@@ -432,11 +459,13 @@ class CookieAutoSaveManager {
   
   setupPPIListeners() {
     // Los listeners se configurarán cuando el PPI manager esté disponible
-    if (window.ppiManager) {
+    const ppiManager = resolve('PPIManagerInstance');
+    if (ppiManager) {
       this.attachPPIListeners();
     } else {
       const checkPPI = setInterval(() => {
-        if (window.ppiManager) {
+        const ppiManager = resolve('PPIManagerInstance');
+        if (ppiManager) {
           this.attachPPIListeners();
           clearInterval(checkPPI);
         }
@@ -447,17 +476,18 @@ class CookieAutoSaveManager {
   attachPPIListeners() {
     try {
       // Crear un proxy para detectar cambios en PPIs
-      if (window.ppiManager.core) {
-        const originalAddPPI = window.ppiManager.core.addPPI.bind(window.ppiManager.core);
-        const originalDeletePPI = window.ppiManager.core.deletePPI.bind(window.ppiManager.core);
+      const ppiManager = resolve('PPIManagerInstance');
+      if (ppiManager && ppiManager.core) {
+        const originalAddPPI = ppiManager.core.addPPI.bind(ppiManager.core);
+        const originalDeletePPI = ppiManager.core.deletePPI.bind(ppiManager.core);
         
-        window.ppiManager.core.addPPI = (ppi) => {
+        ppiManager.core.addPPI = (ppi) => {
           const result = originalAddPPI(ppi);
           this.triggerAutoSave();
           return result;
         };
         
-        window.ppiManager.core.deletePPI = (ppiId) => {
+        ppiManager.core.deletePPI = (ppiId) => {
           const result = originalDeletePPI(ppiId);
           this.triggerAutoSave();
           return result;
@@ -473,11 +503,13 @@ class CookieAutoSaveManager {
   
   setupRasciListeners() {
     // Los listeners se configurarán cuando RASCI esté disponible
-    if (window.rasciMatrixData) {
+    const matrix = RasciStore.getMatrix();
+    if (matrix && Object.keys(matrix).length > 0) {
       this.attachRasciListeners();
     } else {
       const checkRasci = setInterval(() => {
-        if (window.rasciMatrixData) {
+        const matrix = RasciStore.getMatrix();
+        if (matrix && Object.keys(matrix).length > 0) {
           this.attachRasciListeners();
           clearInterval(checkRasci);
         }
@@ -487,18 +519,9 @@ class CookieAutoSaveManager {
   
   attachRasciListeners() {
     try {
-      // Crear un proxy para detectar cambios en RASCI
-      const originalMatrixData = window.rasciMatrixData;
-      
-      window.rasciMatrixData = new Proxy(originalMatrixData, {
-        set: (target, property, value) => {
-          target[property] = value;
-          this.triggerAutoSave();
-          return true;
-        }
-      });
-      
-      console.log('🎧 Listeners de RASCI configurados');
+      // TODO: Implementar observadores para RasciStore
+      // Por ahora, nos basamos en el trigger manual
+      console.log('🎧 Listeners de RASCI configurados (basados en triggers manuales)');
       
     } catch (error) {
       console.error('❌ Error configurando listeners de RASCI:', error);
@@ -507,11 +530,13 @@ class CookieAutoSaveManager {
   
   setupPanelListeners() {
     // Los listeners se configurarán cuando el panel manager esté disponible
-    if (window.panelManager) {
+    const panelManager = resolve('PanelManagerInstance');
+    if (panelManager) {
       this.attachPanelListeners();
     } else {
       const checkPanel = setInterval(() => {
-        if (window.panelManager) {
+        const panelManager = resolve('PanelManagerInstance');
+        if (panelManager) {
           this.attachPanelListeners();
           clearInterval(checkPanel);
         }
@@ -521,23 +546,9 @@ class CookieAutoSaveManager {
   
   attachPanelListeners() {
     try {
-      // Interceptar cambios en paneles activos
-      const originalActivePanels = window.panelManager.activePanels;
-      
-      Object.defineProperty(window.panelManager, 'activePanels', {
-        get: function() {
-          return originalActivePanels;
-        },
-        set: function(value) {
-          originalActivePanels.length = 0;
-          originalActivePanels.push(...value);
-          if (window.cookieAutoSaveManager) {
-            window.cookieAutoSaveManager.triggerAutoSave();
-          }
-        }
-      });
-      
-      console.log('🎧 Listeners de paneles configurados');
+      // TODO: Implementar observadores para PanelManager
+      // Por ahora, nos basamos en el trigger manual
+      console.log('🎧 Listeners de paneles configurados (basados en triggers manuales)');
       
     } catch (error) {
       console.error('❌ Error configurando listeners de paneles:', error);
@@ -610,16 +621,17 @@ class CookieAutoSaveManager {
   
   async restoreBpmnState() {
     try {
-      if (this.projectState.bpmn.xml && window.modeler) {
+      const modeler = resolve('BpmnModeler');
+      if (this.projectState.bpmn.xml && modeler) {
         console.log('🔄 Restaurando estado BPMN desde cookies...');
         
         // Restaurar XML
-        await window.modeler.importXML(this.projectState.bpmn.xml);
+        await modeler.importXML(this.projectState.bpmn.xml);
         
         // Restaurar zoom y posición
         if (this.projectState.bpmn.zoom && this.projectState.bpmn.position) {
           try {
-            const canvas = window.modeler.get('canvas');
+            const canvas = modeler.get('canvas');
             if (canvas) {
               canvas.zoom(this.projectState.bpmn.zoom);
               canvas.viewbox(this.projectState.bpmn.position);
@@ -632,7 +644,7 @@ class CookieAutoSaveManager {
         // Restaurar selección
         if (this.projectState.bpmn.selection) {
           try {
-            const selection = window.modeler.get('selection');
+            const selection = modeler.get('selection');
             if (selection) {
               selection.select(this.projectState.bpmn.selection);
             }
@@ -653,20 +665,21 @@ class CookieAutoSaveManager {
   
   restorePPIState() {
     try {
-      if (this.projectState.ppi.indicators && window.ppiManager && window.ppiManager.core) {
+      const ppiManager = resolve('PPIManagerInstance');
+      if (this.projectState.ppi.indicators && ppiManager && ppiManager.core) {
         console.log('🔄 Restaurando PPIs desde cookies...');
         
         // Limpiar PPIs existentes
-        window.ppiManager.core.ppis = [];
+        ppiManager.core.ppis = [];
         
         // Restaurar PPIs
         this.projectState.ppi.indicators.forEach(ppi => {
-          window.ppiManager.core.addPPI(ppi);
+          ppiManager.core.addPPI(ppi);
         });
         
         // Refrescar UI
-        if (window.ppiManager.ui && window.ppiManager.ui.refreshPPIList) {
-          window.ppiManager.ui.refreshPPIList();
+        if (ppiManager.ui && ppiManager.ui.refreshPPIList) {
+          ppiManager.ui.refreshPPIList();
         }
         
         console.log(`✅ ${this.projectState.ppi.indicators.length} PPIs restaurados desde cookies`);
@@ -718,6 +731,14 @@ class CookieAutoSaveManager {
 // Exportar la clase
 export { CookieAutoSaveManager };
 
-// Crear instancia global
-window.CookieAutoSaveManager = CookieAutoSaveManager;
-window.cookieAutoSaveManager = new CookieAutoSaveManager();
+// Register in ServiceRegistry
+
+const registry = getServiceRegistry();
+if (registry) {
+  registry.register('CookieAutoSaveManager', CookieAutoSaveManager, { 
+    description: 'Autosave (cookies)' 
+  });
+  registry.register('cookieAutoSaveManager', new CookieAutoSaveManager(), { 
+    description: 'Instancia autosave' 
+  });
+}

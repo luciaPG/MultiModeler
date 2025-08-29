@@ -26,6 +26,10 @@ export default function RALphLabelEditingProvider(
 
     // Override the default label editing behavior for RALPH elements
     directEditing.registerProvider(this);
+    
+    // Private state instead of window globals
+    this.activeOverlay = null;
+    this.activeOverlayElement = null;
 
     // Bloqueo global de edición directa para elementos no editables
     eventBus.on('directEditing.activate', 10000, function(event) {
@@ -222,7 +226,7 @@ export default function RALphLabelEditingProvider(
         ];
         
         if (element.type && element.type.startsWith('RALph:') && dualLabelElements.includes(element.type)) {
-            return window.activeRALPHOverlay !== null;
+            return this.activeOverlay !== null;
         }
         return false;
     };
@@ -370,8 +374,8 @@ export default function RALphLabelEditingProvider(
             return;
         }
         // Remove any existing overlay
-        if (window.activeRALPHOverlay) {
-            window.activeRALPHOverlay.remove();
+        if (this.activeOverlay) {
+            this.activeOverlay.remove();
         }
 
         // Store original content and hide it
@@ -417,8 +421,8 @@ export default function RALphLabelEditingProvider(
         
         // Add input to canvas container
         canvas.getContainer().appendChild(input);
-        window.activeRALPHOverlay = input;
-        window.activeRALPHOverlayElement = element;
+        this.activeOverlay = input;
+        this.activeOverlayElement = element;
         
         // Focus and select
         input.focus();
@@ -497,7 +501,7 @@ export default function RALphLabelEditingProvider(
             }
 
             setTimeout(() => {
-                if (window.activeRALPHOverlay && !isFinishing && !enterPressed && !processingKeyEvent && !processingDocumentClick && !processingFinishCall && !hasFinished) {
+                if (this.activeOverlay && !isFinishing && !enterPressed && !processingKeyEvent && !processingDocumentClick && !processingFinishCall && !hasFinished) {
                     const activeElement = document.activeElement;
                     if (!input.contains(activeElement)) {
                         const currentValue = input && input.value ? input.value : '';
@@ -515,7 +519,7 @@ export default function RALphLabelEditingProvider(
         function finishDirectEdit(save = true, capturedValue = null) {
             if (capturedValue && capturedValue.trim() && !hasFinished && !processingFinishCall) {
                 processingFinishCall = true;
-            } else if (!window.activeRALPHOverlay || isFinishing || hasFinished || processingFinishCall) {
+            } else if (!this.activeOverlay || isFinishing || hasFinished || processingFinishCall) {
                 return;
             } else {
                 processingFinishCall = true;
@@ -551,11 +555,11 @@ export default function RALphLabelEditingProvider(
                 hasFinished = true;
                 
                 // Remove input
-                if (window.activeRALPHOverlay) {
-                    window.activeRALPHOverlay.remove();
-                    window.activeRALPHOverlay = null;
+                if (this.activeOverlay) {
+                    this.activeOverlay.remove();
+                    this.activeOverlay = null;
                 }
-                window.activeRALPHOverlayElement = null;
+                this.activeOverlayElement = null;
                 
                 // Restore label visibility
                 labelElement.style.visibility = 'visible';
@@ -630,8 +634,8 @@ export default function RALphLabelEditingProvider(
             return;
         }
         // Remove any existing overlay
-        if (window.activeRALPHOverlay) {
-            window.activeRALPHOverlay.remove();
+        if (this.activeOverlay) {
+            this.activeOverlay.remove();
         }
 
         // Create overlay
@@ -705,8 +709,8 @@ export default function RALphLabelEditingProvider(
         input.select();
         
         // Store overlay reference
-        window.activeRALPHOverlay = overlay;
-        window.activeRALPHOverlayElement = element;
+        this.activeOverlay = overlay;
+        this.activeOverlayElement = element;
         
         // Event handlers
         let hasFinished = false;
@@ -781,7 +785,7 @@ export default function RALphLabelEditingProvider(
         }
 
             setTimeout(() => {
-                if (window.activeRALPHOverlay && !isFinishing && !enterPressed && !processingKeyEvent && !processingDocumentClick && !processingFinishCall && !hasFinished) {
+                if (this.activeOverlay && !isFinishing && !enterPressed && !processingKeyEvent && !processingDocumentClick && !processingFinishCall && !hasFinished) {
                     const activeElement = document.activeElement;
                     if (!overlay.contains(activeElement)) {
                         const currentValue = input && input.value ? input.value : '';
@@ -799,7 +803,7 @@ export default function RALphLabelEditingProvider(
         function finishEditingWithValue(save = true, capturedValue = null) {
             if (capturedValue && capturedValue.trim() && !hasFinished && !processingFinishCall) {
                 processingFinishCall = true;
-            } else if (!window.activeRALPHOverlay || isFinishing || hasFinished || processingFinishCall) {
+            } else if (!this.activeOverlay || isFinishing || hasFinished || processingFinishCall) {
                 return;
             } else {
                 processingFinishCall = true;
@@ -881,9 +885,9 @@ export default function RALphLabelEditingProvider(
             }
             
             hasFinished = true;
-            if (window.activeRALPHOverlay) {
-                window.activeRALPHOverlay.remove();
-                window.activeRALPHOverlay = null;
+            if (this.activeOverlay) {
+                this.activeOverlay.remove();
+                this.activeOverlay = null;
             }
             isFinishing = false;
             processingFinishCall = false;
@@ -955,7 +959,7 @@ export default function RALphLabelEditingProvider(
     // Observador global para eliminar inputs de edición no permitidos SOLO si el elemento es no editable
     const observer = new MutationObserver(() => {
         document.querySelectorAll('input[type="text"]').forEach(input => {
-            const activeElement = window.activeRALPHOverlayElement;
+            const activeElement = this.activeOverlayElement;
             
             // Solo eliminar inputs que estén dentro del contexto de RALph/BPMN
             // No afectar inputs de la tabla RASCI u otros paneles

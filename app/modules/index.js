@@ -10,6 +10,7 @@ import * as ppinotModule from './multinotationModeler/notations/ppinot/index.js'
 import * as ralphModule from './multinotationModeler/notations/ralph/index.js';
 import * as rasciModule from './rasci/index.js';
 import * as ppisModule from './ppis/index.js';
+import { getServiceRegistry } from './ui/core/ServiceRegistry.js';
 
 /**
  * Initialize the application with all modules
@@ -21,9 +22,40 @@ export async function initializeApplication(options = {}) {
   
   try {
     // Initialize the MultiNotation Modeler core
+    const registry = getServiceRegistry();
+    let modeler = options.bpmnModeler;
+    
+    // Si no se pasa como parámetro, intentar obtener del registry
+    if (!modeler) {
+      modeler = registry && registry.get('BpmnModeler');
+    }
+    
+    // Si aún no está disponible, esperar un poco y reintentar
+    if (!modeler && registry) {
+      console.log('[App] BpmnModeler not found, waiting for registration...');
+      // Esperar hasta 2 segundos para que se registre
+      for (let i = 0; i < 20; i++) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        modeler = registry.get('BpmnModeler');
+        if (modeler) {
+          console.log('[App] BpmnModeler found after waiting');
+          break;
+        }
+      }
+    }
+    
+    // Si aún no está disponible, registrar el que se pasó como parámetro
+    if (modeler && registry && !registry.get('BpmnModeler')) {
+      registry.register('BpmnModeler', modeler);
+    }
+    
+    if (!modeler) {
+      throw new Error('TODO: registrar/inyectar BpmnModeler en ServiceRegistry');
+    }
+    
     const multiNotationModeler = initMultiNotationModeler({
       ...options,
-      bpmnModeler: options.bpmnModeler || window.modeler // Use provided modeler or global one
+      bpmnModeler: modeler
     });
     const core = multiNotationModeler.core;
     
@@ -71,18 +103,27 @@ export { MultiNotationModeler };
  * Main entry point when loaded in the browser
  */
 async function main() {
-  if (typeof window !== 'undefined') {
-    window.addEventListener('DOMContentLoaded', async () => {
+  if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', async () => {
       try {
-        // Initialize application when DOM is ready
+        // Check if app is already initialized by app.js
+        const registry = getServiceRegistry();
+        if (registry && registry.get('App')) {
+          console.log('[App] Application already initialized by app.js');
+          return;
+        }
+        
+        // Initialize application when DOM is ready (fallback)
         const app = await initializeApplication({
           container: document.getElementById('container')
         });
         
-        // Make available globally for debugging
-        window.app = app;
+        // Register app in service registry instead of window
+        if (registry) {
+          registry.register('App', app);
+        }
         
-        console.log('[App] Application loaded and ready');
+        console.log('[App] Application loaded and ready (fallback)');
       } catch (error) {
         console.error('[App] Failed to load application:', error);
       }
@@ -90,8 +131,10 @@ async function main() {
   }
 }
 
-// Auto-start when loaded directly
-main();
+// Auto-start when loaded directly (but only if not already started)
+if (typeof document !== 'undefined' && document.readyState === 'loading') {
+  main();
+}
 
 // Export for module usage
 export default {

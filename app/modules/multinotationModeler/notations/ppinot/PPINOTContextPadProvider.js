@@ -2,6 +2,7 @@ import { is } from "bpmn-js/lib/util/ModelUtil";
 import { isAny } from 'bpmn-js/lib/features/modeling/util/ModelingUtil';
 import { assign } from 'min-dash';
 import { myConnectionElements, aggregatedElements } from "./Types";
+import { getServiceRegistry } from '../../../ui/core/ServiceRegistry.js';
 
 // Devuelve las acciones para el context pad de PPINOT
 export default function PPINOTContextPadProvider(
@@ -198,9 +199,13 @@ PPINOTContextPadProvider.prototype.getContextPadEntries = function (element) {
           
           // Sync with PPI list if it was a PPI element
           if (isPPI) {
-            if (window.ppiManager) {
-              window.ppiManager.removePPIFromList(element.id);
-            } else {
+            try {
+              const ppiManager = getServiceRegistry()?.get('PPIManagerInstance');
+              if (ppiManager) {
+                ppiManager.removePPIFromList(element.id);
+              }
+            } catch (error) {
+              console.warn('Could not access PPI manager:', error);
             }
           } else {
           }

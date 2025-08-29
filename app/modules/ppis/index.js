@@ -13,6 +13,7 @@ import './ppi-sync-manager.js';
 import './ppi-sync-ui.js';
 import './bpmn-integration.js';
 import { getServiceRegistry } from '../ui/core/ServiceRegistry.js';
+import { resolve } from '../../services/global-access.js';
 
 /**
  * PPI Manager
@@ -44,27 +45,21 @@ class PPIModuleManager {
     
     // Initialize legacy PPI manager if available
     try {
-      // Obtener PPIManager desde window primero (más confiable) o ServiceRegistry como fallback
-      let PPIManager = null;
-      
-      if (typeof window !== 'undefined' && window.PPIManager) {
-        PPIManager = window.PPIManager;
-        console.log('[PPIs] PPIManager obtenido desde window');
-      } else {
-        const serviceRegistry = getServiceRegistry();
-        PPIManager = (serviceRegistry && serviceRegistry.get('PPIManager'));
-        if (PPIManager) {
-          console.log('[PPIs] PPIManager obtenido desde ServiceRegistry');
-        }
+      // Get PPIManager from ServiceRegistry
+      const registry = getServiceRegistry();
+      const PPIManager = registry && registry.get ? registry.get('PPIManager') : null;
+      if (!PPIManager) {
+        throw new Error('TODO: registrar/inyectar PPIManager en ServiceRegistry');
       }
       
-      if (PPIManager && typeof window !== 'undefined') {
-        window.ppiManagerInstance = new PPIManager();
-        window.ppiManager = window.ppiManagerInstance;
-        console.log('[PPIs] PPIManager instance creada exitosamente');
-      } else {
-        console.warn('[PPIs] PPIManager no disponible');
+      const ppiManagerInstance = new PPIManager();
+      
+      // Register in service registry
+      if (registry) {
+        registry.register('PPIManagerInstance', ppiManagerInstance);
       }
+      
+      console.log('[PPIs] PPIManager instance creada exitosamente');
     } catch (error) {
       console.error('[PPIs] Error initializing legacy PPIManager:', error);
     }
@@ -82,8 +77,9 @@ class PPIModuleManager {
     this.eventBus.publish('ppi.added', { ppi });
     
     // Update legacy manager if available
-    if (typeof window !== 'undefined' && window.ppiManagerInstance && typeof window.ppiManagerInstance.addPPI === 'function') {
-      window.ppiManagerInstance.addPPI(ppi);
+    const ppiManager = resolve('PPIManagerInstance');
+    if (ppiManager && typeof ppiManager.addPPI === 'function') {
+      ppiManager.addPPI(ppi);
     }
     
     return ppi;
@@ -101,8 +97,9 @@ class PPIModuleManager {
       this.eventBus.publish('ppi.updated', { ppi: this.ppis[index] });
       
       // Update legacy manager if available
-      if (typeof window !== 'undefined' && window.ppiManagerInstance && typeof window.ppiManagerInstance.updatePPI === 'function') {
-        window.ppiManagerInstance.updatePPI(id, data);
+      const ppiManager = resolve('PPIManagerInstance');
+      if (ppiManager && typeof ppiManager.updatePPI === 'function') {
+        ppiManager.updatePPI(id, data);
       }
       
       return this.ppis[index];
@@ -123,8 +120,9 @@ class PPIModuleManager {
       this.eventBus.publish('ppi.removed', { ppi });
       
       // Update legacy manager if available
-      if (typeof window !== 'undefined' && window.ppiManagerInstance && typeof window.ppiManagerInstance.removePPI === 'function') {
-        window.ppiManagerInstance.removePPI(id);
+      const ppiManager = resolve('PPIManagerInstance');
+      if (ppiManager && typeof ppiManager.removePPI === 'function') {
+        ppiManager.removePPI(id);
       }
       
       return true;
@@ -138,8 +136,9 @@ class PPIModuleManager {
    */
   getPPIs() {
     // Get from legacy manager if available
-    if (typeof window !== 'undefined' && window.ppiManagerInstance && typeof window.ppiManagerInstance.getPPIs === 'function') {
-      return window.ppiManagerInstance.getPPIs();
+    const ppiManager = resolve('PPIManagerInstance');
+    if (ppiManager && typeof ppiManager.getPPIs === 'function') {
+      return ppiManager.getPPIs();
     }
     
     return this.ppis;
@@ -166,8 +165,9 @@ class PPIModuleManager {
         this.eventBus.publish('ppi.imported', { ppis });
         
         // Update legacy manager if available
-        if (typeof window !== 'undefined' && window.ppiManagerInstance && typeof window.ppiManagerInstance.importPPIs === 'function') {
-          window.ppiManagerInstance.importPPIs(ppis);
+        const ppiManager = resolve('PPIManagerInstance');
+        if (ppiManager && typeof ppiManager.importPPIs === 'function') {
+          ppiManager.importPPIs(ppis);
         }
         
         return true;
@@ -194,28 +194,23 @@ async function loadPPIComponents() {
       return;
     }
     
-    // Ensure legacy managers are initialized
-    let PPIManager = null;
-    
-    if (typeof window !== 'undefined' && window.PPIManager) {
-      PPIManager = window.PPIManager;
-      console.log('[PPIs] loadPPIComponents: PPIManager obtenido desde window');
-    } else {
-      const serviceRegistry = getServiceRegistry();
-      PPIManager = (serviceRegistry && serviceRegistry.get('PPIManager'));
-      if (PPIManager) {
-        console.log('[PPIs] loadPPIComponents: PPIManager obtenido desde ServiceRegistry');
-      }
+    // Get PPIManager from ServiceRegistry
+    const registry = getServiceRegistry();
+    const PPIManager = registry && registry.get ? registry.get('PPIManager') : null;
+    if (!PPIManager) {
+      console.warn('[PPIs] PPIManager not available in ServiceRegistry');
+      return;
     }
     
-    if (PPIManager && typeof window !== 'undefined' && !window.ppiManagerInstance) {
-      console.log('[PPIs] Creating PPIManager instance...');
-      window.ppiManagerInstance = new PPIManager();
-      window.ppiManager = window.ppiManagerInstance;
-      console.log('[PPIs] PPIManager instance created:', window.ppiManagerInstance);
-    } else {
-      console.log('[PPIs] PPIManager not available or instance already exists');
+    console.log('[PPIs] Creating PPIManager instance...');
+    const ppiManagerInstance = new PPIManager();
+    
+    // Register in service registry
+    if (registry) {
+      registry.register('PPIManagerInstance', ppiManagerInstance);
     }
+    
+    console.log('[PPIs] PPIManager instance created:', ppiManagerInstance);
   } catch (error) {
     console.error('[PPIs] Error initializing legacy PPIManager:', error);
   }
@@ -230,9 +225,12 @@ export async function initialize(options = {}) {
   const ppiManager = new PPIModuleManager(options);
   await ppiManager.initialize();
   
-  // Expose legacy function for backward compatibility
-  if (typeof window !== 'undefined') {
-    window.loadPPIComponents = loadPPIComponents;
+  // Register function in ServiceRegistry
+  const registry = getServiceRegistry();
+  if (registry) {
+    registry.register('loadPPIComponents', loadPPIComponents, { 
+      description: 'Carga UI de PPI' 
+    });
   }
   
   return {

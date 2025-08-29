@@ -1,5 +1,8 @@
 // === panel-loader.js ===
 
+import { resolve } from '../../../services/global-access.js';
+import { getServiceRegistry } from '../core/ServiceRegistry.js';
+
 class PanelLoader {
   constructor() {
     this.panelCache = new Map();
@@ -72,12 +75,13 @@ class PanelLoader {
         this.restorePanelVisibility(existingPanel);
         
         // Para el panel PPI, solo refrescar la lista sin recrear
-        if (panelType === 'ppi' && window.ppiManager) {
+        const ppiManager = resolve('PPIManagerInstance');
+        if (panelType === 'ppi' && ppiManager) {
           console.log('[PanelLoader] Refrescando lista PPI sin recrear controladores');
-          if (typeof window.ppiManager.refreshPPIList === 'function') {
+          if (typeof ppiManager.refreshPPIList === 'function') {
             // Pequeño delay para asegurar que el panel esté completamente visible
             setTimeout(() => {
-              window.ppiManager.refreshPPIList();
+              ppiManager.refreshPPIList();
             }, 100);
           }
         }
@@ -524,10 +528,12 @@ class PanelLoader {
         
         // Preservar estado BPMN si se está ocultando el panel BPMN
         const panelType = panel.getAttribute('data-panel-type');
-        if (panelType === 'bpmn' && window.bpmnModeler && window.bpmnModeler.get) {
+        const serviceRegistry = getServiceRegistry();
+        const modeler = serviceRegistry && serviceRegistry.get('BpmnModeler');
+        if (panelType === 'bpmn' && modeler && modeler.get) {
           try {
-            const xml = await window.bpmnModeler.saveXML({ format: true });
-            const svg = await window.bpmnModeler.saveSVG();
+            const xml = await modeler.saveXML({ format: true });
+            const svg = await modeler.saveSVG();
             
             // Verificar que el XML no esté vacío
             if (xml && xml.xml && xml.xml.trim().length > 0) {
@@ -536,8 +542,9 @@ class PanelLoader {
                 svg: svg
               };
               // Guardar el estado en el panel manager
-              if (window.panelManager) {
-                window.panelManager.preservedBpmnState = bpmnState;
+              const panelManager = resolve('PanelManagerInstance');
+              if (panelManager) {
+                panelManager.preservedBpmnState = bpmnState;
               }
             } else {
             }
@@ -546,19 +553,20 @@ class PanelLoader {
         }
         
         // Actualizar la lista de paneles activos en el panel manager
-        if (window.panelManager) {
-          if (panelType && window.panelManager.activePanels.includes(panelType)) {
-            window.panelManager.activePanels = window.panelManager.activePanels.filter(p => p !== panelType);
+        const panelManager = resolve('PanelManagerInstance');
+        if (panelManager) {
+          if (panelType && panelManager.activePanels.includes(panelType)) {
+            panelManager.activePanels = panelManager.activePanels.filter(p => p !== panelType);
             
             // Actualizar el selector de paneles para mostrar el cambio
-            if (window.panelManager.updatePanelSelector) {
-              window.panelManager.updatePanelSelector();
+            if (panelManager.updatePanelSelector) {
+              panelManager.updatePanelSelector();
             }
             
             // Notificar al panel manager para que reajuste el layout
             setTimeout(() => {
-              if (window.panelManager && typeof window.panelManager.adjustLayoutForVisiblePanels === 'function') {
-                window.panelManager.adjustLayoutForVisiblePanels();
+              if (panelManager && typeof panelManager.adjustLayoutForVisiblePanels === 'function') {
+                panelManager.adjustLayoutForVisiblePanels();
               }
             }, 50);
           }
@@ -587,8 +595,9 @@ class PanelLoader {
             
             // Remover de la lista activa
             const otherPanelType = otherPanel.getAttribute('data-panel-type');
-            if (otherPanelType && window.panelManager && window.panelManager.activePanels.includes(otherPanelType)) {
-              window.panelManager.activePanels = window.panelManager.activePanels.filter(p => p !== otherPanelType);
+            const panelManager = resolve('PanelManagerInstance');
+            if (otherPanelType && panelManager && panelManager.activePanels.includes(otherPanelType)) {
+              panelManager.activePanels = panelManager.activePanels.filter(p => p !== otherPanelType);
             }
           }
         });
@@ -599,8 +608,9 @@ class PanelLoader {
         
         // Ajustar layout para un solo panel
         setTimeout(() => {
-          if (window.panelManager && typeof window.panelManager.adjustLayoutForVisiblePanels === 'function') {
-            window.panelManager.adjustLayoutForVisiblePanels();
+          const panelManager = resolve('PanelManagerInstance');
+          if (panelManager && typeof panelManager.adjustLayoutForVisiblePanels === 'function') {
+            panelManager.adjustLayoutForVisiblePanels();
           }
         }, 50);
       });
@@ -663,50 +673,53 @@ class PanelLoader {
 
   loadRasciController(panel) {
     // Inicializar el controlador RASCI
-    if (window.initRasciPanel) {
-      window.initRasciPanel(panel);
+    const serviceRegistry = getServiceRegistry();
+    const initRasciPanel = serviceRegistry && serviceRegistry.getFunction('initRasciPanel');
+    if (initRasciPanel) {
+      initRasciPanel(panel);
     }
   }
 
-  loadPpiController(panel) {
+  loadPpiController() {
     // Inicializar el controlador PPI
-    if (window.ppiManager) {
+    const ppiManager = resolve('PPIManagerInstance');
+    if (ppiManager) {
       // El PPI Manager ya está inicializado globalmente
       
       // Verificar que los métodos existan antes de llamarlos
-      if (typeof window.ppiManager.setupFileUpload === 'function') {
-        window.ppiManager.setupFileUpload();
+      if (typeof ppiManager.setupFileUpload === 'function') {
+        ppiManager.setupFileUpload();
       }
       
-      if (typeof window.ppiManager.setupEventListeners === 'function') {
-        window.ppiManager.setupEventListeners();
+      if (typeof ppiManager.setupEventListeners === 'function') {
+        ppiManager.setupEventListeners();
       }
       
       // MEJORADO: Forzar configuración de event listeners BPMN
-      if (typeof window.ppiManager.setupBpmnEventListeners === 'function') {
+      if (typeof ppiManager.setupBpmnEventListeners === 'function') {
         console.log('[PanelLoader] Forzando configuración de event listeners BPMN');
-        window.ppiManager.setupBpmnEventListeners();
+        ppiManager.setupBpmnEventListeners();
       }
       
       // MEJORADO: Verificar y crear PPIs desde elementos existentes en el canvas
       this.syncExistingPPIsFromCanvas();
       
       // Create sample PPIs if none exist - SOLO si es la primera vez
-      if (typeof window.ppiManager.createSamplePPIs === 'function') {
+      if (typeof ppiManager.createSamplePPIs === 'function') {
         // Verificar si ya hay PPIs en el core antes de crear muestras
-        const existingPPIs = window.ppiManager.core ? window.ppiManager.core.getAllPPIs() : [];
+        const existingPPIs = ppiManager.core ? ppiManager.core.getAllPPIs() : [];
         if (existingPPIs.length === 0) {
           console.log('[PanelLoader] No hay PPIs existentes, creando muestras');
-          window.ppiManager.createSamplePPIs();
+          ppiManager.createSamplePPIs();
         } else {
           console.log(`[PanelLoader] Ya existen ${existingPPIs.length} PPIs, saltando creación de muestras`);
         }
       }
       
       // OPTIMIZADO: Actualización inmediata sin delays
-      if (typeof window.ppiManager.refreshPPIList === 'function') {
+      if (typeof ppiManager.refreshPPIList === 'function') {
         console.log('[PanelLoader] Refrescando lista PPI');
-        window.ppiManager.refreshPPIList();
+        ppiManager.refreshPPIList();
       }
 
       // DEBUG: Verificar estado de sincronización
@@ -718,13 +731,14 @@ class PanelLoader {
 
   // NUEVO: Método para sincronizar PPIs existentes desde el canvas
   syncExistingPPIsFromCanvas() {
-    if (!window.ppiManager || !window.ppiManager.core) {
+    const ppiManager = resolve('PPIManagerInstance');
+    if (!ppiManager || !ppiManager.core) {
       console.log('[PanelLoader] PPI Manager no disponible para sincronización');
       return;
     }
 
     // Obtener modelador
-    const modeler = window.modeler || (window.ppiManager.adapter && window.ppiManager.adapter.getBpmnModeler());
+    const modeler = resolve('BpmnModeler') || (ppiManager.adapter && ppiManager.adapter.getBpmnModeler());
     if (!modeler) {
       console.log('[PanelLoader] Modeler no disponible para sincronización');
       return;
@@ -747,11 +761,11 @@ class PanelLoader {
 
       // Verificar si cada elemento PPINOT tiene un PPI correspondiente
       ppiElements.forEach(element => {
-        const existingPPI = window.ppiManager.core.ppis.find(ppi => ppi.elementId === element.id);
+        const existingPPI = ppiManager.core.ppis.find(ppi => ppi.elementId === element.id);
         if (!existingPPI) {
           console.log(`[PanelLoader] Elemento PPINOT sin PPI correspondiente: ${element.id}, creando PPI`);
-          if (typeof window.ppiManager.createPPIFromElement === 'function') {
-            window.ppiManager.createPPIFromElement(element.id);
+          if (typeof ppiManager.createPPIFromElement === 'function') {
+            ppiManager.createPPIFromElement(element.id);
           }
         } else {
           console.log(`[PanelLoader] Elemento PPINOT ya tiene PPI: ${element.id} -> ${existingPPI.id}`);
@@ -759,7 +773,7 @@ class PanelLoader {
       });
 
       // Verificar PPIs huérfanos (PPIs sin elementos en el canvas)
-      const orphanPPIs = window.ppiManager.core.ppis.filter(ppi => {
+      const orphanPPIs = ppiManager.core.ppis.filter(ppi => {
         if (!ppi.elementId) return true;
         const canvasElement = elementRegistry.get(ppi.elementId);
         return !canvasElement;
@@ -779,18 +793,20 @@ class PanelLoader {
 
   // Método de debugging para verificar el estado de sincronización PPI
   debugPPISyncStatus() {
-    if (!window.ppiManager || !window.ppiManager.core) {
+    const ppiManager = resolve('PPIManagerInstance');
+    if (!ppiManager || !ppiManager.core) {
       console.log('[PanelLoader] PPI Manager o Core no disponible para debugging');
       return;
     }
 
-    const ppis = window.ppiManager.core.getAllPPIs();
+    const ppis = ppiManager.core.getAllPPIs();
     console.log(`[PanelLoader] DEBUG: ${ppis.length} PPIs en el core`);
 
     // Verificar elementos en el canvas
-    if (window.modeler) {
+    const modeler = resolve('BpmnModeler');
+    if (modeler) {
       try {
-        const elementRegistry = window.modeler.get('elementRegistry');
+        const elementRegistry = modeler.get('elementRegistry');
         const allElements = elementRegistry.getAll();
         const ppiElements = allElements.filter(el => 
           el.businessObject && el.businessObject.$type && 
@@ -939,10 +955,11 @@ class PanelLoader {
 
     // Obtener el tipo de panel que se está reordenando
     const panelType = panel.getAttribute('data-panel-type');
-    if (!panelType || !window.panelManager) return;
+    const panelManager = resolve('PanelManagerInstance');
+    if (!panelType || !panelManager) return;
 
     // Reordenar en el array de paneles activos del panel manager
-    const activePanels = window.panelManager.activePanels;
+    const activePanels = panelManager.activePanels;
     const currentPanelIndex = activePanels.indexOf(panelType);
     
     if (currentPanelIndex === -1) return;
@@ -960,8 +977,9 @@ class PanelLoader {
 
     // Reaplicar la configuración para reflejar el nuevo orden
     setTimeout(() => {
-      if (window.panelManager && typeof window.panelManager.applyConfiguration === 'function') {
-        window.panelManager.applyConfiguration();
+      const panelManager = resolve('PanelManagerInstance');
+      if (panelManager && typeof panelManager.applyConfiguration === 'function') {
+        panelManager.applyConfiguration();
       }
     }, 100);
   }
@@ -996,5 +1014,16 @@ class PanelLoader {
 // Exportar la clase para ES6 modules
 export { PanelLoader };
 
-// También mantener la referencia global para compatibilidad
-window.PanelLoader = PanelLoader;
+// Register in ServiceRegistry
+const serviceRegistry = getServiceRegistry();
+if (serviceRegistry) {
+  serviceRegistry.register('PanelLoader', PanelLoader, {
+    description: 'Panel loader for dynamic UI components'
+  });
+}
+
+// Debug exposure only in development
+if (process.env.NODE_ENV !== 'production' && typeof globalThis !== 'undefined') {
+  // eslint-disable-next-line no-undef
+  globalThis.__debug = { ...(globalThis.__debug || {}), PanelLoader };
+}

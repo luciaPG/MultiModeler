@@ -1,6 +1,8 @@
 // RASCI Panel Module
 // This module integrates existing RASCI functionality with the new modular architecture
 
+import { getServiceRegistry } from '../ui/core/ServiceRegistry.js';
+
 // Core functionality
 import { initRasciPanel } from './core/main.js';
 import { renderMatrix, addNewRole, editRole, deleteRole, showDeleteConfirmModal, forceReloadMatrix } from './core/matrix-manager.js';
@@ -46,14 +48,16 @@ class RASCIManager {
     }
     
     // Get initial data if available
-    // Obtener datos del adaptador o fallback a window
+    // Obtener datos del adaptador o ServiceRegistry
     if (this.adapter) {
       const matrixData = this.adapter.getMatrixData();
       if (matrixData) {
         this.matrixData = matrixData;
       }
-    } else if (typeof window !== 'undefined' && window.rasciMatrixData) {
-      this.matrixData = window.rasciMatrixData;
+    } else {
+  const sr = typeof getServiceRegistry === 'function' ? getServiceRegistry() : null;
+  const rasciAdapter = this.adapter || (sr && sr.get('RASCIAdapter'));
+  this.matrixData = rasciAdapter && typeof rasciAdapter.getMatrixData === 'function' ? rasciAdapter.getMatrixData() : {};
     }
     
     console.log('[RASCI] Manager initialized');
@@ -117,18 +121,20 @@ class RASCIManager {
       this.adapter.updateMatrixData(this.matrixData);
     }
     
-    // Update global variable for backward compatibility
-    if (typeof window !== 'undefined') {
-      window.rasciMatrixData = this.matrixData;
+  // Update matrix data via adapter or ServiceRegistry
+    const sr = typeof getServiceRegistry === 'function' ? getServiceRegistry() : null;
+    const rasciAdapter = this.adapter || (sr && sr.get('RASCIAdapter'));
+    if (rasciAdapter && typeof rasciAdapter.setMatrixData === 'function') {
+      rasciAdapter.setMatrixData(this.matrixData);
     }
     
     this.eventBus.publish('rasci.matrix.updated', { matrix: this.matrixData });
     
-    // Trigger UI update through adapter or fallback to window
-    if (this.adapter && this.adapter.forceReloadMatrix) {
-      this.adapter.forceReloadMatrix();
-    } else if (typeof window !== 'undefined' && typeof window.forceReloadMatrix === 'function') {
-      window.forceReloadMatrix();
+  // Trigger UI update through adapter or ServiceRegistry
+    const sr2 = typeof getServiceRegistry === 'function' ? getServiceRegistry() : null;
+    const rasciAdapter2 = this.adapter || (sr2 && sr2.get('RASCIAdapter'));
+    if (rasciAdapter2 && typeof rasciAdapter2.forceReloadMatrix === 'function') {
+      rasciAdapter2.forceReloadMatrix();
     }
   }
   

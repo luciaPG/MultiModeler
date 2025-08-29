@@ -1,6 +1,17 @@
 // RASCI Matrix UI Validator
 
 import { rasciValidator } from '../validation/matrix-validator.js';
+import { RasciStore } from '../store.js';
+import { getServiceRegistry } from '../../ui/core/ServiceRegistry.js';
+import { onStorage } from '../../ui/core/dom-events.js';
+import { registerDebug } from '../../../shared/debug-registry.js';
+
+// Bootstrap SR
+const sr = (typeof getServiceRegistry === 'function') ? getServiceRegistry() : undefined;
+const eventBus = sr && sr.get ? sr.get('EventBus') : undefined;
+const rasciAdapter = sr && sr.get ? sr.get('RASCIAdapter') : undefined;
+const validator = sr && sr.get ? sr.get('RASCIUIValidator') : undefined;
+const bpmnModeler = sr && sr.get ? sr.get('BPMNModeler') : (rasciAdapter && rasciAdapter.getBpmnModeler ? rasciAdapter.getBpmnModeler() : undefined);
 
 export class RasciMatrixUIValidator {
   constructor() {
@@ -76,17 +87,17 @@ export class RasciMatrixUIValidator {
     }
 
     // Observar cambios en localStorage
-    window.addEventListener('storage', (e) => {
+    onStorage((e) => {
       if (e.key === 'rasciMatrixData' || e.key === 'rasciRoles') {
         this.debouncedValidate();
       }
     });
     
-    // Observar cambios en window variables
+    // Observar cambios en RasciStore
     let lastMatrixData = null;
     setInterval(() => {
-      if (window.rasciMatrixData !== lastMatrixData) {
-        lastMatrixData = window.rasciMatrixData;
+      if (RasciStore.getMatrix() !== lastMatrixData) {
+        lastMatrixData = RasciStore.getMatrix();
         this.debouncedValidate();
         
         // También verificar tareas vacías específicamente
@@ -136,6 +147,7 @@ export class RasciMatrixUIValidator {
       
       this.lastValidation = validation;
     } catch (error) {
+      console.error('Error during validation:', error);
     }
   }
 
@@ -144,7 +156,8 @@ export class RasciMatrixUIValidator {
     try {
       // Intentar obtener desde localStorage con diferentes claves
       let roles = [];
-      
+      const localStorageKeys = ['rasciRoles', 'roles', 'matrixRoles'];
+
       for (const key of localStorageKeys) {
         const savedRoles = localStorage.getItem(key);
         if (savedRoles) {
@@ -155,13 +168,14 @@ export class RasciMatrixUIValidator {
               break;
             }
           } catch (parseError) {
+            console.error('Error parsing roles from localStorage:', parseError);
           }
         }
       }
       
       // Intentar obtener desde window si está disponible
-      if (roles.length === 0 && window.rasciRoles) {
-        roles = window.rasciRoles;
+      if (roles.length === 0) {
+        roles = RasciStore.getRoles();
       }
       
       // Si no hay roles, intentar extraerlos de la matriz
@@ -191,15 +205,18 @@ export class RasciMatrixUIValidator {
   // Obtener datos de matriz actuales
   getCurrentMatrixData() {
     try {
-      // Prioridad 1: window.rasciMatrixData (datos en memoria)
-      if (window.rasciMatrixData && typeof window.rasciMatrixData === 'object') {
-        const taskCount = Object.keys(window.rasciMatrixData).length;
+      // Prioridad 1: RasciStore (datos en memoria)
+      const matrixData = RasciStore.getMatrix();
+      if (matrixData && typeof matrixData === 'object') {
+        const taskCount = Object.keys(matrixData).length;
         
         if (taskCount > 0) {
-          return window.rasciMatrixData;
+          return matrixData;
         }
       }
       
+      // Prioridad 2: localStorage.rasciMatrixData
+      const savedMatrix = localStorage.getItem('rasciMatrixData');
       if (savedMatrix) {
         try {
           const parsedMatrix = JSON.parse(savedMatrix);
@@ -211,6 +228,7 @@ export class RasciMatrixUIValidator {
             }
           }
         } catch (parseError) {
+          console.error('Error parsing matrix from localStorage:', parseError);
         }
       }
       
@@ -227,6 +245,7 @@ export class RasciMatrixUIValidator {
             }
           }
         } catch (parseError) {
+          console.error('Error parsing previous matrix from localStorage:', parseError);
         }
       }
       
@@ -242,15 +261,12 @@ export class RasciMatrixUIValidator {
       // Intentar obtener roles desde RALph de múltiples fuentes
       let roles = [];
       
-      // 1. Intentar desde window.ralphRoles
-      if (window.ralphRoles && Array.isArray(window.ralphRoles)) {
-        roles = window.ralphRoles;
-      }
-      
-      // 2. Intentar desde el modeler de RALph si está disponible
-      if (window.ralphjs && window.ralphjs.get) {
+      // 1. Intentar desde ServiceRegistry (RALphModeler)
+      const sr = (typeof getServiceRegistry === 'function') ? getServiceRegistry() : null;
+      const ralphModeler = sr && (sr.get('RALphModeler') || sr.get('RALph'));
+      if (ralphModeler && ralphModeler.get) {
         try {
-          const elementRegistry = window.ralphjs.get('elementRegistry');
+          const elementRegistry = ralphModeler.get('elementRegistry');
           const ralphElements = elementRegistry.filter(element => 
             element.type === 'ralph:Role' || 
             element.type === 'ralph:OrganizationalRole'
@@ -262,6 +278,7 @@ export class RasciMatrixUIValidator {
             }
           }
         } catch (error) {
+          console.error('Error getting RALPH roles from BPMN modeler:', error);
         }
       }
       
@@ -278,6 +295,7 @@ export class RasciMatrixUIValidator {
                 break;
               }
             } catch (parseError) {
+              console.error('Error parsing roles from localStorage key:', key, parseError);
             }
           }
         }
@@ -294,10 +312,11 @@ export class RasciMatrixUIValidator {
         }
       }
       
-      // 5. Intentar desde el modeler de BPMN si tiene roles organizativos
-      if (roles.length === 0 && window.bpmnjs && window.bpmnjs.get) {
+      // 2. Intentar desde el modeler de BPMN si tiene roles organizativos
+      const bpmnModeler = sr && (sr.get('BPMNModeler') || sr.get('BpmnModeler'));
+      if (roles.length === 0 && bpmnModeler && bpmnModeler.get) {
         try {
-          const elementRegistry = window.bpmnjs.get('elementRegistry');
+          const elementRegistry = bpmnModeler.get('elementRegistry');
           const bpmnElements = elementRegistry.filter(element => 
             element.type === 'bpmn:Participant' || 
             element.type === 'bpmn:Lane'
@@ -309,24 +328,11 @@ export class RasciMatrixUIValidator {
             }
           }
         } catch (error) {
+          console.error('Error getting roles from BPMN elements:', error);
         }
       }
       
-      // 6. Intentar desde cualquier variable global que contenga "role" o "ralph"
-      if (roles.length === 0) {
-        const globalVars = Object.keys(window).filter(key => 
-          key.toLowerCase().includes('role') || 
-          key.toLowerCase().includes('ralph')
-        );
-        
-        for (const varName of globalVars) {
-          const value = window[varName];
-          if (Array.isArray(value) && value.length > 0) {
-            roles = value;
-            break;
-          }
-        }
-      }
+      // 3. Evitar inspección arbitraria de variables globales en producción
       return roles;
     } catch (error) {
       return [];
@@ -821,12 +827,18 @@ export class RasciMatrixUIValidator {
       lastValidation: this.lastValidation
     };
     
+    console.log('=== RASCI UI Validator Diagnosis ===');
+    console.log('1. Validator State:', validatorState);
+    
     // 2. Datos actuales
     const currentRoles = this.getCurrentRoles();
     const currentMatrixData = this.getCurrentMatrixData();
     const organizationalRoles = this.getOrganizationalRoles();
     
-
+    console.log('2. Current Data:');
+    console.log('   - Current Roles:', currentRoles);
+    console.log('   - Matrix Data Tasks:', Object.keys(currentMatrixData || {}));
+    console.log('   - Organizational Roles:', organizationalRoles);
     
     // 3. Análisis de tareas
     if (currentMatrixData && Object.keys(currentMatrixData).length > 0) {
@@ -841,11 +853,13 @@ export class RasciMatrixUIValidator {
         return Object.values(taskData).some(value => value && value.trim() !== '');
       });
       
-
+      console.log('3. Task Analysis:');
+      console.log('   - Total Tasks:', allTasks.length);
+      console.log('   - Tasks with Data:', tasksWithData.length);
+      console.log('   - Tasks with Roles:', tasksWithRoles.length);
     }
     
-
-    
+    console.log('=== End Diagnosis ===');
   }
 
   // Limpiar validación
@@ -887,116 +901,102 @@ export class RasciMatrixUIValidator {
   }
 }
 
-// Funciones globales de debug para el validador de UI
-window.debugRasciValidator = () => {
-  if (window.rasciUIValidator) {
-    window.rasciUIValidator.diagnoseValidator();
-  } else {
-  }
-};
+// Configurar ServiceRegistry para el validador de UI
+function setupServiceRegistry() {
+  const registry = getServiceRegistry();
 
-window.forceRasciValidation = () => {
-  if (window.rasciUIValidator) {
-    window.rasciUIValidator.validateCurrentMatrix();
-  } else {
-  }
-};
+  // Registrar funciones de validación en ServiceRegistry
+  registry.registerFunction('debugRasciValidator', () => {
+    const validator = registry.get('rasciUIValidator');
+    if (validator) {
+      validator.diagnoseValidator();
+    } else {
+      console.warn('RASCI UI Validator no disponible en ServiceRegistry');
+    }
+  }, {
+    alias: 'debugRasciValidator',
+    description: 'Debug del validador de UI RASCI'
+  });
 
-window.autoValidateRasci = () => {
-  if (window.rasciUIValidator) {
-    window.rasciUIValidator.validateEmptyTasks();
-    setTimeout(() => {
-      window.rasciUIValidator.validateCurrentMatrix();
-    }, 100);
-  } else {
-  }
-};
+  registry.registerFunction('forceRasciValidation', () => {
+    const validator = registry.get('rasciUIValidator');
+    if (validator) {
+      validator.validateCurrentMatrix();
+    } else {
+      console.warn('RASCI UI Validator no disponible en ServiceRegistry');
+    }
+  }, {
+    alias: 'forceRasciValidation',
+    description: 'Forzar validación de matriz RASCI'
+  });
 
-window.validateEmptyRasciTasks = () => {
-  if (window.rasciUIValidator) {
-    window.rasciUIValidator.validateEmptyTasks();
-  } else {
-  }
-};
+  registry.registerFunction('autoValidateRasci', () => {
+    const validator = registry.get('rasciUIValidator');
+    if (validator) {
+      validator.validateEmptyTasks();
+      setTimeout(() => {
+        validator.validateCurrentMatrix();
+      }, 100);
+    } else {
+      console.warn('RASCI UI Validator no disponible en ServiceRegistry');
+    }
+  }, {
+    alias: 'autoValidateRasci',
+    description: 'Validación automática de RASCI'
+  });
 
-window.analyzeRasciState = () => {
-  
-  // Ejecutar diagnóstico del validador
-  if (window.rasciUIValidator) {
-    window.rasciUIValidator.diagnoseValidator();
-  }
-  
-  // Ejecutar diagnóstico del estado general
-  if (window.diagnoseRasciState) {
-    window.diagnoseRasciState();
-  }
-  
-  // Ejecutar sincronización completa
-  if (window.forceFullSync) {
-    window.forceFullSync();
-  }
-  
-};
+  registry.registerFunction('validateEmptyRasciTasks', () => {
+    const validator = registry.get('rasciUIValidator');
+    if (validator) {
+      validator.validateEmptyTasks();
+    } else {
+      console.warn('RASCI UI Validator no disponible en ServiceRegistry');
+    }
+  }, {
+    alias: 'validateEmptyRasciTasks',
+    description: 'Validar tareas vacías en RASCI'
+  });
+
+  registry.registerFunction('analyzeRasciState', () => {
+    const validator = registry.get('rasciUIValidator');
+    if (validator) {
+      validator.diagnoseValidator();
+    }
+
+    // Ejecutar diagnóstico del estado general
+    const diagnoseFn = registry.getFunction('diagnoseRasciState');
+    if (diagnoseFn) {
+      diagnoseFn();
+    }
+
+    // Ejecutar sincronización completa
+    const syncFn = registry.getFunction('forceFullSync');
+    if (syncFn) {
+      syncFn();
+    }
+  }, {
+    alias: 'analyzeRasciState',
+    description: 'Análisis completo del estado RASCI'
+  });
+
+  // Registrar la instancia del validador
+  registry.register('rasciUIValidator', rasciUIValidator);
+
+  // Exponer API de debug en modo desarrollo
+  registerDebug('rasciUIValidator', {
+    debugRasciValidator: registry.getFunction('debugRasciValidator'),
+    forceRasciValidation: registry.getFunction('forceRasciValidation'),
+    autoValidateRasci: registry.getFunction('autoValidateRasci'),
+    validateEmptyRasciTasks: registry.getFunction('validateEmptyRasciTasks'),
+    analyzeRasciState: registry.getFunction('analyzeRasciState'),
+    getValidator: () => registry.get('rasciUIValidator')
+  });
+
+  console.log('✅ ServiceRegistry configurado para RASCI UI Validator');
+}
 
 // Instancia global del validador de UI
 export const rasciUIValidator = new RasciMatrixUIValidator();
 
-// Exponer función de debug globalmente
-window.debugRasciValidator = () => {
-};
-
-// Función global para forzar validación
-window.forceRasciValidation = () => {
-  rasciUIValidator.forceValidation();
-};
-
-// Función global para validación automática
-window.autoValidateRasci = () => {
-  rasciUIValidator.validateCurrentMatrix();
-};
-
-// Función global para validar tareas vacías
-window.validateEmptyRasciTasks = () => {
-  rasciUIValidator.validateEmptyTasks();
-};
-
-// Función global para analizar estado completo
-window.analyzeRasciState = () => {
-  
-  const matrixData = rasciUIValidator.getCurrentMatrixData();
-  if (matrixData && Object.keys(matrixData).length > 0) {
-    Object.keys(matrixData).forEach(taskName => {
-      const taskData = matrixData[taskName];
-      const hasStructure = taskData && typeof taskData === 'object' && Object.keys(taskData).length > 0;
-      const hasRoles = hasStructure && Object.values(taskData).some(value => value && value.trim() !== '');
-    });
-  }
-  
-};
-
-// Función para forzar validación manual
-window.forceRasciValidation = () => {
-  rasciUIValidator.forceValidation();
-};
-
-// Función para validación automática
-window.autoValidateRasci = () => {
-  rasciUIValidator.autoValidateAfterMatrixUpdate();
-};
-
-// Función para validar tareas vacías específicamente
-window.validateEmptyRasciTasks = () => {
-  rasciUIValidator.validateEmptyTasks();
-};
-
-// Función para análisis completo del estado
-window.analyzeRasciState = () => {
-};
-
-// Función para análisis completo del estado
-window.analyzeRasciState = () => {
-  rasciUIValidator.debugDataState();
-  if (window.analyzeMatrixState) {
-    window.analyzeMatrixState();
-  }
-};
+// Configurar ServiceRegistry al final del archivo
+setupServiceRegistry();

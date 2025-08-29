@@ -33,7 +33,7 @@ function createPpiPanel() {
           
           // Verificar inmediatamente si el ppi-list existe
           const ppiListElement = document.getElementById('ppi-list');
-          console.log('[Panel Registry] ppi-list element immediately after injection:', ppiListElement);
+
           
           // Define loadScript function first
           function loadScript(src) {
@@ -55,18 +55,13 @@ function createPpiPanel() {
           
           // Give the browser time to render the HTML before initializing PPI functionality
           setTimeout(() => {
-            console.log('[Panel Registry] Starting PPI initialization after DOM render delay');
-            
             // Now that HTML is injected, initialize PPI functionality
-            console.log('[Panel Registry] Checking PPI manager availability...');
-            console.log('[Panel Registry] window.ppiManagerInstance:', window.ppiManagerInstance);
-            console.log('[Panel Registry] window.PPIManager:', window.PPIManager);
+            const serviceRegistry = getServiceRegistry();
+            const ppiManagerInstance = serviceRegistry?.get('PPIManagerInstance');
             
-            if (window.ppiManagerInstance && typeof window.ppiManagerInstance.refreshPPIList === 'function') {
-              console.log('[Panel Registry] PPI manager found, refreshing list...');
-              window.ppiManagerInstance.refreshPPIList();
+            if (ppiManagerInstance && typeof ppiManagerInstance.refreshPPIList === 'function') {
+              ppiManagerInstance.refreshPPIList();
             } else {
-              console.log('[Panel Registry] PPI manager not found, loading components...');
               // Load PPI components in the correct order
               const loadScripts = async () => {
                 try {
@@ -78,19 +73,19 @@ function createPpiPanel() {
                   // Finally, load the main index
                   await loadScript('./modules/ppis/index.js');
                   
-                  console.log('[Panel Registry] All PPI scripts loaded, calling loadPPIComponents...');
-                  if (window.loadPPIComponents) {
-                    window.loadPPIComponents();
+                  const sr = getServiceRegistry?.();
+                  const loadPPIComponents = sr?.get('loadPPIComponents');
+                  if (loadPPIComponents) {
+                    loadPPIComponents();
                     
                     // Wait for components to initialize before refreshing
                     setTimeout(() => {
-                      if (window.ppiManagerInstance && typeof window.ppiManagerInstance.refreshPPIList === 'function') {
-                        console.log('[Panel Registry] Refreshing PPI list after initialization...');
-                        window.ppiManagerInstance.refreshPPIList();
+                      const serviceRegistry = getServiceRegistry();
+                      const ppiManagerInstance = serviceRegistry?.get('PPIManagerInstance');
+                      if (ppiManagerInstance && typeof ppiManagerInstance.refreshPPIList === 'function') {
+                        ppiManagerInstance.refreshPPIList();
                       }
                     }, 500);
-                  } else {
-                    console.warn('[Panel Registry] loadPPIComponents not available');
                   }
                 } catch (error) {
                   console.error('[Panel Registry] Error loading PPI scripts:', error);
@@ -104,14 +99,18 @@ function createPpiPanel() {
           // Subscribe to relevant events from the event bus
           if (ctx.eventBus) {
             ctx.eventBus.subscribe('bpmn.element.selected', (event) => {
-              if (window.ppiManagerInstance && typeof window.ppiManagerInstance.handleElementSelected === 'function') {
-                window.ppiManagerInstance.handleElementSelected(event.element);
+              const serviceRegistry = getServiceRegistry();
+              const ppiManagerInstance = serviceRegistry?.get('PPIManagerInstance');
+              if (ppiManagerInstance && typeof ppiManagerInstance.handleElementSelected === 'function') {
+                ppiManagerInstance.handleElementSelected(event.element);
               }
             });
             
             ctx.eventBus.subscribe('model.changed', () => {
-              if (window.ppiManagerInstance && typeof window.ppiManagerInstance.refreshPPIList === 'function') {
-                window.ppiManagerInstance.refreshPPIList();
+              const serviceRegistry = getServiceRegistry();
+              const ppiManagerInstance = serviceRegistry?.get('PPIManagerInstance');
+              if (ppiManagerInstance && typeof ppiManagerInstance.refreshPPIList === 'function') {
+                ppiManagerInstance.refreshPPIList();
               }
             });
           }
@@ -136,17 +135,19 @@ function createPpiPanel() {
      * @param {Object} evt - The event that triggered the update
      */
     update: (evt) => {
-      if (evt.event === 'bpmn.element.selected' && window.ppiManagerInstance) {
+      const serviceRegistry = getServiceRegistry();
+      const ppiManagerInstance = serviceRegistry?.get('PPIManagerInstance');
+      if (evt.event === 'bpmn.element.selected' && ppiManagerInstance) {
         // Handle element selection for PPI panel
-        if (typeof window.ppiManagerInstance.handleElementSelected === 'function') {
-          window.ppiManagerInstance.handleElementSelected(evt.data.element);
+        if (typeof ppiManagerInstance.handleElementSelected === 'function') {
+          ppiManagerInstance.handleElementSelected(evt.data.element);
         }
       }
       
-      if (evt.event === 'model.changed' && window.ppiManagerInstance) {
+      if (evt.event === 'model.changed' && ppiManagerInstance) {
         // Refresh PPI list when model changes
-        if (typeof window.ppiManagerInstance.refreshPPIList === 'function') {
-          window.ppiManagerInstance.refreshPPIList();
+        if (typeof ppiManagerInstance.refreshPPIList === 'function') {
+          ppiManagerInstance.refreshPPIList();
         }
       }
     },
@@ -192,15 +193,13 @@ function createRasciPanel() {
           // Subscribe to relevant events from the event bus
           if (ctx.eventBus) {
             ctx.eventBus.subscribe('bpmn.element.selected', (event) => {
-              if (typeof window.handleRasciElementSelection === 'function') {
-                window.handleRasciElementSelection(event.element);
-              }
+              const sr = getServiceRegistry?.();
+              sr?.get('EventBus')?.publish('rasci.element.selected', { element: event.element });
             });
             
             ctx.eventBus.subscribe('model.changed', () => {
-              if (typeof window.forceReloadMatrix === 'function') {
-                window.forceReloadMatrix();
-              }
+              const sr = getServiceRegistry?.();
+              sr?.get('EventBus')?.publish('rasci.matrix.reload');
             });
           }
         })
@@ -226,16 +225,14 @@ function createRasciPanel() {
     update: (evt) => {
       if (evt.event === 'bpmn.element.selected') {
         // Handle element selection for RASCI panel
-        if (typeof window.handleRasciElementSelection === 'function') {
-          window.handleRasciElementSelection(evt.data.element);
-        }
+        const sr = getServiceRegistry?.();
+        sr?.get('EventBus')?.publish('rasci.element.selected', { element: evt.data.element });
       }
       
       if (evt.event === 'model.changed') {
         // Refresh RASCI matrix when model changes
-        if (typeof window.forceReloadMatrix === 'function') {
-          window.forceReloadMatrix();
-        }
+        const sr = getServiceRegistry?.();
+        sr?.get('EventBus')?.publish('rasci.matrix.reload');
       }
     },
     

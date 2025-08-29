@@ -265,26 +265,13 @@ export const validationConfigManager = new ValidationConfigManager();
 // Cargar configuración al inicializar
 validationConfigManager.loadFromStorage();
 
-// Función global para acceso desde la consola (temporal para compatibilidad)
-if (typeof window !== 'undefined') {
-  window.rasciValidationConfig = validationConfigManager;
-}
+// Register in ServiceRegistry
+import { getServiceRegistry } from '../../ui/core/ServiceRegistry.js';
 
-// Registrar en el ServiceRegistry si está disponible
-setTimeout(async () => {
-  try {
-    const { getServiceRegistry } = await import('../../ui/core/ServiceRegistry.js');
-    const serviceRegistry = getServiceRegistry();
-    
-    if (serviceRegistry) {
-      serviceRegistry.register('rasciValidationConfig', validationConfigManager, {
-        description: 'Gestor de configuración de validación RASCI'
-      });
-      
-      console.log('✅ RASCI Validation Config registrado en ServiceRegistry');
-    }
-  } catch (error) {
-    // ServiceRegistry no disponible, continuar sin registro
-    console.log('ℹ️ ServiceRegistry no disponible para RASCI Validation Config');
-  }
-}, 0); 
+const registry = getServiceRegistry();
+if (registry) {
+  registry.register('RasciValidationConfigManager', validationConfigManager);
+  console.log('✅ RASCI Validation Config registrado en ServiceRegistry');
+} else {
+  console.warn('⚠️ ServiceRegistry no disponible para RASCI Validation Config');
+} 

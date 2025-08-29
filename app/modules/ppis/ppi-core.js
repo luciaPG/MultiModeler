@@ -1,6 +1,8 @@
 // === PPI Core Functionality ===
 // Funcionalidad principal del gestor de PPIs
 
+import { getServiceRegistry } from '../ui/core/ServiceRegistry.js';
+
 class PPICore {
   constructor(adapter = null) {
     this.ppis = [];
@@ -118,16 +120,8 @@ class PPICore {
         console.log('🗑️ [deletePPIFromCanvas] Modeler obtenido desde adapter:', !!modeler);
       }
       
-      // Fallback a window.modeler
-      if (!modeler && typeof window !== 'undefined' && window.modeler) {
-        modeler = window.modeler;
-        console.log('🗑️ [deletePPIFromCanvas] Modeler obtenido desde window.modeler:', !!modeler);
-      }
-      
-      // Fallback a window.ppiManager.adapter
-      if (!modeler && typeof window !== 'undefined' && window.ppiManager && window.ppiManager.adapter) {
-        modeler = window.ppiManager.adapter.getBpmnModeler();
-        console.log('🗑️ [deletePPIFromCanvas] Modeler obtenido desde window.ppiManager.adapter:', !!modeler);
+      if (!modeler) {
+        modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler') || null;
       }
       
       if (!modeler) {
@@ -365,7 +359,7 @@ class PPICore {
       }
       
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
       
       if (!modeler) return;
       
@@ -453,7 +447,7 @@ class PPICore {
   savePPINOTRelationshipsToXML(relationships) {
     try {
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
       
       if (!modeler) return;
       
@@ -552,7 +546,7 @@ class PPICore {
   loadPPINOTRelationshipsFromXML() {
     try {
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
       
       if (!modeler) return [];
       
@@ -679,7 +673,7 @@ class PPICore {
   restorePPINOTRelationshipsFromXML(relationships) {
     try {
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
       
       if (!modeler || !relationships.length) return;
       
@@ -726,7 +720,7 @@ class PPICore {
   restorePPINOTElements() {
     try {
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
       
       if (!modeler) {
         return false;
@@ -849,7 +843,7 @@ class PPICore {
   restoreParentChildRelationship(childId, parentId, childData = null) {
     try {
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
       
       if (!modeler) return false;
       
@@ -942,7 +936,7 @@ class PPICore {
   updatePPIWithChildInfo(parentPPIId, childElementId) {
     try {
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
       
       if (!modeler) return;
       
@@ -1148,7 +1142,7 @@ class PPICore {
     
     try {
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter ? this.adapter.getBpmnModeler() : window.modeler;
+      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
       
       if (modeler) {
         const elementRegistry = modeler.get('elementRegistry');
@@ -1257,22 +1251,18 @@ class PPICore {
   }
 }
 
-// Exportar para uso global (temporal para compatibilidad)
-if (typeof window !== 'undefined') {
-  window.PPICore = PPICore;
-}
-
-// Registrar en ServiceRegistry si está disponible
-setTimeout(() => {
-  try {
-    // Intentar acceder al ServiceRegistry global
-    if (typeof window !== 'undefined' && window.serviceRegistry) {
-      window.serviceRegistry.register('PPICore', PPICore, {
-        description: 'Clase core de funcionalidad PPIs'
-      });
-      console.log('✅ PPICore registrado en ServiceRegistry');
-    }
-  } catch (error) {
-    console.log('ℹ️ ServiceRegistry no disponible para PPICore');
+// Register in ServiceRegistry
+const registry = getServiceRegistry();
+if (registry) {
+  registry.register('PPICore', PPICore, { 
+    description: 'Core de PPIs' 
+  });
+  console.log('✅ PPICore registrado en ServiceRegistry');
+  
+  // Debug exposure only in development
+  if (process.env.NODE_ENV !== 'production') {
+    globalThis.__debug = { ...(globalThis.__debug || {}), PPICore };
   }
-}, 0);
+} else {
+  console.log('ℹ️ ServiceRegistry no disponible para PPICore');
+}

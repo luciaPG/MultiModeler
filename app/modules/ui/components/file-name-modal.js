@@ -225,8 +225,15 @@ class FileNameModal {
     }
 }
 
-// Función helper para usar el modal
-window.showFileNameModal = async function(defaultName = 'diagrama.bpmn', directoryHandle = null) {
+// Register helper function in service registry
+import { getServiceRegistry } from '../core/ServiceRegistry.js';
+
+const showFileNameModal = async function(defaultName = 'diagrama.bpmn', directoryHandle = null) {
     const modal = new FileNameModal();
     return await modal.show(defaultName, directoryHandle);
 };
+
+const serviceRegistry = getServiceRegistry();
+if (serviceRegistry) {
+    serviceRegistry.registerFunction('showFileNameModal', showFileNameModal);
+}

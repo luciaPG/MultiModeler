@@ -5,7 +5,7 @@
  */
 
 import { getEventBus } from './event-bus.js';
-import serviceRegistry from './ServiceRegistry.js';
+import { getServiceRegistry } from './ServiceRegistry.js';
 import windowCompatibilityAdapter from './WindowCompatibilityAdapter.js';
 import moduleBridge from './ModuleBridge.js';
 import ppiAdapter from '../../ppis/PPIAdapter.js';
@@ -14,7 +14,7 @@ import rasciAdapter from '../../rasci/RASCIAdapter.js';
 class CommunicationSystem {
   constructor() {
     this.eventBus = getEventBus();
-    this.serviceRegistry = serviceRegistry;
+    this.serviceRegistry = getServiceRegistry();
     this.windowAdapter = windowCompatibilityAdapter;
     this.moduleBridge = moduleBridge;
     this.ppiAdapter = ppiAdapter;
@@ -32,15 +32,11 @@ class CommunicationSystem {
       return this;
     }
 
-    console.log('[CommunicationSystem] Inicializando sistema de comunicación...');
+
 
     try {
-      // 1. Registrar ServiceRegistry globalmente
-      console.log('[CommunicationSystem] Registrando ServiceRegistry globalmente...');
-      if (typeof window !== 'undefined') {
-        window.serviceRegistry = this.serviceRegistry;
-        window.getServiceRegistry = () => this.serviceRegistry;
-      }
+      // 1. ServiceRegistry initialization - no longer exposed on window
+  
 
       // 2. Configurar middleware para logging
       this.setupLoggingMiddleware();
@@ -61,7 +57,7 @@ class CommunicationSystem {
       });
 
       this.initialized = true;
-      console.log('[CommunicationSystem] Sistema de comunicación inicializado exitosamente');
+  
 
       return this;
     } catch (error) {
@@ -133,7 +129,7 @@ class CommunicationSystem {
     // Migrar funciones UI automáticamente
     this.windowAdapter.migrateUIFunctions();
 
-    console.log('[CommunicationSystem] Migración automática configurada');
+
   }
 
   /**
@@ -151,7 +147,7 @@ class CommunicationSystem {
     });
 
     // Evento para debug del WindowAdapter
-    this.eventBus.subscribe('debug.window.adapter', () => {
+    this.eventBus.subscribe('debug.adapter.window', () => {
       this.windowAdapter.debug();
     });
   }
@@ -274,3 +270,5 @@ export async function initializeCommunicationSystem(options = {}) {
 export function getCommunicationSystem() {
   return communicationSystem;
 }
+
+

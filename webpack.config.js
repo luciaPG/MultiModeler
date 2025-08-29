@@ -90,7 +90,7 @@ module.exports = {
         static: {
             directory: path.join(__dirname, 'public')
         },
-        port: 9000,
+        port: 9002,
         hot: true,
         open: true,
         historyApiFallback: true,

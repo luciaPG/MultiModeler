@@ -5,6 +5,7 @@ import { getEventBus } from '../../ui/core/event-bus.js';
 import { bootUI } from '../../ui/core/boot.js';
 import { StorageManager } from '../../ui/managers/storage-manager.js';
 import { initBpmnModeler } from '../../ui/core/boot.js';
+import { getServiceRegistry } from '../../ui/core/ServiceRegistry.js';
 
 /**
  * MultiNotation Modeler Core
@@ -124,12 +125,17 @@ export class MultiNotationModelerCore {
    */
   async initializeBPMN() {
     try {
-      // We'll defer BPMN modeler initialization until it's available
-      // If window.modeler is not yet available, we'll just note it and continue
-      // The app.js will set it later and we can connect to it through events
+      // Get BPMN modeler from injected dependencies or service registry
+      let bpmnModeler = this.modelers.bpmn;
+      if (!bpmnModeler) {
+        try {
+          bpmnModeler = getServiceRegistry()?.get('BpmnModeler');
+        } catch (error) {
+          console.warn('Could not get service registry:', error);
+        }
+      }
       
-      if (window.modeler) {
-        const bpmnModeler = window.modeler;
+      if (bpmnModeler) {
         this.modelers.bpmn = bpmnModeler;
         this.activeModeler = bpmnModeler;
         
@@ -297,7 +303,7 @@ export class MultiNotationModelerCore {
         bpmn: xml,
         ppinot: this.auxiliaryNotations.ppinot ? this.auxiliaryNotations.ppinot.elements : [],
         ralph: this.auxiliaryNotations.ralph ? this.auxiliaryNotations.ralph.roles : [],
-        rasci: window.rasciMatrixData || {}
+        rasci: await this.getRasciData()
       };
       
       // Save using storage manager
@@ -348,10 +354,8 @@ export class MultiNotationModelerCore {
       
       // Import RASCI matrix
       if (value.rasci) {
-        window.rasciMatrixData = value.rasci;
-        if (typeof window.forceReloadMatrix === 'function') {
-          window.forceReloadMatrix();
-        }
+        await this.setRasciData(value.rasci);
+        this.eventBus.publish('rasci.matrix.reload');
       }
       
       this.eventBus.publish('model.loaded', { path: result.path });
@@ -361,6 +365,33 @@ export class MultiNotationModelerCore {
       console.error('[Core] Failed to load model:', error);
       this.eventBus.publish('model.loaded', { success: false, error });
       return { success: false, error };
+    }
+  }
+
+  /**
+   * Get RASCI data from adapter
+   */
+  async getRasciData() {
+    try {
+      const rasciAdapter = getServiceRegistry()?.get('RASCIAdapter');
+      return rasciAdapter?.getMatrixData() || {};
+    } catch (error) {
+      console.warn('Could not get RASCI data:', error);
+      return {};
+    }
+  }
+
+  /**
+   * Set RASCI data via adapter
+   */
+  async setRasciData(data) {
+    try {
+      const rasciAdapter = getServiceRegistry()?.get('RASCIAdapter');
+      if (rasciAdapter) {
+        rasciAdapter.updateMatrixData(data);
+      }
+    } catch (error) {
+      console.warn('Could not set RASCI data:', error);
     }
   }
 }

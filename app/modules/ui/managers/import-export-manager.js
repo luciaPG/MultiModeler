@@ -1,6 +1,18 @@
 // === Import/Export Manager ===
 // Sistema completo de importación/exportación para preservar toda la información de los paneles
 
+import { resolve } from '../../../services/global-access.js';
+import { getServiceRegistry } from '../core/ServiceRegistry.js';
+import { RasciStore } from '../../rasci/store.js';
+import { registerDebug } from '../../../shared/debug-registry.js';
+
+// Bootstrap SR
+const sr = (typeof getServiceRegistry === 'function') ? getServiceRegistry() : undefined;
+const eventBus = sr && sr.get ? sr.get('EventBus') : undefined;
+const rasciAdapter = sr && sr.get ? sr.get('RASCIAdapter') : undefined;
+const validator = sr && sr.get ? sr.get('RASCIUIValidator') : undefined;
+const bpmnModeler = sr && sr.get ? sr.get('BPMNModeler') : (rasciAdapter && rasciAdapter.getBpmnModeler ? rasciAdapter.getBpmnModeler() : undefined);
+
 class ImportExportManager {
   constructor() {
     this.version = '1.0.0';
@@ -10,8 +22,17 @@ class ImportExportManager {
   }
 
   init() {
-    this.setupEventListeners();
-    this.createFileInput();
+    this.setupEventListeners();      // FORZAR RECARGA DE LA MATRIZ RASCI EN LA UI
+      setTimeout(() => {
+        const sr = getServiceRegistry();
+        const eb = sr && sr.get('EventBus');
+        if (eb) {
+          console.log('🔄 Publicando evento para recargar matriz RASCI...');
+          eb.publish('rasci.state.ensureLoaded', {});
+        } else {
+          console.warn('⚠️ EventBus no disponible para recargar RASCI');
+        }
+      }, 100);ateFileInput();
   }
 
   setupEventListeners() {
@@ -110,8 +131,9 @@ class ImportExportManager {
 
     try {
       // Obtener XML del diagrama
-      if (window.modeler) {
-        const xmlResult = await window.modeler.saveXML({ format: true });
+      const modeler = resolve('BpmnModeler');
+      if (modeler) {
+        const xmlResult = await modeler.saveXML({ format: true });
         if (xmlResult && xmlResult.xml) {
           bpmnData.diagram = xmlResult.xml;
         }
@@ -158,8 +180,9 @@ class ImportExportManager {
 
     try {
       // Obtener indicadores PPI
-      if (window.ppiManager && window.ppiManager.core) {
-        ppiData.indicators = window.ppiManager.core.getAllPPIs();
+      const ppiManager = resolve('PPIManagerInstance');
+      if (ppiManager && ppiManager.core) {
+        ppiData.indicators = ppiManager.core.getAllPPIs();
       }
 
       // PPI localStorage deshabilitado - datos PPI se leen desde archivo
@@ -183,21 +206,18 @@ class ImportExportManager {
 
     try {
       // Obtener roles
-      if (window.rasciRoles) {
-        rasciData.roles = window.rasciRoles;
-      }
+      rasciData.roles = RasciStore.getRoles();
 
       // Obtener matriz de datos
-      if (window.rasciMatrixData) {
-        rasciData.matrix = window.rasciMatrixData;
-      }
+      rasciData.matrix = RasciStore.getMatrix();
 
       // Obtener tareas
-      if (window.rasciTasks) {
-        rasciData.tasks = window.rasciTasks;
-      }
+      const rasci = getServiceRegistry && getServiceRegistry().get('RASCIAdapter');
+      const tasks = rasci && typeof rasci.getTasks === 'function' ? rasci.getTasks() : [];
+      if (tasks.length) rasciData.tasks = tasks;
 
       // Obtener configuraciones RASCI
+      const rasciSettings = localStorage.getItem('rasciSettings');
       if (rasciSettings) {
         rasciData.settings = JSON.parse(rasciSettings);
       }
@@ -253,18 +273,14 @@ class ImportExportManager {
 
     try {
       // Conexiones PPI-BPMN
-      if (window.ppiManager && window.ppiManager.core) {
-        const ppiElements = window.ppiManager.core.getAllPPIs();
+      const ppiManager = resolve('PPIManagerInstance');
+      if (ppiManager && ppiManager.core) {
+        const ppiElements = ppiManager.core.getAllPPIs();
         ppiElements.forEach(ppi => {
           if (ppi.linkedElements && ppi.linkedElements.length > 0) {
             connections.ppiToBpmn[ppi.id] = ppi.linkedElements;
           }
         });
-      }
-
-      // Conexiones RASCI-BPMN (tareas)
-      if (window.rasciTasks) {
-        connections.rasciToBpmn.tasks = window.rasciTasks;
       }
 
     } catch (error) {
@@ -408,20 +424,15 @@ class ImportExportManager {
       console.log('🔄 Realizando recarga final de paneles después de importación completa...');
       
       // Recargar estado RASCI con función robusta
-      if (typeof window.ensureRasciMatrixLoaded === 'function') {
-        window.ensureRasciMatrixLoaded();
-      } else if (typeof window.reloadRasciState === 'function') {
-        window.reloadRasciState();
-      }
+      getServiceRegistry && getServiceRegistry().get('EventBus') && getServiceRegistry().get('EventBus').publish('rasci.matrix.ensureLoaded', {});
       
       // Forzar actualización de matriz desde diagrama
-      if (typeof window.updateMatrixFromDiagram === 'function') {
-        window.updateMatrixFromDiagram();
-      }
+      getServiceRegistry && getServiceRegistry().get('EventBus') && getServiceRegistry().get('EventBus').publish('rasci.matrix.update.fromDiagram', {});
       
       // Aplicar configuración de paneles si está disponible
-      if (window.panelManager && typeof window.panelManager.applyConfiguration === 'function') {
-        window.panelManager.applyConfiguration();
+      const panelManager = resolve('PanelManagerInstance');
+      if (panelManager && typeof panelManager.applyConfiguration === 'function') {
+        panelManager.applyConfiguration();
       }
       
     }, 1000);
@@ -431,25 +442,21 @@ class ImportExportManager {
     console.log('🧹 Limpiando datos existentes antes de importar...');
     
     // Usar StorageManager si está disponible
-    if (window.storageManager) {
-      window.storageManager.clearStorage();
-    } else {
-      // Fallback: usar método propio
-      this.clearAllProjectData();
-    }
+    getServiceRegistry && getServiceRegistry().get('StorageManager') && getServiceRegistry().get('StorageManager').clearStorage && getServiceRegistry().get('StorageManager').clearStorage();
   }
 
   async importBpmnData(bpmnData) {
     try {
       // Importar diagrama XML
-      if (bpmnData.diagram && window.modeler) {
+      const modeler = resolve('BpmnModeler');
+      if (bpmnData.diagram && modeler) {
         console.log('📊 Importando diagrama XML...');
         
         // Esperar a que el modeler esté listo
         await this.waitForModelerReady();
         
         // Importar el XML
-        await window.modeler.importXML(bpmnData.diagram);
+        await modeler.importXML(bpmnData.diagram);
         console.log('✅ Diagrama XML importado correctamente');
       }
 
@@ -493,9 +500,10 @@ class ImportExportManager {
       console.log('📊 Importando datos PPI...');
       
       // Restaurar indicadores PPI
-      if (ppiData.indicators && window.ppiManager && window.ppiManager.core) {
+      const ppiManager = resolve('PPIManagerInstance');
+      if (ppiData.indicators && ppiManager && ppiManager.core) {
         ppiData.indicators.forEach(ppi => {
-          window.ppiManager.core.addPPI(ppi);
+          ppiManager.core.addPPI(ppi);
         });
         console.log(`✅ ${ppiData.indicators.length} indicadores PPI restaurados`);
       }
@@ -524,20 +532,26 @@ class ImportExportManager {
       
       // Restaurar roles
       if (rasciData.roles) {
-        window.rasciRoles = rasciData.roles;
+        RasciStore.setRoles(rasciData.roles);
         console.log(`✅ ${rasciData.roles.length} roles RASCI restaurados`);
       }
 
       // Restaurar matriz
       if (rasciData.matrix) {
-        window.rasciMatrixData = rasciData.matrix;
+        RasciStore.setMatrix(rasciData.matrix);
         console.log('✅ Matriz RASCI restaurada');
       }
 
       // Restaurar tareas
-      if (rasciData.tasks) {
-        window.rasciTasks = rasciData.tasks;
-        console.log(`✅ ${rasciData.tasks.length} tareas RASCI restauradas`);
+      const rasci = getServiceRegistry && getServiceRegistry().get('RASCIAdapter');
+      const tasks = rasci && typeof rasci.getTasks === 'function' ? rasci.getTasks() : [];
+      if (tasks.length) {
+        // Use service registry instead of window
+        const sr = getServiceRegistry();
+        if (sr && sr.get('RASCIAdapter')) {
+          sr.get('RASCIAdapter').setTasks(tasks);
+        }
+        console.log(`✅ ${tasks.length} tareas RASCI restauradas`);
       }
 
       // Restaurar configuraciones
@@ -547,16 +561,7 @@ class ImportExportManager {
 
       // FORZAR RECARGA DE LA MATRIZ RASCI EN LA UI
       setTimeout(() => {
-        if (typeof window.ensureRasciMatrixLoaded === 'function') {
-          console.log('🔄 Usando función robusta para recargar matriz RASCI...');
-          window.ensureRasciMatrixLoaded();
-        } else if (typeof window.reloadRasciState === 'function') {
-          console.log('🔄 Forzando recarga de matriz RASCI después de importación...');
-          window.reloadRasciState();
-        } else if (typeof window.forceReloadRasciState === 'function') {
-          console.log('🔄 Forzando recarga alternativa de matriz RASCI...');
-          window.forceReloadRasciState();
-        }
+        eventBus && eventBus.publish ? eventBus.publish('rasci.state.ensureLoaded', {}) : console.warn('⚠️ EventBus no disponible para recargar RASCI');
       }, 500);
 
     } catch (error) {
@@ -587,17 +592,18 @@ class ImportExportManager {
   async importPanelConnections(connections) {
     try {
       // Restaurar conexiones PPI-BPMN
-      if (connections.ppiToBpmn && window.ppiManager) {
+      const ppiManager = resolve('PPIManagerInstance');
+      if (connections.ppiToBpmn && ppiManager) {
         Object.entries(connections.ppiToBpmn).forEach(([ppiId, elementIds]) => {
           elementIds.forEach(elementId => {
-            window.ppiManager.linkToBpmnElement(ppiId, elementId);
+            ppiManager.linkToBpmnElement(ppiId, elementId);
           });
         });
       }
 
       // Restaurar conexiones RASCI-BPMN
       if (connections.rasciToBpmn && connections.rasciToBpmn.tasks) {
-        window.rasciTasks = connections.rasciToBpmn.tasks;
+        rasciAdapter && rasciAdapter.setTasks ? rasciAdapter.setTasks(connections.rasciToBpmn.tasks) : console.warn('⚠️ RASCIAdapter no disponible para restaurar tareas');
       }
 
     } catch (error) {
@@ -615,7 +621,7 @@ class ImportExportManager {
 
   reloadApplication() {
     // Recargar la página para aplicar todos los cambios
-    window.location.reload();
+    getServiceRegistry && getServiceRegistry().get('EventBus') && getServiceRegistry().get('EventBus').publish('app.reload.requested', {});
   }
 
   showImportSuccessMessage() {
@@ -735,9 +741,10 @@ class ImportExportManager {
     let attempts = 0;
     
     while (attempts < maxAttempts) {
-      if (window.modeler && 
-          window.modeler.importXML && 
-          typeof window.modeler.importXML === 'function') {
+      const modeler = resolve('BpmnModeler');
+      if (modeler && 
+          modeler.importXML && 
+          typeof modeler.importXML === 'function') {
         console.log('✅ Modeler está listo');
         return;
       }
@@ -774,9 +781,8 @@ class ImportExportManager {
     });
     
     // Limpiar variables globales
-    if (window.rasciRoles) window.rasciRoles = [];
-    if (window.rasciTasks) window.rasciTasks = [];
-    if (window.rasciMatrixData) window.rasciMatrixData = {};
+    RasciStore.setRoles([]);
+    RasciStore.setMatrix({});
     
     console.log('✅ Todos los datos del proyecto limpiados');
   }
@@ -882,5 +888,11 @@ class ImportExportManager {
   }
 }
 
-// Exportar la clase
-window.ImportExportManager = ImportExportManager; 
+// Register in service registry instead of window
+const sr2 = getServiceRegistry();
+if (sr2) {
+  sr2.register('ImportExportManager', ImportExportManager, { description: 'Import/Export manager' });
+}
+
+// Expose in debug for development
+registerDebug('ImportExportManager', ImportExportManager);

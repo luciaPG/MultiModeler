@@ -77,13 +77,13 @@ window.updateMatrixFromDiagram();
 import rasciAdapter from './modules/rasci/RASCIAdapter.js';
 
 // Obtener el modelador BPMN
-const modeler = rasciAdapter.getBpmnModeler();
+const modeler = getServiceRegistry() && getServiceRegistry().get('BPMNModeler');
 
 // Obtener datos RASCI
 const matrixData = rasciAdapter.getMatrixData();
 
-// Actualizar matriz usando el adaptador
-rasciAdapter.updateMatrixData(newMatrixData);
+// Publicar evento en EventBus
+getServiceRegistry() && getServiceRegistry().get('EventBus') && getServiceRegistry().get('EventBus').publish('rasci.matrix.update.fromDiagram', {});
 ```
 
 ## 🔄 Migración por Módulos
