@@ -6,8 +6,8 @@
  */
 
 // Import internal dependencies
-import './ppi-core.js';
-import './ppi-ui.js';
+import './core/ppi-core.js';
+import './ui/ppi-ui.js';
 import './ppi-manager.js';
 import './ppi-sync-manager.js';
 import './ppi-sync-ui.js';

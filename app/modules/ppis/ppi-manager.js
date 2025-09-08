@@ -18,8 +18,8 @@ class PPIManager {
     
     // Obtener clases desde ServiceRegistry
     const serviceRegistry = getServiceRegistry();
-    const PPICore = serviceRegistry?.get('PPICore');
-    const PPIUI = serviceRegistry?.get('PPIUI');
+    const PPICore = serviceRegistry && serviceRegistry.get ? serviceRegistry.get('PPICore') : null;
+    const PPIUI = serviceRegistry && serviceRegistry.get ? serviceRegistry.get('PPIUI') : null;
     
     if (process.env.NODE_ENV !== 'production') {
       console.log('[PPI-Manager] PPICore via registry:', !!PPICore);
@@ -29,7 +29,28 @@ class PPIManager {
     // Verificar dependencias
     if (!PPICore) {
       console.warn('PPICore no está disponible. Asegúrate de cargar ppi-core.js primero.');
-      // No lanzar error, solo registrar advertencia
+      // Reintentar inicialización de PPICore cuando esté disponible
+      setTimeout(() => {
+        const sr = typeof getServiceRegistry === 'function' ? getServiceRegistry() : null;
+        const LatePPICore = sr && sr.get ? sr.get('PPICore') : null;
+        if (LatePPICore && !this.core) {
+          this.core = new LatePPICore(this.adapter);
+          // Si la UI ya está disponible tras core, inicializarla
+          const LatePPIUI = sr && sr.get ? sr.get('PPIUI') : null;
+          if (LatePPIUI && !this.ui) {
+            this.ui = new LatePPIUI(this.core, this);
+            if (typeof this.ui.init === 'function') {
+              this.ui.init();
+            }
+          }
+          // Con core lista, verificar PPIs existentes en canvas
+          try {
+            this.verifyExistingPPIsInCanvas();
+          } catch (e) {
+            console.warn('[PPI-Manager] Error en verificación tardía de PPIs:', e);
+          }
+        }
+      }, 1000);
     }
     if (!PPIUI) {
       console.warn('PPIUI no está disponible. Asegúrate de cargar ppi-ui.js primero.');
@@ -49,7 +70,7 @@ class PPIManager {
       console.log('[PPI-Manager] PPIUI or PPICore not available, will retry...');
       // Retry UI initialization after a delay
       setTimeout(() => {
-        const retryPPIUI = serviceRegistry?.get('PPIUI');
+        const retryPPIUI = serviceRegistry && serviceRegistry.get ? serviceRegistry.get('PPIUI') : null;
         if (retryPPIUI && this.core && !this.ui) {
           this.ui = new retryPPIUI(this.core, this);
           console.log('[PPI-Manager] UI initialized on retry');
@@ -139,12 +160,12 @@ class PPIManager {
   }
 
   setupModelerChangeListener() {
-    const sr = getServiceRegistry?.();
-    const eventBus = this.eventBus || sr?.get('EventBus');
+    const sr = typeof getServiceRegistry === 'function' ? getServiceRegistry() : null;
+    const eventBus = this.eventBus || (sr && sr.get ? sr.get('EventBus') : null);
     if (eventBus) {
-      eventBus.subscribe('bpmn.modeler.initialized', () => this.configureEventListeners?.());
-      eventBus.subscribe('bpmn.diagram.loaded', () => this.configureEventListeners?.());
-      eventBus.subscribe('bpmn.modeler.changed', () => this.configureEventListeners?.());
+      eventBus.subscribe('bpmn.modeler.initialized', () => this.configureEventListeners && this.configureEventListeners());
+      eventBus.subscribe('bpmn.diagram.loaded', () => this.configureEventListeners && this.configureEventListeners());
+      eventBus.subscribe('bpmn.modeler.changed', () => this.configureEventListeners && this.configureEventListeners());
     }
   }
 
@@ -155,15 +176,21 @@ class PPIManager {
   setupSyncManager() {
     try {
       // Obtener modelador solo del adapter
-      const modeler = this.adapter?.getBpmnModeler();
+      const modeler = this.adapter && this.adapter.getBpmnModeler ? this.adapter.getBpmnModeler() : null;
       if (!modeler) {
         setTimeout(() => this.setupSyncManager(), 1000);
         return;
       }
 
+      // Asegurar que core está disponible antes de crear el SyncManager
+      if (!this.core) {
+        setTimeout(() => this.setupSyncManager(), 500);
+        return;
+      }
+
       // Obtener PPISyncManager desde ServiceRegistry
       const serviceRegistry = getServiceRegistry();
-      const PPISyncManager = serviceRegistry?.get('PPISyncManager');
+      const PPISyncManager = serviceRegistry && serviceRegistry.get ? serviceRegistry.get('PPISyncManager') : null;
 
       if (!PPISyncManager) {
         this.loadSyncManagerScript();
@@ -211,7 +238,7 @@ class PPIManager {
     try {
       // Obtener PPISyncUI solo desde ServiceRegistry
       const serviceRegistry = getServiceRegistry();
-      const PPISyncUI = serviceRegistry?.get('PPISyncUI');
+      const PPISyncUI = serviceRegistry && serviceRegistry.get ? serviceRegistry.get('PPISyncUI') : null;
       if (!PPISyncUI) {
         this.loadSyncUIScript();
         return;
@@ -332,6 +359,41 @@ class PPIManager {
       this._bpmnListeners.push({ event: 'element.added', handler: addHandler });
       console.log(`[PPI-Manager] ✅ Listener 'element.added' registrado exitosamente`);
 
+      // NUEVO: Listener para creación de formas (algunas integraciones disparan shape.added en lugar de element.added)
+      const shapeAddedHandler = (event) => {
+        try {
+          const element = event && event.element;
+          if (element && this.core && this.core.isPPIElement && this.core.isPPIElement(element)) {
+            const exists = this.core.ppis && this.core.ppis.find(ppi => ppi.elementId === element.id);
+            if (!exists) {
+              setTimeout(() => this.createPPIFromElement(element.id), 10);
+            }
+          }
+        } catch (e) {
+          console.warn('[PPI-Manager] shape.added handler error:', e);
+        }
+      };
+      eventBus.on('shape.added', shapeAddedHandler);
+      this._bpmnListeners.push({ event: 'shape.added', handler: shapeAddedHandler });
+
+      // NUEVO: Listener sobre command stack para creación (garantiza captura en todos los flujos)
+      const cmdCreateHandler = (event) => {
+        try {
+          const context = event && event.context;
+          const shape = context && (context.shape || context.element);
+          if (shape && this.core && this.core.isPPIElement && this.core.isPPIElement(shape)) {
+            const exists = this.core.ppis && this.core.ppis.find(ppi => ppi.elementId === shape.id);
+            if (!exists) {
+              setTimeout(() => this.createPPIFromElement(shape.id), 10);
+            }
+          }
+        } catch (e) {
+          console.warn('[PPI-Manager] commandStack.shape.create.executed handler error:', e);
+        }
+      };
+      eventBus.on('commandStack.shape.create.executed', cmdCreateHandler);
+      this._bpmnListeners.push({ event: 'commandStack.shape.create.executed', handler: cmdCreateHandler });
+
       // MEJORADO: Listener para cambios en elementos PPI del canvas
       const changeHandler = (event) => {
         console.log('📝 Element changed event:', event);
@@ -433,12 +495,16 @@ class PPIManager {
           } else {
             // Si no es un PPI, limpiar la selección
             console.log(`[PPI-Manager] Elemento no es PPI, limpiando selección`);
-            this.ui.clearPPISelection();
+            if (this.ui && typeof this.ui.clearPPISelection === 'function') {
+              this.ui.clearPPISelection();
+            }
           }
         } else {
           // Si no hay selección o hay múltiples elementos, limpiar la selección
           console.log(`[PPI-Manager] Múltiples elementos o sin selección, limpiando`);
-          this.ui.clearPPISelection();
+          if (this.ui && typeof this.ui.clearPPISelection === 'function') {
+            this.ui.clearPPISelection();
+          }
         }
       };
       eventBus.on('selection.changed', selectionHandler);
@@ -481,7 +547,11 @@ class PPIManager {
   // NUEVO: Método para verificar PPIs existentes en el canvas
   verifyExistingPPIsInCanvas() {
     try {
-      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
+      if (!this.core) {
+        console.log('[PPI-Manager] Core no disponible aún para verificación');
+        return;
+      }
+      const modeler = (this.adapter && this.adapter.getBpmnModeler ? this.adapter.getBpmnModeler() : null) || (getServiceRegistry && getServiceRegistry().get ? getServiceRegistry().get('BpmnModeler') : null);
       if (!modeler) {
         console.log('[PPI-Manager] Modeler no disponible para verificación');
         return;
@@ -718,7 +788,7 @@ class PPIManager {
       let elementName = elementId;
       
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
+      const modeler = (this.adapter && this.adapter.getBpmnModeler ? this.adapter.getBpmnModeler() : null) || (getServiceRegistry && getServiceRegistry().get ? getServiceRegistry().get('BpmnModeler') : null);
       
       if (modeler) {
         const elementRegistry = modeler.get('elementRegistry');
@@ -1172,18 +1242,27 @@ class PPIManager {
   }
 
   refreshPPIList() {
+    console.log('[PPI-Manager] refreshPPIList called');
+    console.log('[PPI-Manager] this.ui:', this.ui);
     
     const attemptRefresh = (retryCount = 0) => {
       if (this.ui && typeof this.ui.refreshPPIList === 'function') {
         // Verificar que el contenedor DOM existe
         const ppiListContainer = document.getElementById('ppi-list');
         if (ppiListContainer) {
+          console.log('[PPI-Manager] Calling ui.refreshPPIList()');
           this.ui.refreshPPIList();
         } else if (retryCount < 3) {
+          console.log(`[PPI-Manager] ppi-list container not ready, retrying... (${retryCount + 1}/3)`);
           setTimeout(() => attemptRefresh(retryCount + 1), 200);
+        } else {
+          console.warn('[PPI-Manager] ppi-list container not available after retries');
         }
       } else if (retryCount < 3) {
+        console.log(`[PPI-Manager] UI not available, retrying... (${retryCount + 1}/3)`);
         setTimeout(() => attemptRefresh(retryCount + 1), 200);
+      } else {
+        console.warn('[PPI-Manager] UI not available for refreshPPIList after retries');
       }
     };
     
@@ -1254,7 +1333,7 @@ class PPIManager {
   restorePPINOTElements() {
     try {
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
+      const modeler = (this.adapter && this.adapter.getBpmnModeler ? this.adapter.getBpmnModeler() : null) || (getServiceRegistry && getServiceRegistry().get ? getServiceRegistry().get('BpmnModeler') : null);
       
       if (!modeler) {
         setTimeout(() => this.restorePPINOTElements(), 1000);
@@ -1463,7 +1542,7 @@ class PPIManager {
   refreshPPINOTRelationships() {
     try {
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
+      const modeler = (this.adapter && this.adapter.getBpmnModeler ? this.adapter.getBpmnModeler() : null) || (getServiceRegistry && getServiceRegistry().get ? getServiceRegistry().get('BpmnModeler') : null);
       
       if (!modeler) {
         this.ui.showMessage('Modeler no disponible', 'warning');
@@ -1531,7 +1610,7 @@ class PPIManager {
   forceCanvasRefresh() {
     try {
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
+      const modeler = (this.adapter && this.adapter.getBpmnModeler ? this.adapter.getBpmnModeler() : null) || (getServiceRegistry && getServiceRegistry().get ? getServiceRegistry().get('BpmnModeler') : null);
       
       if (!modeler) return;
       
@@ -1570,7 +1649,7 @@ class PPIManager {
       }
 
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
+      const modeler = (this.adapter && this.adapter.getBpmnModeler ? this.adapter.getBpmnModeler() : null) || (getServiceRegistry && getServiceRegistry().get ? getServiceRegistry().get('BpmnModeler') : null);
       
       if (!modeler) {
         console.warn('Modeler no disponible para selección');
@@ -1618,13 +1697,20 @@ class PPIManager {
 // Inicialización automática comentada - se inicializa desde index.js
 
 // Registrar en ServiceRegistry
-const registry = getServiceRegistry?.();
+const registry = typeof getServiceRegistry === 'function' ? getServiceRegistry() : null;
 if (registry) {
   registry.register('PPIManager', PPIManager, {
     description: 'Gestor de PPIs'
   });
   if (process.env.NODE_ENV !== 'production') {
-    globalThis.__debug = { ...(globalThis.__debug || {}), PPIManager };
+    try {
+      // Exponer para debug solo en desarrollo
+      if (typeof window !== 'undefined') {
+        window.__debug = { ...(window.__debug || {}), PPIManager };
+      }
+    } catch (e) {
+      // Ignorar errores de entorno
+    }
   }
   console.log('✅ PPIManager registrado en ServiceRegistry');
 } else {

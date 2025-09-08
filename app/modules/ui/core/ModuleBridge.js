@@ -8,282 +8,180 @@ import { getServiceRegistry } from './ServiceRegistry.js';
 
 class ModuleBridge {
   constructor() {
-    this.eventBus = getEventBus();
-    this.serviceRegistry = getServiceRegistry();
+    this.eventBus = getEventBus?.() || null;
+    this.serviceRegistry = getServiceRegistry?.() || null;
     this.modules = new Map();
     this.sharedData = new Map();
     this.modelers = new Map();
     this.initialized = false;
   }
 
-  /**
-   * Inicializar el Module Bridge
-   */
+  // === Ciclo de vida =========================================================
   async initialize() {
     if (this.initialized) return this;
 
-    // Registrar eventos del bridge
+    // Asegurar dependencias incluso en SSR / timings raros
+    this.eventBus = this.eventBus || (getEventBus?.() || globalThis.getEventBus?.());
+    this.serviceRegistry = this.serviceRegistry || (getServiceRegistry?.() || (typeof window !== 'undefined' && window.getServiceRegistry?.()));
+
     this.setupEventListeners();
-    
-    // Configurar servicios compartidos
     this.setupSharedServices();
-    
+
     this.initialized = true;
-    console.log('✅ Module Bridge inicializado');
+    console.log('✅ ModuleBridge inicializado');
     return this;
   }
 
-  /**
-   * Configurar listeners de eventos
-   */
+  // === Listeners =============================================================
   setupEventListeners() {
-    // Eventos de modeladores
-    this.eventBus.subscribe('modeler.registered', (event) => {
-      this.registerModeler(event.type, event.modeler);
-    });
+    if (!this.eventBus) return;
 
-    this.eventBus.subscribe('modeler.unregistered', (event) => {
-      this.unregisterModeler(event.type);
-    });
+    // PUBLICACIONES EXTERNAS ESPERADAS:
+    // - 'bpmn.modeler.created'  -> { modeler }
+    // - 'bpmn.modeler.changed'  -> { modeler }
+    // - 'modeler.registered'    -> { type, modeler }
+    // - 'modeler.unregistered'  -> { type }
 
-    // Eventos de módulos
-    this.eventBus.subscribe('module.registered', (event) => {
-      this.registerModule(event.name, event.instance);
-    });
+    const onModelerInferred = (payload = {}) => {
+      const modeler = payload.modeler;
+      if (!modeler) return;
+      // Mejor esfuerzo: si no nos dicen el tipo, asumimos 'bpmn'
+      const type = payload.type || 'bpmn';
+      this.registerModeler(type, modeler);
+    };
 
-    this.eventBus.subscribe('module.unregistered', (event) => {
-      this.unregisterModule(event.name);
-    });
+    // Compat: eventos “bpmn.*”
+    this.eventBus.subscribe?.('bpmn.modeler.created', onModelerInferred);
+    this.eventBus.subscribe?.('bpmn.modeler.changed', onModelerInferred);
 
-    // Eventos de datos compartidos
-    this.eventBus.subscribe('data.shared', (event) => {
-      this.setSharedData(event.key, event.data);
-    });
+    // Compat: eventos “modeler.*”
+    this.eventBus.subscribe?.('modeler.registered', e => this.registerModeler(e.type || 'bpmn', e.modeler));
+    this.eventBus.subscribe?.('modeler.unregistered', e => this.unregisterModeler(e.type || 'bpmn'));
 
-    this.eventBus.subscribe('data.requested', (event) => {
-      const data = this.getSharedData(event.key);
-      this.eventBus.publish('data.provided', {
-        key: event.key,
-        data: data,
-        requestId: event.requestId
-      });
+    // Módulos
+    this.eventBus.subscribe?.('module.registered', e => this.registerModule(e.name, e.instance));
+    this.eventBus.subscribe?.('module.unregistered', e => this.unregisterModule(e.name));
+
+    // Datos compartidos
+    this.eventBus.subscribe?.('data.shared', e => this.setSharedData(e.key, e.data));
+    this.eventBus.subscribe?.('data.requested', e => {
+      const data = this.getSharedData(e.key);
+      this.eventBus.publish?.('data.provided', { key: e.key, data, requestId: e.requestId });
     });
   }
 
-  /**
-   * Configurar servicios compartidos
-   */
+  // === Servicios compartidos (ServiceRegistry) ===============================
   setupSharedServices() {
-    // Servicio para obtener modeladores
-    this.serviceRegistry.registerFunction('getModeler', (type = 'bpmn') => {
-      return this.getModeler(type);
-    }, {
+    const sr = this.serviceRegistry;
+    if (!sr?.registerFunction) return;
+
+    sr.registerFunction('getModeler', (type = 'bpmn') => this.getModeler(type), {
       alias: 'getModeler',
       description: 'Obtiene un modelador por tipo'
     });
 
-    // Servicio para obtener módulos
-    this.serviceRegistry.registerFunction('getModule', (name) => {
-      return this.getModule(name);
-    }, {
+    sr.registerFunction('getModule', (name) => this.getModule(name), {
       alias: 'getModule',
       description: 'Obtiene una instancia de módulo'
     });
 
-    // Servicio para datos compartidos
-    this.serviceRegistry.registerFunction('getSharedData', (key) => {
-      return this.getSharedData(key);
-    }, {
+    sr.registerFunction('getSharedData', (key) => this.getSharedData(key), {
       alias: 'getSharedData',
       description: 'Obtiene datos compartidos'
     });
 
-    this.serviceRegistry.registerFunction('setSharedData', (key, data) => {
-      return this.setSharedData(key, data);
-    }, {
+    sr.registerFunction('setSharedData', (key, data) => this.setSharedData(key, data), {
       alias: 'setSharedData',
       description: 'Establece datos compartidos'
     });
+
+    // También exponemos el propio bridge
+    sr.register('ModuleBridge', this, { description: 'Bridge de comunicación entre módulos' });
   }
 
-  /**
-   * Registrar un modelador
-   * @param {string} type - Tipo de modelador (bpmn, ralph, etc.)
-   * @param {Object} modeler - Instancia del modelador
-   */
+  // === Modelers ==============================================================
+
   registerModeler(type, modeler) {
+    if (!type || !modeler) return;
     this.modelers.set(type, modeler);
-    
-    // Publicar evento de modelador registrado
-    this.eventBus.publish('modeler.available', {
-      type: type,
-      modeler: modeler
-    });
 
-
+    this.eventBus?.publish?.('modeler.available', { type, modeler });
+    console.log(`🧩 Modeler "${type}" registrado en ModuleBridge`);
   }
 
-  /**
-   * Obtener un modelador
-   * @param {string} type - Tipo de modelador
-   * @returns {Object|null} - Instancia del modelador
-   */
   getModeler(type = 'bpmn') {
     return this.modelers.get(type) || null;
   }
 
-  /**
-   * Desregistrar un modelador
-   * @param {string} type - Tipo de modelador
-   */
   unregisterModeler(type) {
+    if (!type) return;
     this.modelers.delete(type);
-    
-    this.eventBus.publish('modeler.unavailable', {
-      type: type
-    });
-
-    console.log(`❌ Modelador ${type} desregistrado del Module Bridge`);
+    this.eventBus?.publish?.('modeler.unavailable', { type });
+    console.log(`❌ Modeler "${type}" desregistrado de ModuleBridge`);
   }
 
-  /**
-   * Registrar un módulo
-   * @param {string} name - Nombre del módulo
-   * @param {Object} instance - Instancia del módulo
-   */
+  // === Módulos ===============================================================
+
   registerModule(name, instance) {
+    if (!name || !instance) return;
     this.modules.set(name, instance);
-    
-    // Publicar evento de módulo registrado
-    this.eventBus.publish('module.available', {
-      name: name,
-      instance: instance
-    });
-
-
+    this.eventBus?.publish?.('module.available', { name, instance });
   }
 
-  /**
-   * Obtener un módulo
-   * @param {string} name - Nombre del módulo
-   * @returns {Object|null} - Instancia del módulo
-   */
   getModule(name) {
     return this.modules.get(name) || null;
   }
 
-  /**
-   * Desregistrar un módulo
-   * @param {string} name - Nombre del módulo
-   */
   unregisterModule(name) {
+    if (!name) return;
     this.modules.delete(name);
-    
-    this.eventBus.publish('module.unavailable', {
-      name: name
-    });
-
-    console.log(`❌ Módulo ${name} desregistrado del Module Bridge`);
+    this.eventBus?.publish?.('module.unavailable', { name });
+    console.log(`❌ Módulo "${name}" desregistrado de ModuleBridge`);
   }
 
-  /**
-   * Establecer datos compartidos
-   * @param {string} key - Clave de los datos
-   * @param {*} data - Datos a compartir
-   */
+  // === Shared data ===========================================================
+
   setSharedData(key, data) {
+    if (key == null) return;
     this.sharedData.set(key, data);
-    
-    // Publicar evento de datos actualizados
-    this.eventBus.publish('data.updated', {
-      key: key,
-      data: data
-    });
-
-    console.log(`📊 Datos compartidos actualizados: ${key}`);
+    this.eventBus?.publish?.('data.updated', { key, data });
   }
 
-  /**
-   * Obtener datos compartidos
-   * @param {string} key - Clave de los datos
-   * @returns {*} - Datos compartidos
-   */
   getSharedData(key) {
     return this.sharedData.get(key);
   }
 
-  /**
-   * Eliminar datos compartidos
-   * @param {string} key - Clave de los datos
-   */
   removeSharedData(key) {
     this.sharedData.delete(key);
-    
-    this.eventBus.publish('data.removed', {
-      key: key
-    });
-
-    console.log(`🗑️ Datos compartidos eliminados: ${key}`);
+    this.eventBus?.publish?.('data.removed', { key });
   }
 
-  /**
-   * Comunicación directa entre módulos
-   * @param {string} fromModule - Módulo origen
-   * @param {string} toModule - Módulo destino
-   * @param {string} action - Acción a ejecutar
-   * @param {*} data - Datos adicionales
-   */
+  // === Comunicación directa ==================================================
+
   async communicate(fromModule, toModule, action, data = {}) {
-    const targetModule = this.getModule(toModule);
-    
-    if (!targetModule) {
-      console.warn(`⚠️ Módulo ${toModule} no encontrado para comunicación desde ${fromModule}`);
+    const target = this.getModule(toModule);
+    if (!target) {
+      console.warn(`⚠️ Módulo destino "${toModule}" no encontrado (from: ${fromModule})`);
       return null;
     }
-
     try {
-      // Publicar evento de comunicación
-      this.eventBus.publish('module.communication', {
-        from: fromModule,
-        to: toModule,
-        action: action,
-        data: data
-      });
-
-      // Ejecutar acción en el módulo destino
-      if (typeof targetModule[action] === 'function') {
-        const result = await targetModule[action](data);
-        
-        // Publicar evento de respuesta
-        this.eventBus.publish('module.response', {
-          from: toModule,
-            to: fromModule,
-            action: action,
-            result: result
-        });
-
+      this.eventBus?.publish?.('module.communication', { from: fromModule, to: toModule, action, data });
+      if (typeof target[action] === 'function') {
+        const result = await target[action](data);
+        this.eventBus?.publish?.('module.response', { from: toModule, to: fromModule, action, result });
         return result;
-      } else {
-        console.warn(`⚠️ Acción ${action} no encontrada en módulo ${toModule}`);
-        return null;
       }
-    } catch (error) {
-      console.error(`❌ Error en comunicación entre módulos:`, error);
-      
-      this.eventBus.publish('module.error', {
-        from: fromModule,
-        to: toModule,
-        action: action,
-        error: error.message
-      });
-
+      console.warn(`⚠️ Acción "${action}" no existe en el módulo "${toModule}"`);
+      return null;
+    } catch (err) {
+      console.error('❌ Error en comunicación entre módulos:', err);
+      this.eventBus?.publish?.('module.error', { from: fromModule, to: toModule, action, error: err?.message });
       return null;
     }
   }
 
-  /**
-   * Obtener estado del bridge
-   */
+  // === Utilidades ============================================================
+
   getStatus() {
     return {
       initialized: this.initialized,
@@ -293,24 +191,44 @@ class ModuleBridge {
     };
   }
 
-  /**
-   * Limpiar todos los datos
-   */
   clear() {
     this.modules.clear();
     this.modelers.clear();
     this.sharedData.clear();
-    
-    this.eventBus.publish('bridge.cleared', {});
-    
-    console.log('🧹 Module Bridge limpiado');
+    this.eventBus?.publish?.('bridge.cleared', {});
+    console.log('🧹 ModuleBridge limpiado');
   }
 }
 
-// Instancia única del Module Bridge
-const moduleBridge = new ModuleBridge();
+// === Singleton perezoso + exports compatibles ================================
 
-// Exportar la instancia y la clase
+let __bridgeSingleton = null;
+
+function createSingleton() {
+  if (!__bridgeSingleton) {
+    __bridgeSingleton = new ModuleBridge();
+    // inicializamos sin bloquear (y tolerante a fallos)
+    __bridgeSingleton.initialize?.().catch(err => {
+      console.warn('[ModuleBridge] init warning:', err?.message || err);
+    });
+
+    // Exponer global para módulos legacy (opcional, pero útil)
+    try {
+      if (typeof window !== 'undefined') window.moduleBridge = __bridgeSingleton;
+      globalThis.moduleBridge = __bridgeSingleton;
+    } catch {}
+  }
+  return __bridgeSingleton;
+}
+
+/** Named export recomendado */
+export function getModuleBridge() {
+  return createSingleton();
+}
+
+/** Default export para compatibilidad con `import moduleBridge from ...` */
+const defaultExport = createSingleton();
+export default defaultExport;
+
+/** También exportamos la clase por si alguien la necesita para tipos/tests */
 export { ModuleBridge };
-export default moduleBridge;
-

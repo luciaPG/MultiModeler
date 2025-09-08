@@ -1,7 +1,7 @@
 // Importar el sistema de comunicación centralizado
-import ppiAdapter from './PPIAdapter.js';
-import { getEventBus } from '../ui/core/event-bus.js';
-import { getServiceRegistry } from '../ui/core/ServiceRegistry.js';
+import { getEventBus } from '../../ui/core/event-bus.js';
+import { getServiceRegistry } from '../../ui/core/ServiceRegistry.js';
+import ppiAdapter from '../infra/PPIAdapter.js';
 
 class PPISyncManager {
   constructor(ppiManager) {
@@ -859,11 +859,7 @@ class PPISyncManager {
 
   updateRelationshipCache() {
     this.relationshipCache.clear();
-    // Guardar ante core no inicializado
-    if (!this.core || !Array.isArray(this.core.ppis)) {
-      return;
-    }
-
+    
     this.core.ppis.forEach(ppi => {
       if (ppi.elementId) {
         const children = this.getChildElements(ppi.elementId);
@@ -1159,3 +1155,4 @@ if (registry) {
 } else {
   console.log('ℹ️ ServiceRegistry no disponible para PPISyncManager');
 }
+export default PPISyncManager;

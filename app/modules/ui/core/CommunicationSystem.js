@@ -32,11 +32,11 @@ class CommunicationSystem {
       return this;
     }
 
-
+    console.log('[CommunicationSystem] Inicializando sistema de comunicación...');
 
     try {
       // 1. ServiceRegistry initialization - no longer exposed on window
-  
+      console.log('[CommunicationSystem] Inicializando ServiceRegistry...');
 
       // 2. Configurar middleware para logging
       this.setupLoggingMiddleware();
@@ -57,7 +57,7 @@ class CommunicationSystem {
       });
 
       this.initialized = true;
-  
+      console.log('[CommunicationSystem] Sistema de comunicación inicializado exitosamente');
 
       return this;
     } catch (error) {
@@ -129,7 +129,7 @@ class CommunicationSystem {
     // Migrar funciones UI automáticamente
     this.windowAdapter.migrateUIFunctions();
 
-
+    console.log('[CommunicationSystem] Migración automática configurada');
   }
 
   /**

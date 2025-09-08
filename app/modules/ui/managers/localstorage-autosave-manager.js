@@ -1,20 +1,24 @@
-// === Cookie AutoSave Manager ===
-// Sistema de autoguardado basado en cookies que se integra con el panel manager
+// === LocalStorage AutoSave Manager ===
+// Sistema de autoguardado basado en localStorage con TTL y debouncing
 
 import { resolve } from '../../../services/global-access.js';
 import { RasciStore } from '../../rasci/store.js';
 import { getServiceRegistry } from '../core/ServiceRegistry.js';
 
-class CookieAutoSaveManager {
+class LocalStorageAutoSaveManager {
   constructor() {
-    this.cookieName = 'bpmn_autosave_data';
-    this.maxCookieSize = 4096; // Tamaño máximo de cookie (4KB)
-    this.autoSaveEnabled = false; // Cookies autosave disabled (migrating to XML)
+    // Configuración de almacenamiento
+    this.STORAGE_KEY = "draft:multinotation";
+    this.TTL_MS = 3 * 60 * 60 * 1000; // 3 horas
+    
+    // Configuración de autoguardado
+    this.autoSaveEnabled = true;
     this.autoSaveInterval = null;
     this.autoSaveFrequency = 5000; // 5 segundos
     this.lastSaveTime = 0;
     this.minSaveInterval = 2000; // Mínimo 2 segundos entre guardados
-    this.compressionEnabled = true;
+    this.debounceTimeout = null;
+    this.debounceDelay = 500; // 500ms debounce
     
     // Estado del proyecto
     this.projectState = {
@@ -51,13 +55,16 @@ class CookieAutoSaveManager {
   }
   
   init() {
-    console.log('🍪 Inicializando Cookie AutoSave Manager...');
+    console.log('💾 Inicializando LocalStorage AutoSave Manager...');
     
     // Cargar estado guardado al inicializar
     this.loadState();
     
-    // Cookies autosave disabled
-    // this.startAutoSave();
+    // Verificar si hay un borrador válido al cargar
+    this.checkForExistingDraft();
+    
+    // Configurar autoguardado automático
+    this.startAutoSave();
     
     // Configurar listeners para cambios en el modeler
     this.setupModelerListeners();
@@ -71,132 +78,235 @@ class CookieAutoSaveManager {
     // Configurar listeners para cambios en paneles
     this.setupPanelListeners();
     
-    console.log('✅ Cookie AutoSave Manager inicializado');
+    // Configurar listener para beforeunload
+    this.setupBeforeUnloadListener();
+    
+    console.log('✅ LocalStorage AutoSave Manager inicializado');
   }
   
-  // === GESTIÓN DE COOKIES ===
+  // === VERIFICACIÓN DE BORRADORES EXISTENTES ===
   
-  setCookie(name, value, days = 7) {
+  checkForExistingDraft() {
     try {
-      const expires = new Date();
-      expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-      const cookieValue = encodeURIComponent(JSON.stringify(value));
-      
-      // Verificar tamaño de cookie
-      if (cookieValue.length > this.maxCookieSize) {
-        console.warn('⚠️ Cookie demasiado grande, comprimiendo...');
-        const compressed = this.compressData(value);
-        if (compressed.length > this.maxCookieSize) {
-          console.error('❌ Cookie demasiado grande incluso comprimida');
-          return false;
-        }
-        document.cookie = `${name}=${encodeURIComponent(compressed)};expires=${expires.toUTCString()};path=/`;
-      } else {
-        document.cookie = `${name}=${cookieValue};expires=${expires.toUTCString()};path=/`;
+      const stored = localStorage.getItem(this.STORAGE_KEY);
+      if (!stored) {
+        console.log('ℹ️ No hay borrador guardado');
+        return;
       }
       
+      const storageData = JSON.parse(stored);
+      
+      // Verificar TTL
+      if (Date.now() - storageData.savedAt > this.TTL_MS) {
+        console.log('⏰ Borrador expirado, eliminando...');
+        this.clearStorage();
+        return;
+      }
+      
+      // Mostrar notificación de borrador disponible
+      this.showDraftNotification(storageData.savedAt);
+      
+    } catch (error) {
+      console.error('❌ Error verificando borrador existente:', error);
+    }
+  }
+  
+  showDraftNotification(savedAt) {
+    const timeAgo = this.getTimeAgo(savedAt);
+    
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #3b82f6;
+      color: white;
+      padding: 16px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 1003;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: 400px;
+    `;
+    
+    notification.innerHTML = `
+      <i class="fas fa-file-alt" style="font-size: 16px;"></i>
+      <div>
+        <div style="font-weight: 600; margin-bottom: 4px;">Borrador disponible</div>
+        <div style="font-size: 12px; opacity: 0.9;">Guardado hace ${timeAgo}</div>
+      </div>
+      <button id="restore-draft-btn" style="
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        margin-left: 8px;
+      ">Restaurar</button>
+      <button id="dismiss-draft-btn" style="
+        background: none;
+        border: none;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+        opacity: 0.7;
+        margin-left: 8px;
+      ">&times;</button>
+    `;
+    
+    // Event listeners
+    notification.querySelector('#restore-draft-btn').addEventListener('click', () => {
+      this.restoreDraft();
+      notification.remove();
+    });
+    
+    notification.querySelector('#dismiss-draft-btn').addEventListener('click', () => {
+      notification.remove();
+    });
+    
+    document.body.appendChild(notification);
+    
+    // Auto-dismiss after 10 seconds
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.remove();
+      }
+    }, 10000);
+  }
+  
+  getTimeAgo(timestamp) {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    
+    if (days > 0) {
+      return `${days} día${days > 1 ? 's' : ''}`;
+    } else if (hours > 0) {
+      return `${hours} hora${hours > 1 ? 's' : ''}`;
+    } else if (minutes > 0) {
+      return `${minutes} minuto${minutes > 1 ? 's' : ''}`;
+    } else {
+      return 'menos de 1 minuto';
+    }
+  }
+  
+  async restoreDraft() {
+    try {
+      console.log('🔄 Restaurando borrador...');
+      
+      // Cargar estado completo
+      const success = await this.forceRestore();
+      
+      if (success) {
+        this.showNotification('Borrador restaurado exitosamente', 'success');
+      } else {
+        this.showNotification('Error restaurando borrador', 'error');
+      }
+      
+    } catch (error) {
+      console.error('❌ Error restaurando borrador:', error);
+      this.showNotification('Error restaurando borrador', 'error');
+    }
+  }
+  
+  showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+      color: white;
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      z-index: 1002;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+    `;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // Animar entrada
+    setTimeout(() => {
+      notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Remover después de 3 segundos
+    setTimeout(() => {
+      notification.style.transform = 'translateX(100%)';
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
+  }
+  
+  // === GESTIÓN DE LOCALSTORAGE ===
+  
+  saveToStorage(data) {
+    try {
+      const storageData = {
+        value: data,
+        savedAt: Date.now()
+      };
+      
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(storageData));
+      console.log('💾 Datos guardados en localStorage');
       return true;
     } catch (error) {
-      console.error('❌ Error guardando cookie:', error);
+      console.error('❌ Error guardando en localStorage:', error);
       return false;
     }
   }
   
-  getCookie(name) {
+  loadFromStorage() {
     try {
-      const nameEQ = name + "=";
-      const ca = document.cookie.split(';');
+      const stored = localStorage.getItem(this.STORAGE_KEY);
+      if (!stored) {
+        console.log('ℹ️ No hay datos guardados en localStorage');
+        return null;
+      }
       
-      for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) === 0) {
-          const value = c.substring(nameEQ.length, c.length);
-          const decoded = decodeURIComponent(value);
-          
-          // Intentar descomprimir si es necesario
-          try {
-            return JSON.parse(decoded);
-          } catch (error) {
-            // Si falla JSON.parse, intentar descomprimir
-            try {
-              return this.decompressData(decoded);
-            } catch (error2) {
-              console.warn('⚠️ No se pudo descomprimir cookie, usando valor raw');
-              return decoded;
-            }
-          }
-        }
+      const storageData = JSON.parse(stored);
+      
+      // Verificar TTL
+      if (Date.now() - storageData.savedAt > this.TTL_MS) {
+        console.log('⏰ Datos expirados, eliminando del localStorage');
+        this.clearStorage();
+        return null;
       }
-      return null;
+      
+      console.log('📂 Datos cargados desde localStorage');
+      return storageData.value;
     } catch (error) {
-      console.error('❌ Error leyendo cookie:', error);
+      console.error('❌ Error cargando desde localStorage:', error);
       return null;
     }
   }
   
-  deleteCookie(name) {
-    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
-  }
-  
-  // === COMPRESIÓN DE DATOS ===
-  
-  compressData(data) {
-    if (!this.compressionEnabled) {
-      return JSON.stringify(data);
-    }
-    
+  clearStorage() {
     try {
-      const jsonString = JSON.stringify(data);
-      // Compresión simple usando LZString si está disponible
-      if (typeof LZString !== 'undefined') {
-        return LZString.compress(jsonString);
-      }
-      // Fallback: compresión básica
-      return this.basicCompress(jsonString);
+      localStorage.removeItem(this.STORAGE_KEY);
+      console.log('🗑️ Datos eliminados del localStorage');
+      return true;
     } catch (error) {
-      console.warn('⚠️ Error comprimiendo datos, usando JSON sin comprimir');
-      return JSON.stringify(data);
+      console.error('❌ Error eliminando del localStorage:', error);
+      return false;
     }
-  }
-  
-  decompressData(compressedData) {
-    if (!this.compressionEnabled) {
-      return JSON.parse(compressedData);
-    }
-    
-    try {
-      // Intentar descomprimir con LZString
-      if (typeof LZString !== 'undefined') {
-        const decompressed = LZString.decompress(compressedData);
-        return JSON.parse(decompressed);
-      }
-      // Fallback: descompresión básica
-      const decompressed = this.basicDecompress(compressedData);
-      return JSON.parse(decompressed);
-    } catch (error) {
-      console.warn('⚠️ Error descomprimiendo datos, intentando JSON directo');
-      return JSON.parse(compressedData);
-    }
-  }
-  
-  basicCompress(str) {
-    // Compresión básica: eliminar espacios innecesarios
-    return str.replace(/\s+/g, ' ').trim();
-  }
-  
-  basicDecompress(str) {
-    // Descompresión básica: no hace nada especial
-    return str;
   }
   
   // === GESTIÓN DE ESTADO ===
   
   async saveState() {
     try {
-      if (!this.autoSaveEnabled) {
-        return false;
-      }
       const now = Date.now();
       
       // Verificar intervalo mínimo entre guardados
@@ -204,7 +314,7 @@ class CookieAutoSaveManager {
         return false;
       }
       
-      console.log('💾 Guardando estado en cookies...');
+      console.log('💾 Guardando estado en localStorage...');
       
       // Actualizar estado del BPMN
       await this.updateBpmnState();
@@ -221,16 +331,16 @@ class CookieAutoSaveManager {
       // Actualizar metadata
       this.projectState.metadata.lastSave = now;
       
-      // Guardar en cookie
-      const success = this.setCookie(this.cookieName, this.projectState);
+      // Guardar en localStorage
+      const success = this.saveToStorage(this.projectState);
       
       if (success) {
         this.lastSaveTime = now;
         this.showSaveIndicator();
-        console.log('✅ Estado guardado en cookies exitosamente');
+        console.log('✅ Estado guardado en localStorage exitosamente');
         return true;
       } else {
-        console.warn('⚠️ No se pudo guardar estado en cookies');
+        console.warn('⚠️ No se pudo guardar estado en localStorage');
         return false;
       }
       
@@ -242,20 +352,20 @@ class CookieAutoSaveManager {
   
   loadState() {
     try {
-      console.log('📂 Cargando estado desde cookies...');
+      console.log('📂 Cargando estado desde localStorage...');
       
-      const savedState = this.getCookie(this.cookieName);
+      const savedState = this.loadFromStorage();
       
-      if (this.autoSaveEnabled && savedState && savedState.metadata) {
+      if (savedState && savedState.metadata) {
         this.projectState = { ...this.projectState, ...savedState };
-        console.log('✅ Estado cargado desde cookies');
+        console.log('✅ Estado cargado desde localStorage');
         
         // Aplicar estado cargado
         this.applyLoadedState();
         
         return true;
       } else {
-        console.log('ℹ️ No hay estado guardado en cookies');
+        console.log('ℹ️ No hay estado guardado en localStorage');
         return false;
       }
       
@@ -300,29 +410,16 @@ class CookieAutoSaveManager {
     try {
       const modeler = resolve('BpmnModeler');
       if (modeler) {
-        // Skip if no diagram is loaded yet
+        // Verificar que el modelador esté inicializado antes de guardar XML
         try {
-          const canvas = modeler.get && modeler.get('canvas');
-          const root = canvas && typeof canvas.getRootElement === 'function' ? canvas.getRootElement() : null;
-          if (!root) {
-            return false;
+          // Guardar XML
+          const xmlResult = await modeler.saveXML({ format: true });
+          if (xmlResult && xmlResult.xml) {
+            this.projectState.bpmn.xml = xmlResult.xml;
           }
-        } catch (e) {
-          return false;
-        }
-        // Guardar XML
-        let xmlResult = null;
-        try {
-          xmlResult = await modeler.saveXML({ format: true });
-        } catch (e) {
-          // Avoid noisy errors when no definitions are loaded
-          if (e && /no definitions loaded/i.test(String(e.message || e))) {
-            return false;
-          }
-          throw e;
-        }
-        if (xmlResult && xmlResult.xml) {
-          this.projectState.bpmn.xml = xmlResult.xml;
+        } catch (xmlError) {
+          console.warn('⚠️ Error guardando XML del diagrama:', xmlError.message);
+          this.projectState.bpmn.xml = null;
         }
         
         // Guardar estado del canvas
@@ -353,7 +450,6 @@ class CookieAutoSaveManager {
   
   updatePPIState() {
     try {
-      if (!this.autoSaveEnabled) return;
       const ppiManager = resolve('PPIManagerInstance');
       if (ppiManager && ppiManager.core) {
         const ppis = ppiManager.core.getAllPPIs();
@@ -389,9 +485,6 @@ class CookieAutoSaveManager {
   // === AUTOGUARDADO ===
   
   startAutoSave() {
-    if (!this.autoSaveEnabled) {
-      return;
-    }
     if (this.autoSaveInterval) {
       clearInterval(this.autoSaveInterval);
     }
@@ -558,15 +651,27 @@ class CookieAutoSaveManager {
     }
   }
   
-  // === TRIGGERS ===
+  setupBeforeUnloadListener() {
+    // Guardar justo antes de salir de la página
+    window.addEventListener('beforeunload', () => {
+      if (this.autoSaveEnabled) {
+        console.log('🚪 Guardando antes de salir...');
+        this.saveState();
+      }
+    });
+    
+    console.log('🎧 Listener beforeunload configurado');
+  }
+  
+  // === TRIGGERS CON DEBOUNCE ===
   
   triggerAutoSave() {
     if (this.autoSaveEnabled) {
       // Debounce para evitar demasiados guardados
-      clearTimeout(this.autoSaveTimeout);
-      this.autoSaveTimeout = setTimeout(() => {
+      clearTimeout(this.debounceTimeout);
+      this.debounceTimeout = setTimeout(() => {
         this.saveState();
-      }, 1000);
+      }, this.debounceDelay);
     }
   }
   
@@ -574,10 +679,10 @@ class CookieAutoSaveManager {
   
   showSaveIndicator() {
     try {
-      let indicator = document.getElementById('cookie-save-indicator');
+      let indicator = document.getElementById('localstorage-save-indicator');
       if (!indicator) {
         indicator = document.createElement('div');
-        indicator.id = 'cookie-save-indicator';
+        indicator.id = 'localstorage-save-indicator';
         indicator.innerHTML = `
           <div style="
             position: fixed;
@@ -598,8 +703,8 @@ class CookieAutoSaveManager {
             transform: translateY(-10px);
             transition: all 0.3s ease;
           ">
-            <i class="fas fa-cookie-bite" style="font-size: 10px;"></i>
-            <span>Guardado en cookies</span>
+            <i class="fas fa-save" style="font-size: 10px;"></i>
+            <span>Guardado automático</span>
           </div>
         `;
         document.body.appendChild(indicator);
@@ -626,7 +731,7 @@ class CookieAutoSaveManager {
     try {
       const modeler = resolve('BpmnModeler');
       if (this.projectState.bpmn.xml && modeler) {
-        console.log('🔄 Restaurando estado BPMN desde cookies...');
+        console.log('🔄 Restaurando estado BPMN desde localStorage...');
         
         // Restaurar XML
         await modeler.importXML(this.projectState.bpmn.xml);
@@ -656,7 +761,7 @@ class CookieAutoSaveManager {
           }
         }
         
-        console.log('✅ Estado BPMN restaurado desde cookies');
+        console.log('✅ Estado BPMN restaurado desde localStorage');
         return true;
       }
       return false;
@@ -668,10 +773,9 @@ class CookieAutoSaveManager {
   
   restorePPIState() {
     try {
-      if (!this.autoSaveEnabled) return false;
       const ppiManager = resolve('PPIManagerInstance');
       if (this.projectState.ppi.indicators && ppiManager && ppiManager.core) {
-        console.log('🔄 Restaurando PPIs desde cookies...');
+        console.log('🔄 Restaurando PPIs desde localStorage...');
         
         // Limpiar PPIs existentes
         ppiManager.core.ppis = [];
@@ -686,7 +790,7 @@ class CookieAutoSaveManager {
           ppiManager.ui.refreshPPIList();
         }
         
-        console.log(`✅ ${this.projectState.ppi.indicators.length} PPIs restaurados desde cookies`);
+        console.log(`✅ ${this.projectState.ppi.indicators.length} PPIs restaurados desde localStorage`);
         return true;
       }
       return false;
@@ -699,20 +803,18 @@ class CookieAutoSaveManager {
   // === MÉTODOS PÚBLICOS ===
   
   async forceSave() {
-    if (!this.autoSaveEnabled) return false;
     console.log('💾 Forzando guardado manual...');
     return await this.saveState();
   }
   
   async forceRestore() {
-    if (!this.autoSaveEnabled) return false;
     console.log('📂 Forzando restauración manual...');
     return this.loadState();
   }
   
   clearSavedState() {
     console.log('🗑️ Limpiando estado guardado...');
-    this.deleteCookie(this.cookieName);
+    this.clearStorage();
     this.projectState = {
       bpmn: { xml: null, canvas: null, selection: null, zoom: 1, position: { x: 0, y: 0 } },
       ppi: { indicators: [], relationships: {}, lastUpdate: null },
@@ -724,27 +826,48 @@ class CookieAutoSaveManager {
   }
   
   getStateInfo() {
+    const stored = this.loadFromStorage();
     return {
       lastSave: this.projectState.metadata.lastSave,
       bpmnSize: this.projectState.bpmn.xml ? this.projectState.bpmn.xml.length : 0,
       ppiCount: this.projectState.ppi.indicators.length,
       rasciRoles: this.projectState.rasci.roles.length,
-      cookieSize: this.getCookie(this.cookieName) ? JSON.stringify(this.getCookie(this.cookieName)).length : 0
+      storageSize: stored ? JSON.stringify(stored).length : 0,
+      ttlRemaining: stored ? Math.max(0, this.TTL_MS - (Date.now() - stored.savedAt)) : 0
     };
+  }
+  
+  // === CONFIGURACIÓN ===
+  
+  setTTL(hours) {
+    this.TTL_MS = hours * 60 * 60 * 1000;
+    console.log(`⏰ TTL actualizado a ${hours} horas`);
+  }
+  
+  setDebounceDelay(ms) {
+    this.debounceDelay = ms;
+    console.log(`⏱️ Debounce actualizado a ${ms}ms`);
+  }
+  
+  setAutoSaveFrequency(ms) {
+    this.autoSaveFrequency = ms;
+    if (this.autoSaveInterval) {
+      this.startAutoSave(); // Reiniciar con nueva frecuencia
+    }
+    console.log(`🔄 Frecuencia de autoguardado actualizada a ${ms}ms`);
   }
 }
 
 // Exportar la clase
-export { CookieAutoSaveManager };
+export { LocalStorageAutoSaveManager };
 
 // Register in ServiceRegistry
-
 const registry = getServiceRegistry();
 if (registry) {
-  registry.register('CookieAutoSaveManager', CookieAutoSaveManager, { 
-    description: 'Autosave (cookies)' 
+  registry.register('LocalStorageAutoSaveManager', LocalStorageAutoSaveManager, { 
+    description: 'Autosave (localStorage)' 
   });
-  registry.register('cookieAutoSaveManager', new CookieAutoSaveManager(), { 
-    description: 'Instancia autosave' 
+  registry.register('localStorageAutoSaveManager', new LocalStorageAutoSaveManager(), { 
+    description: 'Instancia autosave localStorage' 
   });
 }

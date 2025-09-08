@@ -1,14 +1,14 @@
 /**
  * PPI Adapter - Adaptador para comunicación PPIs
  */
-
-import moduleBridge from '../ui/core/ModuleBridge.js';
-import { getEventBus } from '../ui/core/event-bus.js';
+import { getModuleBridge } from '../../ui/core/ModuleBridge.js';
+import { getEventBus } from '../../ui/core/event-bus.js';
+import { getServiceRegistry } from '../../ui/core/ServiceRegistry.js';
 
 class PPIAdapter {
   constructor() {
     this.eventBus = getEventBus();
-    this.bridge = moduleBridge;
+    this.bridge = getModuleBridge();
     this.initialized = false;
   }
 
@@ -183,7 +183,7 @@ class PPIAdapter {
     // Establecer datos compartidos específicos de PPIs
     this.bridge.setSharedData('ppiManager', ppiManager);
     
-    console.log('✅ PPI Manager registrado en Module Bridge');
+
   }
 
   /**

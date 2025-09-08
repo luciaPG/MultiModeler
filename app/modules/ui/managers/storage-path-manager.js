@@ -95,8 +95,10 @@ if (registry) {
 }
 
 // Debug exposure only in development
-if (process.env.NODE_ENV !== 'production') {
-  globalThis.__debug = { ...(globalThis.__debug || {}), pathManager: pathManagerInstance };
+if (typeof process === 'undefined' || (process.env && process.env.NODE_ENV !== 'production')) {
+  if (typeof globalThis !== 'undefined') {
+    globalThis.__debug = { ...(globalThis.__debug || {}), pathManager: pathManagerInstance };
+  }
 }
 
 // Exportar para uso en módulos

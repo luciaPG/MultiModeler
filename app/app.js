@@ -61,18 +61,30 @@ async function initializeApp() {
   
   try {
     console.log('Inicializando aplicación VisualPPINOT...');
-
+    console.log('[DEBUG] Estado inicial:', {
+      appInitialized,
+      modeler,
+      welcomeScreen: !!welcomeScreen,
+      modelerContainer: !!modelerContainer
+    });
     
     // Initialize communication system first
+    console.log('[DEBUG] Inicializando sistema de comunicación...');
     initializeCommunicationSystem();
+    console.log('[DEBUG] Sistema de comunicación inicializado');
     
     // Register modules in service registry
+    console.log('[DEBUG] Registrando módulos...');
     registerModules();
+    console.log('[DEBUG] Módulos registrados');
     
     // Configurar elementos UI
+    console.log('[DEBUG] Configurando elementos UI...');
     setupUIElements();
+    console.log('[DEBUG] Elementos UI configurados');
     
     // Configurar modeler primero para que esté disponible durante la inicialización
+    console.log('[DEBUG] Inicializando modeler...');
     modeler = new MultiNotationModeler({
       container: modelerContainer,
       // El bindTo ya no es necesario en versiones recientes de bpmn-js
@@ -82,6 +94,7 @@ async function initializeApp() {
         RALph: RALphModdle
       }
     });
+    console.log('[DEBUG] Modeler creado:', modeler);
     
     // Register BpmnModeler in service registry (following bpmn-js patterns)
     const serviceRegistry = getServiceRegistry();
@@ -203,16 +216,6 @@ function setupUIEvents() {
     // Botón de abrir diagrama
     $('#open-diagram-btn').on('click', function() {
       openDiagramHandler();
-    });
-
-    // Botón de selector de paneles
-    $('#panel-selector-btn').on('click', function() {
-      const panelManager = resolve('PanelManagerInstance');
-      if (panelManager && panelManager.showSelector) {
-        panelManager.showSelector();
-      } else {
-        console.warn('[WARN] PanelManager no disponible');
-      }
     });
 
     // ...otros eventos de UI...

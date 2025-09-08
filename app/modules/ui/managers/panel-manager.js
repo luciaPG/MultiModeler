@@ -2,7 +2,7 @@
 // Gestor de paneles con selector de paneles y distribución
 import modelerManager from './modeler-manager.js';
 import { PanelLoader } from '../components/panel-loader.js';
-// CookieAutoSaveManager is now accessed via ServiceRegistry
+// CookieAutoSaveManager is accessed via ServiceRegistry; direct import not needed
 import { resolve } from '../../../services/global-access.js';
 import { getServiceRegistry } from '../core/ServiceRegistry.js';
 import { onResize } from '../core/dom-events.js';
@@ -11,9 +11,9 @@ import { registerDebug } from '../../../shared/debug-registry.js';
 // Bootstrap SR
 const sr = (typeof getServiceRegistry === 'function') ? getServiceRegistry() : undefined;
 const eventBus = sr && sr.get ? sr.get('EventBus') : undefined;
-const rasciAdapter = sr && sr.get ? sr.get('RASCIAdapter') : undefined;
-const validator = sr && sr.get ? sr.get('RASCIUIValidator') : undefined;
-const bpmnModeler = sr && sr.get ? sr.get('BPMNModeler') : (rasciAdapter && rasciAdapter.getBpmnModeler ? rasciAdapter.getBpmnModeler() : undefined);
+// const rasciAdapter = sr && sr.get ? sr.get('RASCIAdapter') : undefined;
+// const validator = sr && sr.get ? sr.get('RASCIUIValidator') : undefined;
+// const bpmnModeler = sr && sr.get ? sr.get('BPMNModeler') : (rasciAdapter && rasciAdapter.getBpmnModeler ? rasciAdapter.getBpmnModeler() : undefined);
 
 class PanelManager {
   constructor() {
@@ -100,6 +100,7 @@ class PanelManager {
   init() {
     this.createStyles();
     this.bindEvents();
+    this.attachHeaderButton();
     
     // Initialize the panelLoader using service registry
     if (!this.panelLoader) {
@@ -115,6 +116,30 @@ class PanelManager {
       
       this.setupRasciVisibilityObserver();
     }, 100);
+  }
+
+  attachHeaderButton() {
+    try {
+      const bind = () => {
+        const btn = document.getElementById('panel-selector-btn');
+        if (btn && !btn.hasAttribute('data-panel-selector-bound')) {
+          btn.setAttribute('data-panel-selector-bound', 'true');
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.showSelector();
+          });
+        }
+      };
+      // Try now and also after DOM mutations
+      bind();
+      const mo = new MutationObserver(() => bind());
+      const target = document.body || document.documentElement;
+      if (target) {
+        mo.observe(target, { childList: true, subtree: true });
+      }
+    } catch (e) {
+      // ignore
+    }
   }
 
   loadActivePanels() {
@@ -1263,10 +1288,21 @@ class PanelManager {
         return;
       }
 
-      // Guardar estado completo usando Cookie AutoSave Manager
+      // Guardar estado completo usando Cookie AutoSave Manager (instancia)
       const sr = getServiceRegistry();
-      const cookieManager = sr && sr.get('cookieAutoSaveManager');
-      if (cookieManager) {
+      let cookieManager = sr && (sr.get('cookieAutoSaveManager') || sr.get('CookieAutoSaveManager'));
+      // Si obtenemos la clase en lugar de la instancia, crearla y registrar la instancia para futuras llamadas
+      if (cookieManager && typeof cookieManager === 'function') {
+        try {
+          cookieManager = new cookieManager();
+          if (sr && sr.register) {
+            sr.register('cookieAutoSaveManager', cookieManager);
+          }
+        } catch (e) {
+          // Ignorar errores de construcción
+        }
+      }
+      if (cookieManager && typeof cookieManager.forceSave === 'function') {
         console.log('💾 Guardando estado completo en cookies antes del cambio...');
         try {
           const savedSuccessfully = await cookieManager.forceSave();
@@ -1381,10 +1417,43 @@ class PanelManager {
         canvas.style.minHeight = '400px';
         
         console.log('Preparando restauración del BPMN modeler al panel');
-        
+
+        // Si ya hay un modeler activo con diagrama cargado, no recrear
+        try {
+          const sr = getServiceRegistry && getServiceRegistry();
+          const existingModeler = sr && (sr.get('BpmnModeler') || sr.get('BPMNModeler'));
+          if (existingModeler && typeof existingModeler.get === 'function') {
+            try {
+              const existingCanvas = existingModeler.get('canvas');
+              const root = existingCanvas && typeof existingCanvas.getRootElement === 'function' ? existingCanvas.getRootElement() : null;
+              if (root) {
+                // Asegurar canvas host en el panel y evitar reinstanciar
+                const host = canvas;
+                if (typeof existingModeler.attachTo === 'function') {
+                  existingModeler.attachTo(host);
+                } else if (existingCanvas && existingCanvas._container && host && host.appendChild) {
+                  // Fallback: mover contenedor existente
+                  try {
+                    host.innerHTML = '';
+                    host.appendChild(existingCanvas._container);
+                  } catch (moveErr) {
+                    console.warn('No se pudo mover el contenedor del canvas existente:', moveErr);
+                  }
+                }
+                console.log('BPMN modeler reutilizado sin recreación');
+                // No intentar restaurar desde cookies si no hay estado
+                return;
+              }
+            } catch (reuseErr) {
+              console.warn('No se pudo reutilizar el modeler existente:', reuseErr);
+            }
+          }
+        } catch (lookupErr) {
+          console.warn('No se pudo obtener el modeler existente del ServiceRegistry:', lookupErr);
+        }
+
         // OPTIMIZADO: Restauración inmediata sin delays
         try {
-          // Always try to restore - this will now always create a new modeler instance
           const restoredModeler = await modelerManager.restoreToNewContainer(canvas);
           
           if (restoredModeler) {
@@ -1402,8 +1471,18 @@ class PanelManager {
 
             // Restaurar estado completo desde cookies
             const sr = getServiceRegistry();
-            const cookieManager = sr && sr.get('cookieAutoSaveManager');
-            if (cookieManager) {
+            let cookieManager = sr && (sr.get('cookieAutoSaveManager') || sr.get('CookieAutoSaveManager'));
+            if (cookieManager && typeof cookieManager === 'function') {
+              try {
+                cookieManager = new cookieManager();
+                if (sr && sr.register) {
+                  sr.register('cookieAutoSaveManager', cookieManager);
+                }
+              } catch (e) {
+                console.warn('No se pudo instanciar CookieAutoSaveManager:', e);
+              }
+            }
+            if (cookieManager && typeof cookieManager.restoreBpmnState === 'function' && cookieManager.autoSaveEnabled) {
               setTimeout(async () => {
                 console.log('🔄 Restaurando estado completo desde cookies...');
 
@@ -1414,7 +1493,7 @@ class PanelManager {
                 }
 
                 // Restaurar PPIs
-                const ppiRestored = cookieManager.restorePPIState();
+                const ppiRestored = cookieManager.autoSaveEnabled && cookieManager.restorePPIState && cookieManager.restorePPIState();
                 if (ppiRestored) {
                   console.log('✅ PPIs restaurados desde cookies');
                 }
@@ -1424,8 +1503,7 @@ class PanelManager {
             } else {
               // Fallback al sistema anterior
               console.log('⚠️ Usando sistema de restauración anterior...');
-              // Legacy note: previous implementation referenced preservedPPIState and a global PPI core.
-              // These variables are not defined in the current context and have been removed.
+              // No-op legacy fallback
             }
           } else {
             throw new Error('No se pudo restaurar el modelador');
@@ -1440,11 +1518,23 @@ class PanelManager {
             
             // Restaurar estado desde cookies incluso en el fallback
             const sr = getServiceRegistry();
-            const cookieManager = sr && sr.get('cookieAutoSaveManager');
-            if (cookieManager) {
+            let cookieManager = sr && (sr.get('cookieAutoSaveManager') || sr.get('CookieAutoSaveManager'));
+            if (cookieManager && typeof cookieManager === 'function') {
+              try {
+                cookieManager = new cookieManager();
+                if (sr && sr.register) {
+                  sr.register('cookieAutoSaveManager', cookieManager);
+                }
+              } catch (e) {
+                console.warn('No se pudo instanciar CookieAutoSaveManager:', e);
+              }
+            } else {
+              // No cookie manager available in fallback path
+            }
+            if (cookieManager && typeof cookieManager.restoreBpmnState === 'function') {
               setTimeout(async () => {
                 await cookieManager.restoreBpmnState();
-                cookieManager.restorePPIState();
+                cookieManager.restorePPIState && cookieManager.restorePPIState();
               }, 500);
             }
           } catch (initErr) {

@@ -176,7 +176,7 @@ export function initRasciPanel(panel) {
   // Configurar observer para cambios de visibilidad (DESHABILITADO PARA EVITAR BUCLE)
   function setupVisibilityObserver() {
     // Observer deshabilitado temporalmente para evitar bucle infinito
-
+    console.log('🔕 Observer de visibilidad deshabilitado para evitar bucle');
     
     // Solo configurar una carga inicial única
     let hasLoaded = false;
@@ -532,7 +532,7 @@ export function initRasciPanel(panel) {
 
   // Sistema de detección de cambios en BPMN (DESHABILITADO PARA EVITAR BUCLE)
   function setupBpmnChangeDetection() {
-
+    console.log('🔕 Detección automática de cambios BPMN deshabilitada para evitar bucle');
     
     // Sistema deshabilitado temporalmente
     // El usuario debe usar el botón "Recargar Matriz" manualmente
