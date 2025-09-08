@@ -1252,6 +1252,8 @@ class PanelManager {
         e.preventDefault();
         e.stopPropagation();
         this.applyConfiguration();
+        // Cerrar el modal inmediatamente tras aplicar
+        setTimeout(() => this.closeSelector(), 0);
       };
     }
   }

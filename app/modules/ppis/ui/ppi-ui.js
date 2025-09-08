@@ -914,27 +914,28 @@ class PPIUI {
     const modal = document.createElement('div');
     modal.id = 'ppi-modal';
     modal.className = 'ppi-modal-overlay';
+    const typeColor = '#3a56d4';
     modal.innerHTML = `
-      <div class="ppi-modal">
-      <button class="ppi-modal-close" onclick="this.closest('.ppi-modal-overlay').remove()">
+      <div class="ppi-modal" style="--type-color: ${typeColor}">
+        <div class="ppi-modal-header">
+          <div class="header-left">
+            <span class="type-indicator"><i class="fas fa-calculator"></i></span>
+            <div class="titles">
+              <h3>${title}</h3>
+              <p class="subtitle">Gestión de PPIs · Configura y revisa la información clave</p>
+            </div>
+          </div>
+          <button class="ppi-modal-close" onclick="this.closest('.ppi-modal-overlay').remove()" title="Cerrar">
             <i class="fas fa-times"></i>
           </button>
-
-          <div class="ppi-modal-title">
-        <h2>${title}</h2> 
         </div>
-      
         <div class="ppi-modal-body">
           ${content}
         </div>
         ${isEdit ? `
           <div class="ppi-modal-footer">
-            <button class="btn btn-secondary" onclick="this.closest('.ppi-modal-overlay').remove()">
-              Cancelar
-            </button>
-            <button class="btn btn-primary" id="save-ppi-btn" data-ppi-id="${ppi ? ppi.id : ''}">
-              ${ppi ? 'Guardar Cambios' : 'Crear PPI'}
-            </button>
+            <button class="btn btn-secondary" onclick="this.closest('.ppi-modal-overlay').remove()">Cancelar</button>
+            <button class="btn btn-primary" id="save-ppi-btn" data-ppi-id="${ppi ? ppi.id : ''}">${ppi ? 'Guardar Cambios' : 'Crear PPI'}</button>
           </div>
         ` : ''}
       </div>
@@ -1184,7 +1185,7 @@ class PPIUI {
     const elements = type === 'target' ? existing.targets : existing.scopes;
     
     if (elements.length === 0) {
-      return `<div class="bpmn-info-warning"><i class="fas fa-info-circle"></i> No hay elementos ${type === 'target' ? 'Target' : 'Scope'} en el canvas. Arrastra uno desde la paleta.</div>`;
+      return `<div class="bpmn-info-warning"><i class="fas fa-info-circle"></i> No hay elementos ${type === 'target' ? 'Target' : 'Scope'} en el canvas. Arrastra uno desde la paleta. Puedes editarlos pero no se reflejará en el canvas si no lo añades graficamente</div>`;
     }
 
     const elementsList = elements.map(el => {
@@ -2146,7 +2147,7 @@ class PPIUI {
     styles.textContent = `
       /* Variables CSS para sistema de color y espaciado */
       :root {
-        --ppi-primary: #4361ee;
+        --ppi-primary: #3b82f6; /* azul más moderno acorde con app */
         --ppi-secondary: #667eea;
         --ppi-success: #43e97b;
         --ppi-warning: #f093fb;
@@ -2448,8 +2449,9 @@ class PPIUI {
       }
 
       .icon-btn.primary {
-        background: rgba(67, 97, 238, 0.1);
+        background: #ffffff;
         color: var(--ppi-primary);
+        border: 1px solid #e5e7eb;
       }
 
       .icon-btn.secondary {
@@ -2467,8 +2469,8 @@ class PPIUI {
       }
 
       .icon-btn.primary:hover {
-        background: var(--ppi-primary);
-        color: white;
+        background: #f3f4f6;
+        color: var(--ppi-primary);
       }
 
       .icon-btn.secondary:hover {
@@ -2914,9 +2916,9 @@ class PPIUI {
       }
 
       .ppi-modal {
-        background: white;
+        background: #ffffff;
         border-radius: 12px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
         max-width: 90vw;
         max-height: 90vh;
         overflow: hidden;
@@ -2926,13 +2928,38 @@ class PPIUI {
       }
 
       .ppi-modal-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 20px 30px;
+        background: #f8fafc; /* neutro claro, sin azul intenso */
+        color:rgb(46, 46, 46);
+        padding: 16px 24px;
         display: flex;
+        margin-top: 5px;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 1px solid #e0e0e0;
+   
+        
+      }
+
+      .ppi-modal-header .header-left {
+        display: flex;
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      .ppi-modal-header .type-indicator {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: rgba(58,86,212,0.12); /* suave */
+        color: #3a56d4;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .ppi-modal-header .subtitle {
+        margin: 2px 0 0 0;
+        font-size: 0.85rem;
+        opacity: 0.9;
       }
 
       .ppi-modal-header h3 {
@@ -2944,8 +2971,8 @@ class PPIUI {
       .ppi-modal-close {
         background: none;
         border: none;
-        color: white;
-        font-size: 1.2rem;
+        color: #334155;
+        font-size: 1.1rem;
         cursor: pointer;
         width: 30px;
         height: 30px;
@@ -2957,27 +2984,35 @@ class PPIUI {
       }
 
       .ppi-modal-close:hover {
-        background: rgba(255, 255, 255, 0.2);
+        background: rgba(15, 23, 42, 0.06);
       }
 
       .ppi-modal-body {
         overflow-y: auto;
         flex: 1;
+        padding: 0 24px 16px 24px;
       }
 
       .ppi-modal-footer {
-        padding: 20px 30px;
-        border-top: 1px solid #e0e0e0;
+        padding: 16px 24px;
+        border-top: 1px solid #e5e7eb;
         display: flex;
         justify-content: flex-end;
-        gap: 15px;
-        background: #f8f9fa;
+        gap: 12px;
+        background: #ffffff;
+        align-items: stretch;
       }
+
+      .ppi-modal .btn { width: auto; display: inline-flex; align-items: center; justify-content: center; padding: 10px 16px; border-radius: 8px; border: 1px solid transparent; height: 40px; min-width: 160px; line-height: 1; }
+      .ppi-modal .btn-primary { background: linear-gradient(135deg, var(--ppi-primary) 0%, #764ba2 100%); color: #fff; border-color: transparent; }
+      .ppi-modal .btn-primary:hover { background: linear-gradient(135deg, #2563eb 0%, #6d28d9 100%); }
+      .ppi-modal .btn-secondary { background: #fff; color: #111827; border: 1px solid #d1d5db; }
+      .ppi-modal .btn-secondary:hover { background: #f3f4f6; }
 
       .ppi-detail-grid, .form-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-        gap: 25px;
+        grid-template-columns: 1fr; /* vertical, a una columna */
+        gap: 16px;
       }
 
       .detail-section, .form-section {
@@ -3064,8 +3099,9 @@ class PPIUI {
       }
 
       .btn-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--ppi-primary);
         color: white;
+        min-width: 160px;
       }
 
       .btn-primary:hover {
@@ -3074,14 +3110,23 @@ class PPIUI {
       }
 
       .btn-secondary {
-        background: #6c757d;
-        color: white;
+        background: #ffffff;
+        color: #111827;
+        border: 1px solid #d1d5db;
       }
 
-      .btn-secondary:hover {
-        background: #5a6268;
-        transform: translateY(-1px);
-      }
+      .btn-secondary:hover { background: #f3f4f6; }
+
+      /* Forzar contenido vertical */
+      .tab-content { display: flex; flex-direction: column; gap: 16px; }
+
+      /* Tabs con degradado consistente */
+      .form-tabs { display: flex; gap: 8px; padding: 12px 0 0 0; position: sticky; top: 0;; z-index: 1; border: none !important; }
+      .tab-button {background: #ffffff; color: #374151; border-radius: 8px; padding: 10px 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: background .2s, border-color .2s, color .2s; }
+      .tab-button:hover { background: #ffffff !important; border-color: #cbd5e1 !important; color: #374151 !important; box-shadow: none !important; }
+      .tab-button.active { color: #fff; border-color: transparent; background: linear-gradient(135deg, var(--ppi-primary) 0%, #764ba2 100%); box-shadow: 0 2px 10px rgba(59,130,246,0.25); }
+      .tab-button.active:hover { background: linear-gradient(135deg, var(--ppi-primary) 0%, #764ba2 100%) !important; color: #ffffff !important; box-shadow: 0 2px 10px rgba(59,130,246,0.25) !important; }
+      .tab-indicator { margin-left: 6px; font-size: 12px; }
     `;
 
     document.head.appendChild(styles);

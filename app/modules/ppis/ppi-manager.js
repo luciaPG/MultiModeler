@@ -824,9 +824,7 @@ class PPIManager {
       this.core.addPPI(ppi);
       console.log('[PPI-Manager] PPI added to core');
       
-      if (this.ui && this.ui.showSuccessMessage) {
-        this.ui.showSuccessMessage(`PPI creado: ${elementName}`);
-      }
+      // Silenciar feedback de creación de PPI para evitar molestias en UI
       
       // Asegurar que la UI está disponible y el DOM está listo
       const attemptRefresh = (retryCount = 0) => {
@@ -1077,7 +1075,7 @@ class PPIManager {
       const ppi = this.core.createPPI(processedData);
       this.core.addPPI(ppi);
       document.getElementById('ppi-modal').remove();
-      this.ui.showSuccessMessage('PPI creado exitosamente');
+      // Silenciar feedback de creación
       this.ui.refreshPPIList();
     }
   }
