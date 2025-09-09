@@ -1,17 +1,10 @@
 /**
- * PPIs Module
- * 
- * This module handles Process Performance Indicators (PPIs) within the application.
- * It provides capabilities for defining, managing and visualizing PPIs.
+ * PPIs Module - Handles Process Performance Indicators within the application
  */
-
-// Import internal dependencies
 import './core/ppi-core.js';
 import './ui/ppi-ui.js';
 import './ppi-manager.js';
 import './ppi-sync-manager.js';
-import './ppi-sync-ui.js';
-import './bpmn-integration.js';
 import { getServiceRegistry } from '../ui/core/ServiceRegistry.js';
 import { resolve } from '../../services/global-access.js';
 
@@ -39,7 +32,6 @@ class PPIModuleManager {
     if (this.eventBus) {
       this.eventBus.subscribe('ppinot.element.added', (event) => {
         // React to new PPINOT elements that might affect PPIs
-        console.log('[PPIs] PPINOT element added:', event.element);
       });
     }
     
@@ -59,12 +51,10 @@ class PPIModuleManager {
         registry.register('PPIManagerInstance', ppiManagerInstance);
       }
       
-      console.log('[PPIs] PPIManager instance creada exitosamente');
     } catch (error) {
       console.error('[PPIs] Error initializing legacy PPIManager:', error);
     }
     
-    console.log('[PPIs] Manager initialized');
     return this;
   }
   
@@ -184,7 +174,6 @@ class PPIModuleManager {
  * Legacy function for backward compatibility
  */
 async function loadPPIComponents() {
-  console.log('[PPIs] loadPPIComponents called');
   console.warn('[PPIs] Using legacy loadPPIComponents function. Consider migrating to the modular architecture.');
   
   try {
@@ -202,7 +191,6 @@ async function loadPPIComponents() {
       return;
     }
     
-    console.log('[PPIs] Creating PPIManager instance...');
     const ppiManagerInstance = new PPIManager();
     
     // Register in service registry
@@ -210,7 +198,6 @@ async function loadPPIComponents() {
       registry.register('PPIManagerInstance', ppiManagerInstance);
     }
     
-    console.log('[PPIs] PPIManager instance created:', ppiManagerInstance);
   } catch (error) {
     console.error('[PPIs] Error initializing legacy PPIManager:', error);
   }

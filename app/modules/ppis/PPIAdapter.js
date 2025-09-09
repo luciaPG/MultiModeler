@@ -1,5 +1,5 @@
 /**
- * PPI Adapter - Adaptador para comunicación PPIs
+ * PPI Adapter - Adaptador para comunicación entre PPIs y otros módulos del sistema
  */
 
 import moduleBridge from '../ui/core/ModuleBridge.js';
@@ -28,7 +28,6 @@ class PPIAdapter {
     this.registerPPIServices();
     
     this.initialized = true;
-    console.log('✅ PPI Adapter inicializado');
     return this;
   }
 
@@ -73,23 +72,27 @@ class PPIAdapter {
     }
 
     // Servicio para obtener datos RASCI
-    this.bridge.serviceRegistry?.registerFunction('getRasciData', () => {
-      return {
-        matrixData: this.getRasciMatrixData(),
-        roles: this.getRasciRoles()
-      };
-    }, {
-      alias: 'getRasciData',
-      description: 'Obtiene datos RASCI para PPIs'
-    });
+    if (this.bridge.serviceRegistry) {
+      this.bridge.serviceRegistry.registerFunction('getRasciData', () => {
+        return {
+          matrixData: this.getRasciMatrixData(),
+          roles: this.getRasciRoles()
+        };
+      }, {
+        alias: 'getRasciData',
+        description: 'Obtiene datos RASCI para PPIs'
+      });
+    }
 
     // Servicio para comunicarse con RASCI
-    this.bridge.serviceRegistry?.registerFunction('communicateWithRasci', (action, data) => {
-      return this.communicateWithRasci(action, data);
-    }, {
-      alias: 'communicateWithRasci',
-      description: 'Comunica con el módulo RASCI'
-    });
+    if (this.bridge.serviceRegistry) {
+      this.bridge.serviceRegistry.registerFunction('communicateWithRasci', (action, data) => {
+        return this.communicateWithRasci(action, data);
+      }, {
+        alias: 'communicateWithRasci',
+        description: 'Comunica con el módulo RASCI'
+      });
+    }
   }
 
   /**
@@ -97,7 +100,7 @@ class PPIAdapter {
    * @returns {Object|null} - Instancia del modelador BPMN
    */
   getBpmnModeler() {
-  return this.bridge && typeof this.bridge.getModeler === 'function' ? this.bridge.getModeler('bpmn') : null;
+    return this.bridge && this.bridge.getModeler ? this.bridge.getModeler('bpmn') : null;
   }
 
   /**
@@ -139,7 +142,6 @@ class PPIAdapter {
    * @param {Object} modeler - Instancia del modelador BPMN
    */
   onBpmnModelerAvailable(modeler) {
-    console.log('🎯 PPI Adapter: Modelador BPMN disponible');
     
     // Notificar a los componentes PPI que el modelador está disponible
     this.eventBus.publish('ppi.bpmn.available', {
@@ -152,7 +154,6 @@ class PPIAdapter {
    * @param {Object} rasciModule - Instancia del módulo RASCI
    */
   onRasciModuleAvailable(rasciModule) {
-    console.log('🎯 PPI Adapter: Módulo RASCI disponible');
     
     // Notificar a los componentes PPI que RASCI está disponible
     this.eventBus.publish('ppi.rasci.available', {
@@ -165,7 +166,6 @@ class PPIAdapter {
    * @param {Object} matrixData - Nuevos datos de matriz
    */
   onRasciMatrixDataUpdated(matrixData) {
-    console.log('🎯 PPI Adapter: Datos de matriz RASCI actualizados');
     
     // Notificar a los componentes PPI sobre la actualización
     this.eventBus.publish('ppi.rasci.matrix.updated', {
@@ -183,7 +183,6 @@ class PPIAdapter {
     // Establecer datos compartidos específicos de PPIs
     this.bridge.setSharedData('ppiManager', ppiManager);
     
-    console.log('✅ PPI Manager registrado en Module Bridge');
   }
 
   /**
@@ -191,7 +190,8 @@ class PPIAdapter {
    * @returns {Object|null} - Instancia del PPI Manager
    */
   getPPIManager() {
-  return (this.bridge && typeof this.bridge.getModule === 'function' ? this.bridge.getModule('ppis') : null) || (this.bridge && typeof this.bridge.getSharedData === 'function' ? this.bridge.getSharedData('ppiManager') : null); 
+    return (this.bridge && this.bridge.getModule ? this.bridge.getModule('ppis') : null) || 
+           (this.bridge && this.bridge.getSharedData ? this.bridge.getSharedData('ppiManager') : null);
   }
 
   /**

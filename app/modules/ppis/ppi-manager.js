@@ -1,47 +1,34 @@
-// Importar el sistema de comunicación centralizado
+/**
+ * PPI Manager - Manages Process Performance Indicators and their integration with BPMN canvas
+ */
 import ppiAdapter from './PPIAdapter.js';
 import { getEventBus } from '../ui/core/event-bus.js';
 import { getServiceRegistry } from '../ui/core/ServiceRegistry.js';
 
 class PPIManager {
   constructor() {
-    // Guards to avoid duplicate deletions (list <-> canvas)
-    this._deletingPPIIds = new Set();
-    this._deletingElementIds = new Set();
-    this._isDeleting = false;
-    this._recentlyDeletedElements = new Map(); // elementId -> timestamp
-    this._creationCooldownMs = 1500; // ventana ampliada para ignorar recreaciones
-    // Prevenir inicializaciones duplicadas
     if (PPIManager._instance) {
-      console.warn('[PPI-Manager] Instance already exists, returning existing instance');
       return PPIManager._instance;
     }
     PPIManager._instance = this;
     
-    // Inicializar sistema de comunicación
+    this._deletingPPIIds = new Set();
+    this._deletingElementIds = new Set();
+    this._isDeleting = false;
+    this._recentlyDeletedElements = new Map();
+    this._creationCooldownMs = 1500;
     this.eventBus = getEventBus();
     this.adapter = ppiAdapter;
     
-    // Obtener clases desde ServiceRegistry
     const serviceRegistry = getServiceRegistry();
     const PPICore = serviceRegistry && serviceRegistry.get ? serviceRegistry.get('PPICore') : null;
     const PPIUI = serviceRegistry && serviceRegistry.get ? serviceRegistry.get('PPIUI') : null;
-    
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('[PPI-Manager] PPICore via registry:', !!PPICore);
-      console.log('[PPI-Manager] PPIUI via registry:', !!PPIUI);
-    }
-    
-    // Verificar dependencias
     if (!PPICore) {
-      console.warn('PPICore no está disponible. Asegúrate de cargar ppi-core.js primero.');
-      // Reintentar inicialización de PPICore cuando esté disponible
       setTimeout(() => {
-        const sr = typeof getServiceRegistry === 'function' ? getServiceRegistry() : null;
+        const sr = getServiceRegistry();
         const LatePPICore = sr && sr.get ? sr.get('PPICore') : null;
         if (LatePPICore && !this.core) {
           this.core = new LatePPICore(this.adapter);
-          // Si la UI ya está disponible tras core, inicializarla
           const LatePPIUI = sr && sr.get ? sr.get('PPIUI') : null;
           if (LatePPIUI && !this.ui) {
             this.ui = new LatePPIUI(this.core, this);
@@ -49,7 +36,6 @@ class PPIManager {
               this.ui.init();
             }
           }
-          // Con core lista, verificar PPIs existentes en canvas
           try {
             this.verifyExistingPPIsInCanvas();
           } catch (e) {
@@ -58,30 +44,17 @@ class PPIManager {
         }
       }, 1000);
     }
-    if (!PPIUI) {
-      console.warn('PPIUI no está disponible. Asegúrate de cargar ppi-ui.js primero.');
-      // No lanzar error, solo registrar advertencia
-    }
-    
-    // Inicializar componentes principales solo si están disponibles
     if (PPICore) {
       this.core = new PPICore(this.adapter);
     }
     
-    // Intentar inicializar UI inmediatamente o esperar a que esté disponible
     if (PPIUI && this.core) {
       this.ui = new PPIUI(this.core, this);
-      console.log('[PPI-Manager] UI initialized immediately');
     } else {
-      console.log('[PPI-Manager] PPIUI or PPICore not available, will retry...');
-      // Retry UI initialization after a delay
       setTimeout(() => {
         const retryPPIUI = serviceRegistry && serviceRegistry.get ? serviceRegistry.get('PPIUI') : null;
         if (retryPPIUI && this.core && !this.ui) {
           this.ui = new retryPPIUI(this.core, this);
-          console.log('[PPI-Manager] UI initialized on retry');
-        } else if (retryPPIUI && !this.core) {
-          console.warn('[PPI-Manager] PPIUI available but PPICore not ready');
         }
       }, 1000);
     }
@@ -89,12 +62,10 @@ class PPIManager {
     this.syncManager = null;
     this.syncUI = null;
     
-    // Registrar este manager en el adaptador
     if (this.adapter) {
       this.adapter.registerPPIManager(this);
     }
     
-    // Inicializar de forma asíncrona para evitar problemas de timing
     setTimeout(() => {
       this.init();
     }, 0);
@@ -103,16 +74,14 @@ class PPIManager {
   init() {
     this.setupCanvasDetection();
     
-    // Solo inicializar UI si está disponible
     if (this.ui && typeof this.ui.init === 'function') {
       this.ui.init();
     }
 
     this.setupSyncManager();
+    this.setupKeyboardListeners();
   }
 
-  // === BPMN INTEGRATION ===
-  
   setupCanvasDetection() {
     let attempts = 0;
     const maxAttempts = 20;
@@ -120,21 +89,18 @@ class PPIManager {
     const checkModeler = () => {
       attempts++;
       
-      // Intentar obtener el modelador del nuevo sistema primero
       let foundModeler = null;
       
       if (this.adapter && this.adapter.bridge) {
         foundModeler = this.adapter.getBpmnModeler();
       }
       
-      // Fallback a window (compatibilidad temporal)
       if (!foundModeler && typeof window !== 'undefined') {
         const possibleModelers = ['modeler', 'bpmnModeler', 'viewer', 'bpmnViewer'];
         
         for (const name of possibleModelers) {
           if (window[name]) {
             foundModeler = window[name];
-            // Register modeler through adapter instead of window
             if (this.adapter && this.adapter.bridge) {
               this.adapter.bridge.registerModeler(foundModeler);
             }
@@ -144,7 +110,6 @@ class PPIManager {
       }
       
       if (foundModeler || this.adapter.getBpmnModeler()) {
-        // Registrar el modelador en el nuevo sistema
         if (this.adapter && this.adapter.bridge && foundModeler) {
           this.adapter.bridge.registerModeler('bpmn', foundModeler);
         }
@@ -152,8 +117,6 @@ class PPIManager {
         this.setupBpmnEventListeners();
         this.setupDOMObserver();
         this.setupSyncManager();
-        
-        // NUEVO: Configurar listener para cambios de modelador
         this.setupModelerChangeListener();
         return;
       }
@@ -265,63 +228,31 @@ class PPIManager {
       return;
     }
     
-    if (document.querySelector('script[src="modules/ppis/ppi-sync-ui.js"]')) {
-      return;
-    }
-    
-    const script = document.createElement('script');
-    script.src = `modules/ppis/ppi-sync-ui.js?v=${Date.now()}`;
-    script.onload = () => {
-      setTimeout(() => this.setupSyncUI(), 100);
-    };
-    script.onerror = () => {
-      // Error cargando PPISyncUI
-    };
-    document.head.appendChild(script);
+    // PPISyncUI functionality removed - file was empty
+    // Direct setup without external script loading
+    setTimeout(() => this.setupSyncUI(), 100);
   }
 
   setupBpmnEventListeners() {
-    console.log(`[PPI-Manager] Configurando event listeners BPMN`);
     try {
-      // Debug: Verificar estado del adapter y bridge
-      console.log(`[PPI-Manager] Adapter disponible:`, !!this.adapter);
-      console.log(`[PPI-Manager] Bridge disponible:`, !!(this.adapter && this.adapter.bridge));
-      
-      if (this.adapter && this.adapter.bridge) {
-        console.log(`[PPI-Manager] Modelers en bridge:`, Array.from(this.adapter.bridge.modelers.keys()));
-        const bridgeModeler = this.adapter.bridge.getModeler('bpmn');
-        console.log(`[PPI-Manager] Modeler desde bridge:`, !!bridgeModeler);
-      }
-      
-      // MEJORADO: Obtener modelador solo del adapter
       let modeler = null;
       if (this.adapter && typeof this.adapter.getBpmnModeler === 'function') {
         modeler = this.adapter.getBpmnModeler();
-        console.log(`[PPI-Manager] Modeler obtenido desde adapter:`, !!modeler);
       }
       if (!modeler) {
-        console.warn(`[PPI-Manager] Modelador BPMN no disponible`);
-        // MEJORADO: Programar reintento
         setTimeout(() => {
-          console.log(`[PPI-Manager] Reintentando configuración de event listeners...`);
           this.setupBpmnEventListeners();
         }, 2000);
         return;
       }
       
-      console.log(`[PPI-Manager] Modelador encontrado:`, !!modeler);
-      
       const eventBus = modeler.get('eventBus');
-      console.log(`[PPI-Manager] EventBus obtenido:`, !!eventBus);
       
       if (!eventBus) {
-        console.warn(`[PPI-Manager] EventBus no disponible`);
         return;
       }
       
-      // Limpiar listeners previos para evitar duplicados
       if (this._bpmnListeners) {
-        console.log(`[PPI-Manager] Limpiando listeners previos`);
         this._bpmnListeners.forEach(({ event, handler }) => {
           try {
             eventBus.off(event, handler);
@@ -332,26 +263,24 @@ class PPIManager {
       }
       this._bpmnListeners = [];
       
-      // MEJORADO: Listener para eliminación de PPIs del canvas
+      // MEJORADO: Listener rápido para eliminación de PPIs del canvas
       const removeHandler = (event) => {
-        console.log('[PPI-Manager] Element removed event:', event);
         const el = event && event.element;
         if (el && this.core && this.core.isPPIElement && this.core.isPPIElement(el)) {
           const elementId = el.id;
           if (this._deletingElementIds.has(elementId)) {
-            console.log('[PPI-Manager] Skip duplicate remove for element:', elementId);
             return;
           }
           this._deletingElementIds.add(elementId);
           // Marcar como borrado reciente para que los handlers de creación lo ignoren
           this._recentlyDeletedElements.set(elementId, Date.now());
-          console.log('[PPI-Manager] PPINOT element removed:', elementId);
           try {
             if (!this._isDeleting) {
               this.removePPIFromList(elementId);
             }
           } finally {
-            setTimeout(() => this._deletingElementIds.delete(elementId), 300);
+            // Limpiar inmediatamente
+            this._deletingElementIds.delete(elementId);
           }
         }
       };
@@ -360,27 +289,21 @@ class PPIManager {
 
       // MEJORADO: Listener para adición de PPIs al canvas
       const addHandler = (event) => {
-        console.log('[PPI-Manager] Element added event:', event);
         const element = event.element;
         if (element && this.core && this.core.isPPIElement && this.core.isPPIElement(element)) {
-          console.log('[PPI-Manager] PPINOT element detected:', element.id, element.type);
           const existingPPI = this.core.ppis && this.core.ppis.find(ppi => ppi.elementId === element.id);
           const lastDel = this._recentlyDeletedElements.get(element.id) || 0;
           const withinCooldown = Date.now() - lastDel < this._creationCooldownMs;
           if (!existingPPI && !this._isDeleting && !withinCooldown) {
-            console.log('[PPI-Manager] Creating PPI from element:', element.id);
             // MEJORADO: Usar delay más corto para respuesta más rápida
             setTimeout(() => this.createPPIFromElement(element.id), 50);
           } else {
-            console.log('[PPI-Manager] PPI already exists for element:', element.id);
           }
         } else {
-          console.log('[PPI-Manager] Element is not PPINOT:', element ? element.type : 'undefined');
         }
       };
       eventBus.on('element.added', addHandler);
       this._bpmnListeners.push({ event: 'element.added', handler: addHandler });
-      console.log(`[PPI-Manager] ✅ Listener 'element.added' registrado exitosamente`);
 
       // NUEVO: Listener para creación de formas (algunas integraciones disparan shape.added en lugar de element.added)
       const shapeAddedHandler = (event) => {
@@ -423,10 +346,8 @@ class PPIManager {
 
       // MEJORADO: Listener para cambios en elementos PPI del canvas
       const changeHandler = (event) => {
-        console.log('📝 Element changed event:', event);
         const element = event.element;
         if (element && this.core && this.core.isPPIElement && this.core.isPPIElement(element)) {
-          console.log('📝 PPI element changed:', element.id, element.businessObject && element.businessObject.name);
           this.updatePPIFromElement(element);
         }
       };
@@ -435,10 +356,8 @@ class PPIManager {
 
       // MEJORADO: Listener adicional para cambios de propiedades
       const propertiesHandler = (event) => {
-        console.log('📝 Properties updated event:', event);
         const element = event.context && event.context.element;
         if (element && this.core.isPPIElement && this.core.isPPIElement(element)) {
-          console.log('📝 PPI properties updated:', element.id, element.businessObject && element.businessObject.name);
           setTimeout(() => this.updatePPIFromElement(element), 50);
         }
       };
@@ -447,17 +366,14 @@ class PPIManager {
 
       // MEJORADO: Listener para cambios en el modelo
       const shapeChangeHandler = (event) => {
-        console.log('📝 Shape changed event:', event);
         const element = event.element;
         
         // Detectar elementos PPI principales
         if (element && this.core.isPPIElement && this.core.isPPIElement(element)) {
-          console.log('📝 PPI shape changed:', element.id, element.businessObject && element.businessObject.name);
           
           // Verificar si el PPI existe, si no, crearlo
           const existingPPI = this.core.ppis && this.core.ppis.find(ppi => ppi.elementId === element.id);
           if (!existingPPI) {
-            console.log('📝 Creating PPI from shape.changed:', element.id);
             // Usar un flag para evitar creación duplicada
             const lastDel = this._recentlyDeletedElements.get(element.id) || 0;
             const withinCooldown = Date.now() - lastDel < this._creationCooldownMs;
@@ -468,10 +384,8 @@ class PPIManager {
                 this._creatingPPI = false;
               }, 50);
             } else {
-              console.log('📝 Skipping duplicate PPI creation for:', element.id);
             }
           } else {
-            console.log('📝 Updating existing PPI from shape.changed:', element.id);
             this.updatePPIFromElement(element);
           }
         }
@@ -481,21 +395,16 @@ class PPIManager {
           if (element.type === 'PPINOT:Target' || element.type === 'PPINOT:Scope') {
             const parentId = element && element.parent ? element.parent.id : null;
             const childId = element ? element.id : null;
-            console.log('📝 Target/Scope changed:', element && element.type, childId, 'parent:', parentId);
-            console.log('📝 Element name:', element.businessObject && element.businessObject.name);
-            console.log('📝 Full element:', element);
             
             // Actualizar el PPI padre con la información del hijo
             setTimeout(() => {
               if (parentId && childId) {
-                console.log('📝 Calling updatePPIWithChildInfo for:', parentId, childId);
                 this.updatePPIWithChildInfo(parentId, childId);
               } else {
                 console.warn('[PPI-Manager] Skip updatePPIWithChildInfo: parentId/childId nulos tras shape.changed');
               }
               // Refrescar la UI para mostrar los cambios
               if (this.ui) {
-                console.log('📝 Refreshing UI after Target/Scope update');
                 this.ui.refreshPPIList();
               }
             }, 50);
@@ -507,43 +416,34 @@ class PPIManager {
 
       // MEJORADO: Listener para selección de elementos en el canvas
       const selectionHandler = (event) => {
-        console.log(`[PPI-Manager] Selección cambiada en canvas:`, event);
         const selectedElements = event.newSelection || [];
-        console.log(`[PPI-Manager] Elementos seleccionados:`, selectedElements.length);
         
         if (selectedElements.length === 1) {
           const selectedElement = selectedElements[0];
           if (!selectedElement) {
-            console.log('[PPI-Manager] Elemento seleccionado es null, limpiando selección');
             if (this.ui && typeof this.ui.clearPPISelection === 'function') {
               this.ui.clearPPISelection();
             }
             return;
           }
-          console.log(`[PPI-Manager] Elemento seleccionado:`, selectedElement && selectedElement.id, selectedElement && selectedElement.type);
           
           // Buscar si el elemento seleccionado corresponde a un PPI
           const ppi = this.findPPIByElement(selectedElement);
           if (ppi) {
             // Marcar el PPI como seleccionado en la lista
-            console.log(`[PPI-Manager] Marcando PPI como seleccionado: ${ppi.id}`);
             this.ui.selectPPI(ppi.id);
             
             // También forzar actualización del nombre al seleccionar
-            console.log(`[PPI-Manager] Forzando actualización de nombre al seleccionar`);
             this.updatePPIFromElement(selectedElement);
             
-            console.log(`PPI seleccionado en canvas: ${ppi.id} (${ppi.title || 'Sin título'})`);
           } else {
             // Si no es un PPI, limpiar la selección
-            console.log(`[PPI-Manager] Elemento no es PPI, limpiando selección`);
             if (this.ui && typeof this.ui.clearPPISelection === 'function') {
               this.ui.clearPPISelection();
             }
           }
         } else {
           // Si no hay selección o hay múltiples elementos, limpiar la selección
-          console.log(`[PPI-Manager] Múltiples elementos o sin selección, limpiando`);
           if (this.ui && typeof this.ui.clearPPISelection === 'function') {
             this.ui.clearPPISelection();
           }
@@ -554,16 +454,12 @@ class PPIManager {
 
       // MEJORADO: Listener específico para cambios de propiedades (nombres)
       const elementChangedHandler = (event) => {
-        console.log('🔄 Element changed event:', event);
         const element = event.element;
         
         if (element && element.parent && element.parent.type === 'PPINOT:Ppi') {
           if (element.type === 'PPINOT:Target' || element.type === 'PPINOT:Scope') {
-            console.log('🔄 Target/Scope properties changed:', element && element.type, element && element.id);
-            console.log('🔄 New name:', element.businessObject && element.businessObject.name);
             
             setTimeout(() => {
-              console.log('🔄 Updating PPI from element.changed');
               const parentId = element && element.parent ? element.parent.id : null;
               const childId = element ? element.id : null;
               if (parentId && childId) {
@@ -581,8 +477,6 @@ class PPIManager {
       eventBus.on('element.changed', elementChangedHandler);
       this._bpmnListeners.push({ event: 'element.changed', handler: elementChangedHandler });
       
-      console.log(`[PPI-Manager] 🎉 Setup de event listeners completado exitosamente`);
-      console.log(`[PPI-Manager] Total listeners registrados: ${this._bpmnListeners.length}`);
       
       // MEJORADO: Verificar PPIs existentes en el canvas después de configurar listeners
       this.verifyExistingPPIsInCanvas();
@@ -592,16 +486,51 @@ class PPIManager {
     }
   }
 
+  setupKeyboardListeners() {
+    
+    // Listener ultra-rápido para limpiar PPIs huérfanos
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        
+        // Verificar PPIs huérfanos inmediatamente
+        this.checkForOrphanedPPIs();
+      }
+    });
+  }
+
+
+  checkForOrphanedPPIs() {
+    try {
+      const modeler = this.getBpmnModeler();
+      if (!modeler || !this.core) return;
+
+      const elementRegistry = modeler.get('elementRegistry');
+      const before = this.core.ppis.length;
+
+      // Filtrar PPIs huérfanos ultra-rápido
+      this.core.ppis = this.core.ppis.filter(ppi => 
+        !ppi.elementId || !!elementRegistry.get(ppi.elementId)
+      );
+
+      if (this.core.ppis.length !== before) {
+        this.core.savePPIs();
+        if (this.ui && this.ui.refreshPPIList) {
+          this.ui.refreshPPIList();
+        }
+      }
+    } catch (error) {
+      console.error('[PPI-Manager] Error checking for orphaned PPIs:', error);
+    }
+  }
+
   // NUEVO: Método para verificar PPIs existentes en el canvas
   verifyExistingPPIsInCanvas() {
     try {
       if (!this.core) {
-        console.log('[PPI-Manager] Core no disponible aún para verificación');
         return;
       }
-      const modeler = (this.adapter && this.adapter.getBpmnModeler ? this.adapter.getBpmnModeler() : null) || (getServiceRegistry && getServiceRegistry().get ? getServiceRegistry().get('BpmnModeler') : null);
+      const modeler = this.getBpmnModeler();
       if (!modeler) {
-        console.log('[PPI-Manager] Modeler no disponible para verificación');
         return;
       }
 
@@ -617,18 +546,15 @@ class PPIManager {
         el.type !== 'PPINOT:Condition'
       );
 
-      console.log(`[PPI-Manager] Verificación: ${ppiElements.length} elementos PPINOT encontrados en canvas`);
 
       // Verificar si cada elemento PPINOT tiene un PPI correspondiente
       ppiElements.forEach(element => {
         const existingPPI = this.core.ppis.find(ppi => ppi.elementId === element.id);
         if (!existingPPI && !this._isDeleting) {
-          console.log(`[PPI-Manager] Elemento PPINOT sin PPI correspondiente: ${element.id}, creando PPI`);
           setTimeout(() => {
             this.createPPIFromElement(element.id);
           }, 100);
         } else {
-          console.log(`[PPI-Manager] Elemento PPINOT ya tiene PPI: ${element.id} -> ${existingPPI.id}`);
         }
       });
 
@@ -637,31 +563,24 @@ class PPIManager {
     }
   }
 
-  // === UTILITY METHODS ===
 
   /**
    * Obtiene el modelador BPMN de múltiples fuentes
    * @returns {Object|null} El modelador BPMN o null si no se encuentra
    */
   getBpmnModeler() {
-    let modeler = null;
-    
     // Intentar desde el adapter
     if (this.adapter) {
-      modeler = this.adapter.getBpmnModeler();
+      const modeler = this.adapter.getBpmnModeler();
       if (modeler) {
-        console.log(`🔧 [getBpmnModeler] Modeler obtenido desde adapter`);
         return modeler;
       }
     }
     
-
-    
     // Último intento: bridge
     if (this.bridge && this.bridge.getModeler) {
-      modeler = this.bridge.getModeler('bpmn');
+      const modeler = this.bridge.getModeler('bpmn');
       if (modeler) {
-        console.log(`🔧 [getBpmnModeler] Modeler obtenido desde bridge`);
         return modeler;
       }
     }
@@ -670,7 +589,6 @@ class PPIManager {
     return null;
   }
 
-  // === PPI ELEMENT DETECTION ===
 
   /**
    * Busca un PPI por su elemento del canvas
@@ -680,13 +598,11 @@ class PPIManager {
   findPPIByElement(element) {
     if (!element) return null;
     
-    console.log(`[PPI-Manager] Buscando PPI para elemento:`, element.id, element.type);
     
     try {
       // Buscar por elementId
       let ppi = this.core.ppis.find(p => p.elementId === element.id);
       if (ppi) {
-        console.log(`[PPI-Manager] PPI encontrado por elementId:`, ppi.id, ppi.title);
         return ppi;
       }
       
@@ -694,7 +610,6 @@ class PPIManager {
       if (element.businessObject && element.businessObject.name) {
         ppi = this.core.ppis.find(p => p.title === element.businessObject.name);
         if (ppi) {
-          console.log(`[PPI-Manager] PPI encontrado por nombre:`, ppi.id, ppi.title);
           return ppi;
         }
       }
@@ -702,12 +617,10 @@ class PPIManager {
       // Buscar en el elemento padre si no se encuentra directamente
       if (element.parent) {
         const parentElement = element.parent;
-        console.log(`[PPI-Manager] Buscando en elemento padre:`, parentElement.id, parentElement.type);
         
         // Buscar por elementId del padre
         ppi = this.core.ppis.find(p => p.elementId === parentElement.id);
         if (ppi) {
-          console.log(`[PPI-Manager] PPI encontrado por elementId del padre:`, ppi.id, ppi.title);
           return ppi;
         }
         
@@ -715,13 +628,11 @@ class PPIManager {
         if (parentElement.businessObject && parentElement.businessObject.name) {
           ppi = this.core.ppis.find(p => p.title === parentElement.businessObject.name);
           if (ppi) {
-            console.log(`[PPI-Manager] PPI encontrado por nombre del padre:`, ppi.id, ppi.title);
             return ppi;
           }
         }
       }
       
-      console.log(`[PPI-Manager] No se encontró PPI para elemento:`, element.id);
     } catch (error) {
       console.error('Error finding PPI by element:', error);
     }
@@ -729,7 +640,6 @@ class PPIManager {
     return null;
   }
 
-  // === SCOPE AND TARGET SPECIFIC HANDLING ===
 
   clearPPIChildInfo(element, specificParentId = null) {
     try {
@@ -750,7 +660,6 @@ class PPIManager {
 
   updatePPIWithChildInfo(parentPPIId, childElementId) {
     try {
-      console.log(`🔧 [updatePPIWithChildInfo] Iniciando actualización:`, { parentPPIId, childElementId });
       
       // Obtener modelador usando la función de utilidad
       const modeler = this.getBpmnModeler();
@@ -768,26 +677,11 @@ class PPIManager {
         return;
       }
       
-      console.log(`🔧 [updatePPIWithChildInfo] Elemento hijo encontrado:`, {
-        id: childElement.id,
-        type: childElement.type,
-        name: childElement.businessObject && childElement.businessObject.name,
-        parent: childElement.parent && childElement.parent.id
-      });
-      
       const existingPPI = this.core.ppis.find(ppi => ppi.elementId === parentPPIId);
       if (!existingPPI) {
         console.warn(`🔧 [updatePPIWithChildInfo] PPI padre ${parentPPIId} no encontrado`);
-        console.log(`🔧 [updatePPIWithChildInfo] PPIs disponibles:`, this.core.ppis.map(p => ({ id: p.id, elementId: p.elementId })));
         return;
       }
-      
-      console.log(`🔧 [updatePPIWithChildInfo] PPI padre encontrado:`, {
-        id: existingPPI.id,
-        title: existingPPI.title,
-        currentTarget: existingPPI.target,
-        currentScope: existingPPI.scope
-      });
       
       // Extraer información basada en el tipo de elemento
       let updatedData = { updatedAt: new Date().toISOString() };
@@ -795,28 +689,22 @@ class PPIManager {
       if (childElement.type === 'PPINOT:Target') {
         const targetName = (childElement.businessObject && childElement.businessObject.name) || childElementId;
         updatedData.target = targetName;
-        console.log(`🎯 [updatePPIWithChildInfo] Actualizando Target: ${targetName}`);
       } else if (childElement.type === 'PPINOT:Scope') {
         const scopeName = (childElement.businessObject && childElement.businessObject.name) || childElementId;
         updatedData.scope = scopeName;
-        console.log(`🔍 [updatePPIWithChildInfo] Actualizando Scope: ${scopeName}`);
       } else if (childElement.type === 'PPINOT:Measure') {
         const measureName = (childElement.businessObject && childElement.businessObject.name) || childElementId;
         updatedData.measureDefinition = {
           type: this.core.detectMeasureType(childElementId, childElement.type),
           definition: measureName
         };
-        console.log(`📏 [updatePPIWithChildInfo] Actualizando Measure: ${measureName}`);
       } else if (childElement.type === 'PPINOT:Condition') {
         const conditionName = (childElement.businessObject && childElement.businessObject.name) || childElementId;
         updatedData.businessObjective = conditionName;
-        console.log(`⚖️ [updatePPIWithChildInfo] Actualizando Condition: ${conditionName}`);
       }
       
-      console.log(`🔧 [updatePPIWithChildInfo] Datos a actualizar:`, updatedData);
       
       if (this.core.updatePPI(existingPPI.id, updatedData)) {
-        console.log(`✅ [updatePPIWithChildInfo] PPI actualizado exitosamente`);
         this.ui.refreshPPIList();
         this.core.debouncedSavePPINOTElements();
       } else {
@@ -831,22 +719,17 @@ class PPIManager {
 
 
   createPPIFromElement(elementId) {
-    console.log('[PPI-Manager] createPPIFromElement called with:', elementId);
     try {
       // Evitar creación si estamos en proceso de borrado o en cooldown para este elemento
       const lastDel = this._recentlyDeletedElements.get(elementId) || 0;
       const withinCooldown = Date.now() - lastDel < this._creationCooldownMs;
       if (this._isDeleting || withinCooldown) {
-        console.log('[PPI-Manager] Skipping PPI creation due to deletion in progress/cooldown:', {
-          isDeleting: this._isDeleting,
-          withinCooldown
-        });
         return;
       }
       let elementName = elementId;
       
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = (this.adapter && this.adapter.getBpmnModeler ? this.adapter.getBpmnModeler() : null) || (getServiceRegistry && getServiceRegistry().get ? getServiceRegistry().get('BpmnModeler') : null);
+      const modeler = this.getBpmnModeler();
       
       if (modeler) {
         const elementRegistry = modeler.get('elementRegistry');
@@ -854,9 +737,7 @@ class PPIManager {
         
         if (element && element.businessObject && element.businessObject.name && element.businessObject.name.trim()) {
           elementName = element.businessObject.name.trim();
-          console.log('[PPI-Manager] Using element name:', elementName);
         } else {
-          console.log('[PPI-Manager] Using elementId as name:', elementId);
         }
       }
       
@@ -877,10 +758,8 @@ class PPIManager {
         updatedAt: new Date().toISOString()
       };
       
-      console.log('[PPI-Manager] Created PPI object:', ppi);
       
       this.core.addPPI(ppi);
-      console.log('[PPI-Manager] PPI added to core');
       
       // Silenciar feedback de creación de PPI para evitar molestias en UI
       
@@ -891,15 +770,12 @@ class PPIManager {
           const ppiListContainer = document.getElementById('ppi-list');
           if (ppiListContainer) {
             this.ui.refreshPPIList();
-            console.log('[PPI-Manager] UI refreshed successfully');
           } else if (retryCount < 5) {
-            console.log(`[PPI-Manager] ppi-list container not ready, retrying... (${retryCount + 1}/5)`);
             setTimeout(() => attemptRefresh(retryCount + 1), 200);
           } else {
             console.warn('[PPI-Manager] ppi-list container not available after retries');
           }
         } else if (retryCount < 5) {
-          console.log(`[PPI-Manager] UI not available, retrying... (${retryCount + 1}/5)`);
           setTimeout(() => attemptRefresh(retryCount + 1), 200);
         } else {
           console.warn('[PPI-Manager] UI not available for refresh after retries');
@@ -913,23 +789,18 @@ class PPIManager {
         this.core.debouncedSavePPINOTElements();
       }
       
-      console.log('[PPI-Manager] PPI creation completed successfully');
     } catch (error) {
       console.error('[PPI-Manager] Error creando PPI:', error);
     }
   }
 
   updatePPIFromElement(element) {
-    console.log('📝 UpdatePPIFromElement called with:', element);
     try {
       const elementId = element.id;
-      console.log('📝 Element ID:', elementId);
       
       const existingPPI = this.core.ppis.find(ppi => ppi.elementId === elementId);
-      console.log('📝 Existing PPI found:', existingPPI);
       
       if (!existingPPI) {
-        console.log('📝 No existing PPI found for element');
         return;
       }
       
@@ -940,8 +811,6 @@ class PPIManager {
         newTitle = element.businessObject.id; // Use ID as fallback
       }
       
-      console.log('📝 Current PPI title:', existingPPI.title);
-      console.log('📝 New title from element:', newTitle);
       
       // Always update if we have a new title, be more aggressive
       if (newTitle) {
@@ -949,7 +818,6 @@ class PPIManager {
         const titleChanged = newTitle.trim() !== (existingPPI.title || '').trim();
         
         if (titleChanged || !existingPPI.title) {
-          console.log('📝 Updating PPI title from', existingPPI.title, 'to', newTitle);
           
           const updatedData = {
             title: newTitle,
@@ -957,40 +825,32 @@ class PPIManager {
           };
           
           if (this.core.updatePPI(existingPPI.id, updatedData)) {
-            console.log('📝 PPI updated successfully in core');
             
             // Force immediate DOM update
             this.updatePPIElementInDOM(existingPPI.id, updatedData);
             
             // Force UI refresh with multiple attempts
             setTimeout(() => {
-              console.log('📝 Forcing UI refresh attempt 1...');
               this.ui.refreshPPIList();
             }, 10);
             
             setTimeout(() => {
-              console.log('📝 Forcing UI refresh attempt 2...');
               this.ui.refreshPPIList();
             }, 100);
             
             // Also try to update the card directly
             setTimeout(() => {
-              console.log('📝 Direct card update attempt...');
               const cardElement = document.querySelector(`[data-ppi-id="${existingPPI.id}"] .ppi-title`);
               if (cardElement) {
                 cardElement.textContent = newTitle;
-                console.log('📝 Card title updated directly');
               }
             }, 50);
             
           } else {
-            console.log('📝 Failed to update PPI in core');
           }
         } else {
-          console.log('📝 No title change detected');
         }
       } else {
-        console.log('📝 No valid title found');
       }
     } catch (error) {
       console.error('📝 Error updating PPI from element:', error);
@@ -1014,7 +874,6 @@ class PPIManager {
     }
   }
 
-  // === PUBLIC API METHODS ===
   
   // UI Methods
   showCreatePPIModal() {
@@ -1067,35 +926,26 @@ class PPIManager {
   }
 
   confirmDeletePPI(ppiId) {
-    console.log('[PPI-Manager] confirmDeletePPI called for:', ppiId);
-    console.log('[PPI-Manager] Current deleting PPIs:', Array.from(this._deletingPPIIds));
-    console.log('[PPI-Manager] Is currently deleting:', this._isDeleting);
     
     const proceed = () => {
-      console.log('[PPI-Manager] Modal confirmed, proceeding with deletion for:', ppiId);
       if (this._deletingPPIIds.has(ppiId)) {
-        console.log('[PPI-Manager] PPI already being deleted, skipping:', ppiId);
         return;
       }
       this._deletingPPIIds.add(ppiId);
       try {
         this._isDeleting = true;
-        console.log('[PPI-Manager] Starting deletion process for:', ppiId);
         if (this.core.deletePPI(ppiId)) {
-          console.log('[PPI-Manager] PPI deleted successfully:', ppiId);
           this.ui.showSuccessMessage('PPI eliminado exitosamente');
           this.ui.refreshPPIList();
         } else {
-          console.log('[PPI-Manager] Failed to delete PPI:', ppiId);
         }
       } finally {
         this._isDeleting = false;
-        setTimeout(() => this._deletingPPIIds.delete(ppiId), 300);
+        this._deletingPPIIds.delete(ppiId);
       }
     };
 
     // Usar modal de confirmación del proyecto en lugar de window.confirm
-    console.log('[PPI-Manager] Showing confirmation modal for:', ppiId);
     this.showConfirmModal('¿Estás seguro de que quieres eliminar este PPI?', proceed);
   }
 
@@ -1123,7 +973,7 @@ class PPIManager {
         } finally {
           this._isDeleting = false;
         }
-        setTimeout(() => this._deletingPPIIds.delete(ppi.id), 300);
+        this._deletingPPIIds.delete(ppi.id);
       } else {
         // Buscar por ID directo como fallback
         const ppiById = this.core.ppis.find(ppi => ppi.id === ppiId);
@@ -1143,12 +993,12 @@ class PPIManager {
           } finally {
             this._isDeleting = false;
           }
-          setTimeout(() => this._deletingPPIIds.delete(ppiById.id), 300);
+          this._deletingPPIIds.delete(ppiById.id);
         } else {
           // Fallback adicional: purgar PPIs huérfanos cuyo elementId ya no exista en el canvas
           try {
-            const modeler = this.getBpmnModeler && this.getBpmnModeler();
-            const er = modeler && modeler.get && modeler.get('elementRegistry');
+            const modeler = this.getBpmnModeler();
+            const er = modeler && modeler.get ? modeler.get('elementRegistry') : null;
             if (er) {
               const before = this.core.ppis.length;
               this.core.ppis = this.core.ppis.filter(p => !p.elementId || er.get(p.elementId));
@@ -1168,7 +1018,6 @@ class PPIManager {
 
   // Modal de confirmación estilizado (reutilizable)
   showConfirmModal(message, onConfirm) {
-    console.log('[PPI-Manager] showConfirmModal called with message:', message);
     try {
       const overlay = document.createElement('div');
       overlay.className = 'modal-overlay ppi-confirm-modal';
@@ -1236,7 +1085,6 @@ class PPIManager {
       document.addEventListener('keydown', handleEscape);
 
       overlay.querySelector('.btn-accept').addEventListener('click', () => {
-        console.log('[PPI-Manager] Modal accept button clicked');
         const btn = overlay.querySelector('.btn-accept');
         
         // Mostrar estado de carga
@@ -1246,10 +1094,8 @@ class PPIManager {
         try {
           // Ejecutar confirmación de forma asíncrona
           if (onConfirm) {
-            console.log('[PPI-Manager] Executing onConfirm callback');
             // Usar Promise para manejar la eliminación de forma asíncrona
             Promise.resolve(onConfirm()).then(() => {
-              console.log('[PPI-Manager] onConfirm completed successfully');
               // Cerrar modal después de que se complete la eliminación
               setTimeout(() => {
                 close();
@@ -1264,7 +1110,6 @@ class PPIManager {
               document.removeEventListener('keydown', handleEscape);
             });
           } else {
-            console.log('[PPI-Manager] No onConfirm callback provided');
             // Si no hay onConfirm, cerrar inmediatamente
             close();
             document.removeEventListener('keydown', handleEscape);
@@ -1324,15 +1169,12 @@ class PPIManager {
     ppiData.comments = commentsEl ? commentsEl.value : '';
     
     // Debug: Mostrar todos los campos capturados
-    console.log('🔍 [saveEditedPPI] Captured form fields:');
     for (let [key, value] of Object.entries(ppiData)) {
-      console.log(`   ${key}: ${value}`);
     }
     
     // Procesar los datos usando el método del core
     const processedData = this.core.parseFormData(new Map(Object.entries(ppiData)));
     
-    console.log('💾 [saveEditedPPI] Processed PPI data:', processedData);
     
     if (ppiId) {
       // Update existing PPI
@@ -1361,17 +1203,14 @@ class PPIManager {
    */
   syncPPIChangesToCanvas(ppiId, ppiData) {
     try {
-      console.log('🔄 [syncPPIChangesToCanvas] Syncing changes to canvas for PPI:', ppiId);
       
       const ppi = this.core.ppis.find(p => p.id === ppiId);
       if (!ppi || !ppi.elementId) {
-        console.log('❌ [syncPPIChangesToCanvas] PPI or elementId not found');
         return;
       }
 
       const modeler = this.getBpmnModeler();
       if (!modeler) {
-        console.log('❌ [syncPPIChangesToCanvas] No modeler available');
         return;
       }
 
@@ -1382,7 +1221,6 @@ class PPIManager {
       // Find the PPI parent element
       const ppiElement = elementRegistry.get(ppi.elementId);
       if (!ppiElement) {
-        console.log('❌ [syncPPIChangesToCanvas] PPI element not found in canvas');
         return;
       }
 
@@ -1395,18 +1233,14 @@ class PPIManager {
         el.type === 'PPINOT:Scope' && el.parent && el.parent.id === ppi.elementId
       );
 
-      console.log(`🎯 [syncPPIChangesToCanvas] Found ${targetElements.length} Target elements`);
-      console.log(`🔍 [syncPPIChangesToCanvas] Found ${scopeElements.length} Scope elements`);
 
       // Helper function to safely update element and trigger visual refresh
       const safeUpdateElement = (element, newName, elementType) => {
         try {
-          console.log(`🔄 [syncPPIChangesToCanvas] Updating ${elementType} ${element.id} with: ${newName}`);
           
           // Update the business object name directly
           if (element.businessObject) {
             element.businessObject.name = newName;
-            console.log(`🔄 [syncPPIChangesToCanvas] Updated businessObject.name to: ${element.businessObject.name}`);
           }
           
           // Update properties using modeling service
@@ -1431,7 +1265,6 @@ class PPIManager {
           setTimeout(() => {
             try {
               eventBus.fire('element.changed', { element: element });
-              console.log(`✅ [syncPPIChangesToCanvas] Re-render completed for ${elementType} ${element.id}`);
             } catch (eventError) {
               console.warn(`⚠️ [syncPPIChangesToCanvas] Error in delayed re-render for ${elementType}:`, eventError);
             }
@@ -1444,33 +1277,25 @@ class PPIManager {
 
       // Update Target elements
       if (ppiData.target && targetElements.length > 0) {
-        console.log(`🎯 [syncPPIChangesToCanvas] Updating ${targetElements.length} Target elements with: ${ppiData.target}`);
         targetElements.forEach(targetEl => {
           safeUpdateElement(targetEl, ppiData.target, 'Target');
         });
       } else {
-        console.log(`⚠️ [syncPPIChangesToCanvas] No Target update: ppiData.target=${ppiData.target}, targetElements.length=${targetElements.length}`);
       }
 
       // Update Scope elements
       if (ppiData.scope && scopeElements.length > 0) {
-        console.log(`🔍 [syncPPIChangesToCanvas] Updating ${scopeElements.length} Scope elements with: ${ppiData.scope}`);
         scopeElements.forEach(scopeEl => {
           safeUpdateElement(scopeEl, ppiData.scope, 'Scope');
         });
       } else {
-        console.log(`⚠️ [syncPPIChangesToCanvas] No Scope update: ppiData.scope=${ppiData.scope}, scopeElements.length=${scopeElements.length}`);
-        console.log(`⚠️ [syncPPIChangesToCanvas] ppiData:`, ppiData);
-        console.log(`⚠️ [syncPPIChangesToCanvas] scopeElements:`, scopeElements);
       }
 
       // Update PPI title if provided
       if (ppiData.title && ppiElement) {
-        console.log(`📝 [syncPPIChangesToCanvas] Updating PPI title to: ${ppiData.title}`);
         safeUpdateElement(ppiElement, ppiData.title, 'PPI');
       }
 
-      console.log('✅ [syncPPIChangesToCanvas] Canvas sync completed');
       
     } catch (error) {
       console.error('💥 [syncPPIChangesToCanvas] Error:', error);
@@ -1496,7 +1321,6 @@ class PPIManager {
         el.type === 'PPINOT:Scope' && el.parent && el.parent.id === ppiElementId
       );
 
-      console.log(`📋 [getExistingTargetScopeElements] Found ${targets.length} targets, ${scopes.length} scopes for PPI ${ppiElementId}`);
       
       return { targets, scopes };
       
@@ -1516,24 +1340,19 @@ class PPIManager {
   }
 
   refreshPPIList() {
-    console.log('[PPI-Manager] refreshPPIList called');
-    console.log('[PPI-Manager] this.ui:', this.ui);
     
     const attemptRefresh = (retryCount = 0) => {
       if (this.ui && typeof this.ui.refreshPPIList === 'function') {
         // Verificar que el contenedor DOM existe
         const ppiListContainer = document.getElementById('ppi-list');
         if (ppiListContainer) {
-          console.log('[PPI-Manager] Calling ui.refreshPPIList()');
           this.ui.refreshPPIList();
         } else if (retryCount < 3) {
-          console.log(`[PPI-Manager] ppi-list container not ready, retrying... (${retryCount + 1}/3)`);
           setTimeout(() => attemptRefresh(retryCount + 1), 200);
         } else {
           console.warn('[PPI-Manager] ppi-list container not available after retries');
         }
       } else if (retryCount < 3) {
-        console.log(`[PPI-Manager] UI not available, retrying... (${retryCount + 1}/3)`);
         setTimeout(() => attemptRefresh(retryCount + 1), 200);
       } else {
         console.warn('[PPI-Manager] UI not available for refreshPPIList after retries');
@@ -1602,12 +1421,11 @@ class PPIManager {
   }
 
 
-  // === PPINOT RESTORATION ===
   
   restorePPINOTElements() {
     try {
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = (this.adapter && this.adapter.getBpmnModeler ? this.adapter.getBpmnModeler() : null) || (getServiceRegistry && getServiceRegistry().get ? getServiceRegistry().get('BpmnModeler') : null);
+      const modeler = this.getBpmnModeler();
       
       if (!modeler) {
         setTimeout(() => this.restorePPINOTElements(), 1000);
@@ -1624,12 +1442,10 @@ class PPIManager {
     }
   }
 
-  // === DEBUG FUNCTIONS ===
   
   // Función global para debugging del estado PPINOT
 
 
-  // === SYNC MANAGER METHODS ===
   
   getSyncStatus() {
     if (this.syncManager) {
@@ -1706,7 +1522,6 @@ class PPIManager {
     return this.core.loadPPINOTRelationshipsFromXML();
   }
 
-  // === MEMORY MANAGEMENT ===
   
   cleanupOldData() {
     this.core.cleanupOldData();
@@ -1811,80 +1626,83 @@ class PPIManager {
     };
   }
 
-  // === MANUAL REFRESH FUNCTION ===
   
   refreshPPINOTRelationships() {
     try {
-      // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = (this.adapter && this.adapter.getBpmnModeler ? this.adapter.getBpmnModeler() : null) || (getServiceRegistry && getServiceRegistry().get ? getServiceRegistry().get('BpmnModeler') : null);
-      
+      const modeler = this.getBpmnModeler();
       if (!modeler) {
         this.ui.showMessage('Modeler no disponible', 'warning');
         return;
       }
 
-      // Usar el nuevo sistema de sincronización si está disponible
       if (this.syncManager) {
         this.syncManager.forceSync();
         this.ui.showSuccessMessage('Sincronización completada con el nuevo sistema');
         return;
       }
 
-      // Fallback al método anterior
-      const elementRegistry = modeler.get('elementRegistry');
-      const allElements = elementRegistry.getAll();
-      
-      // Limpiar todos los PPIs existentes
-      this.core.ppis.length = 0;
-      this.core.processedElements.clear();
-      
-      // Buscar todos los PPIs principales
-      const ppiElements = allElements.filter(element => 
-        element.type === 'PPINOT:Ppi' || 
-        (element.businessObject && element.businessObject.$type === 'PPINOT:Ppi')
-      );
-      
-      // Crear PPIs para cada elemento encontrado
-      ppiElements.forEach(element => {
-        this.createPPIFromElement(element.id);
-      });
-      
-      // Buscar todos los elementos hijos de PPI
-      const ppiChildren = allElements.filter(element => 
-        element.parent && 
-        element.parent.type === 'PPINOT:Ppi' &&
-        (element.type === 'PPINOT:Scope' || 
-         element.type === 'PPINOT:Target' ||
-         element.type === 'PPINOT:Measure' ||
-         element.type === 'PPINOT:Condition')
-      );
-      
-      // Actualizar cada PPI con sus hijos
-      ppiChildren.forEach(element => {
-        if (element.parent && element.parent.id) {
-          this.updatePPIWithChildInfo(element.parent.id, element.id);
-        }
-      });
-      
-      // Guardar el estado actual
-      this.core.forceSavePPINOTElements();
-      
-      // Actualizar la UI
-      this.ui.refreshPPIList();
-      
-      this.ui.showSuccessMessage(`Refresco completado: ${ppiElements.length} PPIs, ${ppiChildren.length} elementos hijos`);
+      this.performLegacySync(modeler);
       
     } catch (error) {
       this.ui.showMessage('Error en refresco: ' + error.message, 'error');
     }
   }
 
-  // === CANVAS REFRESH AND DEBUGGING ===
+  performLegacySync(modeler) {
+    const elementRegistry = modeler.get('elementRegistry');
+    const allElements = elementRegistry.getAll();
+    
+    this.clearExistingPPIs();
+    const ppiElements = this.createPPIsFromElements(allElements);
+    const ppiChildren = this.updatePPIsWithChildren(allElements);
+    
+    this.core.forceSavePPINOTElements();
+    this.ui.refreshPPIList();
+    this.ui.showSuccessMessage(`Refresco completado: ${ppiElements.length} PPIs, ${ppiChildren.length} elementos hijos`);
+  }
+
+  clearExistingPPIs() {
+    this.core.ppis.length = 0;
+    this.core.processedElements.clear();
+  }
+
+  createPPIsFromElements(allElements) {
+    const ppiElements = allElements.filter(element => 
+      element.type === 'PPINOT:Ppi' || 
+      (element.businessObject && element.businessObject.$type === 'PPINOT:Ppi')
+    );
+    
+    ppiElements.forEach(element => {
+      this.createPPIFromElement(element.id);
+    });
+    
+    return ppiElements;
+  }
+
+  updatePPIsWithChildren(allElements) {
+    const ppiChildren = allElements.filter(element => 
+      element.parent && 
+      element.parent.type === 'PPINOT:Ppi' &&
+      (element.type === 'PPINOT:Scope' || 
+       element.type === 'PPINOT:Target' ||
+       element.type === 'PPINOT:Measure' ||
+       element.type === 'PPINOT:Condition')
+    );
+    
+    ppiChildren.forEach(element => {
+      if (element.parent && element.parent.id) {
+        this.updatePPIWithChildInfo(element.parent.id, element.id);
+      }
+    });
+    
+    return ppiChildren;
+  }
+
   
   forceCanvasRefresh() {
     try {
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = (this.adapter && this.adapter.getBpmnModeler ? this.adapter.getBpmnModeler() : null) || (getServiceRegistry && getServiceRegistry().get ? getServiceRegistry().get('BpmnModeler') : null);
+      const modeler = this.getBpmnModeler();
       
       if (!modeler) return;
       
@@ -1923,7 +1741,7 @@ class PPIManager {
       }
 
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = (this.adapter && this.adapter.getBpmnModeler ? this.adapter.getBpmnModeler() : null) || (getServiceRegistry && getServiceRegistry().get ? getServiceRegistry().get('BpmnModeler') : null);
+      const modeler = this.getBpmnModeler();
       
       if (!modeler) {
         console.warn('Modeler no disponible para selección');
@@ -1952,11 +1770,9 @@ class PPIManager {
               canvas.scrollToElement(element);
             }
           } catch (scrollError) {
-            console.log('Zoom/scroll no disponible, pero elemento seleccionado');
           }
         }
         
-        console.log(`Elemento seleccionado en canvas: ${ppi.elementId} (PPI: ${ppiId})`);
       } else {
         console.warn(`Elemento no encontrado en canvas: ${ppi.elementId}`);
       }
@@ -2019,9 +1835,7 @@ if (registry) {
       // Ignorar errores de entorno
     }
   }
-  console.log('✅ PPIManager registrado en ServiceRegistry');
 } else {
-  console.log('ℹ️ ServiceRegistry no disponible para PPIManager');
 }
 
  
