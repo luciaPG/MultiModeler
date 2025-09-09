@@ -51,6 +51,12 @@ class LocalStorageAutoSaveManager {
       }
     };
     
+    // Estado interno de restauración/avisos
+    this.hasRestored = false;
+    this.draftNotificationEl = null;
+    this.suspended = false; // suspender autoguardado durante restauraciones
+    this._autoRestoreDone = false; // restauración automática realizada una vez
+    
     this.init();
   }
   
@@ -94,6 +100,17 @@ class LocalStorageAutoSaveManager {
         return;
       }
       
+      // No mostrar si ya está restaurado
+      if (this.hasRestored) {
+        return;
+      }
+
+      // Mostrar aviso solo si la welcome screen está visible
+      const welcome = document.getElementById('welcome-screen');
+      if (welcome && welcome.style && welcome.style.display === 'none') {
+        return;
+      }
+
       const storageData = JSON.parse(stored);
       
       // Verificar TTL
@@ -113,6 +130,11 @@ class LocalStorageAutoSaveManager {
   
   showDraftNotification(savedAt) {
     const timeAgo = this.getTimeAgo(savedAt);
+    
+    // Evitar duplicados
+    if (this.draftNotificationEl && this.draftNotificationEl.parentNode) {
+      return;
+    }
     
     const notification = document.createElement('div');
     notification.style.cssText = `
@@ -171,11 +193,13 @@ class LocalStorageAutoSaveManager {
     });
     
     document.body.appendChild(notification);
+    this.draftNotificationEl = notification;
     
     // Auto-dismiss after 10 seconds
     setTimeout(() => {
       if (notification.parentNode) {
         notification.remove();
+        if (this.draftNotificationEl === notification) this.draftNotificationEl = null;
       }
     }, 10000);
   }
@@ -206,6 +230,8 @@ class LocalStorageAutoSaveManager {
       const success = await this.forceRestore();
       
       if (success) {
+        this.hasRestored = true;
+        this.dismissDraftNotification();
         this.showNotification('Borrador restaurado exitosamente', 'success');
       } else {
         this.showNotification('Error restaurando borrador', 'error');
@@ -215,6 +241,22 @@ class LocalStorageAutoSaveManager {
       console.error('❌ Error restaurando borrador:', error);
       this.showNotification('Error restaurando borrador', 'error');
     }
+  }
+
+  dismissDraftNotification() {
+    try {
+      if (this.draftNotificationEl && this.draftNotificationEl.parentNode) {
+        this.draftNotificationEl.remove();
+      }
+      this.draftNotificationEl = null;
+    } catch (e) {
+      // noop
+    }
+  }
+
+  markRestored() {
+    this.hasRestored = true;
+    this.dismissDraftNotification();
   }
   
   showNotification(message, type = 'info') {
@@ -284,6 +326,18 @@ class LocalStorageAutoSaveManager {
         return null;
       }
       
+      // Validar contenido útil
+      const value = storageData && storageData.value;
+      const hasContent = value && (
+        (value.bpmn && value.bpmn.xml && typeof value.bpmn.xml === 'string' && value.bpmn.xml.trim().length > 0) ||
+        (value.ppi && Array.isArray(value.ppi.indicators) && value.ppi.indicators.length > 0) ||
+        (value.rasci && Array.isArray(value.rasci.roles) && value.rasci.roles.length > 0)
+      );
+      if (!hasContent) {
+        console.log('ℹ️ Datos presentes pero sin contenido útil, se ignoran');
+        return null;
+      }
+      
       console.log('📂 Datos cargados desde localStorage');
       return storageData.value;
     } catch (error) {
@@ -309,6 +363,11 @@ class LocalStorageAutoSaveManager {
     try {
       const now = Date.now();
       
+      // No guardar si está suspendido
+      if (this.suspended) {
+        return false;
+      }
+
       // Verificar intervalo mínimo entre guardados
       if (now - this.lastSaveTime < this.minSaveInterval) {
         return false;
@@ -412,6 +471,12 @@ class LocalStorageAutoSaveManager {
       if (modeler) {
         // Verificar que el modelador esté inicializado antes de guardar XML
         try {
+          // Evitar guardar si no hay diagrama cargado
+          const canvas = modeler.get('canvas');
+          const root = canvas && typeof canvas.getRootElement === 'function' ? canvas.getRootElement() : null;
+          if (!root || !root.businessObject) {
+            return;
+          }
           // Guardar XML
           const xmlResult = await modeler.saveXML({ format: true });
           if (xmlResult && xmlResult.xml) {
@@ -450,10 +515,46 @@ class LocalStorageAutoSaveManager {
   
   updatePPIState() {
     try {
+      // Preferir PPICore registrado (fuente única) y fallback a PPIManager.core
+      const registry = getServiceRegistry && getServiceRegistry();
+      const ppiCore = registry ? registry.get('PPICore') : null;
       const ppiManager = resolve('PPIManagerInstance');
-      if (ppiManager && ppiManager.core) {
-        const ppis = ppiManager.core.getAllPPIs();
-        this.projectState.ppi.indicators = ppis;
+      let ppis = [];
+      
+      if (ppiCore && typeof ppiCore.getAllPPIs === 'function') {
+        ppis = ppiCore.getAllPPIs();
+      } else if (ppiManager && ppiManager.core && typeof ppiManager.core.getAllPPIs === 'function') {
+        ppis = ppiManager.core.getAllPPIs();
+      }
+      
+      if (Array.isArray(ppis)) {
+        // Enriquecer con posiciones actuales de Scope/Target si están en el canvas
+        let elementRegistry = null;
+        try {
+          const modeler = resolve('BpmnModeler') || (registry && registry.get && registry.get('BpmnModeler'));
+          elementRegistry = modeler ? modeler.get('elementRegistry') : null;
+        } catch (ignored) {
+          // no-op
+        }
+
+        this.projectState.ppi.indicators = ppis.map(p => {
+          const enriched = { ...p };
+          if (elementRegistry && p && p.elementId) {
+            const ppiShape = elementRegistry.get(p.elementId);
+            if (ppiShape) {
+              const children = (ppiShape.children || []).slice();
+              const scopeElt = children.find(ch => ch && ch.businessObject && ch.businessObject.$type === 'PPINOT:Scope');
+              const targetElt = children.find(ch => ch && ch.businessObject && ch.businessObject.$type === 'PPINOT:Target');
+              if (scopeElt) {
+                enriched.scopePosition = { x: scopeElt.x, y: scopeElt.y };
+              }
+              if (targetElt) {
+                enriched.targetPosition = { x: targetElt.x, y: targetElt.y };
+              }
+            }
+          }
+          return enriched;
+        });
         this.projectState.ppi.lastUpdate = Date.now();
       }
     } catch (error) {
@@ -490,7 +591,7 @@ class LocalStorageAutoSaveManager {
     }
     
     this.autoSaveInterval = setInterval(() => {
-      if (this.autoSaveEnabled) {
+      if (this.autoSaveEnabled && !this.suspended) {
         this.saveState();
       }
     }, this.autoSaveFrequency);
@@ -547,6 +648,25 @@ class LocalStorageAutoSaveManager {
       });
       
       console.log('🎧 Listeners del modeler configurados');
+
+      // Intentar una restauración automática única cuando el modeler está listo
+      try {
+        if (!this._autoRestoreDone && !this.hasRestored) {
+          const hasXML = this.projectState && this.projectState.bpmn && typeof this.projectState.bpmn.xml === 'string' && this.projectState.bpmn.xml.trim().length > 0;
+          const hasPPIs = this.projectState && this.projectState.ppi && Array.isArray(this.projectState.ppi.indicators) && this.projectState.ppi.indicators.length > 0;
+          if (hasXML || hasPPIs) {
+            this.suspendAutoSave();
+            Promise.resolve()
+              .then(() => hasXML ? this.restoreBpmnState() : true)
+              .then(() => this.restorePPIState())
+              .then(() => { this.markRestored(); })
+              .catch(() => { /* no-op */ })
+              .finally(() => { this.resumeAutoSave(); this._autoRestoreDone = true; });
+          } else {
+            this._autoRestoreDone = true;
+          }
+        }
+      } catch (e) { /* no-op */ }
       
     } catch (error) {
       console.error('❌ Error configurando listeners del modeler:', error);
@@ -576,6 +696,7 @@ class LocalStorageAutoSaveManager {
       if (ppiManager && ppiManager.core) {
         const originalAddPPI = ppiManager.core.addPPI.bind(ppiManager.core);
         const originalDeletePPI = ppiManager.core.deletePPI.bind(ppiManager.core);
+        const originalUpdatePPI = ppiManager.core.updatePPI.bind(ppiManager.core);
         
         ppiManager.core.addPPI = (ppi) => {
           const result = originalAddPPI(ppi);
@@ -588,6 +709,39 @@ class LocalStorageAutoSaveManager {
           this.triggerAutoSave();
           return result;
         };
+
+        // Guardar cuando se actualizan PPIs (incluye target/scope)
+        ppiManager.core.updatePPI = (ppiId, updatedData) => {
+          const result = originalUpdatePPI(ppiId, updatedData);
+          this.triggerAutoSave();
+          return result;
+        };
+      }
+      
+      // También engancharse al PPICore registrado directamente (si la UI lo usa)
+      const registry = getServiceRegistry && getServiceRegistry();
+      const ppiCore = registry ? registry.get('PPICore') : null;
+      if (ppiCore) {
+        try {
+          if (!ppiCore.__autosaveWrapped) {
+            const coreAdd = ppiCore.addPPI && ppiCore.addPPI.bind(ppiCore);
+            const coreDel = ppiCore.deletePPI && ppiCore.deletePPI.bind(ppiCore);
+            const coreUpd = ppiCore.updatePPI && ppiCore.updatePPI.bind(ppiCore);
+            
+            if (coreAdd) {
+              ppiCore.addPPI = (...args) => { const r = coreAdd(...args); this.triggerAutoSave(); return r; };
+            }
+            if (coreDel) {
+              ppiCore.deletePPI = (...args) => { const r = coreDel(...args); this.triggerAutoSave(); return r; };
+            }
+            if (coreUpd) {
+              ppiCore.updatePPI = (...args) => { const r = coreUpd(...args); this.triggerAutoSave(); return r; };
+            }
+            ppiCore.__autosaveWrapped = true;
+          }
+        } catch (wrapErr) {
+          // noop
+        }
       }
       
       console.log('🎧 Listeners de PPI configurados');
@@ -666,13 +820,21 @@ class LocalStorageAutoSaveManager {
   // === TRIGGERS CON DEBOUNCE ===
   
   triggerAutoSave() {
-    if (this.autoSaveEnabled) {
+    if (this.autoSaveEnabled && !this.suspended) {
       // Debounce para evitar demasiados guardados
       clearTimeout(this.debounceTimeout);
       this.debounceTimeout = setTimeout(() => {
         this.saveState();
       }, this.debounceDelay);
     }
+  }
+
+  // === CONTROL EXTERNO ===
+  suspendAutoSave() {
+    this.suspended = true;
+  }
+  resumeAutoSave() {
+    this.suspended = false;
   }
   
   // === UI INDICATORS ===
@@ -780,15 +942,113 @@ class LocalStorageAutoSaveManager {
         // Limpiar PPIs existentes
         ppiManager.core.ppis = [];
         
-        // Restaurar PPIs
-        this.projectState.ppi.indicators.forEach(ppi => {
-          ppiManager.core.addPPI(ppi);
+        // Restaurar PPIs (solo los que todavía existen en el canvas)
+        const modelerForCheck = resolve('BpmnModeler') || (typeof getServiceRegistry === 'function' && getServiceRegistry() && getServiceRegistry().get && getServiceRegistry().get('BpmnModeler'));
+        const elementRegistryForCheck = modelerForCheck ? modelerForCheck.get('elementRegistry') : null;
+        const kept = [];
+        const removed = [];
+        (this.projectState.ppi.indicators || []).forEach(ppi => {
+          if (!ppi || !ppi.elementId) return;
+          const exists = elementRegistryForCheck ? !!elementRegistryForCheck.get(ppi.elementId) : true;
+          if (exists) {
+            kept.push(ppi);
+            ppiManager.core.addPPI(ppi);
+          } else {
+            removed.push(ppi);
+          }
         });
-        
-        // Refrescar UI
-        if (ppiManager.ui && ppiManager.ui.refreshPPIList) {
-          ppiManager.ui.refreshPPIList();
+        // Si hay PPIs huérfanos (sin elemento en canvas), limpiarlos del estado y persistir
+        if (removed.length) {
+          this.projectState.ppi.indicators = kept;
+          try { this.saveToStorage(this.projectState); } catch (e) { /* no-op */ }
         }
+
+        // Sincronizar nombres de Scope/Target en el canvas BPMN a partir de los PPIs restaurados
+        try {
+          const modeler = resolve('BpmnModeler') || (typeof getServiceRegistry === 'function' && getServiceRegistry() && getServiceRegistry().get && getServiceRegistry().get('BpmnModeler'));
+          if (modeler) {
+            const elementRegistry = modeler.get('elementRegistry');
+            const modeling = modeler.get('modeling');
+            const elementFactory = modeler.get('elementFactory');
+            const eventBus = modeler.get('eventBus');
+
+            const indicators = Array.isArray(this.projectState.ppi.indicators) ? this.projectState.ppi.indicators : [];
+            indicators.forEach(ppi => {
+              if (!ppi || !ppi.elementId) return;
+              const ppiShape = elementRegistry.get(ppi.elementId);
+              if (!ppiShape || !ppiShape.businessObject) return;
+
+              // Buscar hijos Scope y Target bajo el mismo contenedor del PPI
+              const parent = ppiShape;
+              const children = (parent.children || []).slice();
+              const scopeElt = children.find(ch => ch && ch.businessObject && ch.businessObject.$type === 'PPINOT:Scope');
+              const targetElt = children.find(ch => ch && ch.businessObject && ch.businessObject.$type === 'PPINOT:Target');
+
+              if (typeof ppi.title === 'string' && ppi.title && ppiShape.businessObject.name !== ppi.title) {
+                // Actualizar nombre del PPI principal
+                try { modeling.updateLabel(ppiShape, ppi.title); } catch (_) { ppiShape.businessObject.name = ppi.title; eventBus.fire('element.changed', { element: ppiShape }); }
+              }
+
+              // Crear Scope/Target si faltan
+              const defaultSize = (type) => {
+                // tamaños pequeños por defecto si no están en la fábrica
+                return type === 'PPINOT:Scope' ? { width: 28, height: 28 } : { width: 25, height: 25 };
+              };
+
+              let scopeShape = scopeElt;
+              let targetShape = targetElt;
+
+              // Posiciones relativas simples dentro del PPI
+              const ppiCenter = { x: ppiShape.x + ppiShape.width / 2, y: ppiShape.y + ppiShape.height / 2 };
+
+              if (!scopeShape) {
+                const scopeBOShape = elementFactory.create('shape', { type: 'PPINOT:Scope', ...defaultSize('PPINOT:Scope') });
+                const pos = (ppi.scopePosition && typeof ppi.scopePosition.x === 'number' && typeof ppi.scopePosition.y === 'number')
+                  ? ppi.scopePosition
+                  : { x: ppiCenter.x - 60, y: ppiCenter.y };
+                scopeShape = modeling.createShape(scopeBOShape, pos, parent);
+              } else if (ppi.scopePosition && typeof ppi.scopePosition.x === 'number' && typeof ppi.scopePosition.y === 'number') {
+                const delta = { x: ppi.scopePosition.x - scopeShape.x, y: ppi.scopePosition.y - scopeShape.y };
+                if (delta.x || delta.y) modeling.moveElements([scopeShape], delta, parent);
+              }
+              if (!targetShape) {
+                const targetBOShape = elementFactory.create('shape', { type: 'PPINOT:Target', ...defaultSize('PPINOT:Target') });
+                const pos = (ppi.targetPosition && typeof ppi.targetPosition.x === 'number' && typeof ppi.targetPosition.y === 'number')
+                  ? ppi.targetPosition
+                  : { x: ppiCenter.x + 60, y: ppiCenter.y };
+                targetShape = modeling.createShape(targetBOShape, pos, parent);
+              } else if (ppi.targetPosition && typeof ppi.targetPosition.x === 'number' && typeof ppi.targetPosition.y === 'number') {
+                const delta = { x: ppi.targetPosition.x - targetShape.x, y: ppi.targetPosition.y - targetShape.y };
+                if (delta.x || delta.y) modeling.moveElements([targetShape], delta, parent);
+              }
+
+              if (scopeShape && typeof ppi.scope === 'string' && ppi.scope) {
+                try { modeling.updateLabel(scopeShape, ppi.scope); } catch (_) { scopeShape.businessObject.name = ppi.scope; eventBus.fire('element.changed', { element: scopeShape }); }
+              }
+
+              if (targetShape && typeof ppi.target === 'string' && ppi.target) {
+                try { modeling.updateLabel(targetShape, ppi.target); } catch (_) { targetShape.businessObject.name = ppi.target; eventBus.fire('element.changed', { element: targetShape }); }
+              }
+            });
+          }
+        } catch (e) {
+          // no-op: si falla la sincronización de labels, no interrumpir la restauración
+        }
+        
+        // Refrescar UI cuando el contenedor exista, con reintentos
+        const tryRefresh = (attempt = 0) => {
+          try {
+            const hasContainer = typeof document !== 'undefined' && document.getElementById('ppi-list');
+            if (hasContainer && ppiManager.ui && typeof ppiManager.ui.refreshPPIList === 'function') {
+              ppiManager.ui.refreshPPIList();
+            } else if (attempt < 5) {
+              setTimeout(() => tryRefresh(attempt + 1), 200);
+            }
+          } catch (e) {
+            // ignore
+          }
+        };
+        tryRefresh(0);
         
         console.log(`✅ ${this.projectState.ppi.indicators.length} PPIs restaurados desde localStorage`);
         return true;
@@ -809,7 +1069,23 @@ class LocalStorageAutoSaveManager {
   
   async forceRestore() {
     console.log('📂 Forzando restauración manual...');
-    return this.loadState();
+    // 1) Cargar estado desde localStorage en memoria
+    const loaded = this.loadState();
+    if (!loaded) return false;
+    // 2) Suspender autoguardado durante la restauración
+    this.suspendAutoSave();
+    try {
+      // 3) Importar BPMN y luego restaurar PPIs (Scope/Target incluidos)
+      await this.restoreBpmnState();
+      this.restorePPIState();
+      this.markRestored();
+      return true;
+    } catch (e) {
+      console.error('❌ Error en restauración completa:', e);
+      return false;
+    } finally {
+      this.resumeAutoSave();
+    }
   }
   
   clearSavedState() {

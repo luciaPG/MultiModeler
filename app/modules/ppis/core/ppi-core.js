@@ -68,6 +68,16 @@ class PPICore {
   addPPI(ppi) {
     console.log('[PPICore] addPPI called with:', ppi);
     console.log('[PPICore] Stack trace:', new Error().stack && new Error().stack.split('\n').slice(1, 4).join(' | '));
+    
+    // DEDUPLICACIÓN AGRESIVA: eliminar PPIs duplicados para el mismo elementId
+    if (ppi.elementId) {
+      const existingIndex = this.ppis.findIndex(existing => existing.elementId === ppi.elementId);
+      if (existingIndex !== -1) {
+        console.log(`[PPICore] DEDUPLICACIÓN: Eliminando PPI duplicado para elementId ${ppi.elementId}`);
+        this.ppis.splice(existingIndex, 1);
+      }
+    }
+    
     this.ppis.push(ppi);
     console.log('[PPICore] PPI added to list. Total PPIs:', this.ppis.length);
     this.savePPIs();
@@ -82,15 +92,68 @@ class PPICore {
       console.log(`🔄 [PPICore] PPI encontrado en índice ${index}, actualizando...`);
       
       const oldData = { ...this.ppis[index] };
+      // Separar metadatos internos para control de sincronización
+      const { __source, ...cleanData } = (updatedData || {});
       this.ppis[index] = { 
         ...this.ppis[index], 
-        ...updatedData, 
+        ...cleanData, 
         updatedAt: new Date().toISOString() 
       };
       
       console.log(`🔄 [PPICore] Datos anteriores:`, oldData);
       console.log(`🔄 [PPICore] Datos nuevos:`, this.ppis[index]);
       
+      // Sincronizar canvas si se cambian target/scope y el origen es formulario (evitar bucles desde canvas)
+      try {
+        const parentElementId = this.ppis[index].elementId;
+        if (__source === 'form' && parentElementId && (Object.prototype.hasOwnProperty.call(cleanData, 'target') || Object.prototype.hasOwnProperty.call(cleanData, 'scope'))) {
+          const modeler = (this.adapter && this.adapter.getBpmnModeler && this.adapter.getBpmnModeler()) || (getServiceRegistry && getServiceRegistry().get && getServiceRegistry().get('BpmnModeler')) || null;
+          if (modeler) {
+            const elementRegistry = modeler.get('elementRegistry');
+            const modeling = modeler.get('modeling');
+            const eventBus = modeler.get('eventBus');
+            const parentElement = elementRegistry && elementRegistry.get(parentElementId);
+            if (parentElement && elementRegistry && modeling) {
+              const all = elementRegistry.getAll();
+              // Actualizar Target
+              if (Object.prototype.hasOwnProperty.call(cleanData, 'target')) {
+                const targetEl = all.find(el => el.parent && el.parent.id === parentElementId && (el.type === 'PPINOT:Target' || (el.businessObject && el.businessObject.$type === 'PPINOT:Target')));
+                if (targetEl) {
+                  try {
+                    modeling.updateProperties(targetEl, { name: cleanData.target || '' });
+                    if (targetEl.businessObject) targetEl.businessObject.name = cleanData.target || '';
+                    if (eventBus) {
+                      eventBus.fire('element.changed', { element: targetEl });
+                      eventBus.fire('shape.changed', { element: targetEl });
+                    }
+                  } catch (e) {
+                    // ignore canvas sync errors
+                  }
+                }
+              }
+              // Actualizar Scope
+              if (Object.prototype.hasOwnProperty.call(cleanData, 'scope')) {
+                const scopeEl = all.find(el => el.parent && el.parent.id === parentElementId && (el.type === 'PPINOT:Scope' || (el.businessObject && el.businessObject.$type === 'PPINOT:Scope')));
+                if (scopeEl) {
+                  try {
+                    modeling.updateProperties(scopeEl, { name: cleanData.scope || '' });
+                    if (scopeEl.businessObject) scopeEl.businessObject.name = cleanData.scope || '';
+                    if (eventBus) {
+                      eventBus.fire('element.changed', { element: scopeEl });
+                      eventBus.fire('shape.changed', { element: scopeEl });
+                    }
+                  } catch (e) {
+                    // ignore canvas sync errors
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch (syncErr) {
+        // ignore sync errors
+      }
+
       this.savePPIs();
       return true;
     } else {
@@ -103,16 +166,22 @@ class PPICore {
     const index = this.ppis.findIndex(ppi => ppi.id === ppiId);
     if (index !== -1) {
       const deletedPPI = this.ppis[index];
-      
-      // Store the PPI data before removing it from the list
       const ppiData = { ...deletedPPI };
-      
+
+      // Primero eliminar del canvas (evita recreaciones) y luego de la lista
+      try {
+        this.deletePPIFromCanvas(ppiId, ppiData);
+      } catch (e) {
+        // ignore errors from canvas deletion
+      }
+
+      // Eliminar de la lista aunque el canvas ya no exista o falle
       this.ppis.splice(index, 1);
       this.savePPIs();
-      
-      // Also remove the PPI element and its children from the canvas
-      this.deletePPIFromCanvas(ppiId, ppiData);
-      
+
+      // PURGE INMEDIATO: eliminar PPIs huérfanos tras eliminación
+      this.purgeOrphanedPPIs();
+
       return true;
     }
     return false;
@@ -132,7 +201,7 @@ class PPICore {
       }
       
       if (!modeler) {
-        modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler') || null;
+        modeler = (this.adapter && this.adapter.getBpmnModeler && this.adapter.getBpmnModeler()) || (getServiceRegistry && getServiceRegistry().get && getServiceRegistry().get('BpmnModeler')) || null;
       }
       
       if (!modeler) {
@@ -158,6 +227,14 @@ class PPICore {
         console.log('❌ [deletePPIFromCanvas] PPI no tiene elementId');
         return false;
       }
+
+      // Señal al manager para evitar recreaciones durante la eliminación
+      try {
+        const mgr = this.adapter && typeof this.adapter.getPPIManager === 'function' ? this.adapter.getPPIManager() : null;
+        if (mgr && typeof mgr.beginCanvasDeletion === 'function') {
+          mgr.beginCanvasDeletion(elementId);
+        }
+      } catch (e) { /* no-op: coordinación opcional */ }
       
       const elementRegistry = modeler.get('elementRegistry');
       const modeling = modeler.get('modeling');
@@ -173,34 +250,8 @@ class PPICore {
       let ppiElement = elementRegistry.get(elementId);
       
       if (!ppiElement) {
-        console.log('⚠️ [deletePPIFromCanvas] Elemento no encontrado por ID, buscando por nombre...');
-        
-        // Buscar por nombre en elementos PPINOT
-        const allElements = elementRegistry.getAll();
-        const ppiElements = allElements.filter(el => 
-          el.type && el.type.startsWith('PPINOT:') && 
-          el.type !== 'PPINOT:Target' && 
-          el.type !== 'PPINOT:Scope' && 
-          el.type !== 'PPINOT:Measure' && 
-          el.type !== 'PPINOT:Condition' &&
-          (el.businessObject && el.businessObject.name === ppi.title)
-        );
-        
-        if (ppiElements.length > 0) {
-          ppiElement = ppiElements[0];
-          console.log('✅ [deletePPIFromCanvas] Elemento encontrado por nombre:', ppiElement.id);
-        } else {
-          // Buscar por tipo PPINOT:Ppi
-          const ppiTypeElements = allElements.filter(el => 
-            el.type === 'PPINOT:Ppi' || 
-            (el.businessObject && el.businessObject.$type === 'PPINOT:Ppi')
-          );
-          
-          if (ppiTypeElements.length > 0) {
-            ppiElement = ppiTypeElements[0];
-            console.log('✅ [deletePPIFromCanvas] Elemento encontrado por tipo PPINOT:Ppi:', ppiElement.id);
-          }
-        }
+        console.log('⚠️ [deletePPIFromCanvas] Elemento no encontrado por ID, abortando eliminación para evitar borrar el elemento equivocado');
+        return false;
       } else {
         console.log('✅ [deletePPIFromCanvas] Elemento encontrado por ID:', ppiElement.id);
       }
@@ -290,6 +341,14 @@ class PPICore {
           }
           
           return false;
+        } finally {
+          // Señal de fin de eliminación
+          try {
+            const mgr = this.adapter && typeof this.adapter.getPPIManager === 'function' ? this.adapter.getPPIManager() : null;
+            if (mgr && typeof mgr.endCanvasDeletion === 'function') {
+              mgr.endCanvasDeletion(elementId);
+            }
+          } catch (e) { /* no-op: coordinación opcional */ }
         }
       } else {
         console.log('❌ [deletePPIFromCanvas] No se encontró elemento PPI en el canvas');
@@ -311,6 +370,31 @@ class PPICore {
 
   getPPIsForElement(elementId) {
     return this.ppis.filter(ppi => ppi.elementId === elementId);
+  }
+
+  // PURGE: eliminar PPIs huérfanos cuyo elementId ya no existe en el canvas
+  purgeOrphanedPPIs() {
+    try {
+      const modeler = (this.adapter && this.adapter.getBpmnModeler && this.adapter.getBpmnModeler()) || (getServiceRegistry && getServiceRegistry().get && getServiceRegistry().get('BpmnModeler'));
+      if (!modeler) return;
+
+      const elementRegistry = modeler.get('elementRegistry');
+      if (!elementRegistry) return;
+
+      const before = this.ppis.length;
+      this.ppis = this.ppis.filter(ppi => {
+        if (!ppi.elementId) return true; // Mantener PPIs sin elementId
+        const element = elementRegistry.get(ppi.elementId);
+        return !!element; // Mantener solo si el elemento existe en canvas
+      });
+
+      if (this.ppis.length !== before) {
+        console.log(`[PPICore] PURGE: Eliminados ${before - this.ppis.length} PPIs huérfanos`);
+        this.savePPIs();
+      }
+    } catch (e) {
+      // ignore purge errors
+    }
   }
 
   // === PERSISTENCE ===
@@ -370,7 +454,7 @@ class PPICore {
       }
       
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
+      const modeler = (this.adapter && this.adapter.getBpmnModeler && this.adapter.getBpmnModeler()) || (getServiceRegistry && getServiceRegistry().get && getServiceRegistry().get('BpmnModeler'));
       
       if (!modeler) return;
       
@@ -458,7 +542,7 @@ class PPICore {
   savePPINOTRelationshipsToXML(relationships) {
     try {
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
+      const modeler = (this.adapter && this.adapter.getBpmnModeler && this.adapter.getBpmnModeler()) || (getServiceRegistry && getServiceRegistry().get && getServiceRegistry().get('BpmnModeler'));
       
       if (!modeler) return;
       
@@ -557,7 +641,7 @@ class PPICore {
   loadPPINOTRelationshipsFromXML() {
     try {
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
+      const modeler = (this.adapter && this.adapter.getBpmnModeler && this.adapter.getBpmnModeler()) || (getServiceRegistry && getServiceRegistry().get && getServiceRegistry().get('BpmnModeler'));
       
       if (!modeler) return [];
       
@@ -684,7 +768,7 @@ class PPICore {
   restorePPINOTRelationshipsFromXML(relationships) {
     try {
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
+      const modeler = (this.adapter && this.adapter.getBpmnModeler && this.adapter.getBpmnModeler()) || (getServiceRegistry && getServiceRegistry().get && getServiceRegistry().get('BpmnModeler'));
       
       if (!modeler || !relationships.length) return;
       
@@ -731,7 +815,7 @@ class PPICore {
   restorePPINOTElements() {
     try {
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
+      const modeler = (this.adapter && this.adapter.getBpmnModeler && this.adapter.getBpmnModeler()) || (getServiceRegistry && getServiceRegistry().get && getServiceRegistry().get('BpmnModeler'));
       
       if (!modeler) {
         return false;
@@ -854,7 +938,7 @@ class PPICore {
   restoreParentChildRelationship(childId, parentId, childData = null) {
     try {
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
+      const modeler = (this.adapter && this.adapter.getBpmnModeler && this.adapter.getBpmnModeler()) || (getServiceRegistry && getServiceRegistry().get && getServiceRegistry().get('BpmnModeler'));
       
       if (!modeler) return false;
       
@@ -947,7 +1031,7 @@ class PPICore {
   updatePPIWithChildInfo(parentPPIId, childElementId) {
     try {
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
+      const modeler = (this.adapter && this.adapter.getBpmnModeler && this.adapter.getBpmnModeler()) || (getServiceRegistry && getServiceRegistry().get && getServiceRegistry().get('BpmnModeler'));
       
       if (!modeler) return;
       
@@ -1153,7 +1237,7 @@ class PPICore {
     
     try {
       // Obtener modelador del nuevo sistema o fallback a window
-      const modeler = this.adapter?.getBpmnModeler() || getServiceRegistry()?.get('BpmnModeler');
+      const modeler = (this.adapter && this.adapter.getBpmnModeler && this.adapter.getBpmnModeler()) || (getServiceRegistry && getServiceRegistry().get && getServiceRegistry().get('BpmnModeler'));
       
       if (modeler) {
         const elementRegistry = modeler.get('elementRegistry');

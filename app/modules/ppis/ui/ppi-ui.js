@@ -396,15 +396,13 @@ class PPIUI {
       return;
     }
     this._isRefreshing = true;
-    console.log('[PPI-UI] refreshPPIList llamado');
+    // Silenciar logs para evitar spam cuando el panel no está montado aún
   
     // Siempre buscar el contenedor actual del panel
     const listContainer = document.querySelector('#ppi-panel #ppi-list');
     if (!listContainer) {
-      console.warn('[PPI-UI] ❌ No se encontró contenedor #ppi-list');
-      // Liberar lock y reintentar en breve (panel aún montándose)
+      // Si el contenedor no existe, liberar el lock y salir sin reintentos para evitar bucles
       this._isRefreshing = false;
-      setTimeout(() => this.refreshPPIList(), 150);
       return;
     }
   
@@ -702,30 +700,49 @@ class PPIUI {
     const deleteBtn = element.querySelector('button[data-action="delete"]');
     
     if (viewBtn) {
-      viewBtn.addEventListener('click', () => {
+      // Remover listener anterior si existe
+      if (viewBtn._clickHandler) {
+        viewBtn.removeEventListener('click', viewBtn._clickHandler);
+      }
+      viewBtn._clickHandler = () => {
         const ppiManager = resolve('PPIManagerInstance');
         if (ppiManager && typeof ppiManager.viewPPI === 'function') {
           ppiManager.viewPPI(ppi.id);
         }
-      });
+      };
+      viewBtn.addEventListener('click', viewBtn._clickHandler);
     }
     
     if (editBtn) {
-      editBtn.addEventListener('click', () => {
+      // Remover listener anterior si existe
+      if (editBtn._clickHandler) {
+        editBtn.removeEventListener('click', editBtn._clickHandler);
+      }
+      editBtn._clickHandler = () => {
         const ppiManager = resolve('PPIManagerInstance');
         if (ppiManager && typeof ppiManager.editPPI === 'function') {
           ppiManager.editPPI(ppi.id);
         }
-      });
+      };
+      editBtn.addEventListener('click', editBtn._clickHandler);
     }
     
     if (deleteBtn) {
-      deleteBtn.addEventListener('click', () => {
+      // Remover listener anterior si existe
+      if (deleteBtn._clickHandler) {
+        deleteBtn.removeEventListener('click', deleteBtn._clickHandler);
+      }
+      deleteBtn._clickHandler = () => {
+        console.log('[PPI-UI] Delete button clicked for PPI:', ppi.id);
         const ppiManager = resolve('PPIManagerInstance');
         if (ppiManager && typeof ppiManager.confirmDeletePPI === 'function') {
+          console.log('[PPI-UI] Calling confirmDeletePPI for:', ppi.id);
           ppiManager.confirmDeletePPI(ppi.id);
+        } else {
+          console.error('[PPI-UI] PPIManager not found or confirmDeletePPI not available');
         }
-      });
+      };
+      deleteBtn.addEventListener('click', deleteBtn._clickHandler);
     }
   }
 
@@ -1469,9 +1486,18 @@ class PPIUI {
       this.updateDiagramElement(ppi, 'PPINOT:Target', targetInput.value);
       // También actualizar el PPI en el core
       if (this.core && typeof this.core.updatePPI === 'function') {
-        this.core.updatePPI(ppi.id, { target: targetInput.value });
+        this.core.updatePPI(ppi.id, { target: targetInput.value, __source: 'form' });
         // Actualizar la tarjeta PPI específica inmediatamente
         this.forceUpdatePPICard(ppi.id);
+        try {
+          const registry = getServiceRegistry && getServiceRegistry();
+          const autosave = registry ? registry.get('localStorageAutoSaveManager') : null;
+          if (autosave && typeof autosave.forceSave === 'function') {
+            autosave.forceSave();
+          }
+        } catch (e) {
+          // ignore autosave errors
+        }
       }
     };
     targetInput.addEventListener('input', targetInput._syncHandler);
@@ -1487,9 +1513,18 @@ class PPIUI {
       this.updateDiagramElement(ppi, 'PPINOT:Scope', scopeInput.value);
       // También actualizar el PPI en el core
       if (this.core && typeof this.core.updatePPI === 'function') {
-        this.core.updatePPI(ppi.id, { scope: scopeInput.value });
+        this.core.updatePPI(ppi.id, { scope: scopeInput.value, __source: 'form' });
         // Actualizar la tarjeta PPI específica inmediatamente
         this.forceUpdatePPICard(ppi.id);
+        try {
+          const registry = getServiceRegistry && getServiceRegistry();
+          const autosave = registry ? registry.get('localStorageAutoSaveManager') : null;
+          if (autosave && typeof autosave.forceSave === 'function') {
+            autosave.forceSave();
+          }
+        } catch (e) {
+          // ignore autosave errors
+        }
       }
     };
     scopeInput.addEventListener('input', scopeInput._syncHandler);

@@ -1290,40 +1290,14 @@ class PanelManager {
         return;
       }
 
-      // Guardar estado completo usando Cookie AutoSave Manager (instancia)
-      const sr = getServiceRegistry();
-      let cookieManager = sr && (sr.get('cookieAutoSaveManager') || sr.get('CookieAutoSaveManager'));
-      // Si obtenemos la clase en lugar de la instancia, crearla y registrar la instancia para futuras llamadas
-      if (cookieManager && typeof cookieManager === 'function') {
-        try {
-          cookieManager = new cookieManager();
-          if (sr && sr.register) {
-            sr.register('cookieAutoSaveManager', cookieManager);
-          }
-        } catch (e) {
-          // Ignorar errores de construcción
+      // Cookies deshabilitadas: usar exclusivamente localStorage autosave
+      try {
+        const sr = getServiceRegistry();
+        const lsMgr = sr && (sr.get('localStorageAutoSaveManager') || sr.get('LocalStorageAutoSaveManager'));
+        if (lsMgr && typeof lsMgr.forceSave === 'function') {
+          await lsMgr.forceSave();
         }
-      }
-      if (cookieManager && typeof cookieManager.forceSave === 'function') {
-        console.log('💾 Guardando estado completo en cookies antes del cambio...');
-        try {
-          const savedSuccessfully = await cookieManager.forceSave();
-          console.log('💾 Estado guardado en cookies:', savedSuccessfully ? '✅ Exitoso' : '⚠️ Fallido');
-        } catch (err) {
-          console.error('❌ Error al guardar estado en cookies:', err);
-        }
-      } else {
-        // Fallback al sistema anterior si no está disponible el Cookie AutoSave Manager
-        console.log('⚠️ Cookie AutoSave Manager no disponible, usando sistema anterior...');
-        if (this.activePanels.includes('bpmn')) {
-          try {
-            const savedSuccessfully = await modelerManager.saveState();
-            console.log('💾 Estado BPMN guardado:', savedSuccessfully ? '✅ Exitoso' : '⚠️ Fallido');
-          } catch (err) {
-            console.error('❌ Error al guardar estado del modelador BPMN:', err);
-          }
-        }
-      }
+      } catch (_) {}
 
       const existingPanels = container.querySelectorAll('.panel');
       existingPanels.forEach(panel => {
@@ -1471,41 +1445,17 @@ class PanelManager {
               console.warn('Error al redimensionar el canvas después de la restauración:', resizeErr);
             }
 
-            // Restaurar estado completo desde cookies
-            const sr = getServiceRegistry();
-            let cookieManager = sr && (sr.get('cookieAutoSaveManager') || sr.get('CookieAutoSaveManager'));
-            if (cookieManager && typeof cookieManager === 'function') {
-              try {
-                cookieManager = new cookieManager();
-                if (sr && sr.register) {
-                  sr.register('cookieAutoSaveManager', cookieManager);
-                }
-              } catch (e) {
-                console.warn('No se pudo instanciar CookieAutoSaveManager:', e);
+            // Restauración mediante localStorage autosave únicamente
+            try {
+              const sr = getServiceRegistry();
+              const lsMgr = sr && (sr.get('localStorageAutoSaveManager') || sr.get('LocalStorageAutoSaveManager'));
+              if (lsMgr && typeof lsMgr.forceRestore === 'function') {
+                await lsMgr.forceRestore();
+                await lsMgr.restoreBpmnState?.();
+                lsMgr.restorePPIState?.();
               }
-            }
-            if (cookieManager && typeof cookieManager.restoreBpmnState === 'function' && cookieManager.autoSaveEnabled) {
-              setTimeout(async () => {
-                console.log('🔄 Restaurando estado completo desde cookies...');
-
-                // Restaurar estado BPMN
-                const bpmnRestored = await cookieManager.restoreBpmnState();
-                if (bpmnRestored) {
-                  console.log('✅ Estado BPMN restaurado desde cookies');
-                }
-
-                // Restaurar PPIs
-                const ppiRestored = cookieManager.autoSaveEnabled && cookieManager.restorePPIState && cookieManager.restorePPIState();
-                if (ppiRestored) {
-                  console.log('✅ PPIs restaurados desde cookies');
-                }
-                
-                console.log('✅ Restauración completa desde cookies finalizada');
-              }, 500);
-            } else {
-              // Fallback al sistema anterior
-              console.log('⚠️ Usando sistema de restauración anterior...');
-              // No-op legacy fallback
+            } catch (e) {
+              console.warn('No se pudo restaurar desde localStorage autosave:', e);
             }
           } else {
             throw new Error('No se pudo restaurar el modelador');
@@ -1518,26 +1468,17 @@ class PanelManager {
             modelerManager.initialize(canvas, true);
             console.log('Nuevo modeler BPMN inicializado como fallback');
             
-            // Restaurar estado desde cookies incluso en el fallback
-            const sr = getServiceRegistry();
-            let cookieManager = sr && (sr.get('cookieAutoSaveManager') || sr.get('CookieAutoSaveManager'));
-            if (cookieManager && typeof cookieManager === 'function') {
-              try {
-                cookieManager = new cookieManager();
-                if (sr && sr.register) {
-                  sr.register('cookieAutoSaveManager', cookieManager);
-                }
-              } catch (e) {
-                console.warn('No se pudo instanciar CookieAutoSaveManager:', e);
+            // Restaurar estado desde localStorage en el fallback
+            try {
+              const sr = getServiceRegistry();
+              const lsMgr = sr && (sr.get('localStorageAutoSaveManager') || sr.get('LocalStorageAutoSaveManager'));
+              if (lsMgr) {
+                await lsMgr.forceRestore?.();
+                await lsMgr.restoreBpmnState?.();
+                lsMgr.restorePPIState?.();
               }
-            } else {
-              // No cookie manager available in fallback path
-            }
-            if (cookieManager && typeof cookieManager.restoreBpmnState === 'function') {
-              setTimeout(async () => {
-                await cookieManager.restoreBpmnState();
-                cookieManager.restorePPIState && cookieManager.restorePPIState();
-              }, 500);
+            } catch (e2) {
+              console.warn('Fallback restore desde localStorage fallido:', e2);
             }
           } catch (initErr) {
             console.error('Error fatal al inicializar el modeler BPMN:', initErr);

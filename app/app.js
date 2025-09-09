@@ -10,6 +10,7 @@ import { PanelLoader } from './modules/ui/components/panel-loader.js';
 import modelerManager from './modules/ui/managers/modeler-manager.js';
 import './modules/ui/managers/panel-manager.js';
 import './modules/ui/managers/cookie-autosave-manager.js';
+import './modules/ui/managers/localstorage-autosave-manager.js';
 import { initializeCommunicationSystem } from './modules/ui/core/CommunicationSystem.js';
 import { getServiceRegistry } from './modules/ui/core/ServiceRegistry.js';
 import { resolve } from './services/global-access.js';
@@ -37,21 +38,16 @@ import './css/app.css';
 // Variables para autoguardado
 let autoSaveEnabled = false;
 let autoSaveInterval = null;
-let currentFileHandle = null;
-let currentDirectoryHandle = null;
+// let currentFileHandle = null; // reservado para uso futuro
+// let currentDirectoryHandle = null; // reservado para uso futuro
 let currentFileName = 'mi_diagrama.bpmn'; // Archivo único que se sobreescribe
-let autoSaveFrequency = 10000; // 10 segundos por defecto
-let lastAutoSaveTime = 0;
-let autoSaveConfigured = false;
 
 let modeler = null;
 let app = null;
 let modelerContainer = null;
 let welcomeScreen = null;
 let isModelerInitialized = false;
-let isModelerSystemInitialized = false;
-let isProcessingFile = false;
-let fileHandlersSetup = false;
+// flags no usados eliminados para satisfacer el linter
 let appInitialized = false;
 let isOpenButtonClicked = false;
 
@@ -184,6 +180,32 @@ function setupUIElements() {
 // Configurar eventos de UI
 function setupUIEvents() {
   $(function() {
+    // Detectar borrador en localStorage para mostrar botón de continuar
+    try {
+      const stored = localStorage.getItem('draft:multinotation');
+      let shouldShow = false;
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const savedAt = parsed && parsed.savedAt;
+        const value = parsed && parsed.value;
+        const notExpired = savedAt && (Date.now() - savedAt <= 3 * 60 * 60 * 1000);
+        const hasContent = value && (
+          (value.bpmn && value.bpmn.xml && typeof value.bpmn.xml === 'string' && value.bpmn.xml.trim().length > 0) ||
+          (value.ppi && Array.isArray(value.ppi.indicators) && value.ppi.indicators.length > 0) ||
+          (value.rasci && Array.isArray(value.rasci.roles) && value.rasci.roles.length > 0)
+        );
+        shouldShow = Boolean(notExpired && hasContent);
+      }
+      if (shouldShow) {
+        $('#continue-diagram-btn').show();
+      } else {
+        $('#continue-diagram-btn').hide();
+      }
+    } catch (e) {
+      console.warn('[WARN] No se pudo determinar si hay borrador en localStorage:', e);
+      $('#continue-diagram-btn').hide();
+    }
+
     // Botón de nuevo diagrama
     $('#new-diagram-btn').on('click', function() {
       console.log('[DEBUG] Botón Nuevo Diagrama clickeado');
@@ -194,6 +216,17 @@ function setupUIEvents() {
       });
 
       try {
+        // Ocultar botón de continuar si estaba visible y suprimir aviso de borrador
+        try {
+          $('#continue-diagram-btn').hide();
+          const registry = getServiceRegistry();
+          const manager = registry ? registry.get('localStorageAutoSaveManager') : null;
+          if (manager) {
+            if (typeof manager.markRestored === 'function') manager.markRestored();
+            if (typeof manager.dismissDraftNotification === 'function') manager.dismissDraftNotification();
+          }
+        } catch (_) { /* no-op */ }
+
         // Preparar UI
         console.log('[DEBUG] Ocultando welcome screen y mostrando modeler container');
         welcomeScreen.hide();
@@ -216,6 +249,82 @@ function setupUIEvents() {
     // Botón de abrir diagrama
     $('#open-diagram-btn').on('click', function() {
       openDiagramHandler();
+    });
+
+    // Botón de continuar último diagrama
+    $('#continue-diagram-btn').on('click', async function() {
+      try {
+        welcomeScreen.hide();
+        modelerContainer.show();
+        // Asegurar inicialización base
+        if (!appInitialized) {
+          await initializeApp();
+        }
+        // Restaurar desde el autosave manager
+        const registry = getServiceRegistry();
+        const manager = registry ? registry.get('localStorageAutoSaveManager') : null;
+        if (manager && typeof manager.forceRestore === 'function') {
+          // Suspender autoguardado durante restauración para evitar errores
+          if (typeof manager.suspendAutoSave === 'function') manager.suspendAutoSave();
+          const restored = await manager.forceRestore();
+          // Intentar restaurar BPMN y PPIs si hay estado cargado
+          if (restored) {
+            // 1) Restaurar BPMN primero
+            try { await manager.restoreBpmnState(); } catch (e) { console.warn('[WARN] Restauración BPMN fallida:', e); }
+            // Marcar como restaurado para suprimir futuros avisos
+            try { if (typeof manager.markRestored === 'function') manager.markRestored(); } catch (_) { /* no-op */ }
+            // Aplicar configuración de paneles guardada
+            try {
+              const panelManager = resolve('PanelManagerInstance');
+              if (panelManager && typeof panelManager.applyConfiguration === 'function') {
+                await panelManager.applyConfiguration();
+              }
+            } catch (e) {
+              console.warn('[WARN] No se pudo aplicar la configuración de paneles guardada:', e);
+            }
+            // 2) Restaurar PPIs cuando el panel ya existe
+            try {
+              // pequeño delay para asegurar montaje del panel
+              await new Promise(r => setTimeout(r, 150));
+              manager.restorePPIState();
+            } catch (e) {
+              console.warn('[WARN] Restauración PPI fallida:', e);
+            }
+          }
+          if (!restored) {
+            console.warn('[WARN] No se pudo restaurar el borrador, creando nuevo diagrama');
+            await initModeler();
+          }
+          // Reanudar autoguardado
+          if (typeof manager.resumeAutoSave === 'function') manager.resumeAutoSave();
+        } else {
+          console.warn('[WARN] Autosave manager no disponible, creando nuevo diagrama');
+          await initModeler();
+        }
+        // Ajustes de interfaz tras restaurar
+        setTimeout(() => {
+          if (typeof window !== 'undefined' && typeof $ !== 'undefined') {
+            $(window).trigger('resize');
+          }
+          try {
+            if (modeler && modeler.get('canvas')) {
+              const sr = getServiceRegistry && getServiceRegistry();
+              const ls = sr && (sr.get('localStorageAutoSaveManager') || sr.get('LocalStorageAutoSaveManager'));
+              const hasSavedView = ls && ls.projectState && ls.projectState.bpmn && ls.projectState.bpmn.position;
+              const hasRestored = ls && ls.hasRestored;
+              // Solo auto-ajustar si NO hay un viewbox/zoom restaurado
+              if (!(hasSavedView && hasRestored)) {
+                modeler.get('canvas').zoom('fit-viewport');
+              }
+            }
+          } catch (zoomErr) {
+            console.warn('[WARN] Error al ajustar zoom tras restauración:', zoomErr);
+          }
+        }, 500);
+      } catch (e) {
+        console.error('[ERROR] Error al continuar borrador:', e);
+        showErrorMessage('Error al cargar borrador: ' + e.message);
+      }
     });
 
     // ...otros eventos de UI...
@@ -248,7 +357,13 @@ async function openDiagramHandler() {
       }
       try {
         if (modeler && modeler.get('canvas')) {
-          modeler.get('canvas').zoom('fit-viewport');
+          const sr = getServiceRegistry && getServiceRegistry();
+          const ls = sr && (sr.get('localStorageAutoSaveManager') || sr.get('LocalStorageAutoSaveManager'));
+          const hasSavedView = ls && ls.projectState && ls.projectState.bpmn && ls.projectState.bpmn.position;
+          const hasRestored = ls && ls.hasRestored;
+          if (!(hasSavedView && hasRestored)) {
+            modeler.get('canvas').zoom('fit-viewport');
+          }
         }
       } catch (zoomErr) {
         console.warn('[WARN] Error al ajustar zoom:', zoomErr);
@@ -424,8 +539,8 @@ async function openFile() {
       file = await fileHandle[0].getFile();
       contents = await file.text();
       
-      // Guardar referencia al archivo actual
-      currentFileHandle = fileHandle[0];
+      // Guardar referencia al archivo actual (opcional)
+      // const currentFileHandle = fileHandle[0];
     } else {
       // Usar el método tradicional para navegadores que no soportan File System Access API
       if (typeof document !== 'undefined') {
@@ -487,12 +602,12 @@ async function openFile() {
 }
 
 // Función para guardar un archivo
-async function saveFile() {
-  // Implementación de guardar archivo...
-  if (typeof console !== 'undefined') {
-    console.log('Función saveFile no implementada');
-  }
-}
+// async function saveFile() {
+//   // Implementación de guardar archivo...
+//   if (typeof console !== 'undefined') {
+//     console.log('Función saveFile no implementada');
+//   }
+// }
 
 // Función para mostrar mensajes de error
 function showErrorMessage(message) {

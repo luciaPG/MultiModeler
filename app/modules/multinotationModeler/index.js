@@ -14,6 +14,8 @@ import BaseModule from './MultiNotationModule';
 import PPINOTModule from './notations/ppinot';
 import RALPHModule from './notations/ralph';
 import { MultiNotationModelerCore } from './core/MultiNotationModelerCore.js';
+import PPINOTModdle from './notations/ppinot/PPINOTModdle.json';
+import RALphModdle from './notations/ralph/RALphModdle.json';
 
 /**
  * MultiNotation Modeler class
@@ -27,7 +29,11 @@ class MultiNotationModeler extends Modeler {
         PPINOTModule,
         RALPHModule, 
         ...(options.additionalModules || [])
-      ]
+      ],
+      moddleExtensions: assign({}, options.moddleExtensions || {}, {
+        PPINOT: PPINOTModdle,
+        RALph: RALphModdle
+      })
     });
 
     super(enhancedOptions);

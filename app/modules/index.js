@@ -11,6 +11,7 @@ import * as ralphModule from './multinotationModeler/notations/ralph/index.js';
 import * as rasciModule from './rasci/index.js';
 import * as ppisModule from './ppis/index.js';
 import { getServiceRegistry } from './ui/core/ServiceRegistry.js';
+import CanvasUtils from './ui/utils/canvas-utils.js';
 
 /**
  * Initialize the application with all modules
@@ -65,6 +66,11 @@ export async function initializeApplication(options = {}) {
     
     // Initialize the core
     await multiNotationModeler.initialize();
+    
+    // Register CanvasUtils globally
+    if (registry) {
+      registry.register('CanvasUtils', CanvasUtils);
+    }
     
     // Initialize independent modules
     const rasci = await rasciModule.initialize({

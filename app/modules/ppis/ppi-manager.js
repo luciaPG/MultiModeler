@@ -5,6 +5,12 @@ import { getServiceRegistry } from '../ui/core/ServiceRegistry.js';
 
 class PPIManager {
   constructor() {
+    // Guards to avoid duplicate deletions (list <-> canvas)
+    this._deletingPPIIds = new Set();
+    this._deletingElementIds = new Set();
+    this._isDeleting = false;
+    this._recentlyDeletedElements = new Map(); // elementId -> timestamp
+    this._creationCooldownMs = 1500; // ventana ampliada para ignorar recreaciones
     // Prevenir inicializaciones duplicadas
     if (PPIManager._instance) {
       console.warn('[PPI-Manager] Instance already exists, returning existing instance');
@@ -329,9 +335,24 @@ class PPIManager {
       // MEJORADO: Listener para eliminación de PPIs del canvas
       const removeHandler = (event) => {
         console.log('[PPI-Manager] Element removed event:', event);
-        if (event.element && this.core && this.core.isPPIElement && this.core.isPPIElement(event.element)) {
-          console.log('[PPI-Manager] PPINOT element removed:', event.element.id);
-          this.removePPIFromList(event.element.id);
+        const el = event && event.element;
+        if (el && this.core && this.core.isPPIElement && this.core.isPPIElement(el)) {
+          const elementId = el.id;
+          if (this._deletingElementIds.has(elementId)) {
+            console.log('[PPI-Manager] Skip duplicate remove for element:', elementId);
+            return;
+          }
+          this._deletingElementIds.add(elementId);
+          // Marcar como borrado reciente para que los handlers de creación lo ignoren
+          this._recentlyDeletedElements.set(elementId, Date.now());
+          console.log('[PPI-Manager] PPINOT element removed:', elementId);
+          try {
+            if (!this._isDeleting) {
+              this.removePPIFromList(elementId);
+            }
+          } finally {
+            setTimeout(() => this._deletingElementIds.delete(elementId), 300);
+          }
         }
       };
       eventBus.on('element.removed', removeHandler);
@@ -344,7 +365,9 @@ class PPIManager {
         if (element && this.core && this.core.isPPIElement && this.core.isPPIElement(element)) {
           console.log('[PPI-Manager] PPINOT element detected:', element.id, element.type);
           const existingPPI = this.core.ppis && this.core.ppis.find(ppi => ppi.elementId === element.id);
-          if (!existingPPI) {
+          const lastDel = this._recentlyDeletedElements.get(element.id) || 0;
+          const withinCooldown = Date.now() - lastDel < this._creationCooldownMs;
+          if (!existingPPI && !this._isDeleting && !withinCooldown) {
             console.log('[PPI-Manager] Creating PPI from element:', element.id);
             // MEJORADO: Usar delay más corto para respuesta más rápida
             setTimeout(() => this.createPPIFromElement(element.id), 50);
@@ -365,7 +388,9 @@ class PPIManager {
           const element = event && event.element;
           if (element && this.core && this.core.isPPIElement && this.core.isPPIElement(element)) {
             const exists = this.core.ppis && this.core.ppis.find(ppi => ppi.elementId === element.id);
-            if (!exists) {
+            const lastDel = this._recentlyDeletedElements.get(element.id) || 0;
+            const withinCooldown = Date.now() - lastDel < this._creationCooldownMs;
+            if (!exists && !this._isDeleting && !withinCooldown) {
               setTimeout(() => this.createPPIFromElement(element.id), 10);
             }
           }
@@ -383,7 +408,9 @@ class PPIManager {
           const shape = context && (context.shape || context.element);
           if (shape && this.core && this.core.isPPIElement && this.core.isPPIElement(shape)) {
             const exists = this.core.ppis && this.core.ppis.find(ppi => ppi.elementId === shape.id);
-            if (!exists) {
+            const lastDel = this._recentlyDeletedElements.get(shape.id) || 0;
+            const withinCooldown = Date.now() - lastDel < this._creationCooldownMs;
+            if (!exists && !this._isDeleting && !withinCooldown) {
               setTimeout(() => this.createPPIFromElement(shape.id), 10);
             }
           }
@@ -432,7 +459,9 @@ class PPIManager {
           if (!existingPPI) {
             console.log('📝 Creating PPI from shape.changed:', element.id);
             // Usar un flag para evitar creación duplicada
-            if (!this._creatingPPI) {
+            const lastDel = this._recentlyDeletedElements.get(element.id) || 0;
+            const withinCooldown = Date.now() - lastDel < this._creationCooldownMs;
+            if (!this._creatingPPI && !this._isDeleting && !withinCooldown) {
               this._creatingPPI = true;
               setTimeout(() => {
                 this.createPPIFromElement(element.id);
@@ -450,14 +479,20 @@ class PPIManager {
         // NUEVO: Detectar elementos Target y Scope que son hijos de PPIs
         if (element && element.parent && element.parent.type === 'PPINOT:Ppi') {
           if (element.type === 'PPINOT:Target' || element.type === 'PPINOT:Scope') {
-            console.log('📝 Target/Scope changed:', element.type, element.id, 'parent:', element.parent.id);
+            const parentId = element && element.parent ? element.parent.id : null;
+            const childId = element ? element.id : null;
+            console.log('📝 Target/Scope changed:', element && element.type, childId, 'parent:', parentId);
             console.log('📝 Element name:', element.businessObject && element.businessObject.name);
             console.log('📝 Full element:', element);
             
             // Actualizar el PPI padre con la información del hijo
             setTimeout(() => {
-              console.log('📝 Calling updatePPIWithChildInfo for:', element.parent.id, element.id);
-              this.updatePPIWithChildInfo(element.parent.id, element.id);
+              if (parentId && childId) {
+                console.log('📝 Calling updatePPIWithChildInfo for:', parentId, childId);
+                this.updatePPIWithChildInfo(parentId, childId);
+              } else {
+                console.warn('[PPI-Manager] Skip updatePPIWithChildInfo: parentId/childId nulos tras shape.changed');
+              }
               // Refrescar la UI para mostrar los cambios
               if (this.ui) {
                 console.log('📝 Refreshing UI after Target/Scope update');
@@ -478,7 +513,14 @@ class PPIManager {
         
         if (selectedElements.length === 1) {
           const selectedElement = selectedElements[0];
-          console.log(`[PPI-Manager] Elemento seleccionado:`, selectedElement.id, selectedElement.type);
+          if (!selectedElement) {
+            console.log('[PPI-Manager] Elemento seleccionado es null, limpiando selección');
+            if (this.ui && typeof this.ui.clearPPISelection === 'function') {
+              this.ui.clearPPISelection();
+            }
+            return;
+          }
+          console.log(`[PPI-Manager] Elemento seleccionado:`, selectedElement && selectedElement.id, selectedElement && selectedElement.type);
           
           // Buscar si el elemento seleccionado corresponde a un PPI
           const ppi = this.findPPIByElement(selectedElement);
@@ -517,12 +559,18 @@ class PPIManager {
         
         if (element && element.parent && element.parent.type === 'PPINOT:Ppi') {
           if (element.type === 'PPINOT:Target' || element.type === 'PPINOT:Scope') {
-            console.log('🔄 Target/Scope properties changed:', element.type, element.id);
+            console.log('🔄 Target/Scope properties changed:', element && element.type, element && element.id);
             console.log('🔄 New name:', element.businessObject && element.businessObject.name);
             
             setTimeout(() => {
               console.log('🔄 Updating PPI from element.changed');
-              this.updatePPIWithChildInfo(element.parent.id, element.id);
+              const parentId = element && element.parent ? element.parent.id : null;
+              const childId = element ? element.id : null;
+              if (parentId && childId) {
+                this.updatePPIWithChildInfo(parentId, childId);
+              } else {
+                console.warn('[PPI-Manager] element.parent o element.id es null; se omite updatePPIWithChildInfo');
+              }
               if (this.ui) {
                 this.ui.refreshPPIList();
               }
@@ -574,7 +622,7 @@ class PPIManager {
       // Verificar si cada elemento PPINOT tiene un PPI correspondiente
       ppiElements.forEach(element => {
         const existingPPI = this.core.ppis.find(ppi => ppi.elementId === element.id);
-        if (!existingPPI) {
+        if (!existingPPI && !this._isDeleting) {
           console.log(`[PPI-Manager] Elemento PPINOT sin PPI correspondiente: ${element.id}, creando PPI`);
           setTimeout(() => {
             this.createPPIFromElement(element.id);
@@ -785,6 +833,16 @@ class PPIManager {
   createPPIFromElement(elementId) {
     console.log('[PPI-Manager] createPPIFromElement called with:', elementId);
     try {
+      // Evitar creación si estamos en proceso de borrado o en cooldown para este elemento
+      const lastDel = this._recentlyDeletedElements.get(elementId) || 0;
+      const withinCooldown = Date.now() - lastDel < this._creationCooldownMs;
+      if (this._isDeleting || withinCooldown) {
+        console.log('[PPI-Manager] Skipping PPI creation due to deletion in progress/cooldown:', {
+          isDeleting: this._isDeleting,
+          withinCooldown
+        });
+        return;
+      }
       let elementName = elementId;
       
       // Obtener modelador del nuevo sistema o fallback a window
@@ -963,6 +1021,39 @@ class PPIManager {
     this.ui.showCreatePPIModal();
   }
 
+  /**
+   * Marcar el inicio de una eliminación en el canvas para un elemento PPINOT
+   * Esto evita recreaciones y elimina duplicadas disparadas por eventos
+   */
+  beginCanvasDeletion(elementId) {
+    try {
+      this._isDeleting = true;
+      if (elementId) {
+        this._deletingElementIds.add(elementId);
+        this._recentlyDeletedElements.set(elementId, Date.now());
+      }
+    } catch (_) { /* no-op: coordinación opcional */ }
+  }
+
+  /**
+   * Marcar el fin de una eliminación en el canvas para un elemento PPINOT
+   */
+  endCanvasDeletion(elementId) {
+    try {
+      if (elementId) {
+        this._deletingElementIds.delete(elementId);
+        this._recentlyDeletedElements.set(elementId, Date.now());
+      }
+      
+      // PURGE INMEDIATO tras eliminación
+      if (this.core && typeof this.core.purgeOrphanedPPIs === 'function') {
+        this.core.purgeOrphanedPPIs();
+      }
+    } finally {
+      this._isDeleting = false;
+    }
+  }
+
   viewPPI(ppiId) {
     const ppi = this.core.getPPI(ppiId);
     if (!ppi) return;
@@ -976,37 +1067,222 @@ class PPIManager {
   }
 
   confirmDeletePPI(ppiId) {
-    if (confirm('¿Estás seguro de que quieres eliminar este PPI?')) {
-      if (this.core.deletePPI(ppiId)) {
-        this.ui.showSuccessMessage('PPI eliminado exitosamente');
-        this.ui.refreshPPIList();
+    console.log('[PPI-Manager] confirmDeletePPI called for:', ppiId);
+    console.log('[PPI-Manager] Current deleting PPIs:', Array.from(this._deletingPPIIds));
+    console.log('[PPI-Manager] Is currently deleting:', this._isDeleting);
+    
+    const proceed = () => {
+      console.log('[PPI-Manager] Modal confirmed, proceeding with deletion for:', ppiId);
+      if (this._deletingPPIIds.has(ppiId)) {
+        console.log('[PPI-Manager] PPI already being deleted, skipping:', ppiId);
+        return;
       }
-    }
+      this._deletingPPIIds.add(ppiId);
+      try {
+        this._isDeleting = true;
+        console.log('[PPI-Manager] Starting deletion process for:', ppiId);
+        if (this.core.deletePPI(ppiId)) {
+          console.log('[PPI-Manager] PPI deleted successfully:', ppiId);
+          this.ui.showSuccessMessage('PPI eliminado exitosamente');
+          this.ui.refreshPPIList();
+        } else {
+          console.log('[PPI-Manager] Failed to delete PPI:', ppiId);
+        }
+      } finally {
+        this._isDeleting = false;
+        setTimeout(() => this._deletingPPIIds.delete(ppiId), 300);
+      }
+    };
+
+    // Usar modal de confirmación del proyecto en lugar de window.confirm
+    console.log('[PPI-Manager] Showing confirmation modal for:', ppiId);
+    this.showConfirmModal('¿Estás seguro de que quieres eliminar este PPI?', proceed);
   }
 
   removePPIFromList(ppiId) {
     try {
+      if (this._deletingPPIIds.has(ppiId)) {
+        return;
+      }
       // Buscar el PPI por elementId
       const ppi = this.core.ppis.find(ppi => ppi.elementId === ppiId);
       if (ppi) {
-        // Usar la función deletePPI del core que también elimina del canvas
-        if (this.core.deletePPI(ppi.id)) {
+        this._deletingPPIIds.add(ppi.id);
+        // Si viene del canvas (elementId), solo eliminar de la lista, no del canvas
+        // porque el canvas ya se eliminó (eso disparó este evento)
+        try {
+          this._isDeleting = true;
+          
+          // Eliminar solo de la lista, no del canvas
+          this.core.ppis = this.core.ppis.filter(p => p.id !== ppi.id);
+          this.core.savePPIs();
+          
           // Refresh the UI
           this.ui.refreshPPIList();
           this.ui.showSuccessMessage(`PPI eliminado: ${ppi.title || ppiId}`);
+        } finally {
+          this._isDeleting = false;
         }
+        setTimeout(() => this._deletingPPIIds.delete(ppi.id), 300);
       } else {
         // Buscar por ID directo como fallback
         const ppiById = this.core.ppis.find(ppi => ppi.id === ppiId);
         if (ppiById) {
-          if (this.core.deletePPI(ppiById.id)) {
-            this.ui.refreshPPIList();
-            this.ui.showSuccessMessage(`PPI eliminado: ${ppiById.title || ppiId}`);
+          this._deletingPPIIds.add(ppiById.id);
+          try {
+            this._isDeleting = true;
+            if (this.core.deletePPI(ppiById.id)) {
+              this.ui.refreshPPIList();
+              this.ui.showSuccessMessage(`PPI eliminado: ${ppiById.title || ppiId}`);
+            } else {
+              // Fallback: eliminar solo de la lista
+              this.core.ppis = this.core.ppis.filter(p => p.id !== ppiById.id);
+              this.ui.refreshPPIList();
+              this.ui.showSuccessMessage(`PPI eliminado de la lista: ${ppiById.title || ppiId}`);
+            }
+          } finally {
+            this._isDeleting = false;
+          }
+          setTimeout(() => this._deletingPPIIds.delete(ppiById.id), 300);
+        } else {
+          // Fallback adicional: purgar PPIs huérfanos cuyo elementId ya no exista en el canvas
+          try {
+            const modeler = this.getBpmnModeler && this.getBpmnModeler();
+            const er = modeler && modeler.get && modeler.get('elementRegistry');
+            if (er) {
+              const before = this.core.ppis.length;
+              this.core.ppis = this.core.ppis.filter(p => !p.elementId || er.get(p.elementId));
+              if (this.core.ppis.length !== before) {
+                this.ui.refreshPPIList();
+              }
+            }
+          } catch (purgeErr) {
+            // no-op
           }
         }
       }
     } catch (error) {
       // Error removiendo PPI de la lista
+    }
+  }
+
+  // Modal de confirmación estilizado (reutilizable)
+  showConfirmModal(message, onConfirm) {
+    console.log('[PPI-Manager] showConfirmModal called with message:', message);
+    try {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay ppi-confirm-modal';
+      overlay.innerHTML = `
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3><i class="fas fa-trash-alt"></i> Confirmar eliminación</h3>
+            <button class="modal-close" aria-label="Cerrar">×</button>
+          </div>
+          <div class="modal-body">
+            <div class="warning-container" style="max-width: 500px; margin: 0 auto;">
+              <div class="warning-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+              </div>
+              <div class="warning-content">
+                <p class="warning-title">${message}</p>
+                <p class="warning-subtitle">Esta acción no se puede deshacer.</p>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary btn-cancel">Cancelar</button>
+            <button class="btn btn-danger btn-accept">
+              <span class="btn-text">Eliminar</span>
+              <span class="btn-loading" style="display: none;">
+                <div class="loading-spinner"></div>
+              </span>
+            </button>
+          </div>
+        </div>`;
+
+      const close = () => {
+        if (overlay.parentNode) {
+          overlay.classList.remove('active');
+          setTimeout(() => {
+            if (overlay.parentNode) {
+              overlay.parentNode.removeChild(overlay);
+            }
+          }, 300);
+        }
+      };
+
+      // Animación de entrada
+      document.body.appendChild(overlay);
+      setTimeout(() => {
+        overlay.classList.add('active');
+      }, 10);
+
+      // Event listeners
+      overlay.querySelector('.modal-close').addEventListener('click', close);
+      overlay.querySelector('.btn-cancel').addEventListener('click', close);
+      
+      // Cerrar al hacer clic en el overlay (fuera del modal)
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) close();
+      });
+
+      // Cerrar con Escape
+      const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+          close();
+          document.removeEventListener('keydown', handleEscape);
+        }
+      };
+      document.addEventListener('keydown', handleEscape);
+
+      overlay.querySelector('.btn-accept').addEventListener('click', () => {
+        console.log('[PPI-Manager] Modal accept button clicked');
+        const btn = overlay.querySelector('.btn-accept');
+        
+        // Mostrar estado de carga
+        btn.disabled = true;
+        btn.classList.add('loading');
+        
+        try {
+          // Ejecutar confirmación de forma asíncrona
+          if (onConfirm) {
+            console.log('[PPI-Manager] Executing onConfirm callback');
+            // Usar Promise para manejar la eliminación de forma asíncrona
+            Promise.resolve(onConfirm()).then(() => {
+              console.log('[PPI-Manager] onConfirm completed successfully');
+              // Cerrar modal después de que se complete la eliminación
+              setTimeout(() => {
+                close();
+                document.removeEventListener('keydown', handleEscape);
+              }, 300);
+            }).catch((error) => {
+              console.error('Error en confirmación:', error);
+              // En caso de error, restaurar botón y cerrar
+              btn.disabled = false;
+              btn.classList.remove('loading');
+              close();
+              document.removeEventListener('keydown', handleEscape);
+            });
+          } else {
+            console.log('[PPI-Manager] No onConfirm callback provided');
+            // Si no hay onConfirm, cerrar inmediatamente
+            close();
+            document.removeEventListener('keydown', handleEscape);
+          }
+        } catch (error) {
+          console.error('Error ejecutando confirmación:', error);
+          // En caso de error, restaurar botón y cerrar
+          btn.disabled = false;
+          btn.classList.remove('loading');
+          close();
+          document.removeEventListener('keydown', handleEscape);
+        }
+      });
+
+    } catch (e) {
+      console.error('Error creando modal de confirmación:', e);
+      // Fallback silencioso si el modal falla
+      if (typeof onConfirm === 'function') onConfirm();
     }
   }
 
@@ -1666,7 +1942,7 @@ class PPIManager {
         try {
           const canvas = modeler.get('canvas');
           if (canvas && typeof canvas.zoom === 'function') {
-            canvas.zoom('fit-viewport', element);
+            this.safeZoomToElement(canvas, element);
           }
         } catch (zoomError) {
           // Si el zoom falla, al menos intentar scrollTo
@@ -1686,6 +1962,39 @@ class PPIManager {
       }
     } catch (error) {
       console.error('Error seleccionando PPI en canvas:', error);
+    }
+  }
+
+  /**
+   * Zoom seguro al elemento evitando errores de matriz no invertible
+   * @param {Object} canvas - Canvas del modeler
+   * @param {Object} element - Elemento al que hacer zoom
+   */
+  safeZoomToElement(canvas, element) {
+    // Usar la utilidad global si está disponible
+    const CanvasUtils = getServiceRegistry && getServiceRegistry().get('CanvasUtils');
+    if (CanvasUtils) {
+      const success = CanvasUtils.safeZoomToElement(canvas, element);
+      if (!success) {
+        // Fallback a scroll si el zoom falla
+        CanvasUtils.safeScrollToElement(canvas, element);
+      }
+      return;
+    }
+
+    // Fallback local si CanvasUtils no está disponible
+    try {
+      if (!canvas || !element) return;
+
+      try {
+        canvas.zoom('fit-viewport', element);
+      } catch (fitError) {
+        if (canvas.scrollToElement) {
+          canvas.scrollToElement(element);
+        }
+      }
+    } catch (error) {
+      console.warn('Error en zoom seguro:', error.message);
     }
   }
 }
