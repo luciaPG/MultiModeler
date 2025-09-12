@@ -3,6 +3,7 @@
 
 import { rasciManager } from '../core/matrix-manager.js';
 import { executeRasciToRalphMapping } from './auto-mapper.js';
+import { getServiceRegistry } from '../../ui/core/ServiceRegistry.js';
 import { 
   getElementName, 
   saveOriginalFlow, 
@@ -60,6 +61,7 @@ function isConnectedToTask(modeler, sourceElement, targetTask, visited = new Set
 
 // Función para hacer una limpieza completa de todos los elementos RALph y especiales
 function performCompleteCleanup(modeler) {
+  console.log('🧹 [CLEANUP] Iniciando limpieza completa de elementos RALph...');
   
   const elementRegistry = modeler.get('elementRegistry');
   const modeling = modeler.get('modeling');
@@ -71,11 +73,15 @@ function performCompleteCleanup(modeler) {
     conn.type === 'RALph:ResourceArc' || conn.type === 'bpmn:Association'
   );
   
+  console.log(`🔍 [CLEANUP] Encontradas ${allRalphConnections.length} conexiones RALph`);
+  
   if (allRalphConnections.length > 0) {
     try {
       modeling.removeElements(allRalphConnections);
       elementsRemoved += allRalphConnections.length;
+      console.log(`✅ [CLEANUP] Eliminadas ${allRalphConnections.length} conexiones RALph`);
     } catch (e) {
+      console.warn('⚠️ [CLEANUP] Error eliminando conexiones RALph:', e);
     }
   }
   
@@ -87,11 +93,15 @@ function performCompleteCleanup(modeler) {
      element.businessObject.name.startsWith('Informar '))
   );
   
+  console.log(`🔍 [CLEANUP] Encontrados ${allSpecialElements.length} elementos especiales`);
+  
   if (allSpecialElements.length > 0) {
     try {
       modeling.removeElements(allSpecialElements);
       elementsRemoved += allSpecialElements.length;
+      console.log(`✅ [CLEANUP] Eliminados ${allSpecialElements.length} elementos especiales`);
     } catch (e) {
+      console.warn('⚠️ [CLEANUP] Error eliminando elementos especiales:', e);
     }
   }
   
@@ -100,11 +110,15 @@ function performCompleteCleanup(modeler) {
     element.type === 'RALph:RoleRALph' || element.type === 'ralph:Role'
   );
   
+  console.log(`🔍 [CLEANUP] Encontrados ${allRalphRoles.length} roles RALph`);
+  
   if (allRalphRoles.length > 0) {
     try {
       modeling.removeElements(allRalphRoles);
       elementsRemoved += allRalphRoles.length;
+      console.log(`✅ [CLEANUP] Eliminados ${allRalphRoles.length} roles RALph`);
     } catch (e) {
+      console.warn('⚠️ [CLEANUP] Error eliminando roles RALph:', e);
     }
   }
   
@@ -113,14 +127,19 @@ function performCompleteCleanup(modeler) {
     element.type === 'RALph:Complex-Assignment-AND'
   );
   
+  console.log(`🔍 [CLEANUP] Encontrados ${allAndGates.length} AND Gates`);
+  
   if (allAndGates.length > 0) {
     try {
       modeling.removeElements(allAndGates);
       elementsRemoved += allAndGates.length;
+      console.log(`✅ [CLEANUP] Eliminados ${allAndGates.length} AND Gates`);
     } catch (e) {
+      console.warn('⚠️ [CLEANUP] Error eliminando AND Gates:', e);
     }
   }
   
+  console.log(`🎯 [CLEANUP] Limpieza completa terminada - Total elementos eliminados: ${elementsRemoved}`);
   return elementsRemoved;
 }
 
@@ -171,6 +190,7 @@ function performSelectiveCleanup(modeler, matrix) {
       modeling.removeElements(rolesToRemove);
       elementsRemoved += rolesToRemove.length;
     } catch (e) {
+      console.warn('⚠️ Error en limpieza de conexiones RALph:', e);
     }
   }
   
@@ -192,6 +212,7 @@ function performSelectiveCleanup(modeler, matrix) {
       modeling.removeElements(specialElementsToRemove);
       elementsRemoved += specialElementsToRemove.length;
     } catch (e) {
+      console.warn('⚠️ Error en limpieza de conexiones RALph:', e);
     }
   }
   
@@ -208,6 +229,7 @@ function performSelectiveCleanup(modeler, matrix) {
       modeling.removeElements(orphanedConnections);
       elementsRemoved += orphanedConnections.length;
     } catch (e) {
+      console.warn('⚠️ Error en limpieza de conexiones RALph:', e);
     }
   }
   
@@ -228,6 +250,7 @@ function handleRolesAndAssignments(modeler, matrix, results) {
     try {
       modeling.removeElements(existingRalphConnections);
     } catch (e) {
+      console.warn('⚠️ Error en limpieza de conexiones RALph:', e);
     }
   }
   
@@ -324,14 +347,38 @@ function handleRolesAndAssignments(modeler, matrix, results) {
 }
 
 export function executeSimpleRasciMapping(modeler, matrix) {
+  console.log('🚀 [SIMPLE-MAPPER] Iniciando mapeo completo de matriz...');
+  console.log('🔍 [SIMPLE-MAPPER] Matriz a mapear:', JSON.stringify(matrix, null, 2));
+  
   if (!modeler) return { error: 'Modeler no disponible' };
   
   const elementRegistry = modeler.get('elementRegistry');
   if (!elementRegistry) return { error: 'elementRegistry no disponible' };
   
+  // Validar reglas RASCI antes de ejecutar el mapeo
+  const sr = typeof getServiceRegistry === 'function' ? getServiceRegistry() : null;
+  if (sr && typeof sr.getFunction === 'function') {
+    const validateRasciCriticalRules = sr.getFunction('validateRasciCriticalRules');
+    if (typeof validateRasciCriticalRules === 'function') {
+      console.log('🔍 [SIMPLE-MAPPER] Validando reglas RASCI críticas...');
+      const validation = validateRasciCriticalRules();
+      if (!validation.isValid) {
+        console.log('⚠️ [SIMPLE-MAPPER] Mapeo bloqueado - Reglas RASCI no cumplidas:');
+        validation.errors.forEach(error => console.log('  ✗ ' + error));
+        return { error: 'Reglas RASCI no cumplidas', validationErrors: validation.errors };
+      }
+      console.log('✅ [SIMPLE-MAPPER] Reglas RASCI críticas validadas correctamente');
+    } else {
+      console.log('⚠️ [SIMPLE-MAPPER] Función validateRasciCriticalRules no encontrada - continuando sin validación');
+    }
+  }
+  
+  console.log('🧹 [SIMPLE-MAPPER] Iniciando limpieza completa de elementos existentes...');
   
   // 🧹 LIMPIEZA COMPLETA: Eliminar TODOS los elementos RALph y especiales existentes
   const completeCleanupCount = performCompleteCleanup(modeler);
+  
+  console.log(`✅ [SIMPLE-MAPPER] Limpieza completa terminada - ${completeCleanupCount} elementos eliminados`);
   
   originalFlowMap.clear();
   saveOriginalFlow(modeler);
@@ -353,12 +400,20 @@ export function executeSimpleRasciMapping(modeler, matrix) {
     }
   });
   
-  // 🔥 CREAR ELEMENTOS ESPECIALES PRIMERO
+  // 🔥 CREAR ELEMENTOS ESPECIALES PRIMERO (A, C, I)
+  console.log('🔥 [SIMPLE-MAPPER] CREANDO ELEMENTOS ESPECIALES A, C, I...');
   Object.keys(matrix).forEach(taskName => {
     const taskRoles = matrix[taskName];
     const bpmnTask = taskMappings[taskName];
     
-    if (!bpmnTask) return;
+    console.log(`🔍 [SIMPLE-MAPPER] Procesando tarea: ${taskName}`);
+    console.log(`🔍 [SIMPLE-MAPPER] Roles de tarea:`, taskRoles);
+    console.log(`🔍 [SIMPLE-MAPPER] BPMN Task encontrada:`, !!bpmnTask);
+    
+    if (!bpmnTask) {
+      console.log(`⚠️ [SIMPLE-MAPPER] Saltando ${taskName} - No se encontró BPMN Task`);
+      return;
+    }
     
     const consultRoles = [];
     const approveRoles = [];
@@ -374,18 +429,27 @@ export function executeSimpleRasciMapping(modeler, matrix) {
       switch (responsibility) {
         case 'C':
           consultRoles.push(roleKey);
+          console.log(`📞 [SIMPLE-MAPPER] Rol ${roleKey} marcado para CONSULTA`);
           break;
         case 'A':
           approveRoles.push(roleKey);
+          console.log(`✅ [SIMPLE-MAPPER] Rol ${roleKey} marcado para APROBACIÓN`);
           break;
         case 'I':
           informRoles.push(roleKey);
+          console.log(`📢 [SIMPLE-MAPPER] Rol ${roleKey} marcado para INFORMACIÓN`);
           break;
       }
     });
     
+    console.log(`📊 [SIMPLE-MAPPER] Tarea ${taskName} - Consultas: ${consultRoles.length}, Aprobaciones: ${approveRoles.length}, Informaciones: ${informRoles.length}`);
+    
     if (consultRoles.length > 0 || approveRoles.length > 0 || informRoles.length > 0) {
+      console.log(`🚀 [SIMPLE-MAPPER] Creando elementos especiales para ${taskName}...`);
       createSequentialSpecialElements(modeler, bpmnTask, consultRoles, approveRoles, informRoles, results);
+      console.log(`✅ [SIMPLE-MAPPER] Elementos especiales creados para ${taskName}`);
+    } else {
+      console.log(`ℹ️ [SIMPLE-MAPPER] No hay elementos A, C, I para ${taskName}`);
     }
   });
   
@@ -419,6 +483,16 @@ export function executeSimpleRasciMapping(modeler, matrix) {
   setTimeout(() => {
     setupElementDeletionListener();
   }, 500);
+  
+  console.log('✅ [SIMPLE-MAPPER] Mapeo completo terminado');
+  console.log('📊 [SIMPLE-MAPPER] Resultados del mapeo:', {
+    elementosEliminados: results.elementsRemoved,
+    rolesCreados: results.rolesCreated,
+    asignacionesRoles: results.roleAssignments,
+    tareasAprobacion: results.approvalTasks,
+    flujosMensaje: results.messageFlows,
+    eventosInfo: results.infoEvents
+  });
   
   return results;
 }

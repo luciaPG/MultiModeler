@@ -102,8 +102,10 @@ function createRalphRole(modeler, roleName, results) {
       
       while (attempts < maxAttempts) {
         const isOccupied = existingRoles.some(role => {
+          const roleX = role.x || (role.bounds && role.bounds.x) || 0;
+          const roleY = role.y || (role.bounds && role.bounds.y) || 0;
           const distance = Math.sqrt(
-            Math.pow(role.x - position.x, 2) + Math.pow(role.y - position.y, 2)
+            Math.pow(roleX - position.x, 2) + Math.pow(roleY - position.y, 2)
           );
           return distance < (roleWidth + margin);
         });
@@ -229,7 +231,9 @@ function createAndGate(modeler, bpmnTask, roles, results) {
       element.type === 'RALph:Complex-Assignment-AND'
     );
     
-    let position = { x: bpmnTask.x + 200, y: bpmnTask.y };
+    const taskX = bpmnTask.x || (bpmnTask.bounds && bpmnTask.bounds.x) || 0;
+    const taskY = bpmnTask.y || (bpmnTask.bounds && bpmnTask.bounds.y) || 0;
+    let position = { x: taskX + 200, y: taskY };
     
     let attempts = 0;
     const maxAttempts = 10;
@@ -237,13 +241,15 @@ function createAndGate(modeler, bpmnTask, roles, results) {
     const gateHeight = 50;
     const margin = 100;
     
-    while (attempts < maxAttempts) {
-      const isOccupied = existingAndGates.some(gate => {
-        const distance = Math.sqrt(
-          Math.pow(gate.x - position.x, 2) + Math.pow(gate.y - position.y, 2)
-        );
-        return distance < (gateWidth + margin);
-      });
+      while (attempts < maxAttempts) {
+        const isOccupied = existingAndGates.some(gate => {
+          const gateX = gate.x || (gate.bounds && gate.bounds.x) || 0;
+          const gateY = gate.y || (gate.bounds && gate.bounds.y) || 0;
+          const distance = Math.sqrt(
+            Math.pow(gateX - position.x, 2) + Math.pow(gateY - position.y, 2)
+          );
+          return distance < (gateWidth + margin);
+        });
       
       if (!isOccupied) break;
       
@@ -251,7 +257,7 @@ function createAndGate(modeler, bpmnTask, roles, results) {
         position.y += gateHeight + margin;
       } else {
         position.x += gateWidth + margin;
-        position.y = bpmnTask.y;
+        position.y = taskY;
       }
       attempts++;
     }

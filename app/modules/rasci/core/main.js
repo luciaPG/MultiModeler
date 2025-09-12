@@ -267,6 +267,15 @@ export function initRasciPanel(panel) {
       
       if (!modeler || !Object.keys(data).length) return;
       
+      // Verificar si el auto-mapping está habilitado
+      const autoMappingSwitch = document.getElementById('auto-mapping-switch');
+      const isAutoMappingEnabled = autoMappingSwitch ? autoMappingSwitch.checked : true; // Por defecto habilitado
+      
+      if (!isAutoMappingEnabled) {
+        console.log('Mapeo automático deshabilitado - Solo se actualiza la matriz RASCI');
+        return;
+      }
+      
       const validatorInstance = validator;
       if (validator && validator.getValidationState && validator.getValidationState().hasCriticalErrors) {
         alert('❌ No se puede ejecutar el mapeo. Hay errores críticos en la matriz RASCI que deben corregirse primero.');
@@ -275,6 +284,10 @@ export function initRasciPanel(panel) {
       
       try {
         const results = executeSimpleRasciMapping(modeler, data);
+        if (results && results.error === 'Reglas RASCI no cumplidas') {
+          console.log('⚠️ Mapeo cancelado - Corrige los errores RASCI primero');
+          return;
+        }
       } catch (error) {
         console.error('Error executing RASCI to Ralph mapping:', error);
       }
@@ -677,6 +690,36 @@ export function initRasciPanel(panel) {
       eventBus && eventBus.publish && eventBus.publish('rasci.roles.detect', { save: true });
     });
 
+    // Mapeo manual que procesa cambios pendientes
+    sr.registerFunction('executeManualRasciMapping', async () => {
+      // Importar directamente desde auto-mapper para evitar recursión
+      try {
+        const { executeManualRasciMapping } = await import('../mapping/auto-mapper.js');
+        if (executeManualRasciMapping) {
+          await executeManualRasciMapping();
+        } else {
+          console.warn('⚠️ Función executeManualRasciMapping no disponible');
+        }
+      } catch (error) {
+        console.error('❌ Error importando executeManualRasciMapping:', error);
+      }
+    });
+
+    // Debug de la cola de cambios
+    sr.registerFunction('debugQueueStatus', async () => {
+      // Importar directamente desde change-queue-manager para evitar recursión
+      try {
+        const { debugQueueStatus } = await import('./change-queue-manager.js');
+        if (debugQueueStatus) {
+          debugQueueStatus();
+        } else {
+          console.warn('⚠️ Función debugQueueStatus no disponible');
+        }
+      } catch (error) {
+        console.error('❌ Error importando debugQueueStatus:', error);
+      }
+    });
+
     // Force detect Ralph roles
     sr.registerFunction('forceDetectRalphRoles', () => {
       console.log('🔄 Forzando detección de roles RALPH (manual)...');
@@ -814,6 +857,25 @@ function toggleAutoMapping() {
 
   const isEnabled = switchElement.checked;
 
+  // Si se está intentando activar el mapeo, validar reglas primero
+  if (isEnabled) {
+    // Obtener la función de validación desde el ServiceRegistry
+    const sr = typeof getServiceRegistry === 'function' ? getServiceRegistry() : null;
+    if (sr && typeof sr.getFunction === 'function') {
+      const validateRasciCriticalRules = sr.getFunction('validateRasciCriticalRules');
+      if (typeof validateRasciCriticalRules === 'function') {
+        const validation = validateRasciCriticalRules();
+        if (!validation.isValid) {
+          // Revertir el toggle si hay errores
+          switchElement.checked = false;
+          alert('No se puede activar el mapeo automático. Corrige los errores RASCI primero:\n\n' + 
+                validation.errors.join('\n'));
+          return false;
+        }
+      }
+    }
+  }
+
   if (rasciAutoMapping) {
     if (isEnabled) {
       rasciAutoMapping.enable();
@@ -837,19 +899,24 @@ function toggleAutoMapping() {
   return isEnabled;
 }
 
+// Hacer la función disponible globalmente para el HTML
+if (typeof window !== 'undefined') {
+  window.toggleAutoMapping = toggleAutoMapping;
+}
+
 // Función modular para inicializar auto-mapping
 function initializeAutoMapping() {
   const switchElement = document.getElementById('auto-mapping-switch');
   const manualBtn = document.getElementById('manual-mapping-btn');
 
   if (switchElement) {
-    // Set default state (enabled by default)
-    switchElement.checked = true;
+    // Set default state (DISABLED by default)
+    switchElement.checked = false;
 
-    // Initialize auto-mapping
+    // Initialize auto-mapping as disabled
     if (rasciAutoMapping) {
-      rasciAutoMapping.enable();
-      if (manualBtn) manualBtn.style.display = 'none';
+      rasciAutoMapping.disable();
+      if (manualBtn) manualBtn.style.display = 'block';
     }
 
   }

@@ -17,6 +17,12 @@ import { initRasciMapping, executeSimpleRasciMapping } from './mapping/index.js'
 // Auto-mapping functionality
 import { rasciAutoMapping } from './mapping/auto-mapper.js';
 
+// Change queue management
+import { changeQueueManager, addChangeToQueue, processPendingChanges, getQueueInfo, clearPendingChanges } from './core/change-queue-manager.js';
+
+// Debug helper
+import './debug-helper.js';
+
 /**
  * RASCI Matrix Manager
  * Manages the RASCI matrix data and UI
@@ -180,6 +186,16 @@ export async function initialize(options = {}) {
   const rasciManager = new RASCIManager(options);
   await rasciManager.initialize();
   
+  // Registrar funciones de debug globalmente
+  if (typeof globalThis !== 'undefined') {
+    globalThis.debugQueueStatus = debugQueueStatus;
+    globalThis.processPendingChanges = processPendingChanges;
+    globalThis.getQueueInfo = getQueueInfo;
+    globalThis.addChangeToQueue = addChangeToQueue;
+    globalThis.clearPendingChanges = clearPendingChanges;
+    console.log('✅ Funciones de debug RASCI registradas globalmente');
+  }
+  
   // Export existing functionality
   return {
     manager: rasciManager,
@@ -204,6 +220,13 @@ export async function initialize(options = {}) {
     executeSimpleRasciMapping,
     rasciAutoMapping,
     
+    // Change queue management
+    changeQueueManager,
+    addChangeToQueue,
+    processPendingChanges,
+    getQueueInfo,
+    clearPendingChanges,
+    
     // Public API
     getMatrixData: rasciManager.getMatrixData,
     updateMatrix: rasciManager.updateMatrix,
@@ -227,7 +250,12 @@ export {
   rasciUIValidator,
   initRasciMapping,
   executeSimpleRasciMapping,
-  rasciAutoMapping
+  rasciAutoMapping,
+  changeQueueManager,
+  addChangeToQueue,
+  processPendingChanges,
+  getQueueInfo,
+  clearPendingChanges
 };
 
 /**

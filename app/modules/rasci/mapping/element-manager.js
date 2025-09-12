@@ -125,7 +125,9 @@ function createSpecialElement(modeler, sourceElement, roleName, elementType, eve
        element.businessObject.name.startsWith('Informar '))
     );
     
-    let position = { x: sourceElement.x + 150, y: sourceElement.y };
+    const sourceX = sourceElement.x || (sourceElement.bounds && sourceElement.bounds.x) || 0;
+    const sourceY = sourceElement.y || (sourceElement.bounds && sourceElement.bounds.y) || 0;
+    let position = { x: sourceX + 150, y: sourceY };
     
     let attempts = 0;
     const maxAttempts = 10;
@@ -135,8 +137,10 @@ function createSpecialElement(modeler, sourceElement, roleName, elementType, eve
     
     while (attempts < maxAttempts) {
       const isOccupied = existingSpecialElements.some(element => {
+        const elementX = element.x || (element.bounds && element.bounds.x) || 0;
+        const elementY = element.y || (element.bounds && element.bounds.y) || 0;
         const distance = Math.sqrt(
-          Math.pow(element.x - position.x, 2) + Math.pow(element.y - position.y, 2)
+          Math.pow(elementX - position.x, 2) + Math.pow(elementY - position.y, 2)
         );
         return distance < (elementWidth + margin);
       });
@@ -147,7 +151,7 @@ function createSpecialElement(modeler, sourceElement, roleName, elementType, eve
         position.x += elementWidth + margin;
       } else {
         position.y += elementHeight + margin;
-        position.x = sourceElement.x + 150;
+        position.x = sourceX + 150;
       }
       attempts++;
     }

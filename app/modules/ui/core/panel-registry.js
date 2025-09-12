@@ -109,6 +109,12 @@ function createRasciPanel() {
 
   return {
     mount: (ctx) => {
+      // Evitar duplicados: si ya existe un panel RASCI, eliminarlo antes de recrear
+      const existing = document.getElementById('rasci-panel');
+      if (existing && existing.parentNode) {
+        existing.parentNode.removeChild(existing);
+      }
+
       panel = document.createElement('div');
       panel.id = 'rasci-panel';
       panel.className = 'panel';
@@ -119,7 +125,9 @@ function createRasciPanel() {
         .then(html => {
           panel.innerHTML = html;
 
-          document.body.appendChild(panel);
+          // ⚡️ Insertar en el contenedor de paneles si existe, si no al body
+          const container = document.getElementById('panel-container') || document.body;
+          container.appendChild(panel);
 
           if (typeof initRasciPanel === 'function') {
             initRasciPanel(panel);

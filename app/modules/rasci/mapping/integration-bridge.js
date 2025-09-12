@@ -73,14 +73,33 @@ class RasciMappingBridge {
     // Registrar la función de auto-mapping con el manager
     // para evitar referencias a window
     setOnRasciMatrixUpdatedCallback(() => {
+      console.log('🔄 Callback de matriz RASCI activado');
+      
+      // Importar la función de validación de reglas duras
+      import('../core/matrix-manager.js').then(({ onRasciMatrixUpdated: validateAndUpdate }) => {
+        try {
+          console.log('✅ Función de validación importada, ejecutando...');
+          // Primero validar reglas duras y actualizar UI
+          validateAndUpdate();
+        } catch (error) {
+          console.warn('⚠️ Error in validateAndUpdate:', error);
+        }
+      }).catch(error => {
+        console.warn('⚠️ Error importing matrix-manager:', error);
+      });
+      
+      // También ejecutar el auto-mapping si está disponible
       if (onRasciMatrixUpdated && typeof onRasciMatrixUpdated === 'function') {
         try {
+          console.log('✅ Ejecutando auto-mapping...');
           onRasciMatrixUpdated();
         } catch (error) {
           console.warn('⚠️ Error in modular onRasciMatrixUpdated:', error);
         }
       }
     });
+    
+    console.log('✅ Callback de matriz RASCI configurado');
   }
 
   /**
