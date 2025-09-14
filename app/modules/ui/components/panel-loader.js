@@ -568,6 +568,13 @@ class PanelLoader {
               if (panelManager && typeof panelManager.adjustLayoutForVisiblePanels === 'function') {
                 panelManager.adjustLayoutForVisiblePanels();
               }
+              
+              // IMPORTANTE: Aplicar configuración para manejar el caso de panel único
+              if (panelManager && typeof panelManager.applyConfiguration === 'function') {
+                panelManager.applyConfiguration().catch(err => {
+                  console.warn('Error aplicando configuración después de ocultar panel:', err);
+                });
+              }
             }, 50);
           }
         }
@@ -606,11 +613,35 @@ class PanelLoader {
         panel.style.display = 'flex';
         panel.style.flex = '1';
         
+        // Forzar estilos de panel único
+        panel.style.width = '100%';
+        panel.style.maxWidth = 'none';
+        panel.style.minWidth = '0';
+        
         // Ajustar layout para un solo panel
         setTimeout(() => {
           const panelManager = resolve('PanelManagerInstance');
-          if (panelManager && typeof panelManager.adjustLayoutForVisiblePanels === 'function') {
-            panelManager.adjustLayoutForVisiblePanels();
+          if (panelManager) {
+            // Actualizar el layout actual a "1" para panel único
+            panelManager.currentLayout = '1';
+            
+            if (typeof panelManager.adjustLayoutForVisiblePanels === 'function') {
+              panelManager.adjustLayoutForVisiblePanels();
+            }
+            
+            // IMPORTANTE: Aplicar configuración para manejar el caso de panel único
+            if (typeof panelManager.applyConfiguration === 'function') {
+              panelManager.applyConfiguration().catch(err => {
+                console.warn('Error aplicando configuración para panel único:', err);
+              });
+            }
+            
+            // Forzar recalculo de tamaños
+            if (typeof panelManager.recalculatePanelSizes === 'function') {
+              setTimeout(() => {
+                panelManager.recalculatePanelSizes();
+              }, 100);
+            }
           }
         }, 50);
       });

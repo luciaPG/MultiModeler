@@ -5,7 +5,6 @@ import { PanelLoader } from '../components/panel-loader.js';
 // CookieAutoSaveManager is accessed via ServiceRegistry; direct import not needed
 import { resolve } from '../../../services/global-access.js';
 import { getServiceRegistry } from '../core/ServiceRegistry.js';
-import { onResize } from '../core/dom-events.js';
 import { registerDebug } from '../../../shared/debug-registry.js';
 
 // Bootstrap SR
@@ -69,14 +68,180 @@ class PanelManager {
   
   setupWindowResizeListener() {
     let resizeTimeout;
-    onResize(() => {
+    const handleResize = () => {
       // Debounce para evitar muchas llamadas
       clearTimeout(resizeTimeout);
       resizeTimeout = setTimeout(() => {
-        // En el commit anterior no se hacía resize manual del canvas
-      // El canvas se redimensiona automáticamente
-    }, 250);
+        this.recalculatePanelSizes();
+      }, 250);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    // También escuchar cambios en el contenedor de paneles
+    const container = document.getElementById('panel-container');
+    if (container) {
+      const observer = new MutationObserver((mutations) => {
+        let panelCountChanged = false;
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'childList') {
+            panelCountChanged = true;
+          }
+        });
+        
+        if (panelCountChanged) {
+          console.log('🔍 Detectado cambio en número de paneles, recalculando...');
+          clearTimeout(resizeTimeout);
+          resizeTimeout = setTimeout(() => {
+            this.recalculatePanelSizes();
+          }, 300);
+        }
+      });
+      
+      observer.observe(container, { 
+        childList: true, 
+        subtree: false 
+      });
+    }
+  }
+
+  recalculatePanelSizes() {
+    const container = document.getElementById('panel-container');
+    if (!container) return;
+    
+    console.log('♻️ Recalculando tamaños de paneles...');
+    
+    // Forzar altura completa del contenedor
+    container.style.height = '100%';
+    container.style.display = 'flex';
+    container.style.alignItems = 'stretch';
+    
+    // Recalcular dimensiones de todos los paneles
+    const panels = container.querySelectorAll('.panel');
+    
+    // Manejar caso especial de un solo panel
+    if (panels.length === 1) {
+      const singlePanel = panels[0];
+      singlePanel.style.width = '100%';
+      singlePanel.style.maxWidth = 'none';
+      singlePanel.style.minWidth = '0';
+      singlePanel.style.flex = '1';
+      console.log('📏 Panel único ajustado para ocupar todo el ancho');
+    }
+    
+    panels.forEach(panel => {
+      // Forzar recalculo de dimensiones con altura completa
+      panel.style.height = '100%';
+      panel.style.display = 'flex';
+      panel.style.flexDirection = 'column';
+      
+      // Para un solo panel, asegurar que ocupe todo el ancho
+      if (panels.length === 1) {
+        panel.style.width = '100%';
+        panel.style.maxWidth = 'none';
+        panel.style.minWidth = '0';
+        panel.style.flex = '1';
+      } else {
+        panel.style.flex = '1';
+      }
+      
+      // Asegurar que el contenido del panel use toda la altura
+      const panelContent = panel.querySelector('.panel-content');
+      if (panelContent) {
+        panelContent.style.height = '100%';
+        panelContent.style.flex = '1';
+        panelContent.style.display = 'flex';
+        panelContent.style.flexDirection = 'column';
+      }
+      
+      // Para paneles BPMN, redimensionar el canvas
+      if (panel.getAttribute('data-panel-type') === 'bpmn') {
+        const canvas = panel.querySelector('#js-canvas, .bpmn-container');
+        if (canvas) {
+          canvas.style.height = '100%';
+          canvas.style.width = '100%';
+          canvas.style.flex = '1';
+          
+          // Trigger resize event en el modeler BPMN si existe
+          try {
+            const sr = getServiceRegistry();
+            const modeler = sr && sr.get('BpmnModeler');
+            if (modeler && typeof modeler.get === 'function') {
+              const canvasService = modeler.get('canvas');
+              if (canvasService && typeof canvasService.resized === 'function') {
+                setTimeout(() => {
+                  canvasService.resized();
+                  console.log('📐 Canvas BPMN redimensionado');
+                }, 50);
+              }
+            }
+          } catch (e) {
+            // Try with global modeler
+            try {
+              const globalModeler = window.bpmnModeler || window.modeler;
+              if (globalModeler && globalModeler.get) {
+                const canvasService = globalModeler.get('canvas');
+                if (canvasService && typeof canvasService.resized === 'function') {
+                  setTimeout(() => {
+                    canvasService.resized();
+                    console.log('📐 Canvas BPMN redimensionado (global)');
+                  }, 50);
+                }
+              }
+            } catch (e2) {
+              console.warn('No se pudo redimensionar el canvas BPMN:', e2);
+            }
+          }
+        }
+      }
+      
+      // Para paneles RASCI, forzar rerender de la matriz
+      if (panel.getAttribute('data-panel-type') === 'rasci') {
+        const tabContent = panel.querySelector('.tab-content');
+        if (tabContent) {
+          tabContent.style.height = '100%';
+          tabContent.style.flex = '1';
+          tabContent.style.display = 'flex';
+          tabContent.style.flexDirection = 'column';
+        }
+        
+        const rasciContainer = panel.querySelector('.rasci-matrix-container');
+        if (rasciContainer) {
+          rasciContainer.style.height = '100%';
+          rasciContainer.style.flex = '1';
+        }
+        
+        try {
+          const sr = getServiceRegistry();
+          const eb = sr && sr.get('EventBus');
+          if (eb) {
+            setTimeout(() => {
+              eb.publish('rasci.matrix.resize', {});
+              console.log('📊 Matriz RASCI redimensionada');
+            }, 100);
+          }
+        } catch (e) {
+          // Try with global functions
+          try {
+            if (typeof window.reloadRasciMatrix === 'function') {
+              setTimeout(() => {
+                window.reloadRasciMatrix();
+                console.log('📊 Matriz RASCI recargada');
+              }, 100);
+            }
+          } catch (e2) {
+            console.warn('No se pudo redimensionar la matriz RASCI:', e2);
+          }
+        }
+      }
     });
+    
+    // Forzar reflow del contenedor
+    container.style.display = 'none';
+    container.offsetHeight; // Trigger reflow
+    container.style.display = 'flex';
+    
+    console.log('✅ Recalculo de paneles completado');
   }  cleanupExistingModals() {
     const existingOverlay = document.getElementById('panel-selector-overlay');
     const existingSelector = document.getElementById('panel-selector');
@@ -115,6 +280,17 @@ class PanelManager {
       }
       
       this.setupRasciVisibilityObserver();
+      
+      // Aplicar configuración inicial automáticamente si hay paneles activos
+      if (this.activePanels.length > 0) {
+        console.log('🚀 Aplicando configuración inicial de paneles automáticamente');
+        // Esperar un poco más para asegurar que todo el DOM esté listo
+        setTimeout(() => {
+          this.applyConfiguration().catch(err => {
+            console.error('❌ Error en configuración inicial de paneles:', err);
+          });
+        }, 500);
+      }
     }, 100);
   }
 
@@ -169,8 +345,8 @@ class PanelManager {
       /* === ESTILOS DE LAYOUTS === */
       .panel-container {
         display: flex;
-        height: 100vh;
-        width: 100vw;
+        height: 100%;
+        width: 100%;
         overflow: hidden;
         gap: 2px;
       }
@@ -270,11 +446,29 @@ class PanelManager {
       .panel-container.layout-3v .panel,
       .panel-container.layout-1 .panel {
         flex: 1;
-        min-width: 0;
+        min-width: 0 !important;
         min-height: 0;
+        height: 100%;
+        width: 100% !important;
+        max-width: none !important;
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         transition: all 0.3s ease;
+      }
+      
+      /* Asegurar que los contenidos de los paneles usen toda la altura */
+      .panel-content .bpmn-container,
+      .panel-content #js-canvas {
+        height: 100% !important;
+        width: 100% !important;
+        min-height: 0 !important;
+      }
+      
+      .panel-content .rasci-matrix,
+      .panel-content .rasci-container {
+        height: 100% !important;
+        width: 100% !important;
+        overflow: auto !important;
       }
       
       /* Scrollbars verticales discretos */
@@ -1282,6 +1476,8 @@ class PanelManager {
     
     this.isApplyingConfiguration = true;
     console.log('🔄 Aplicando nueva configuración de paneles...');
+    console.log('📊 Paneles activos:', this.activePanels);
+    console.log('🎨 Layout actual:', this.currentLayout);
     
     try {
       const container = document.getElementById('panel-container');
@@ -1297,7 +1493,9 @@ class PanelManager {
         if (lsMgr && typeof lsMgr.forceSave === 'function') {
           await lsMgr.forceSave();
         }
-      } catch (_) {}
+      } catch (e) {
+        // Ignore error silently
+      }
 
       const existingPanels = container.querySelectorAll('.panel');
       existingPanels.forEach(panel => {
@@ -1351,7 +1549,46 @@ class PanelManager {
       if (container) {
         container.className = 'panel-container';
         container.classList.add(`layout-${this.currentLayout}`);
+        
+        // Lógica especial para panel único
+        if (this.activePanels.length === 1) {
+          container.classList.add('single-panel');
+          container.setAttribute('data-panels', '1');
+          container.setAttribute('data-layout', '1');
+          this.currentLayout = '1'; // Asegurar que el layout se establezca como 1
+          
+          // Forzar estilos para panel único
+          const singlePanel = container.querySelector('.panel');
+          if (singlePanel) {
+            singlePanel.style.minWidth = '0 !important';
+            singlePanel.style.width = '100% !important';
+            singlePanel.style.maxWidth = 'none !important';
+            singlePanel.style.flex = '1 !important';
+            console.log('🎯 Panel único configurado para ancho completo');
+            
+            // Aplicar también las clases CSS adicionales
+            singlePanel.classList.add('single-panel-item');
+          }
+        } else {
+          container.classList.remove('single-panel');
+          container.removeAttribute('data-panels');
+          const panels = container.querySelectorAll('.panel');
+          panels.forEach(panel => {
+            panel.classList.remove('single-panel-item');
+          });
+        }
+        
         this.adjustLayoutForVisiblePanels();
+        
+        // Forzar recalculo de dimensiones después de aplicar el layout
+        setTimeout(() => {
+          this.recalculatePanelSizes();
+        }, 100);
+        
+        // Un segundo recalculo para asegurar que todo esté bien
+        setTimeout(() => {
+          this.recalculatePanelSizes();
+        }, 800);
       }
 
       // Initialize the BPMN modeler with more robust error handling
@@ -1451,8 +1688,12 @@ class PanelManager {
               const lsMgr = sr && (sr.get('localStorageAutoSaveManager') || sr.get('LocalStorageAutoSaveManager'));
               if (lsMgr && typeof lsMgr.forceRestore === 'function') {
                 await lsMgr.forceRestore();
-                await lsMgr.restoreBpmnState?.();
-                lsMgr.restorePPIState?.();
+                if (lsMgr.restoreBpmnState && typeof lsMgr.restoreBpmnState === 'function') {
+                  await lsMgr.restoreBpmnState();
+                }
+                if (lsMgr.restorePPIState && typeof lsMgr.restorePPIState === 'function') {
+                  lsMgr.restorePPIState();
+                }
               }
             } catch (e) {
               console.warn('No se pudo restaurar desde localStorage autosave:', e);
@@ -1473,9 +1714,15 @@ class PanelManager {
               const sr = getServiceRegistry();
               const lsMgr = sr && (sr.get('localStorageAutoSaveManager') || sr.get('LocalStorageAutoSaveManager'));
               if (lsMgr) {
-                await lsMgr.forceRestore?.();
-                await lsMgr.restoreBpmnState?.();
-                lsMgr.restorePPIState?.();
+                if (lsMgr.forceRestore && typeof lsMgr.forceRestore === 'function') {
+                  await lsMgr.forceRestore();
+                }
+                if (lsMgr.restoreBpmnState && typeof lsMgr.restoreBpmnState === 'function') {
+                  await lsMgr.restoreBpmnState();
+                }
+                if (lsMgr.restorePPIState && typeof lsMgr.restorePPIState === 'function') {
+                  lsMgr.restorePPIState();
+                }
               }
             } catch (e2) {
               console.warn('Fallback restore desde localStorage fallido:', e2);
@@ -1544,13 +1791,26 @@ class PanelManager {
     }
     
     if (newLayout && newLayout !== this.currentLayout) {
-      console.log(`Ajustando layout automáticamente de ${this.currentLayout} a ${newLayout}`);
+      console.log(`🔄 Ajustando layout automáticamente de ${this.currentLayout} a ${newLayout}`);
       this.currentLayout = newLayout;
+      
+      // Actualizar la clase del contenedor inmediatamente
+      const container = document.getElementById('panel-container');
+      if (container) {
+        container.className = 'panel-container';
+        container.classList.add(`layout-${newLayout}`);
+      }
+      
       const sr = getServiceRegistry();
       const snap = sr && sr.get('SnapSystem');
       if (snap) {
         snap.changeLayout(newLayout);
       }
+      
+      // Forzar recalculo de tamaños después del cambio de layout
+      setTimeout(() => {
+        this.recalculatePanelSizes();
+      }, 150);
     }
   }
 
