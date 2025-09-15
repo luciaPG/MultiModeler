@@ -31,7 +31,8 @@ class RasciMappingBridge {
       this.integrateWithMatrixManager();
       
       this.initialized = true;
-      console.log('✅ RASCI Mapping Bridge initialized');
+      // Optimización: Log eliminado para mejorar rendimiento
+  // console.log('✅ RASCI Mapping Bridge initialized');
     } catch (error) {
       console.error('❌ Error initializing RASCI Mapping Bridge:', error);
     }
@@ -99,7 +100,8 @@ class RasciMappingBridge {
       }
     });
     
-    console.log('✅ Callback de matriz RASCI configurado');
+    // Optimización: Log eliminado para mejorar rendimiento
+    // console.log('✅ Callback de matriz RASCI configurado');
   }
 
   /**

@@ -36,7 +36,8 @@ export default RALPHModule;
  * @returns {Object} - RALPH module instance
  */
 export function initialize(options = {}) {
-  console.log('[RALPH] Initializing RALPH module');
+  // Optimización: Log eliminado para mejorar rendimiento
+  // console.log('[RALPH] Initializing RALPH module');
   
   const ralphManager = {
     type: 'ralph',
@@ -89,5 +90,6 @@ export function registerWith(core) {
     initialize
   });
   
-  console.log('[RALPH] Registered with MultiNotation Modeler Core');
+  // Optimización: Log eliminado para mejorar rendimiento
+  // console.log('[RALPH] Registered with MultiNotation Modeler Core');
 }

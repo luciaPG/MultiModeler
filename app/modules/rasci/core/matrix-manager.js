@@ -132,11 +132,13 @@ export function cleanAutoTasksFromMatrix() {
   }
   
   const allTasks = Object.keys(rasciManager.rasciMatrixData);
-  const autoTasks = allTasks.filter(taskId => taskId.startsWith('Aprobar '));
+  const autoTasks = allTasks.filter(taskId => 
+    taskId.startsWith('Aprobar ') || taskId.startsWith('root_')
+  );
 
    
   
-  console.log(`🔍 Encontradas ${autoTasks.length} tareas automáticas en matriz existente:`);
+  console.log(`🔍 Encontradas ${autoTasks.length} tareas automáticas/fantasma en matriz existente:`);
   autoTasks.forEach(task => {
     console.log(`  🗑️ Eliminando: ${task}`);
     delete rasciManager.rasciMatrixData[task];
@@ -159,6 +161,63 @@ export function cleanAutoTasksFromMatrix() {
   }
   
   return autoTasks.length;
+}
+
+// Función para limpiar tareas fantasma al inicio
+export function cleanGhostTasksOnStartup() {
+  // Optimización: Log eliminado para mejorar rendimiento
+  // console.log('🧹 Limpieza inicial de tareas fantasma...');
+  
+  // Obtener datos de la matriz desde localStorage
+  const matrixData = RasciStore.getMatrix();
+  if (!matrixData || Object.keys(matrixData).length === 0) {
+    console.log('📋 No hay matriz para limpiar en startup');
+    return;
+  }
+  
+  const allTasks = Object.keys(matrixData);
+  const ghostTasks = allTasks.filter(taskId => taskId.startsWith('root_'));
+  
+  if (ghostTasks.length > 0) {
+    console.log(`🔍 Encontradas ${ghostTasks.length} tareas fantasma en startup:`);
+    ghostTasks.forEach(task => {
+      console.log(`  🗑️ Eliminando tarea fantasma: ${task}`);
+      delete matrixData[task];
+    });
+    
+    // Guardar la matriz limpia
+    RasciStore.setMatrix(matrixData);
+    console.log(`✅ ${ghostTasks.length} tareas fantasma eliminadas en startup`);
+  } else {
+    // Optimización: Log eliminado para mejorar rendimiento
+    // console.log('✅ No hay tareas fantasma que limpiar en startup');
+  }
+}
+
+// Función para limpiar tareas fantasma periódicamente
+export function startGhostTaskCleaner() {
+  // Optimización: Log eliminado para mejorar rendimiento
+  // console.log('🧹 Iniciando limpiador periódico de tareas fantasma...');
+  
+  setInterval(() => {
+    if (rasciManager.rasciMatrixData) {
+      const allTasks = Object.keys(rasciManager.rasciMatrixData);
+      const ghostTasks = allTasks.filter(taskId => taskId.startsWith('root_'));
+      
+      if (ghostTasks.length > 0) {
+        console.log(`🧹 Limpiador periódico: eliminando ${ghostTasks.length} tareas fantasma`);
+        ghostTasks.forEach(task => {
+          delete rasciManager.rasciMatrixData[task];
+          console.log(`  🗑️ Eliminada: ${task}`);
+        });
+        
+        // Guardar cambios
+        if (typeof autoSaveRasciState === 'function') {
+          autoSaveRasciState();
+        }
+      }
+    }
+  }, 10000); // Cada 10 segundos
 }
 
 // Función para mapeo directo usando sistema RALph visual
@@ -621,19 +680,23 @@ export function renderMatrix(panel, rolesArray, autoSaveFn) {
   rasciManager.setStorageCleared(!!(sr && sr.get('StorageClearedFlag')));
   rasciManager.setRasciUIValidator((sr && sr.get('RASCIUIValidator')) || null);
 
+  // Cargar datos desde localStorage
   rasciManager.rasciMatrixData = RasciStore.getMatrix();
   rasciManager.rasciRoles = RasciStore.getRoles();
 
+  // Usar roles guardados si existen, sino usar los proporcionados
   roles = rolesArray || rasciManager.getRasciRoles() || [];
   autoSaveRasciState = autoSaveFn;
 
+  // Solo limpiar si realmente no hay datos guardados Y no estamos importando
   const shouldClear =
     !rasciManager.isImportingProject &&
-    (rasciManager.storageCleared ||
-      !rasciManager.rasciMatrixData ||
-      Object.keys(rasciManager.rasciMatrixData).length === 0);
+    rasciManager.storageCleared &&
+    (!rasciManager.rasciMatrixData || Object.keys(rasciManager.rasciMatrixData).length === 0) &&
+    (!rasciManager.rasciRoles || rasciManager.rasciRoles.length === 0);
 
   if (shouldClear) {
+    console.log('🧹 Limpiando matriz RASCI - no hay datos guardados');
     rasciManager.rasciMatrixData = {};
     const currentTasks = rasciManager.getBpmnModeler() ? getBpmnTasks() : [];
     currentTasks.forEach(task => {
@@ -647,7 +710,13 @@ export function renderMatrix(panel, rolesArray, autoSaveFn) {
     rasciManager.rasciMatrixData = {};
   }
 
-  rasciManager.rasciRoles = roles;
+  // Preservar roles guardados si existen
+  if (rasciManager.rasciRoles && rasciManager.rasciRoles.length > 0) {
+    console.log('📋 Restaurando roles guardados:', rasciManager.rasciRoles);
+    roles = rasciManager.rasciRoles;
+  } else {
+    rasciManager.rasciRoles = roles;
+  }
 
   if (typeof window !== 'undefined') {
     RasciStore.setMatrix(rasciManager.rasciMatrixData);
@@ -677,11 +746,11 @@ export function renderMatrix(panel, rolesArray, autoSaveFn) {
 
   const taskHeader = document.createElement('th');
   taskHeader.style.cssText = `
-    position: relative; background: #f8fafc; border-bottom: 2px solid #e2e8f0; padding: 12px 16px; text-align: center;
-    font-weight: 400; color: #1f2937; min-width: 160px; vertical-align: middle; font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+    position: relative; background: #f8fafc; border-bottom: 2px solid #e2e8f0; padding: 4px 8px; text-align: center;
+    font-weight: 400; color: #1f2937; min-width: 120px; vertical-align: middle; font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif; height: 28px;
   `;
   const taskHeaderContent = document.createElement('div');
-  taskHeaderContent.style.cssText = `display: flex; align-items: center; justify-content: center; gap: 6px; position: relative; height: 100%; min-height: 24px;`;
+  taskHeaderContent.style.cssText = `display: flex; align-items: center; justify-content: center; gap: 4px; position: relative; height: 100%; min-height: 20px;`;
 
   const taskText = document.createElement('span');
   taskText.textContent = 'Tarea';
@@ -778,6 +847,31 @@ export function renderMatrix(panel, rolesArray, autoSaveFn) {
   const tasks = getBpmnTasks();
   if (!rasciManager.rasciMatrixData) rasciManager.rasciMatrixData = {};
 
+  // Calcular altura dinámica basada en el número de tareas
+  const taskCount = tasks ? tasks.length : 0;
+  const baseHeight = 200; // Altura base
+  const rowHeight = 28; // Altura de cada fila
+  const headerHeight = 28; // Altura del header
+  const calculatedHeight = Math.max(baseHeight, headerHeight + (taskCount * rowHeight) + 20); // +20 para padding
+  const maxHeight = Math.min(calculatedHeight, window.innerHeight - 200);
+  
+  console.log(`📏 Calculando altura de matriz: ${taskCount} tareas, altura calculada: ${calculatedHeight}px, altura máxima: ${maxHeight}px`);
+  
+  // Aplicar altura calculada al contenedor
+  matrixContainer.style.height = `${calculatedHeight}px`;
+  matrixContainer.style.maxHeight = `${maxHeight}px`;
+
+  // Limpiar tareas fantasma antes de renderizar
+  const allTasks = Object.keys(rasciManager.rasciMatrixData);
+  const ghostTasks = allTasks.filter(taskId => taskId.startsWith('root_'));
+  if (ghostTasks.length > 0) {
+    console.log(`🧹 Eliminando ${ghostTasks.length} tareas fantasma durante renderizado:`);
+    ghostTasks.forEach(task => {
+      console.log(`  🗑️ Eliminando: ${task}`);
+      delete rasciManager.rasciMatrixData[task];
+    });
+  }
+
   const currentRoles = roles || rasciManager.rasciRoles || [];
 
   // Preservar valores actuales
@@ -828,9 +922,9 @@ export function renderMatrix(panel, rolesArray, autoSaveFn) {
 
     const taskCell = document.createElement('td');
     taskCell.style.cssText = `
-      background: #f8fafc; border-right: 2px solid #e2e8f0; padding: 20px 16px; text-align: left; font-weight: 600; color: #1f2937;
-      font-size: 12px; vertical-align: middle; min-width: 160px; max-width: 240px; word-wrap: break-word; position: relative;
-      font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f8fafc; border-right: 2px solid #e2e8f0; padding: 4px 8px; text-align: left; font-weight: 600; color: #1f2937;
+      font-size: 10px; vertical-align: middle; min-width: 120px; max-width: 200px; word-wrap: break-word; position: relative;
+      font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif; height: 10px;
     `;
     const taskNameSpan = document.createElement('span');
     taskNameSpan.textContent = task;
@@ -1132,8 +1226,21 @@ export function updateMatrixFromDiagram() {
   const modeler = rasciManager.getBpmnModeler();
   if (!modeler) return;
 
-  // Limpiar tareas automáticas de la matriz existente
+  // Limpiar tareas automáticas y fantasma de la matriz existente
   cleanAutoTasksFromMatrix();
+  
+  // Limpieza adicional de tareas fantasma
+  if (rasciManager.rasciMatrixData) {
+    const allTasks = Object.keys(rasciManager.rasciMatrixData);
+    const ghostTasks = allTasks.filter(taskId => taskId.startsWith('root_'));
+    if (ghostTasks.length > 0) {
+      console.log(`🧹 Limpieza adicional: eliminando ${ghostTasks.length} tareas fantasma`);
+      ghostTasks.forEach(task => {
+        delete rasciManager.rasciMatrixData[task];
+        console.log(`  🗑️ Eliminada: ${task}`);
+      });
+    }
+  }
 
   const preserved = preserveRasciValues();
   const currentTasks = getBpmnTasks();
@@ -1189,7 +1296,17 @@ export function updateMatrixFromDiagram() {
 export function setupDiagramChangeListener() {
   const modeler = rasciManager.getBpmnModeler();
   if (!modeler) return;
-  modeler.get('eventBus').on('element.changed', () => setTimeout(updateMatrixFromDiagram, 500));
+  
+  const eventBus = modeler.get('eventBus');
+  
+  // Escuchar cambios en elementos
+  eventBus.on('element.changed', () => setTimeout(updateMatrixFromDiagram, 500));
+  
+  // Escuchar eliminación de elementos para limpiar la matriz
+  eventBus.on('element.removed', () => {
+    console.log('🗑️ Elemento eliminado del diagrama - sincronizando matriz RASCI...');
+    setTimeout(updateMatrixFromDiagram, 100); // Más rápido para eliminaciones
+  });
 }
 
 // -----------------------------------------------------
@@ -1342,12 +1459,14 @@ setupServiceRegistry();
 // -----------------------------------------------------
 export function setOnRasciMatrixUpdatedCallback(callback) {
   onRasciMatrixUpdatedFunction = callback;
-  console.log('✅ Callback de matriz RASCI configurado:', typeof callback);
+  // Optimización: Log eliminado para mejorar rendimiento
+  // console.log('✅ Callback de matriz RASCI configurado:', typeof callback);
 }
 
 // Función para configurar el callback manualmente
 export function configureMatrixCallback() {
-  console.log('🔧 Configurando callback de matriz RASCI...');
+  // Optimización: Log eliminado para mejorar rendimiento
+  // console.log('🔧 Configurando callback de matriz RASCI...');
   
   // Configurar el callback directamente
   setOnRasciMatrixUpdatedCallback(onRasciMatrixUpdated);
@@ -1355,7 +1474,8 @@ export function configureMatrixCallback() {
   // También exponerlo globalmente para diagnóstico
   if (typeof window !== 'undefined') {
     window.onRasciMatrixUpdatedFunction = onRasciMatrixUpdated;
-    console.log('✅ Callback expuesto globalmente');
+    // Optimización: Log eliminado para mejorar rendimiento
+  // console.log('✅ Callback expuesto globalmente');
   }
   
   return true;

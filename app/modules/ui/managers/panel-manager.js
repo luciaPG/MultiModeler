@@ -90,7 +90,6 @@ class PanelManager {
         });
         
         if (panelCountChanged) {
-          console.log('🔍 Detectado cambio en número de paneles, recalculando...');
           clearTimeout(resizeTimeout);
           resizeTimeout = setTimeout(() => {
             this.recalculatePanelSizes();
@@ -109,7 +108,15 @@ class PanelManager {
     const container = document.getElementById('panel-container');
     if (!container) return;
     
-    console.log('♻️ Recalculando tamaños de paneles...');
+    // Optimización RADICAL: Evitar recálculos excesivos
+    const now = Date.now();
+    if (now - this._lastRecalculation < 500) { // 500ms de cooldown más agresivo
+      return;
+    }
+    this._lastRecalculation = now;
+    
+    // Optimización: Log eliminado para mejorar rendimiento
+    // console.log('♻️ Recalculando tamaños de paneles...');
     
     // Forzar altura completa del contenedor
     container.style.height = '100%';
@@ -283,7 +290,8 @@ class PanelManager {
       
       // Aplicar configuración inicial automáticamente si hay paneles activos
       if (this.activePanels.length > 0) {
-        console.log('🚀 Aplicando configuración inicial de paneles automáticamente');
+        // Optimización: Log eliminado para mejorar rendimiento
+        // console.log('🚀 Aplicando configuración inicial de paneles automáticamente');
         // Esperar un poco más para asegurar que todo el DOM esté listo
         setTimeout(() => {
           this.applyConfiguration().catch(err => {
@@ -1687,13 +1695,8 @@ class PanelManager {
               const sr = getServiceRegistry();
               const lsMgr = sr && (sr.get('localStorageAutoSaveManager') || sr.get('LocalStorageAutoSaveManager'));
               if (lsMgr && typeof lsMgr.forceRestore === 'function') {
+                // forceRestore ya incluye la restauración de BPMN y PPIs
                 await lsMgr.forceRestore();
-                if (lsMgr.restoreBpmnState && typeof lsMgr.restoreBpmnState === 'function') {
-                  await lsMgr.restoreBpmnState();
-                }
-                if (lsMgr.restorePPIState && typeof lsMgr.restorePPIState === 'function') {
-                  lsMgr.restorePPIState();
-                }
               }
             } catch (e) {
               console.warn('No se pudo restaurar desde localStorage autosave:', e);
@@ -1715,13 +1718,8 @@ class PanelManager {
               const lsMgr = sr && (sr.get('localStorageAutoSaveManager') || sr.get('LocalStorageAutoSaveManager'));
               if (lsMgr) {
                 if (lsMgr.forceRestore && typeof lsMgr.forceRestore === 'function') {
+                  // forceRestore ya incluye la restauración de BPMN y PPIs
                   await lsMgr.forceRestore();
-                }
-                if (lsMgr.restoreBpmnState && typeof lsMgr.restoreBpmnState === 'function') {
-                  await lsMgr.restoreBpmnState();
-                }
-                if (lsMgr.restorePPIState && typeof lsMgr.restorePPIState === 'function') {
-                  lsMgr.restorePPIState();
                 }
               }
             } catch (e2) {
@@ -1733,13 +1731,8 @@ class PanelManager {
         }
       }
 
-      // Recargar automáticamente el panel RASCI si está activo
-      if (this.activePanels.includes('rasci')) {
-        setTimeout(() => {
-          const rasciPanel = container.querySelector('#rasci-panel');
-          if (rasciPanel) eventBus && eventBus.publish ? eventBus.publish('rasci.matrix.reload', {}) : console.warn('⚠️ EventBus no disponible para recargar RASCI');
-        }, 300);
-      }
+      // ELIMINADO: Recarga automática de RASCI que causa recargas adicionales
+      // El panel RASCI se carga automáticamente cuando es necesario
 
       // Notificar que la configuración se completó
       if (this.onConfigurationComplete) {

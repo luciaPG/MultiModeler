@@ -42,7 +42,8 @@ export function bootUI(ctx) {
         });
       }
       
-      console.log(`[BPMN Boot] Panel ${id} mounted successfully`);
+      // Optimización: Log eliminado para mejorar rendimiento
+      // console.log(`[BPMN Boot] Panel ${id} mounted successfully`);
     } catch (error) {
       console.error(`[BPMN Boot] Failed to mount panel ${id}:`, error);
     }
@@ -109,7 +110,8 @@ function setupBpmnEventHandlers(ctx) {
         });
       });
       
-      console.log('[BPMN Boot] BPMN event handlers set up successfully');
+      // Optimización: Log eliminado para mejorar rendimiento
+      // console.log('[BPMN Boot] BPMN event handlers set up successfully');
     }
   } catch (error) {
     console.error('[BPMN Boot] Failed to set up BPMN event handlers:', error);

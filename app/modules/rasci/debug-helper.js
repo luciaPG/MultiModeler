@@ -78,4 +78,5 @@ export async function executeManualRasciMapping() {
 }
 
 // El registro global se hace desde change-queue-manager.js para evitar duplicados
-console.log('✅ [DEBUG-HELPER] Debug helper cargado - funciones disponibles a través de imports');
+// Optimización: Log eliminado para mejorar rendimiento
+// console.log('✅ [DEBUG-HELPER] Debug helper cargado - funciones disponibles a través de imports');

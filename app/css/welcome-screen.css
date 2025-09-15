@@ -13,7 +13,7 @@
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  /* transition: opacity 0.5s ease, transform 0.5s ease; */ /* ELIMINADO: Causa parpadeo */
   overflow: hidden;
 }
 
@@ -31,7 +31,7 @@
   background: white;
   border-radius: 20px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-  animation: welcomeFadeIn 0.8s ease-out;
+  /* animation: welcomeFadeIn 0.8s ease-out; */ /* ELIMINADO: Causa parpadeo */
 }
 
 @keyframes welcomeFadeIn {
@@ -49,7 +49,7 @@
   font-size: 3rem;
   margin-bottom: 20px;
   color: #4361ee;
-  animation: logoFloat 3s ease-in-out infinite;
+  /* animation: logoFloat 3s ease-in-out infinite; */ /* ELIMINADO: Causa parpadeo */
 }
 
 @keyframes logoFloat {
@@ -92,7 +92,7 @@
   font-size: 1.1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  /* transition: all 0.3s ease; */ /* ELIMINADO: Causa parpadeo */
   display: flex;
   align-items: center;
   gap: 12px;

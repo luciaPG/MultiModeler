@@ -39,7 +39,8 @@ export default PPINOTModule;
  * @returns {Object} - PPINOT module instance
  */
 export function initialize(options = {}) {
-  console.log('[PPINOT] Initializing PPINOT module');
+  // Optimización: Log eliminado para mejorar rendimiento
+  // console.log('[PPINOT] Initializing PPINOT module');
   
   const ppinotManager = {
     type: 'ppinot',
@@ -47,7 +48,8 @@ export function initialize(options = {}) {
     
     // Method to synchronize with BPMN elements
     syncWithBPMN: (bpmnElements) => {
-      console.log('[PPINOT] Synchronizing with BPMN elements:', bpmnElements.length);
+      // Optimización: Reducir logs de debug para mejorar rendimiento
+      // console.log('[PPINOT] Synchronizing with BPMN elements:', bpmnElements.length);
       
       // Existing synchronization logic
       if (options.eventBus) {
@@ -83,5 +85,6 @@ export function registerWith(core) {
     initialize
   });
   
-  console.log('[PPINOT] Registered with MultiNotation Modeler Core');
+  // Optimización: Log eliminado para mejorar rendimiento
+  // console.log('[PPINOT] Registered with MultiNotation Modeler Core');
 }

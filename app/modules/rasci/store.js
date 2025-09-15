@@ -10,7 +10,8 @@ try {
   const savedMatrix = localStorage.getItem(STORAGE_KEY_MATRIX);
   if (savedMatrix) {
     _matrix = JSON.parse(savedMatrix);
-    console.log('📦 Matriz RASCI cargada desde localStorage:', _matrix);
+    // Optimización: Log eliminado para mejorar rendimiento
+    // console.log('📦 Matriz RASCI cargada desde localStorage:', _matrix);
   }
 } catch (error) {
   console.warn('Error al cargar matriz desde localStorage:', error);
@@ -20,7 +21,8 @@ try {
   const savedRoles = localStorage.getItem(STORAGE_KEY_ROLES);
   if (savedRoles) {
     _roles = JSON.parse(savedRoles);
-    console.log('📦 Roles RASCI cargados desde localStorage:', _roles);
+    // Optimización: Log eliminado para mejorar rendimiento
+    // console.log('📦 Roles RASCI cargados desde localStorage:', _roles);
   }
 } catch (error) {
   console.warn('Error al cargar roles desde localStorage:', error);

@@ -657,7 +657,7 @@ export function applyStyles() {
     }
 
     /* === ESTILOS PARA LA MATRIZ RASCI === */
-    /* Contenedor principal con altura máxima */
+    /* Contenedor principal con altura adaptativa */
     #matrix-container {
       border-radius: 4px;
       background: #fff;
@@ -667,8 +667,9 @@ export function applyStyles() {
       flex: 1 !important;
       max-width: 100%;
       width: 100%;
-      height: 100%;
-      max-height: calc(100vh - 180px) !important;
+      height: auto;
+      min-height: 200px !important;
+      max-height: calc(100vh - 200px) !important;
       display: block !important;
       box-sizing: border-box !important;
     }
@@ -818,7 +819,7 @@ export function applyStyles() {
       border-collapse: separate;
       border-spacing: 0;
       width: max-content;
-      min-width: 600px;
+      min-width: 500px;
       margin: 0;
       font-family: 'Segoe UI', Roboto, sans-serif;
       font-size: 11px;
@@ -832,16 +833,16 @@ export function applyStyles() {
 
     .rasci-matrix th,
     .rasci-matrix td {
-      padding: 6px 3px;
+      padding: 4px 3px;
       text-align: center;
       border-right: 1px solid #eaeaea;
       border-bottom: 1px solid #eaeaea;
       position: relative;
-      min-width: 60px;
-      max-width: 80px;
-      width: 60px;
-      height: auto;
-      vertical-align: top;
+      min-width: 50px;
+      max-width: 70px;
+      width: 50px;
+      height: 28px;
+      vertical-align: middle;
       background: #f8fafc;
       transition: background-color 0.2s ease;
       white-space: normal;
@@ -849,7 +850,10 @@ export function applyStyles() {
       overflow-wrap: break-word;
       hyphens: auto;
       line-height: 1.1;
-      font-size: 10px;
+    }
+
+    .rasci-matrix tr {
+      height: 28px;
     }
 
     /* === STICKY COLUMNS === */
@@ -995,7 +999,7 @@ export function applyStyles() {
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 28px;
+      height: 28px;
       font-weight: bold;
       font-size: 15px;
       border: none;
@@ -1004,14 +1008,14 @@ export function applyStyles() {
 
     .rasci-circle {
       display: inline-block;
-      width: 24px;
-      height: 24px;
-      line-height: 24px;
+      width: 20px;
+      height: 20px;
+      line-height: 20px;
       border-radius: 50%;
       background: #eee;
       color: #fff;
       font-weight: bold;
-      font-size: 15px;
+      font-size: 13px;
       text-align: center;
       vertical-align: middle;
       margin: 0 2px;
@@ -1055,8 +1059,8 @@ export function applyStyles() {
       justify-content: center !important;
       position: relative !important;
       width: 100% !important;
-      padding: 2px 8px 2px 2px !important;
-      min-height: 24px !important;
+      padding: 1px 4px 1px 1px !important;
+      min-height: 20px !important;
       transition: all 0.2s ease !important;
     }
 
@@ -1071,10 +1075,12 @@ export function applyStyles() {
       transition: color 0.2s ease;
       text-align: center;
       border-radius: 3px;
-      min-height: 20px;
+      min-height: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-size: 9px;
+      line-height: 1.1;
     }
 
     .role-name:hover {
@@ -1114,15 +1120,15 @@ export function applyStyles() {
 
     .delete-role-btn {
       position: absolute !important;
-      top: 2px !important;
-      right: 2px !important;
-      width: 16px !important;
-      height: 16px !important;
+      top: 1px !important;
+      right: 1px !important;
+      width: 12px !important;
+      height: 12px !important;
       border: none !important;
       background: transparent !important;
       color: #dc2626 !important;
       border-radius: 0 !important;
-      font-size: 16px !important;
+      font-size: 12px !important;
       font-weight: bold !important;
       cursor: pointer !important;
       display: flex !important;
@@ -1340,11 +1346,13 @@ export function applyStyles() {
 
       .rasci-matrix th:first-child,
       .rasci-matrix td:first-child {
-        min-width: 140px;
-        max-width: 140px;
-        width: 140px;
-        font-size: 11px;
-        line-height: 1.3;
+        min-width: 120px;
+        max-width: 120px;
+        width: 120px;
+        font-size: 10px;
+        line-height: 1.2;
+        padding: 4px 8px;
+        height: 28px;
       }
 
       #rasci-panel .panel-tabs {
@@ -1406,7 +1414,7 @@ export function applyStyles() {
 
     #rasci-panel #main-tab #matrix-container {
       flex: 1 !important;
-      min-height: 300px !important;
+      min-height: 150px !important;
     }
 
     /* Pestaña 2: Mapeo RALph */
@@ -1546,6 +1554,7 @@ export function applyStyles() {
       background: #b91c1c !important;
       border-color: #b91c1c !important;
     }
+
   `;
   document.head.appendChild(style);
 } 

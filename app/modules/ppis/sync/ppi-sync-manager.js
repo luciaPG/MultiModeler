@@ -893,9 +893,9 @@ class PPISyncManager {
         } else {
         }
         
-        // Guardar estado inmediatamente
-        if (this.core && this.core.savePPINOTElements) {
-          this.core.savePPINOTElements();
+        // Guardar estado inmediatamente (usando versión debounced para mejor rendimiento)
+        if (this.core && this.core.debouncedSavePPINOTElements) {
+          this.core.debouncedSavePPINOTElements();
         }
         
       } catch (error) {
@@ -1151,7 +1151,8 @@ if (registry) {
     if (mgr) mgr.forceDropCheck();
   }, { description: 'Forzar verificación de drop PPI' });
   
-  console.log('✅ PPISyncManager registrado en ServiceRegistry');
+  // Optimización: Log eliminado para mejorar rendimiento
+  // console.log('✅ PPISyncManager registrado en ServiceRegistry');
 } else {
   console.log('ℹ️ ServiceRegistry no disponible para PPISyncManager');
 }

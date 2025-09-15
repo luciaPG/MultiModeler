@@ -272,9 +272,10 @@ import { getServiceRegistry } from '../../ui/core/ServiceRegistry.js';
 
 const sr = getServiceRegistry();
 if (sr) {
-  console.log('🔄 [AUTO-MAPPER] Re-registrando funciones en service registry...');
-  console.log('🔍 [AUTO-MAPPER] Función executeRasciToRalphMapping antes del registro:', typeof executeRasciToRalphMapping);
-  console.log('🔍 [AUTO-MAPPER] Código de la función:', executeRasciToRalphMapping.toString().substring(0, 100) + '...');
+  // Optimización: Logs eliminados para mejorar rendimiento
+  // console.log('🔄 [AUTO-MAPPER] Re-registrando funciones en service registry...');
+  // console.log('🔍 [AUTO-MAPPER] Función executeRasciToRalphMapping antes del registro:', typeof executeRasciToRalphMapping);
+  // console.log('🔍 [AUTO-MAPPER] Código de la función:', executeRasciToRalphMapping.toString().substring(0, 100) + '...');
   
   sr.registerFunction('executeRasciToRalphMapping', executeRasciToRalphMapping);
   sr.registerFunction('executeManualRasciMapping', executeManualRasciMapping);
@@ -287,10 +288,11 @@ if (sr) {
   
   // Verificar que se registró correctamente
   const registeredFunction = sr.getFunction('executeRasciToRalphMapping');
-  console.log('🔍 [AUTO-MAPPER] Función registrada en service registry:', typeof registeredFunction);
-  console.log('🔍 [AUTO-MAPPER] Código de la función registrada:', registeredFunction ? registeredFunction.toString().substring(0, 100) + '...' : 'null');
+  // Optimización: Logs eliminados para mejorar rendimiento
+  // console.log('🔍 [AUTO-MAPPER] Función registrada en service registry:', typeof registeredFunction);
+  // console.log('🔍 [AUTO-MAPPER] Código de la función registrada:', registeredFunction ? registeredFunction.toString().substring(0, 100) + '...' : 'null');
   
-  console.log('✅ executeRasciToRalphMapping y executeManualRasciMapping registradas en service registry y globalThis desde auto-mapper');
+  // console.log('✅ executeRasciToRalphMapping y executeManualRasciMapping registradas en service registry y globalThis desde auto-mapper');
 }
 
 // Para compatibilidad con el sistema, usar el rasciManager como puente

@@ -992,7 +992,8 @@ function setupServiceRegistry() {
     getValidator: () => registry.get('rasciUIValidator')
   });
 
-  console.log('✅ ServiceRegistry configurado para RASCI UI Validator');
+  // Optimización: Log eliminado para mejorar rendimiento
+  // console.log('✅ ServiceRegistry configurado para RASCI UI Validator');
 }
 
 // Instancia global del validador de UI

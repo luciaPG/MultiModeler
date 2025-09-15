@@ -19,7 +19,8 @@ import CanvasUtils from './ui/utils/canvas-utils.js';
  * @returns {Promise<Object>} - Application instance
  */
 export async function initializeApplication(options = {}) {
-  console.log('[App] Initializing application with modular monolith architecture');
+  // Optimización: Log eliminado para mejorar rendimiento
+  // console.log('[App] Initializing application with modular monolith architecture');
   
   try {
     // Initialize the MultiNotation Modeler core
@@ -33,7 +34,8 @@ export async function initializeApplication(options = {}) {
     
     // Si aún no está disponible, esperar un poco y reintentar
     if (!modeler && registry) {
-      console.log('[App] BpmnModeler not found, waiting for registration...');
+      // Optimización: Log eliminado para mejorar rendimiento
+      // console.log('[App] BpmnModeler not found, waiting for registration...');
       // Esperar hasta 2 segundos para que se registre
       for (let i = 0; i < 20; i++) {
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -83,7 +85,8 @@ export async function initializeApplication(options = {}) {
       core: core
     });
     
-    console.log('[App] Application initialized successfully');
+    // Optimización: Log eliminado para mejorar rendimiento
+    // console.log('[App] Application initialized successfully');
     
     // Return the application API
     return {
@@ -109,32 +112,10 @@ export { MultiNotationModeler };
  * Main entry point when loaded in the browser
  */
 async function main() {
-  if (typeof document !== 'undefined') {
-    document.addEventListener('DOMContentLoaded', async () => {
-      try {
-        // Check if app is already initialized by app.js
-        const registry = getServiceRegistry();
-        if (registry && registry.get('App')) {
-          console.log('[App] Application already initialized by app.js');
-          return;
-        }
-        
-        // Initialize application when DOM is ready (fallback)
-        const app = await initializeApplication({
-          container: document.getElementById('container')
-        });
-        
-        // Register app in service registry instead of window
-        if (registry) {
-          registry.register('App', app);
-        }
-        
-        console.log('[App] Application loaded and ready (fallback)');
-      } catch (error) {
-        console.error('[App] Failed to load application:', error);
-      }
-    });
-  }
+  // DESHABILITADO: La inicialización se maneja completamente desde app.js
+  // para evitar inicializaciones múltiples y recargas de welcome screen
+  console.log('[App] Inicialización automática deshabilitada - manejada por app.js');
+  return;
 }
 
 // Auto-start when loaded directly (but only if not already started)

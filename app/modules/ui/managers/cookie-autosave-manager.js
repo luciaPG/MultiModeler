@@ -51,7 +51,8 @@ class CookieAutoSaveManager {
   }
   
   init() {
-    console.log('🍪 Inicializando Cookie AutoSave Manager...');
+    // Optimización: Log eliminado para mejorar rendimiento
+    // console.log('🍪 Inicializando Cookie AutoSave Manager...');
     
     // Cargar estado guardado al inicializar
     this.loadState();
@@ -71,7 +72,8 @@ class CookieAutoSaveManager {
     // Configurar listeners para cambios en paneles
     this.setupPanelListeners();
     
-    console.log('✅ Cookie AutoSave Manager inicializado');
+    // Optimización: Log eliminado para mejorar rendimiento
+    // console.log('✅ Cookie AutoSave Manager inicializado');
   }
   
   // === GESTIÓN DE COOKIES ===
@@ -242,13 +244,15 @@ class CookieAutoSaveManager {
   
   loadState() {
     try {
-      console.log('📂 Cargando estado desde cookies...');
+      // Optimización: Log eliminado para mejorar rendimiento
+      // console.log('📂 Cargando estado desde cookies...');
       
       const savedState = this.getCookie(this.cookieName);
       
       if (this.autoSaveEnabled && savedState && savedState.metadata) {
         this.projectState = { ...this.projectState, ...savedState };
-        console.log('✅ Estado cargado desde cookies');
+        // Optimización: Log eliminado para mejorar rendimiento
+        // console.log('✅ Estado cargado desde cookies');
         
         // Aplicar estado cargado
         this.applyLoadedState();
@@ -287,7 +291,8 @@ class CookieAutoSaveManager {
         RasciStore.setMatrix(this.projectState.rasci.matrixData || {});
       }
       
-      console.log('✅ Estado aplicado correctamente');
+      // Optimización: Log eliminado para mejorar rendimiento
+      // console.log('✅ Estado aplicado correctamente');
       
     } catch (error) {
       console.error('❌ Error aplicando estado cargado:', error);
@@ -402,7 +407,8 @@ class CookieAutoSaveManager {
       }
     }, this.autoSaveFrequency);
     
-    console.log(`🔄 Autoguardado iniciado cada ${this.autoSaveFrequency}ms`);
+    // Optimización: Log eliminado para mejorar rendimiento
+    // console.log(`🔄 Autoguardado iniciado cada ${this.autoSaveFrequency}ms`);
   }
   
   stopAutoSave() {
@@ -453,7 +459,8 @@ class CookieAutoSaveManager {
         });
       });
       
-      console.log('🎧 Listeners del modeler configurados');
+      // Optimización: Log eliminado para mejorar rendimiento
+      // console.log('🎧 Listeners del modeler configurados');
       
     } catch (error) {
       console.error('❌ Error configurando listeners del modeler:', error);
@@ -497,7 +504,8 @@ class CookieAutoSaveManager {
         };
       }
       
-      console.log('🎧 Listeners de PPI configurados');
+      // Optimización: Log eliminado para mejorar rendimiento
+      // console.log('🎧 Listeners de PPI configurados');
       
     } catch (error) {
       console.error('❌ Error configurando listeners de PPI:', error);
@@ -524,7 +532,8 @@ class CookieAutoSaveManager {
     try {
       // TODO: Implementar observadores para RasciStore
       // Por ahora, nos basamos en el trigger manual
-      console.log('🎧 Listeners de RASCI configurados (basados en triggers manuales)');
+      // Optimización: Log eliminado para mejorar rendimiento
+      // console.log('🎧 Listeners de RASCI configurados (basados en triggers manuales)');
       
     } catch (error) {
       console.error('❌ Error configurando listeners de RASCI:', error);
@@ -551,7 +560,8 @@ class CookieAutoSaveManager {
     try {
       // TODO: Implementar observadores para PanelManager
       // Por ahora, nos basamos en el trigger manual
-      console.log('🎧 Listeners de paneles configurados (basados en triggers manuales)');
+      // Optimización: Log eliminado para mejorar rendimiento
+      // console.log('🎧 Listeners de paneles configurados (basados en triggers manuales)');
       
     } catch (error) {
       console.error('❌ Error configurando listeners de paneles:', error);
@@ -631,18 +641,9 @@ class CookieAutoSaveManager {
         // Restaurar XML
         await modeler.importXML(this.projectState.bpmn.xml);
         
-        // Restaurar zoom y posición
-        if (this.projectState.bpmn.zoom && this.projectState.bpmn.position) {
-          try {
-            const canvas = modeler.get('canvas');
-            if (canvas) {
-              canvas.zoom(this.projectState.bpmn.zoom);
-              canvas.viewbox(this.projectState.bpmn.position);
-            }
-          } catch (error) {
-            console.warn('⚠️ No se pudo restaurar zoom/posición:', error);
-          }
-        }
+        // Restaurar zoom y posición - DESHABILITADO para evitar duplicación con LocalStorageAutoSaveManager
+        // El LocalStorageAutoSaveManager maneja la restauración de zoom/posición de manera más robusta
+        console.log('ℹ️ Zoom/posición manejado por LocalStorageAutoSaveManager');
         
         // Restaurar selección
         if (this.projectState.bpmn.selection) {

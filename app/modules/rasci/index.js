@@ -66,7 +66,8 @@ class RASCIManager {
   this.matrixData = rasciAdapter && typeof rasciAdapter.getMatrixData === 'function' ? rasciAdapter.getMatrixData() : {};
     }
     
-    console.log('[RASCI] Manager initialized');
+    // Optimización: Log eliminado para mejorar rendimiento
+    // console.log('[RASCI] Manager initialized');
     return this;
   }
   
@@ -193,7 +194,8 @@ export async function initialize(options = {}) {
     globalThis.getQueueInfo = getQueueInfo;
     globalThis.addChangeToQueue = addChangeToQueue;
     globalThis.clearPendingChanges = clearPendingChanges;
-    console.log('✅ Funciones de debug RASCI registradas globalmente');
+    // Optimización: Log eliminado para mejorar rendimiento
+    // console.log('✅ Funciones de debug RASCI registradas globalmente');
   }
   
   // Export existing functionality

@@ -1,4 +1,5 @@
 // RASCI Matrix Validator
+import { getBpmnTasks } from '../core/matrix-manager.js';
 
 export class RasciMatrixValidator {
   constructor() {
@@ -16,20 +17,40 @@ export class RasciMatrixValidator {
     this.validRoles = new Set(organizationalRoles);
 
     if (!roles || roles.length === 0) {
-      this.addCriticalError('No hay roles definidos en la matriz RASCI.');
+      // No mostrar error si no hay roles - puede ser un diagrama nuevo
+      console.log('ℹ️ No hay roles definidos - diagrama nuevo o sin configuración RASCI');
       return this.getValidationSummary();
     }
 
     if (!matrixData || Object.keys(matrixData).length === 0) {
-      this.addCriticalError('No hay datos de matriz para validar.');
+      // No mostrar error si no hay datos de matriz - puede ser un diagrama nuevo
+      console.log('ℹ️ No hay datos de matriz - diagrama nuevo o sin tareas');
       return this.getValidationSummary();
     }
 
-    // Validar cada tarea de la matriz RASCI
-    const allTasks = Object.keys(matrixData);
+    // Obtener tareas actuales del diagrama BPMN
+    const currentBpmnTasks = getBpmnTasks();
+    console.log('🔍 Tareas actuales en diagrama BPMN:', currentBpmnTasks);
     
-    // Verificar si todas las tareas están vacías
-    const tasksWithRoles = allTasks.filter(taskName => {
+    // Solo validar tareas que realmente existen en el diagrama actual
+    const allTasks = Object.keys(matrixData);
+    const validTasks = allTasks.filter(taskName => currentBpmnTasks.includes(taskName));
+    const orphanedTasks = allTasks.filter(taskName => !currentBpmnTasks.includes(taskName));
+    
+    if (orphanedTasks.length > 0) {
+      console.log('🗑️ Tareas huérfanas en matriz (no existen en diagrama):', orphanedTasks);
+      // Limpiar tareas huérfanas automáticamente
+      this.cleanOrphanedTasks(orphanedTasks, matrixData);
+    }
+    
+    // Si no hay tareas válidas, no hay nada que validar
+    if (validTasks.length === 0) {
+      console.log('ℹ️ No hay tareas válidas para validar - diagrama vacío o sin tareas');
+      return this.getValidationSummary();
+    }
+    
+    // Verificar si todas las tareas válidas están vacías
+    const tasksWithRoles = validTasks.filter(taskName => {
       const taskData = matrixData[taskName] || {};
       
       // Verificar si la tarea tiene datos (incluso si están vacíos)
@@ -45,19 +66,19 @@ export class RasciMatrixValidator {
       return hasRoles;
     });
 
-    // Verificar si hay tareas pero están vacías
-    if (allTasks.length > 0) {
-      const tasksWithData = allTasks.filter(taskName => {
+    // Verificar si hay tareas válidas pero están vacías
+    if (validTasks.length > 0) {
+      const tasksWithData = validTasks.filter(taskName => {
         const taskData = matrixData[taskName] || {};
         return taskData && typeof taskData === 'object' && Object.keys(taskData).length > 0;
       });
       
       if (tasksWithData.length > 0 && tasksWithRoles.length === 0) {
         // Hay tareas con estructura pero sin roles asignados
-        this.addCriticalError(`Ninguna de las ${allTasks.length} tareas tiene roles asignados. Debes asignar al menos un responsable (R) a cada tarea.`);
+        this.addCriticalError(`Ninguna de las ${validTasks.length} tareas tiene roles asignados. Debes asignar al menos un responsable (R) a cada tarea.`);
         
-        // Mostrar errores individuales para cada tarea
-        allTasks.forEach(taskName => {
+        // Mostrar errores individuales solo para tareas válidas
+        validTasks.forEach(taskName => {
           this.addCriticalError(`La tarea '${taskName}' no tiene ningún rol asignado. Debes asignar al menos un responsable (R) a esta tarea.`);
         });
         
@@ -65,7 +86,8 @@ export class RasciMatrixValidator {
       }
     }
     
-    allTasks.forEach(taskName => {
+    // Solo validar tareas que realmente existen en el diagrama
+    validTasks.forEach(taskName => {
       this.validateTask(taskName, roles, matrixData);
     });
 
@@ -341,6 +363,28 @@ export class RasciMatrixValidator {
     };
     
     return realTimeResult;
+  }
+
+  // Limpiar tareas huérfanas de la matriz
+  cleanOrphanedTasks(orphanedTasks, matrixData) {
+    console.log('🧹 Limpiando tareas huérfanas de la matriz...');
+    
+    orphanedTasks.forEach(taskName => {
+      if (matrixData[taskName]) {
+        delete matrixData[taskName];
+        console.log(`🗑️ Eliminada tarea huérfana: ${taskName}`);
+      }
+    });
+    
+    // Guardar cambios en localStorage si es posible
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('rasciMatrixData', JSON.stringify(matrixData));
+        console.log('✅ Matriz actualizada en localStorage');
+      }
+    } catch (error) {
+      console.warn('⚠️ No se pudo actualizar localStorage:', error);
+    }
   }
 }
 

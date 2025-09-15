@@ -631,9 +631,11 @@ class PPIUI {
           updatedAt: ppi.updatedAt
         });
         newElement.setAttribute('data-ppi-data', currentData);
-        // No animation delay - elements should appear instantly
+        // Eliminar completamente animaciones y transiciones para evitar parpadeos
         newElement.style.animation = 'none';
         newElement.style.transition = 'none';
+        newElement.style.opacity = '1';
+        newElement.style.transform = 'none';
         
         // Configurar event listeners para los botones de la nueva tarjeta
         this.setupCardEventListeners(newElement, ppi);
@@ -3559,13 +3561,15 @@ class PPIUI {
    * Deselecciona todos los PPIs en la lista
    */
   clearPPISelection() {
-    console.log(`🔴 [PPI-UI] Limpiando selección de PPIs`);
+    // Optimización: Log eliminado para mejorar rendimiento
+    // console.log(`🔴 [PPI-UI] Limpiando selección de PPIs`);
     
     const container = document.getElementById('ppi-list');
     if (!container) return;
     
     const selectedCards = container.querySelectorAll('.ppi-card.selected');
-    console.log(`🔴 [PPI-UI] Encontradas ${selectedCards.length} tarjetas seleccionadas`);
+    // Optimización: Log eliminado para mejorar rendimiento
+    // console.log(`🔴 [PPI-UI] Encontradas ${selectedCards.length} tarjetas seleccionadas`);
     
     selectedCards.forEach(card => {
       card.classList.remove('selected');
@@ -3681,7 +3685,8 @@ if (registry) {
   registry.register('PPIUI', PPIUI, { 
     description: 'UI de PPIs' 
   });
-  console.log('✅ PPIUI registrado en ServiceRegistry');
+  // Optimización: Log eliminado para mejorar rendimiento
+  // console.log('✅ PPIUI registrado en ServiceRegistry');
 } else {
   console.log('ℹ️ ServiceRegistry no disponible para PPIUI');
 }

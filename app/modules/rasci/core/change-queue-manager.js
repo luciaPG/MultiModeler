@@ -268,21 +268,6 @@ class ChangeQueueManager {
       console.warn('⚠️ [QUEUE] Elemento pending-changes-indicator no encontrado');
     }
 
-    // Actualizar el botón de mapeo manual si existe
-    const manualBtn = document.getElementById('manual-mapping-btn');
-    if (manualBtn) {
-      if (count > 0) {
-        manualBtn.innerHTML = `<i class="fas fa-magic"></i> Ejecutar Mapeo Manual (${count} pendientes)`;
-        manualBtn.style.backgroundColor = '#ff9800';
-        manualBtn.style.color = 'white';
-        manualBtn.style.display = 'block';
-      } else {
-        manualBtn.innerHTML = `<i class="fas fa-magic"></i> Ejecutar Mapeo Manual`;
-        manualBtn.style.backgroundColor = '';
-        manualBtn.style.color = '';
-        // No cambiar display aquí, dejarlo como está
-      }
-    }
   }
 
   /**
@@ -351,7 +336,8 @@ function registerGlobalFunctions() {
     globalThis.getQueueInfo = getQueueInfo;
     globalThis.addChangeToQueue = addChangeToQueue;
     globalThis.clearPendingChanges = clearPendingChanges;
-    console.log('✅ [QUEUE] Funciones de debug registradas globalmente');
+    // Optimización: Log eliminado para mejorar rendimiento
+    // console.log('✅ [QUEUE] Funciones de debug registradas globalmente');
   }
 }
 
@@ -367,7 +353,8 @@ if (sr) {
   sr.registerFunction('clearPendingChanges', clearPendingChanges);
   sr.registerFunction('debugQueueStatus', debugQueueStatus);
   
-  console.log('✅ [QUEUE] ChangeQueueManager registrado en service registry');
+  // Optimización: Log eliminado para mejorar rendimiento
+  // console.log('✅ [QUEUE] ChangeQueueManager registrado en service registry');
 }
 
 // También registrar con un pequeño delay para asegurar que esté disponible

@@ -1,5 +1,5 @@
 // RASCI Core
-import { renderMatrix, addNewRole, editRole, showDeleteConfirmModal, getBpmnTasks, forceReloadMatrix } from './matrix-manager.js';
+import { renderMatrix, addNewRole, editRole, showDeleteConfirmModal, getBpmnTasks, forceReloadMatrix, setupDiagramChangeListener } from './matrix-manager.js';
 import { applyStyles } from './styles.js';
 import { initRasciMapping, executeSimpleRasciMapping, rasciAutoMapping } from '../mapping/index.js';
 import { rasciUIValidator } from '../ui/matrix-ui-validator.js';
@@ -543,27 +543,24 @@ export function initRasciPanel(panel) {
   // Inicializar validador de matriz RASCI
   rasciUIValidator.init(panel);
 
-  // Sistema de detección de cambios en BPMN (DESHABILITADO PARA EVITAR BUCLE)
+  // Sistema de detección de cambios en BPMN - HABILITADO para sincronizar matriz
   function setupBpmnChangeDetection() {
-    console.log('🔕 Detección automática de cambios BPMN deshabilitada para evitar bucle');
+    console.log('🔍 Configurando detección de cambios BPMN para sincronizar matriz RASCI...');
     
-    // Sistema deshabilitado temporalmente
-    // El usuario debe usar el botón "Recargar Matriz" manualmente
-    
-    /*
     const registry = getServiceRegistry();
     const modeler = registry && registry.get('BPMNModeler');
     if (modeler && modeler.get) {
       const eventBus = modeler.get('eventBus');
       if (eventBus) {
-        console.log('EventBus disponible pero listeners deshabilitados');
+        console.log('✅ EventBus disponible - configurando listeners para sincronización');
+        // Configurar listeners para sincronizar matriz cuando cambie el diagrama
+        setupDiagramChangeListener();
       } else {
-        console.log('EventBus no disponible');
+        console.log('⚠️ EventBus no disponible');
       }
     } else {
-      console.log('BPMN Modeler no disponible');
+      console.log('⚠️ BPMN Modeler no disponible');
     }
-    */
   }
 
   // Configurar detección de cambios

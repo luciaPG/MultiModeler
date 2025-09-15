@@ -53,7 +53,8 @@ export class MultiNotationModelerCore {
    */
   registerModule(name, module) {
     this.registeredModules[name] = module;
-    console.log(`[Core] Module "${name}" registered successfully`);
+    // Optimización: Log eliminado para mejorar rendimiento
+    // console.log(`[Core] Module "${name}" registered successfully`);
     
     // Notify that a module was registered
     this.eventBus.publish('core.module.registered', { name, module });
@@ -109,7 +110,8 @@ export class MultiNotationModelerCore {
         });
       }
       
-      console.log('[Core] MultiNotation Modeler initialized successfully');
+      // Optimización: Log eliminado para mejorar rendimiento
+      // console.log('[Core] MultiNotation Modeler initialized successfully');
       return this;
     } catch (error) {
       console.error('[Core] Failed to initialize MultiNotation Modeler:', error);
@@ -156,7 +158,8 @@ export class MultiNotationModelerCore {
             panelManager: panelManager,
             store: this.store
           });
-          console.log('[Core] BPMN modeler initialized successfully');
+          // Optimización: Log eliminado para mejorar rendimiento
+          // console.log('[Core] BPMN modeler initialized successfully');
         } catch (err) {
           console.warn('[Core] Could not fully initialize BPMN modeler:', err);
         }
@@ -213,7 +216,8 @@ export class MultiNotationModelerCore {
         };
       }
       
-      console.log('[Core] Auxiliary notations initialized successfully');
+      // Optimización: Log eliminado para mejorar rendimiento
+      // console.log('[Core] Auxiliary notations initialized successfully');
     } catch (error) {
       console.error('[Core] Failed to initialize auxiliary notations:', error);
       throw error;

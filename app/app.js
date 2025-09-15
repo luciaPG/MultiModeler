@@ -11,9 +11,13 @@ import modelerManager from './modules/ui/managers/modeler-manager.js';
 import './modules/ui/managers/panel-manager.js';
 import './modules/ui/managers/cookie-autosave-manager.js';
 import './modules/ui/managers/localstorage-autosave-manager.js';
+import './modules/ui/managers/ppinot-storage-manager.js';
+import './modules/ui/managers/ppinot-coordination-manager.js';
+import './modules/ui/managers/import-export-manager.js';
 import { initializeCommunicationSystem } from './modules/ui/core/CommunicationSystem.js';
 import { getServiceRegistry } from './modules/ui/core/ServiceRegistry.js';
 import { resolve } from './services/global-access.js';
+import { cleanGhostTasksOnStartup, startGhostTaskCleaner } from './modules/rasci/core/matrix-manager.js';
 
 // Import required JSON files for moddle extensions
 import PPINOTModdle from './modules/multinotationModeler/notations/ppinot/PPINOTModdle.json';
@@ -28,6 +32,15 @@ const registerModules = () => {
     registry.register('RALphModdle', RALphModdle);
   }
 };
+
+// Call registerModules immediately
+registerModules();
+
+// Clean ghost tasks on startup
+cleanGhostTasksOnStartup();
+
+// Start periodic ghost task cleaner
+startGhostTaskCleaner();
 
 // Import CSS
 import 'bpmn-js/dist/assets/diagram-js.css';
@@ -51,36 +64,278 @@ let isModelerInitialized = false;
 let appInitialized = false;
 let isOpenButtonClicked = false;
 
+// Sistema de sincronización para carga consistente
+const loadingState = {
+  modules: {
+    communicationSystem: false,
+    serviceRegistry: false,
+    bpmnModeler: false,
+    ppinotModule: false,
+    ralphModule: false,
+    rasciModule: false,
+    localStorageManager: false,
+    cookieManager: false,
+    panelManager: false
+  },
+  isReady: false,
+  onReadyCallbacks: [],
+  isInitializing: false
+};
+
+// Función para verificar si todos los módulos están listos
+function checkAllModulesReady() {
+  const allReady = Object.values(loadingState.modules).every(ready => ready);
+  if (allReady && !loadingState.isReady) {
+    loadingState.isReady = true;
+    console.log('🚀 Todos los módulos están listos, inicializando aplicación...');
+    
+    // Ejecutar callbacks de ready
+    loadingState.onReadyCallbacks.forEach(callback => {
+      try {
+        callback();
+      } catch (error) {
+        console.error('Error en callback de ready:', error);
+      }
+    });
+    loadingState.onReadyCallbacks = [];
+  }
+  return allReady;
+}
+
+// Timeout de seguridad para evitar cargas infinitas
+let loadingTimeout = null;
+function startLoadingTimeout() {
+  // Timeout optimizado para experiencia de usuario óptima
+  const timeoutMs = 3000; // 3 segundos para permitir inicialización completa
+  
+  loadingTimeout = setTimeout(() => {
+    console.warn('⚠️ Timeout de carga alcanzado, forzando finalización...');
+        // Forzando finalización...
+    
+    // Forzar finalización inmediata
+    if (!appInitialized) {
+      appInitialized = true;
+      clearLoadingTimeout();
+      hideLoadingScreen();
+      console.log('✅ Aplicación forzada a inicializar por timeout.');
+    }
+  }, timeoutMs);
+}
+
+function clearLoadingTimeout() {
+  if (loadingTimeout) {
+    clearTimeout(loadingTimeout);
+    loadingTimeout = null;
+  }
+}
+
+// Función para resetear el estado de carga
+function resetLoadingState() {
+  loadingState.isReady = false;
+  loadingState.isInitializing = false;
+  loadingState.onReadyCallbacks = [];
+  
+  // Resetear todos los módulos
+  Object.keys(loadingState.modules).forEach(module => {
+    loadingState.modules[module] = false;
+  });
+  
+  clearLoadingTimeout();
+}
+
+// Función para marcar un módulo como listo
+function markModuleReady(moduleName) {
+  if (loadingState.modules.hasOwnProperty(moduleName)) {
+    loadingState.modules[moduleName] = true;
+    
+    // Solo mostrar log en primera carga para evitar spam
+    if (!appInitialized) {
+      console.log(`✅ Módulo ${moduleName} listo`);
+    }
+    
+    checkAllModulesReady();
+  }
+}
+
+// Función para esperar a que todos los módulos estén listos
+function waitForAllModules(callback) {
+  if (loadingState.isReady) {
+    callback();
+  } else {
+    loadingState.onReadyCallbacks.push(callback);
+  }
+}
+
+// Función para mostrar pantalla de carga
+function showLoadingScreen() {
+  // Verificar si ya existe una pantalla de carga
+  if (document.getElementById('app-loading-screen')) {
+    console.log('⚠️ Pantalla de carga ya existe, saltando...');
+    return;
+  }
+  
+  const loadingHTML = `
+    <div id="app-loading-screen" style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      color: white;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    ">
+      <div style="text-align: center;">
+        <div style="
+          width: 60px;
+          height: 60px;
+          border: 4px solid rgba(255,255,255,0.3);
+          border-top: 4px solid white;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin: 0 auto 20px;
+        "></div>
+        <h2 style="margin: 0 0 10px; font-size: 24px; font-weight: 300;">VisualPPINOT</h2>
+        <p style="margin: 0; font-size: 16px; opacity: 0.8;">Cargando módulos...</p>
+        <div id="loading-progress" style="
+          margin-top: 20px;
+          font-size: 14px;
+          opacity: 0.7;
+        ">Inicializando sistema...</div>
+      </div>
+      <style>
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      </style>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', loadingHTML);
+  console.log('✅ Pantalla de carga mostrada');
+}
+
+// Función para ocultar pantalla de carga
+function hideLoadingScreen() {
+  const loadingScreen = document.getElementById('app-loading-screen');
+  if (loadingScreen) {
+    // Ocultar inmediatamente sin transición
+    loadingScreen.remove();
+    console.log('✅ Pantalla de carga ocultada');
+  }
+}
+
+// Función para actualizar progreso de carga
+function updateLoadingProgress(message) {
+  const progressElement = document.getElementById('loading-progress');
+  if (progressElement) {
+    progressElement.textContent = message;
+  }
+}
+
+// Función para verificar si la aplicación está realmente funcionando
+function isAppReallyWorking() {
+  // Verificación rápida para evitar reinicializaciones innecesarias
+  if (!appInitialized || !modeler || !app) {
+    return false;
+  }
+  
+  // Verificar que el contenedor existe y tiene contenido
+  const container = document.getElementById('modeler-container');
+  if (!container || container.children.length === 0) {
+    return false;
+  }
+  
+  // Verificar que el modeler tiene los servicios básicos
+  try {
+    const canvas = modeler.get('canvas');
+    const elementRegistry = modeler.get('elementRegistry');
+    if (!canvas || !elementRegistry) {
+      return false;
+    }
+  } catch (error) {
+    console.warn('⚠️ Error verificando servicios del modeler:', error);
+    return false;
+  }
+  
+  return true;
+}
+
+// Flag para evitar múltiples inicializaciones simultáneas
+let _initializing = false;
+
 // Inicialización principal de la aplicación
 async function initializeApp() {
-  if (appInitialized) return;
+  // Verificar si ya está inicializando para evitar múltiples llamadas
+  if (_initializing) {
+    console.log('🔄 Inicialización ya en progreso, saltando...');
+    return;
+  }
+  
+  // Verificar si ya está inicializado para evitar múltiples llamadas
+  if (appInitialized) {
+    console.log('✅ Aplicación ya inicializada, saltando reinicialización...');
+    return;
+  }
+  
+  // Verificar si realmente está funcionando (solo si está marcado como inicializado)
+  if (isAppReallyWorking()) {
+    console.log('✅ Aplicación ya inicializada y funcionando, saltando reinicialización...');
+    return;
+  }
+  
+  // Marcar como inicializando para evitar llamadas múltiples
+  _initializing = true;
   
   try {
-    console.log('Inicializando aplicación VisualPPINOT...');
-    console.log('[DEBUG] Estado inicial:', {
-      appInitialized,
-      modeler,
-      welcomeScreen: !!welcomeScreen,
-      modelerContainer: !!modelerContainer
-    });
+    console.log('🚀 Iniciando carga sincronizada de la aplicación...');
+    
+    // Inicialización directa sin sistema de sincronización complejo
+    
+    // NO mostrar pantalla de carga - usar solo welcome screen para evitar parpadeos
+    if (!appInitialized) {
+      console.log('🚀 Inicializando aplicación (sin pantalla de carga)...');
+    } else {
+      // En recargas, no mostrar pantalla de carga para mejor rendimiento
+      console.log('🔄 Recarga rápida sin pantalla de carga...');
+    }
+    
+    // Verificar que el DOM está listo
+    if (!document.getElementById('modeler-container')) {
+      console.error('❌ Error: Contenedor del modeler no encontrado en el DOM');
+      // Error: Contenedor no encontrado
+      return;
+    }
+    
+    // Iniciar timeout de seguridad
+    startLoadingTimeout();
     
     // Initialize communication system first
-    console.log('[DEBUG] Inicializando sistema de comunicación...');
     initializeCommunicationSystem();
-    console.log('[DEBUG] Sistema de comunicación inicializado');
     
     // Register modules in service registry
-    console.log('[DEBUG] Registrando módulos...');
     registerModules();
-    console.log('[DEBUG] Módulos registrados');
     
     // Configurar elementos UI
-    console.log('[DEBUG] Configurando elementos UI...');
     setupUIElements();
-    console.log('[DEBUG] Elementos UI configurados');
     
     // Configurar modeler primero para que esté disponible durante la inicialización
-    console.log('[DEBUG] Inicializando modeler...');
+    
+    // Asegurar que el contenedor existe
+    if (!modelerContainer) {
+      modelerContainer = document.getElementById('modeler-container');
+    }
+    
+    if (!modelerContainer) {
+      throw new Error('Contenedor del modeler no encontrado');
+    }
+    
     modeler = new MultiNotationModeler({
       container: modelerContainer,
       // El bindTo ya no es necesario en versiones recientes de bpmn-js
@@ -90,42 +345,100 @@ async function initializeApp() {
         RALph: RALphModdle
       }
     });
-    console.log('[DEBUG] Modeler creado:', modeler);
+    
+    // Verificar que el modeler se creó correctamente
+    if (!modeler) {
+      throw new Error('Error al crear el modeler BPMN');
+    }
+    
+    // Verificar que el modeler tiene los métodos necesarios
+    if (!modeler.get || !modeler.get('moddle')) {
+      throw new Error('Modeler BPMN no tiene los métodos necesarios');
+    }
     
     // Register BpmnModeler in service registry (following bpmn-js patterns)
     const serviceRegistry = getServiceRegistry();
     if (serviceRegistry) {
       serviceRegistry.register('BpmnModeler', modeler);
     }
+    // Modeler BPMN listo
   
     
-    // Inicializar aplicación modular
-    app = await initializeApplication({
-      container: document.getElementById('modeler-container'),
-      bpmnModeler: modeler // Pasar el modeler a la aplicación
-    });
+    // Inicialización modular inteligente: solo si no existe
+    const needsModularInit = !app;
     
-    // Actualizar las extensiones del modeler con las proporcionadas por la app
-    if (app.multinotationModeler) {
-      // Añadir extensiones de moddle si están disponibles
-      if (app.multinotationModeler.ppinot) {
-        modeler.get('moddle').registerPackage({ ppinot: app.multinotationModeler.ppinot });
-        const sr = getServiceRegistry();
-        if (sr) {
+    if (needsModularInit) {
+      // Inicializando aplicación modular
+      try {
+        // Inicialización con timeout optimizado para recargas
+        const timeoutMs = appInitialized ? 1000 : 2000; // Timeout más corto en recargas
+        
+        const initPromise = initializeApplication({
+          container: document.getElementById('modeler-container'),
+          bpmnModeler: modeler
+        });
+        
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout inicializando aplicación modular')), timeoutMs)
+        );
+        
+        app = await Promise.race([initPromise, timeoutPromise]);
+        
+        if (!app) {
+          throw new Error('Aplicación modular retornó null');
+        }
+        
+        // Crear estructura esperada para compatibilidad
+        if (app.multiNotationModeler) {
+          app.multinotationModeler = {
+            ppinot: app.multiNotationModeler,
+            ralph: app.multiNotationModeler
+          };
+          console.log('✅ Estructura de extensiones creada para compatibilidad');
+        } else {
+          console.warn('⚠️ Aplicación modular no tiene multiNotationModeler, pero continuando...');
+        }
+        
+        console.log('✅ Aplicación modular inicializada correctamente');
+      } catch (error) {
+        console.warn('⚠️ Error al inicializar aplicación modular, usando fallback rápido:', error.message);
+        // Crear app mock para evitar errores
+        app = {
+          multinotationModeler: null,
+          core: null
+        };
+        console.log('⚠️ Usando aplicación mock para continuar');
+      }
+    } else {
+      // Aplicación modular ya existe con extensiones
+    }
+    
+    // Las extensiones ya están registradas en el constructor del modeler
+    // No necesitamos registrarlas manualmente con registerPackage
+    if (app && modeler) {
+      console.log('✅ Extensiones PPINOT y RALph ya registradas en el constructor del modeler');
+      
+      // Solo registrar en el service registry para referencia
+      const sr = getServiceRegistry();
+      if (sr) {
+        if (app.multinotationModeler && app.multinotationModeler.ppinot) {
           sr.register('PPINOTModdle', app.multinotationModeler.ppinot);
+          console.log('✅ PPINOTModdle registrado en ServiceRegistry');
         }
-      }
-      if (app.multinotationModeler.ralph) {
-        modeler.get('moddle').registerPackage({ ralph: app.multinotationModeler.ralph });
-        const sr = getServiceRegistry();
-        if (sr) {
+        if (app.multinotationModeler && app.multinotationModeler.ralph) {
           sr.register('RALphModdle', app.multinotationModeler.ralph);
+          console.log('✅ RALphModdle registrado en ServiceRegistry');
         }
       }
+    } else {
+      console.warn('⚠️ Aplicación modular o modeler no disponible, continuando sin extensiones...');
+      console.log('🔍 Debug - app:', !!app);
+      console.log('🔍 Debug - app.multinotationModeler:', !!app?.multinotationModeler);
+      console.log('🔍 Debug - modeler:', !!modeler);
     }
     
     // Notificar al core que el modelador está disponible (por si acaso no lo detectó antes)
-    if (app.core && app.core.eventBus) {
+    if (app && app.core && app.core.eventBus) {
       app.core.eventBus.publish('bpmn.modeler.created', { modeler: modeler });
     }
     
@@ -136,7 +449,7 @@ async function initializeApp() {
     }
     
     // Registrar paneles disponibles en el panel manager
-    if (app.core && app.core.panelManager) {
+    if (app && app.core && app.core.panelManager) {
       app.core.panelManager.loadPanels = async function() {
         // No-op para compatibilidad
         console.log('[App] Panel loading is now handled by the panel-loader');
@@ -146,11 +459,24 @@ async function initializeApp() {
     // Configurar manejadores de eventos
     setupEventHandlers();
     
+    // Módulos ya están listos después de la inicialización modular
+    
     // Exponer APIs necesarias para elementos legacy
     exposeAPIs();
     
+    // Marcar como inicializado inmediatamente para recargas rápidas
+    const wasAlreadyInitialized = appInitialized;
     appInitialized = true;
-    console.log('Aplicación VisualPPINOT inicializada correctamente.');
+    _initializing = false; // Limpiar flag de inicialización
+    clearLoadingTimeout(); // Limpiar timeout de seguridad
+    
+    if (!wasAlreadyInitialized) {
+      // ¡Aplicación lista!
+    } else {
+      // En recargas, sin pantalla de carga
+    }
+    
+    console.log('✅ Aplicación VisualPPINOT inicializada correctamente.');
     
     // Inicializar sistema de autoguardado si está habilitado
     if (autoSaveEnabled && !autoSaveInterval) {
@@ -161,6 +487,9 @@ async function initializeApp() {
   } catch (error) {
     console.error('Error inicializando la aplicación:', error);
     showErrorMessage('Error al inicializar la aplicación: ' + error.message);
+  } finally {
+    // Limpiar flag de inicialización
+    _initializing = false;
   }
 }
 
@@ -169,9 +498,14 @@ function setupUIElements() {
   welcomeScreen = $('#welcome-screen');
   modelerContainer = $('#modeler-container');
   
-  // Configurar UI inicial
-  welcomeScreen.show();
-  modelerContainer.hide();
+  // Solo mostrar welcome screen en primera carga, no en recargas
+  if (!appInitialized) {
+    welcomeScreen.show();
+    modelerContainer.hide();
+  } else {
+    // En recargas, mantener el estado actual
+    console.log('🔄 Recarga: manteniendo estado actual de UI...');
+  }
   
   // Configurar botones y eventos de UI
   setupUIEvents();
@@ -216,12 +550,17 @@ function setupUIEvents() {
       });
 
       try {
-        // Ocultar botón de continuar si estaba visible y suprimir aviso de borrador
+        // Ocultar botón de continuar si estaba visible y resetear localStorage para nuevo diagrama
         try {
           $('#continue-diagram-btn').hide();
           const registry = getServiceRegistry();
           const manager = registry ? registry.get('localStorageAutoSaveManager') : null;
           if (manager) {
+            // RESETEAR localStorage para nuevo diagrama
+            console.log('🔄 Reseteando localStorage para nuevo diagrama...');
+            if (typeof manager.clearProjectState === 'function') {
+              manager.clearProjectState();
+            }
             if (typeof manager.markRestored === 'function') manager.markRestored();
             if (typeof manager.dismissDraftNotification === 'function') manager.dismissDraftNotification();
           }
@@ -251,14 +590,22 @@ function setupUIEvents() {
       openDiagramHandler();
     });
 
+    // Botón de descargar proyecto
+    $('#download-project-btn').on('click', function() {
+      downloadProjectHandler();
+    });
+
     // Botón de continuar último diagrama
     $('#continue-diagram-btn').on('click', async function() {
       try {
         welcomeScreen.hide();
         modelerContainer.show();
-        // Asegurar inicialización base
+        // Asegurar inicialización base solo si realmente no está inicializada
         if (!appInitialized) {
+          console.log('🔄 Inicializando aplicación para continuar diagrama...');
           await initializeApp();
+        } else {
+          console.log('✅ Aplicación ya inicializada, continuando con restauración...');
         }
         // Restaurar desde el autosave manager
         const registry = getServiceRegistry();
@@ -267,10 +614,8 @@ function setupUIEvents() {
           // Suspender autoguardado durante restauración para evitar errores
           if (typeof manager.suspendAutoSave === 'function') manager.suspendAutoSave();
           const restored = await manager.forceRestore();
-          // Intentar restaurar BPMN y PPIs si hay estado cargado
+          // forceRestore ya incluye la restauración de BPMN, no es necesario llamarla de nuevo
           if (restored) {
-            // 1) Restaurar BPMN primero
-            try { await manager.restoreBpmnState(); } catch (e) { console.warn('[WARN] Restauración BPMN fallida:', e); }
             // Marcar como restaurado para suprimir futuros avisos
             try { if (typeof manager.markRestored === 'function') manager.markRestored(); } catch (_) { /* no-op */ }
             // Aplicar configuración de paneles guardada
@@ -282,14 +627,9 @@ function setupUIEvents() {
             } catch (e) {
               console.warn('[WARN] No se pudo aplicar la configuración de paneles guardada:', e);
             }
-            // 2) Restaurar PPIs cuando el panel ya existe
-            try {
-              // pequeño delay para asegurar montaje del panel
-              await new Promise(r => setTimeout(r, 150));
-              manager.restorePPIState();
-            } catch (e) {
-              console.warn('[WARN] Restauración PPI fallida:', e);
-            }
+            // 2) Restaurar PPIs cuando el panel ya existe - DESHABILITADO
+            // forceRestore ya incluye la restauración de PPIs, no es necesario llamarla de nuevo
+            console.log('ℹ️ Restauración PPI manejada por forceRestore');
           }
           if (!restored) {
             console.warn('[WARN] No se pudo restaurar el borrador, creando nuevo diagrama');
@@ -301,26 +641,11 @@ function setupUIEvents() {
           console.warn('[WARN] Autosave manager no disponible, creando nuevo diagrama');
           await initModeler();
         }
-        // Ajustes de interfaz tras restaurar
+        // Ajustes de interfaz tras restaurar - Optimización Ultra
         setTimeout(() => {
-          if (typeof window !== 'undefined' && typeof $ !== 'undefined') {
-            $(window).trigger('resize');
-          }
-          try {
-            if (modeler && modeler.get('canvas')) {
-              const sr = getServiceRegistry && getServiceRegistry();
-              const ls = sr && (sr.get('localStorageAutoSaveManager') || sr.get('LocalStorageAutoSaveManager'));
-              const hasSavedView = ls && ls.projectState && ls.projectState.bpmn && ls.projectState.bpmn.position;
-              const hasRestored = ls && ls.hasRestored;
-              // Solo auto-ajustar si NO hay un viewbox/zoom restaurado
-              if (!(hasSavedView && hasRestored)) {
-                modeler.get('canvas').zoom('fit-viewport');
-              }
-            }
-          } catch (zoomErr) {
-            console.warn('[WARN] Error al ajustar zoom tras restauración:', zoomErr);
-          }
-        }, 500);
+          // Evitar forzar eventos de resize para no provocar reflows perceptibles
+          // El zoom/posición se restauran desde LocalStorageAutoSaveManager cuando procede
+        }, 50); // Optimización Ultra: Reducir de 500ms a 50ms
       } catch (e) {
         console.error('[ERROR] Error al continuar borrador:', e);
         showErrorMessage('Error al cargar borrador: ' + e.message);
@@ -329,6 +654,24 @@ function setupUIEvents() {
 
     // ...otros eventos de UI...
   });
+}
+
+// Handler para descargar proyecto
+async function downloadProjectHandler() {
+  try {
+    console.log('[DEBUG] Botón Descargar Proyecto clickeado');
+    
+    const importManager = getServiceRegistry && getServiceRegistry().get('ImportExportManager');
+    if (importManager) {
+      await importManager.exportProject();
+      console.log('[DEBUG] Proyecto descargado correctamente.');
+    } else {
+      throw new Error('No se pudo acceder al gestor de exportación');
+    }
+  } catch (e) {
+    console.error('[ERROR] Error al descargar proyecto:', e);
+    showErrorMessage('Error al descargar proyecto: ' + e.message);
+  }
 }
 
 // Handler asíncrono para abrir diagrama
@@ -341,34 +684,36 @@ async function openDiagramHandler() {
   isOpenButtonClicked = true;
   try {
     console.log('[DEBUG] Abriendo archivo...');
-    const xml = await openFile();
-    console.log('[DEBUG] Archivo abierto:', xml ? xml.substring(0, 50) + '...' : 'sin contenido');
+    const fileData = await openFile();
+    console.log('[DEBUG] Archivo abierto:', fileData.type, fileData.content ? fileData.content.substring(0, 50) + '...' : 'sin contenido');
+    
     welcomeScreen.hide();
     modelerContainer.show();
-    await modeler.importXML(xml);
-    modelerManager.setModeler(modeler);
-    isModelerInitialized = true;
-    console.log('[DEBUG] Diagrama abierto correctamente.');
+    
+    if (fileData.type === 'project') {
+      // Es un archivo de proyecto completo
+      console.log('[DEBUG] Importando proyecto completo...');
+      const importManager = getServiceRegistry && getServiceRegistry().get('ImportExportManager');
+      if (importManager) {
+        await importManager.importAllProjectData(fileData.data);
+        console.log('[DEBUG] Proyecto completo importado correctamente.');
+      } else {
+        throw new Error('No se pudo acceder al gestor de importación');
+      }
+    } else if (fileData.type === 'bpmn') {
+      // Es un archivo XML BPMN
+      console.log('[DEBUG] Importando diagrama BPMN...');
+      await modeler.importXML(fileData.content);
+      modelerManager.setModeler(modeler);
+      isModelerInitialized = true;
+      console.log('[DEBUG] Diagrama BPMN abierto correctamente.');
+    }
 
-    // Ajustes de interfaz tras cargar
+    // Ajustes de interfaz tras cargar - Optimización Ultra
     setTimeout(() => {
-      if (typeof window !== 'undefined' && typeof $ !== 'undefined') {
-        $(window).trigger('resize');
-      }
-      try {
-        if (modeler && modeler.get('canvas')) {
-          const sr = getServiceRegistry && getServiceRegistry();
-          const ls = sr && (sr.get('localStorageAutoSaveManager') || sr.get('LocalStorageAutoSaveManager'));
-          const hasSavedView = ls && ls.projectState && ls.projectState.bpmn && ls.projectState.bpmn.position;
-          const hasRestored = ls && ls.hasRestored;
-          if (!(hasSavedView && hasRestored)) {
-            modeler.get('canvas').zoom('fit-viewport');
-          }
-        }
-      } catch (zoomErr) {
-        console.warn('[WARN] Error al ajustar zoom:', zoomErr);
-      }
-    }, 500);
+      // Evitar forzar eventos de resize para no provocar reflows perceptibles
+      // El zoom/posición se restauran desde LocalStorageAutoSaveManager cuando procede
+    }, 50); // Optimización Ultra: Reducir de 500ms a 50ms
 
   } catch (e) {
     if (e && e.message === 'Operación cancelada') {
@@ -388,12 +733,21 @@ function setupEventHandlers() {
   
   // Eventos para cambios en el diagrama
   modeler.on('elements.changed', function() {
-    // Notificar cambios
-    app.core.eventBus.publish('model.changed', { source: 'bpmn' });
+    // No disparar notificaciones durante cooldown post-restauración para evitar recarga de paneles
+    try {
+      const sr = getServiceRegistry && getServiceRegistry();
+      const lsMgr = sr && (sr.get('localStorageAutoSaveManager') || sr.get('LocalStorageAutoSaveManager'));
+      const inCooldown = lsMgr && lsMgr._postRestoreCooldownUntil && Date.now() < lsMgr._postRestoreCooldownUntil;
+      if (inCooldown) return;
+    } catch (_) { /* no-op */ }
+    // Notificar cambios fuera del cooldown
+    if (app && app.core && app.core.eventBus) {
+      app.core.eventBus.publish('model.changed', { source: 'bpmn' });
+    }
   });
   
   modeler.on('selection.changed', function(e) {
-    if (e.newSelection && e.newSelection.length) {
+    if (e.newSelection && e.newSelection.length && app && app.core && app.core.eventBus) {
       app.core.eventBus.publish('bpmn.element.selected', { element: e.newSelection[0] });
     }
   });
@@ -489,20 +843,7 @@ async function initModeler() {
     
     // OPTIMIZADO: Actualización inmediata sin delays
     console.log('[DEBUG] Ejecutando actualizaciones inmediatas...');
-    if (typeof window !== 'undefined' && typeof $ !== 'undefined') {
-      $(window).trigger('resize');
-    }
-    
-    try {
-      // Ajustar zoom para ver todo el diagrama INMEDIATAMENTE
-      const canvas = modeler.get('canvas');
-      if (canvas && typeof canvas.zoom === 'function') {
-        console.log('[DEBUG] Ajustando zoom inmediatamente');
-        canvas.zoom('fit-viewport');
-      }
-    } catch (error) {
-      console.warn('Error al ajustar zoom:', error);
-    }
+    // Evitar forzar resize o ajuste inmediato de zoom para no provocar reflows perceptibles
     
     console.log('[DEBUG] Inicialización completada');
   } catch (error) {
@@ -521,6 +862,12 @@ async function openFile() {
       // Usar la moderna File System Access API
       const fileHandle = await window.showOpenFilePicker({
         types: [
+          {
+            description: 'Proyectos MultiModeler',
+            accept: {
+              'application/json': ['.mmproject'],
+            },
+          },
           {
             description: 'Diagramas BPMN',
             accept: {
@@ -547,7 +894,7 @@ async function openFile() {
         // Crear un input file oculto
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = '.bpmn,.xml';
+        input.accept = '.mmproject,.bpmn,.xml';
         
         // Promesa para manejar la selección de archivo
         const fileSelected = new Promise((resolve, reject) => {
@@ -579,16 +926,35 @@ async function openFile() {
       }
     }
     
-    // Actualizar el modelo con el contenido del archivo
-    await modeler.importXML(contents);
-    modelerManager.setModeler(modeler);
+    if (!contents) {
+      throw new Error('No se pudo leer el contenido del archivo');
+    }
     
-    isModelerInitialized = true;
-    currentFileName = file.name;
+    // Detectar tipo de archivo y devolver objeto con tipo y contenido
+    const fileExtension = file.name.split('.').pop().toLowerCase();
     
-    console.log(`Archivo '${currentFileName}' abierto correctamente.`);
-    
-    return contents;
+    if (fileExtension === 'mmproject') {
+      // Es un archivo de proyecto completo
+      try {
+        const projectData = JSON.parse(contents);
+        return {
+          type: 'project',
+          data: projectData,
+          content: contents
+        };
+      } catch (error) {
+        throw new Error('El archivo de proyecto no es válido: ' + error.message);
+      }
+    } else if (fileExtension === 'bpmn' || fileExtension === 'xml') {
+      // Es un archivo XML BPMN
+      return {
+        type: 'bpmn',
+        data: null,
+        content: contents
+      };
+    } else {
+      throw new Error('Tipo de archivo no soportado. Use archivos .mmproject, .bpmn o .xml');
+    }
   } catch (error) {
     // Si el error es porque el usuario canceló la operación, no mostramos error
     if (error.name === 'AbortError' || error.message === 'Operación cancelada') {

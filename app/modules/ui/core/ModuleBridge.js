@@ -28,7 +28,8 @@ class ModuleBridge {
     this.setupSharedServices();
 
     this.initialized = true;
-    console.log('✅ ModuleBridge inicializado');
+    // Optimización: Log eliminado para mejorar rendimiento
+    // console.log('✅ ModuleBridge inicializado');
     return this;
   }
 
@@ -106,7 +107,8 @@ class ModuleBridge {
     this.modelers.set(type, modeler);
 
     this.eventBus?.publish?.('modeler.available', { type, modeler });
-    console.log(`🧩 Modeler "${type}" registrado en ModuleBridge`);
+    // Optimización: Log eliminado para mejorar rendimiento
+    // console.log(`🧩 Modeler "${type}" registrado en ModuleBridge`);
   }
 
   getModeler(type = 'bpmn') {
