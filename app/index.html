@@ -403,41 +403,81 @@
     
     /* Área de trabajo principal */
     .workspace {
-      height: 100vh;
+      flex: 1;
+      height: calc(100vh - 64px);
+      max-height: calc(100vh - 64px);
       min-height: 0;
       min-width: 0;
       box-sizing: border-box;
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      position: relative;
+      background: #f1f3f5;
     }
     
     /* Contenedor de paneles */
     .panel-container {
-      height: 100%;
+      flex: 1;
+      height: calc(100vh - 64px - 8px);
+      max-height: calc(100vh - 64px - 8px);
       min-height: 0;
       min-width: 0;
       box-sizing: border-box;
       overflow: hidden;
-      display: flex;
-      overflow: hidden;
+      display: flex !important;
+      flex-direction: row;
       position: relative;
       gap: 8px;
+      padding: 4px;
+      align-items: stretch;
     }
     
     /* Panel individual */
     .panel {
       flex: 1;
-      display: flex;
+      display: flex !important;
       flex-direction: column;
       min-width: var(--panel-min-width);
+      max-width: none;
+      height: 100% !important;
+      max-height: 100% !important;
       background: white;
       box-shadow: var(--shadow-sm);
       position: relative;
       overflow: hidden;
       border-radius: 8px;
-      margin: 8px;
+      margin: 0;
       transition: transform 0.2s ease;
+    }
+    
+    /* Configuración de un solo panel - forzar ancho completo */
+    .panel-container[data-layout="1"] .panel,
+    .panel-container.single-panel .panel,
+    .layout-1 .panel {
+      min-width: 0 !important;
+      width: 100% !important;
+      max-width: none !important;
+      flex: 1 !important;
+    }
+    
+    /* Sobrescribir reglas específicas del panel-container */
+    #panel-container {
+      height: calc(100vh - 64px - 8px) !important;
+      max-height: calc(100vh - 64px - 8px) !important;
+      min-height: calc(100vh - 64px - 8px) !important;
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: stretch !important;
+      flex: 1 !important;
+      overflow: hidden !important;
+      padding: 4px !important;
+    }
+    
+    #panel-container .panel {
+      height: calc(100vh - 64px - 16px) !important;
+      max-height: calc(100vh - 64px - 16px) !important;
+      flex: 1 !important;
     }
     
     .panel-header {
@@ -503,15 +543,101 @@
     
     .panel-content {
       flex: 1;
-      overflow: hidden;
+      overflow: auto;
       position: relative;
       background: white;
+      display: flex !important;
+      flex-direction: column;
+      height: 100% !important;
+      max-height: 100% !important;
+      min-height: 0;
     }
     
     /* Estilos para el canvas */
-    .bpmn-container {
-      width: 100%;
-      height: 100%;
+    .bpmn-container,
+    #js-canvas {
+      width: 100% !important;
+      height: 100% !important;
+      max-height: 100% !important;
+      flex: 1 !important;
+      overflow: visible !important;
+      min-height: 0;
+    }
+    
+    /* Para BPMN, el canvas debe ser visible completamente */
+    .panel[data-panel-type="bpmn"] .panel-content {
+      overflow: visible !important;
+    }
+    
+    .panel[data-panel-type="bpmn"] .bpmn-container {
+      overflow: visible !important;
+    }
+    
+    /* Estilos para contenido RASCI */
+    .tab-content {
+      flex: 1 !important;
+      display: flex !important;
+      flex-direction: column;
+      height: 100% !important;
+      max-height: 100% !important;
+      overflow: auto !important;
+      min-height: 0;
+    }
+    
+    .rasci-matrix-container {
+      flex: 1 !important;
+      overflow: auto !important;
+      height: 100% !important;
+      max-height: 100% !important;
+      min-height: 0;
+    }
+    
+    /* Asegurar que un solo panel ocupe todo el espacio */
+    .panel-container .panel:only-child {
+      max-width: none !important;
+      width: 100% !important;
+      flex: 1 !important;
+      min-width: 0 !important;
+    }
+    
+    /* Layout específico para un solo panel */
+    .panel-container.layout-1 .panel {
+      max-width: none !important;
+      width: 100% !important;
+      flex: 1 !important;
+      min-width: 0 !important;
+    }
+    
+    /* Cuando solo hay un panel en el contenedor */
+    #panel-container .panel:only-child {
+      max-width: none !important;
+      width: 100% !important;
+      flex: 1 !important;
+      min-width: 0 !important;
+    }
+    
+    /* Sobrescribir min-width cuando es el único panel */
+    .panel:only-child {
+      min-width: 0 !important;
+    }
+    
+    /* Configuraciones adicionales para panel único */
+    .panel-container[data-panels="1"] .panel,
+    .panel-container.one-panel .panel,
+    #panel-container[data-panels="1"] .panel,
+    .single-panel-item {
+      min-width: 0 !important;
+      width: 100% !important;
+      max-width: none !important;
+      flex: 1 !important;
+    }
+    
+    /* Forzar ancho completo para panel único */
+    .panel-container.single-panel .panel {
+      min-width: 0 !important;
+      width: 100% !important;
+      max-width: none !important;
+      flex: 1 !important;
     }
     
     /* Gutter para Split.js */
@@ -584,18 +710,28 @@
       border-color: var(--primary-dark);
     }
     
-    /* Status bar */
+    /* Status bar - ocultar completamente */
     .status-bar {
-      height: 24px;
+      display: none !important;
+      height: 0px;
       background: var(--dark-bg);
       color: white;
       font-size: 0.75rem;
-      display: flex;
       align-items: center;
       padding: 0 12px;
       gap: 16px;
       z-index: 1001;
       position: relative;
+    }
+    
+    /* Ocultar cualquier elemento que pueda actuar como status bar */
+    .modeler-container .status-bar,
+    #modeler-container .status-bar,
+    [class*="status-bar"],
+    [class*="status"],
+    footer {
+      display: none !important;
+      height: 0 !important;
     }
     
     .status-item {
@@ -705,6 +841,10 @@
       <p class="welcome-subtitle">Herramienta híbrida para modelado de procesos BPMN, PPINOT y RASCI</p>
       <div class="welcome-buttons">
         <!-- Botón para continuar con diagrama guardado (solo aparece si hay uno) -->
+        <button class="welcome-btn success" id="continue-diagram-btn" style="display:none">
+          <i class="fas fa-play"></i>
+          Continuar último diagrama
+        </button>
         <button class="welcome-btn primary" id="new-diagram-btn">
           <i class="fas fa-plus"></i>
           Crear Nuevo Diagrama
@@ -727,7 +867,7 @@
          <button  class="back-to-welcome-btn" id="back-to-welcome-btn" title="Volver a la pantalla de bienvenida">
             <i class="fas fa-project-diagram"></i>
             <span>MultiModeler</span>
-          </button>
+         </button>
       </div>
       
       <!-- Nombre del proyecto (solo lectura) -->
@@ -741,21 +881,17 @@
           <div class="autosave-toolbar-toggle" id="autosave-panel">
             <div class="autosave-toggle-container">
               <label class="autosave-toggle" for="autosave-checkbox">
-                <input type="checkbox" id="autosave-checkbox">
+                <input type="checkbox" id="autosave-checkbox" checked>
                 <span class="autosave-slider"></span>
               </label>
               <span class="autosave-label">Autoguardado</span>
             </div>
             <div class="autosave-timestamp" id="autosave-timestamp">
-              <span id="timestamp-text"></span>
+              <i class="fas fa-clock"></i>
+              <span id="timestamp-text">--:--</span>
             </div>
           </div>
           
-          <!-- Indicador de guardado exitoso -->
-          <div class="save-success-indicator" id="save-success-indicator">
-            <i class="fas fa-check-circle"></i>
-            <span id="save-success-text">Guardado en ubicación anterior</span>
-          </div>
         </div>
         
         <!-- Grupo de herramientas de vista y paneles -->
@@ -767,11 +903,11 @@
           <button class="tool-btn" id="open-btn" title="Abrir diagrama existente">
             <i class="fas fa-folder-open"></i> Abrir
           </button>
-          <button class="tool-btn" id="save-btn" title="Guardar diagrama actual">
-            <i class="fas fa-save"></i> Guardar
+          <button class="tool-btn" id="download-project-btn" title="Descargar proyecto completo">
+            <i class="fas fa-download"></i> Descargar
           </button>
         </div>
-          <button class="tool-btn header-panel-btn" onclick="panelManager.showSelector()" title="Gestionar paneles">
+          <button class="tool-btn header-panel-btn" id="panel-selector-btn" title="Gestionar paneles">
             <i class="fas fa-th-large"></i> Paneles
           </button>
         </div>
@@ -793,13 +929,10 @@
   
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
-  <script src="js/storage-manager.js"></script>
-  <script src="js/file-name-modal.js"></script>
   <script src="bundle.js"></script>
-  <script src="js/panels/ppi/index.js"></script>
-  <script src="js/panels/ppi/bpmn-integration.js"></script>
-  <script src="js/panels/ppi/natural-language-processor.js"></script>
-  <script src="js/panels/ppi/example-usage.js"></script>
+  
+  <!-- Ultra Speed Optimization Script - ELIMINADO para evitar error 404 -->
+  <!-- <script src="../ultra-speed-optimization.js"></script> -->
 
   <script>
     // Mostrar herramientas de desarrollo solo en modo desarrollo
