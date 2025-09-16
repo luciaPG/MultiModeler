@@ -433,7 +433,7 @@ async function initializeApp() {
     } else {
       console.warn('⚠️ Aplicación modular o modeler no disponible, continuando sin extensiones...');
       console.log('🔍 Debug - app:', !!app);
-      console.log('🔍 Debug - app.multinotationModeler:', !!app?.multinotationModeler);
+      console.log('🔍 Debug - app.multinotationModeler:', !!(app && app.multinotationModeler));
       console.log('🔍 Debug - modeler:', !!modeler);
     }
     
@@ -555,6 +555,7 @@ function setupUIEvents() {
           $('#continue-diagram-btn').hide();
           const registry = getServiceRegistry();
           const manager = registry ? registry.get('localStorageAutoSaveManager') : null;
+          const ppinotStorageManager = registry ? registry.get('PPINOTStorageManager') : null;
           if (manager) {
             // RESETEAR localStorage para nuevo diagrama
             console.log('🔄 Reseteando localStorage para nuevo diagrama...');
@@ -564,6 +565,12 @@ function setupUIEvents() {
             if (typeof manager.markRestored === 'function') manager.markRestored();
             if (typeof manager.dismissDraftNotification === 'function') manager.dismissDraftNotification();
           }
+          // Limpiar datos PPINOT (Target/Scope/Relaciones) para evitar restauración en diagrama nuevo
+          try {
+            if (ppinotStorageManager && typeof ppinotStorageManager.clearPPINOTData === 'function') {
+              ppinotStorageManager.clearPPINOTData();
+            }
+          } catch (_) { /* no-op */ }
         } catch (_) { /* no-op */ }
 
         // Preparar UI

@@ -1731,7 +1731,7 @@ class LocalStorageAutoSaveManager {
         console.log('🔍 PPIManager encontrado:', !!mgr);
         if (mgr) {
           console.log('🔍 PPIManager.core:', !!mgr.core);
-          console.log('🔍 PPIManager.core.addPPI:', typeof mgr.core?.addPPI);
+          console.log('🔍 PPIManager.core.addPPI:', typeof (mgr.core && mgr.core.addPPI));
         }
         
         if (mgr && mgr.core && typeof mgr.core.addPPI === 'function') {
@@ -2042,11 +2042,35 @@ class LocalStorageAutoSaveManager {
       localStorage.removeItem('rasciMatrix');
       localStorage.removeItem('rasciRolesData');
       
-      // Resetear estado interno
+      // Resetear estado interno con estructura completa por defecto
       this.projectState = {
-        bpmn: { xml: null, position: null },
-        ppi: { indicators: [] },
-        rasci: { matrix: null }
+        bpmn: {
+          xml: null,
+          canvas: null,
+          selection: null,
+          zoom: 1,
+          position: { x: 0, y: 0 }
+        },
+        ppi: {
+          indicators: [],
+          relationships: {},
+          lastUpdate: null
+        },
+        rasci: {
+          roles: [],
+          matrixData: {},
+          tasks: []
+        },
+        panels: {
+          activePanels: ['bpmn'],
+          layout: '2v',
+          order: ['bpmn']
+        },
+        metadata: {
+          lastSave: null,
+          version: '1.0.0',
+          projectName: 'Proyecto BPMN'
+        }
       };
       
       // Resetear flags de restauración
