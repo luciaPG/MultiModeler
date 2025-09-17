@@ -51,18 +51,18 @@ class PPISyncManager {
 
     const eventBus = modeler.get('eventBus');
     
-    // Eventos de elementos PPINOT - DESHABILITADO para evitar conflictos
-    // eventBus.on('element.changed', (event) => {
-    //   this.handleElementChange(event);
-    // });
+    // Eventos de elementos PPINOT
+    eventBus.on('element.changed', (event) => {
+      this.handleElementChange(event);
+    });
 
-    // eventBus.on('element.removed', (event) => {
-    //   this.handleElementRemoval(event);
-    // });
+    eventBus.on('element.removed', (event) => {
+      this.handleElementRemoval(event);
+    });
 
-    // eventBus.on('element.added', (event) => {
-    //   this.handleElementAdded(event);
-    // });
+    eventBus.on('element.added', (event) => {
+      this.handleElementAdded(event);
+    });
 
     // Eventos de relaciones padre-hijo - MEJORADOS
     eventBus.on('shape.move', (event) => {
@@ -78,22 +78,22 @@ class PPISyncManager {
       this.handleModelingMoveShape(event);
     });
 
-    // NUEVOS EVENTOS para detectar cambios de padre - DESHABILITADO
-    // eventBus.on('element.updateParent', (event) => {
-    //   this.handleParentUpdate(event);
-    //   // Verificar cambios de padre después de actualización
-    //   setTimeout(() => {
-    //     this.checkAllParentChanges();
-    //   }, 100);
-    // });
+    // NUEVOS EVENTOS para detectar cambios de padre
+    eventBus.on('element.updateParent', (event) => {
+      this.handleParentUpdate(event);
+      // Verificar cambios de padre después de actualización
+      setTimeout(() => {
+        this.checkAllParentChanges();
+      }, 100);
+    });
 
-    // eventBus.on('modeling.updateProperties', (event) => {
-    //   this.handlePropertiesUpdate(event);
-    //   // Verificar cambios después de actualización de propiedades
-    //   setTimeout(() => {
-    //     this.checkAllParentChanges();
-    //   }, 100);
-    // });
+    eventBus.on('modeling.updateProperties', (event) => {
+      this.handlePropertiesUpdate(event);
+      // Verificar cambios después de actualización de propiedades
+      setTimeout(() => {
+        this.checkAllParentChanges();
+      }, 100);
+    });
 
     // Eventos de drag & drop
     eventBus.on('drag.end', (event) => {
@@ -104,18 +104,18 @@ class PPISyncManager {
       this.handleDropEnd(event);
     });
 
-    // Eventos adicionales para detectar cambios de padre - DESHABILITADO
-    // eventBus.on('modeling.moveShape', () => {
-    //   setTimeout(() => {
-    //     this.checkAllParentChanges();
-    //   }, 100);
-    // });
+    // Eventos adicionales para detectar cambios de padre
+    eventBus.on('modeling.moveShape', () => {
+      setTimeout(() => {
+        this.checkAllParentChanges();
+      }, 100);
+    });
 
-    // eventBus.on('elements.move', () => {
-    //   setTimeout(() => {
-    //     this.checkAllParentChanges();
-    //   }, 100);
-    // });
+    eventBus.on('elements.move', () => {
+      setTimeout(() => {
+        this.checkAllParentChanges();
+      }, 100);
+    });
 
     // Eventos de selección para detectar cambios
     eventBus.on('selection.changed', (event) => {
@@ -765,13 +765,7 @@ class PPISyncManager {
    }
 
            // NUEVO: Verificar todos los elementos hijo para cambios de padre
-   // DESHABILITADO: Para evitar regeneración automática de elementos borrados
     checkAllParentChanges() {
-      console.log('⚠️ checkAllParentChanges DESHABILITADO - usar sistema de detección automática');
-      return; // Deshabilitado para evitar regeneración automática
-      
-      // Código original comentado:
-      /*
       try {
         // Obtener modelador del adapter
         const modeler = this.adapter && this.adapter.getBpmnModeler();
@@ -809,7 +803,6 @@ class PPISyncManager {
 
       } catch (error) {
       }
-      */
     }
 
   updateElementCache() {
@@ -1045,13 +1038,7 @@ class PPISyncManager {
    }
 
    // NUEVO: Método más robusto para detectar elementos que dejaron de ser hijos
-   // DESHABILITADO: Para evitar regeneración automática de elementos borrados
    checkOrphanedElements() {
-     console.log('⚠️ checkOrphanedElements DESHABILITADO - usar sistema de detección automática');
-     return; // Deshabilitado para evitar regeneración automática
-     
-     // Código original comentado:
-     /*
      
      // Obtener modelador del adapter
      const modeler = this.adapter.getBpmnModeler();
@@ -1112,7 +1099,6 @@ class PPISyncManager {
        this.syncUI();
      } else {
      }
-     */
    }
 
   getSyncStatus() {

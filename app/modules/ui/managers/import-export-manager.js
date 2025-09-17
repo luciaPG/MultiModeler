@@ -7,7 +7,6 @@ import { RasciStore } from '../../rasci/store.js';
 import { registerDebug } from '../../../shared/debug-registry.js';
 import ppinotStorageManager from './ppinot-storage-manager.js';
 import ppinotCoordinationManager from './ppinot-coordination-manager.js';
-import relationshipManager from '../core/relationship-manager.js';
 
 // Bootstrap SR
 const sr = (typeof getServiceRegistry === 'function') ? getServiceRegistry() : undefined;
@@ -162,20 +161,12 @@ class ImportExportManager {
         bpmnData.canvas = JSON.parse(canvasState);
       }
 
-      // Detectar y obtener elementos PPINOT con relaciones actualizadas
-      console.log('🔍 Detectando relaciones PPINOT actuales desde el canvas...');
-      const detectedCount = relationshipManager.detectRelationshipsFromCanvas();
-      console.log(`✅ Detectadas ${detectedCount} relaciones desde el canvas`);
-      
       // Obtener elementos PPINOT usando el sistema unificado
       const ppinotData = ppinotStorageManager.loadPPINOTElements();
-      
-      // Obtener relaciones actualizadas desde el relationship manager
-      const currentRelationships = relationshipManager.serializeRelationships();
       bpmnData.ppinotElements = ppinotData.elements;
-      bpmnData.ppinotRelationships = currentRelationships.relationships || ppinotData.relationships;
+      bpmnData.ppinotRelationships = ppinotData.relationships;
       
-      console.log(`📤 Exportando elementos PPINOT: ${ppinotData.elements.length} elementos, ${bpmnData.ppinotRelationships.length} relaciones`);
+      console.log(`📤 Exportando elementos PPINOT: ${ppinotData.elements.length} elementos, ${ppinotData.relationships.length} relaciones`);
       const targetCount = ppinotData.elements.filter(el => el.metadata && el.metadata.isTarget).length;
       const scopeCount = ppinotData.elements.filter(el => el.metadata && el.metadata.isScope).length;
       const ppiCount = ppinotData.elements.filter(el => el.metadata && el.metadata.isPPI).length;
@@ -600,39 +591,12 @@ class ImportExportManager {
         console.log('✅ Elementos PPINOT guardados en sistema unificado para restauración');
       }
 
-      // Restaurar relaciones PPINOT usando el nuevo sistema simplificado
+      // Restaurar relaciones PPINOT si están disponibles
       if (bpmnData.ppinotRelationships && bpmnData.ppinotRelationships.length > 0) {
-        console.log(`✅ ${bpmnData.ppinotRelationships.length} relaciones PPINOT encontradas`);
-        
-        // Cargar relaciones en el relationship manager
-        const relationshipData = {
-          version: '1.0.0',
-          timestamp: Date.now(),
-          relationships: bpmnData.ppinotRelationships,
-          metadata: {}
-        };
-        
-        const loaded = relationshipManager.deserializeRelationships(relationshipData);
-        if (loaded) {
-          console.log('✅ Relaciones PPINOT cargadas en relationship manager');
-          
-          // Aplicar relaciones al canvas después de un breve delay
-          setTimeout(async () => {
-            const applied = await relationshipManager.applyRelationshipsToCanvas();
-            if (applied) {
-              console.log('✅ Relaciones PPINOT aplicadas al canvas');
-            }
-          }, 1000);
-        }
-      } else {
-        // Si no hay relaciones en el archivo, detectar automáticamente
-        console.log('🔍 No hay relaciones PPINOT en archivo, detectando automáticamente...');
-        setTimeout(() => {
-          const detected = relationshipManager.detectRelationshipsFromCanvas();
-          if (detected > 0) {
-            console.log(`✅ ${detected} relaciones detectadas automáticamente`);
-          }
-        }, 1500);
+        console.log(`✅ ${bpmnData.ppinotRelationships.length} relaciones PPINOT encontradas en el XML`);
+        // Guardar relaciones PPINOT en localStorage para restauración posterior
+        localStorage.setItem('ppinotRelationships', JSON.stringify(bpmnData.ppinotRelationships));
+        console.log('✅ Relaciones PPINOT guardadas en localStorage para restauración');
       }
 
       // Usar el sistema de coordinación unificado para restauración PPINOT
@@ -1280,11 +1244,6 @@ class ImportExportManager {
   }
 
   async restoreTargetAndScopeElements(modeler, targetElements, scopeElements) {
-    console.log('⚠️ restoreTargetAndScopeElements DESHABILITADO - usar sistema de detección automática');
-    return; // Deshabilitado para evitar regeneración automática
-    
-    // Código original comentado:
-    /*
     try {
       console.log('🎯 Iniciando restauración visual de elementos Target y Scope...');
       
@@ -1449,7 +1408,6 @@ class ImportExportManager {
     } catch (error) {
       console.error('❌ Error en restauración visual de Target y Scope:', error);
     }
-    */
   }
 
   async restorePPINOTRelationships(modeler, relationships) {

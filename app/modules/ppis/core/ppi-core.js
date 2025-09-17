@@ -623,26 +623,24 @@ class PPICore {
         if (ppiElements.length > 0 && ppiChildren.length > 0) {
           // Optimización: Reducir logs de debug
           // console.log('🎯 Disparando restauración de elementos Target/Scope...');
-          // Deshabilitado para evitar regeneración automática
-          // setTimeout(() => {
-          //   const coordinationManager = registry && registry.get ? registry.get('PPINOTCoordinationManager') : null;
-          //   if (coordinationManager) {
-          //     coordinationManager.triggerRestoration('ppi.detection');
-          //   }
-          // }, 1000);
+          setTimeout(() => {
+            const coordinationManager = registry && registry.get ? registry.get('PPINOTCoordinationManager') : null;
+            if (coordinationManager) {
+              coordinationManager.triggerRestoration('ppi.detection');
+            }
+          }, 1000);
         }
         
-        // También disparar restauración si hay elementos Target/Scope existentes - DESHABILITADO
+        // También disparar restauración si hay elementos Target/Scope existentes
         if (ppiElements.length > 0 && (ppiChildren.length > 0)) {
           // Optimización: Reducir logs de debug para mejorar rendimiento
           // console.log('🎯 Disparando restauración de elementos Target/Scope existentes...');
-          // Deshabilitado para evitar regeneración automática
-          // setTimeout(() => {
-          //   const coordinationManager = registry && registry.get ? registry.get('PPINOTCoordinationManager') : null;
-          //   if (coordinationManager) {
-          //     coordinationManager.triggerRestoration('ppi.existing');
-          //   }
-          // }, 1500);
+          setTimeout(() => {
+            const coordinationManager = registry && registry.get ? registry.get('PPINOTCoordinationManager') : null;
+            if (coordinationManager) {
+              coordinationManager.triggerRestoration('ppi.existing');
+            }
+          }, 1500);
         }
       } else {
         // Fallback al sistema anterior

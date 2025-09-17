@@ -1,13 +1,13 @@
 /**
- * Canvas Relationship Manager
+ * PPI Relationship Manager
  * 
- * Gestiona las relaciones padre-hijo entre elementos del canvas (PPIs, scope, target, medidas, etc.)
+ * Gestiona las relaciones padre-hijo entre PPIs y sus elementos scope/target
  * de forma simplificada y consistente.
  */
 
-import { getServiceRegistry } from './ServiceRegistry.js';
+import { getServiceRegistry } from '../../ui/core/ServiceRegistry.js';
 
-class CanvasRelationshipManager {
+class PPIRelationshipManager {
   constructor() {
     this.relationships = new Map(); // Map<childId, parentId>
     this.childrenByParent = new Map(); // Map<parentId, Set<childId>>
@@ -306,52 +306,6 @@ class CanvasRelationshipManager {
   }
 
   /**
-   * Carga elementos desde localStorage y los restaura en el canvas de forma directa
-   * SIN depender de eventos que pueden causar conflictos
-   */
-  async loadAndRestoreFromStorage() {
-    try {
-      console.log('🔄 Cargando elementos desde localStorage de forma directa...');
-      
-      const registry = getServiceRegistry();
-      const storageManager = registry ? registry.get('PPINOTStorageManager') : null;
-      
-      if (!storageManager) {
-        console.warn('⚠️ PPINOTStorageManager no disponible');
-        return false;
-      }
-
-      // Cargar datos desde storage
-      const data = storageManager.loadPPINOTElements();
-      if (!data || !data.elements || data.elements.length === 0) {
-        console.log('ℹ️ No hay elementos para restaurar desde storage');
-        return false;
-      }
-
-      console.log(`📂 Cargados ${data.elements.length} elementos y ${data.relationships.length} relaciones`);
-
-      // Deserializar relaciones
-      if (data.relationships.length > 0) {
-        this.deserializeRelationships({
-          relationships: data.relationships,
-          version: '1.0.0',
-          timestamp: Date.now()
-        });
-      }
-
-      // Aplicar relaciones al canvas
-      const applied = await this.applyRelationshipsToCanvas();
-      
-      console.log(`✅ Restauración directa completada: ${applied ? 'ÉXITO' : 'FALLO'}`);
-      return applied;
-
-    } catch (error) {
-      console.error('❌ Error en carga directa desde storage:', error);
-      return false;
-    }
-  }
-
-  /**
    * Actualiza la información de relaciones anidadas en el PPI correspondiente
    */
   updateNestedRelationshipInPPI(childId, parentId, metadata) {
@@ -507,19 +461,14 @@ class CanvasRelationshipManager {
 }
 
 // Crear instancia singleton
-const canvasRelationshipManager = new CanvasRelationshipManager();
+const ppiRelationshipManager = new PPIRelationshipManager();
 
 // Registrar en el service registry
 const registry = getServiceRegistry();
 if (registry) {
-  registry.register('CanvasRelationshipManager', canvasRelationshipManager, {
-    description: 'Gestiona relaciones padre-hijo entre elementos del canvas'
-  });
-  
-  // Mantener compatibilidad con el nombre anterior
-  registry.register('PPIRelationshipManager', canvasRelationshipManager, {
-    description: 'Alias para CanvasRelationshipManager (compatibilidad)'
+  registry.register('PPIRelationshipManager', ppiRelationshipManager, {
+    description: 'Gestiona relaciones padre-hijo entre PPIs y elementos scope/target'
   });
 }
 
-export default canvasRelationshipManager;
+export default ppiRelationshipManager;

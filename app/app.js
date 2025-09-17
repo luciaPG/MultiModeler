@@ -14,8 +14,6 @@ import './modules/ui/managers/localstorage-autosave-manager.js';
 import './modules/ui/managers/ppinot-storage-manager.js';
 import './modules/ui/managers/ppinot-coordination-manager.js';
 import './modules/ui/managers/import-export-manager.js';
-import './modules/ui/core/direct-restore-manager.js';
-import './modules/ui/core/relationship-manager.js';
 import { initializeCommunicationSystem } from './modules/ui/core/CommunicationSystem.js';
 import { getServiceRegistry } from './modules/ui/core/ServiceRegistry.js';
 import { resolve } from './services/global-access.js';
@@ -418,8 +416,36 @@ async function initializeApp() {
       // Aplicación modular ya existe con extensiones
     }
     
-    // Los moddles PPINOT y RALPH ya se registraron en el constructor del modeler
-    console.log('✅ Moddles PPINOT y RALPH ya registrados en el constructor del modeler');
+    // Actualizar las extensiones del modeler con las proporcionadas por la app
+    if (app && app.multinotationModeler && modeler && modeler.get && modeler.get('moddle')) {
+      // Añadir extensiones de moddle si están disponibles
+      if (app.multinotationModeler.ppinot) {
+        const moddle = modeler.get('moddle');
+        if (moddle && typeof moddle.registerPackage === 'function') {
+          moddle.registerPackage({ ppinot: app.multinotationModeler.ppinot });
+        } else {
+          console.warn('⚠️ moddle.registerPackage no disponible; omitiendo registro PPINOT');
+        }
+        const sr = getServiceRegistry();
+        if (sr) {
+          sr.register('PPINOTModdle', app.multinotationModeler.ppinot);
+        }
+      }
+      if (app.multinotationModeler.ralph) {
+        const moddle = modeler.get('moddle');
+        if (moddle && typeof moddle.registerPackage === 'function') {
+          moddle.registerPackage({ ralph: app.multinotationModeler.ralph });
+        } else {
+          console.warn('⚠️ moddle.registerPackage no disponible; omitiendo registro RALPH');
+        }
+        const sr = getServiceRegistry();
+        if (sr) {
+          sr.register('RALphModdle', app.multinotationModeler.ralph);
+        }
+      }
+    } else {
+      console.warn('⚠️ Aplicación modular o modeler no disponible, continuando sin extensiones...');
+    }
     
     // Notificar al core que el modelador está disponible (por si acaso no lo detectó antes)
     if (app && app.core && app.core.eventBus) {
@@ -591,47 +617,38 @@ function setupUIEvents() {
         } else {
           console.log('✅ Aplicación ya inicializada, continuando con restauración...');
         }
-        // Usar el nuevo sistema de restauración directa
+        // Restaurar desde el autosave manager
         const registry = getServiceRegistry();
         const manager = registry ? registry.get('localStorageAutoSaveManager') : null;
-        const directManager = registry ? registry.get('DirectRestoreManager') : null;
-        
-        if (manager && directManager) {
-          try {
-            // 1. Restaurar BPMN primero
-            console.log('🔄 Restaurando BPMN...');
-            const bpmnRestored = await manager.restoreBpmnState();
-            
-            if (bpmnRestored) {
-              // 2. Aplicar configuración de paneles
-              try {
-                const panelManager = resolve('PanelManagerInstance');
-                if (panelManager && typeof panelManager.applyConfiguration === 'function') {
-                  await panelManager.applyConfiguration();
-                }
-              } catch (e) {
-                console.warn('[WARN] No se pudo aplicar configuración de paneles:', e);
+        if (manager && typeof manager.forceRestore === 'function') {
+          // Suspender autoguardado durante restauración para evitar errores
+          if (typeof manager.suspendAutoSave === 'function') manager.suspendAutoSave();
+          const restored = await manager.forceRestore();
+          // forceRestore ya incluye la restauración de BPMN, no es necesario llamarla de nuevo
+          if (restored) {
+            // Marcar como restaurado para suprimir futuros avisos
+            try { if (typeof manager.markRestored === 'function') manager.markRestored(); } catch (_) { /* no-op */ }
+            // Aplicar configuración de paneles guardada
+            try {
+              const panelManager = resolve('PanelManagerInstance');
+              if (panelManager && typeof panelManager.applyConfiguration === 'function') {
+                await panelManager.applyConfiguration();
               }
-              
-              // 3. Usar restauración directa para elementos PPINOT
-              console.log('🔄 Usando restauración directa para elementos PPINOT...');
-              setTimeout(async () => {
-                const ppiRestored = await directManager.loadAndRestoreFromStorage();
-                console.log(`✅ Restauración PPINOT directa: ${ppiRestored ? 'ÉXITO' : 'FALLO'}`);
-              }, 1000);
-              
-              // Marcar como restaurado
-              try { if (typeof manager.markRestored === 'function') manager.markRestored(); } catch (_) { /* no-op */ }
-            } else {
-              console.warn('[WARN] No se pudo restaurar BPMN, creando nuevo diagrama');
-              await initModeler();
+            } catch (e) {
+              console.warn('[WARN] No se pudo aplicar la configuración de paneles guardada:', e);
             }
-          } catch (error) {
-            console.error('[ERROR] Error en restauración:', error);
+            // 2) Restaurar PPIs cuando el panel ya existe - DESHABILITADO
+            // forceRestore ya incluye la restauración de PPIs, no es necesario llamarla de nuevo
+            console.log('ℹ️ Restauración PPI manejada por forceRestore');
+          }
+          if (!restored) {
+            console.warn('[WARN] No se pudo restaurar el borrador, creando nuevo diagrama');
             await initModeler();
           }
+          // Reanudar autoguardado
+          if (typeof manager.resumeAutoSave === 'function') manager.resumeAutoSave();
         } else {
-          console.warn('[WARN] Managers no disponibles, creando nuevo diagrama');
+          console.warn('[WARN] Autosave manager no disponible, creando nuevo diagrama');
           await initModeler();
         }
         // Ajustes de interfaz tras restaurar

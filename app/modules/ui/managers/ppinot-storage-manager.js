@@ -3,7 +3,6 @@
 // Evita conflictos entre múltiples sistemas
 
 import { getServiceRegistry } from '../core/ServiceRegistry.js';
-import relationshipManager from '../core/relationship-manager.js';
 
 class PPINOTStorageManager {
   constructor() {
@@ -29,13 +28,8 @@ class PPINOTStorageManager {
 
   savePPINOTElements(elements, relationships = []) {
     try {
-      // Detectar relaciones automáticamente desde el canvas si no se proporcionan
-      if (!relationships || relationships.length === 0) {
-        console.log('🔍 Detectando relaciones automáticamente...');
-        relationshipManager.detectRelationshipsFromCanvas();
-        const serializedRels = relationshipManager.serializeRelationships();
-        relationships = serializedRels.relationships || [];
-      }
+      // Optimización: Reducir logs de debug para mejorar rendimiento
+      // console.log('💾 Guardando elementos PPINOT en localStorage...');
       
       const timestamp = Date.now();
       
@@ -144,6 +138,9 @@ class PPINOTStorageManager {
 
   loadPPINOTElements() {
     try {
+      // Optimización: Reducir logs de debug para mejorar rendimiento
+      // console.log('🔄 Cargando elementos PPINOT desde localStorage...');
+      
       const elementsData = localStorage.getItem(this.STORAGE_KEYS.ELEMENTS);
       if (!elementsData) {
         console.log('ℹ️ No hay elementos PPINOT guardados');
@@ -169,15 +166,8 @@ class PPINOTStorageManager {
         }
       }
 
-      // Cargar relaciones en el relationship manager para uso posterior
-      if (relationships.length > 0) {
-        relationshipManager.deserializeRelationships({
-          relationships: relationships,
-          version: this.VERSION,
-          timestamp: Date.now()
-        });
-      }
-
+      // Optimización: Reducir logs de debug para mejorar rendimiento
+      // console.log(`✅ Cargados ${parsed.elements.length} elementos y ${relationships.length} relaciones PPINOT`);
       return {
         elements: parsed.elements || [],
         relationships: relationships

@@ -121,13 +121,8 @@ class PPINOTCoordinationManager {
         // Optimización: Log eliminado para mejorar rendimiento
         // console.log('🔄 Configurando auto-restauración...');
     
-    // Verificar si hay datos para restaurar al cargar la página - DESHABILITADO
+    // Verificar si hay datos para restaurar al cargar la página
     const checkForData = () => {
-      console.log('⚠️ checkForData DESHABILITADO - usar sistema de detección automática');
-      return; // Deshabilitado para evitar restauración automática no deseada
-      
-      // Código original comentado:
-      /*
       try {
         const ppinotData = ppinotStorageManager.loadPPINOTElements();
         if (ppinotData.elements.length > 0) {
@@ -153,7 +148,6 @@ class PPINOTCoordinationManager {
       } catch (error) {
         console.log('❌ Error verificando datos PPINOT:', error.message);
       }
-      */
     };
     
     // Verificar inmediatamente
@@ -173,11 +167,6 @@ class PPINOTCoordinationManager {
   // === GESTIÓN DE TRIGGERS ===
 
   triggerRestoration(source) {
-    console.log(`⚠️ triggerRestoration DESHABILITADO desde: ${source} - usar sistema de detección automática`);
-    return false; // Deshabilitado completamente para evitar regeneración automática
-    
-    // Código original comentado para evitar regeneración:
-    /*
     const now = Date.now();
     
     // Verificar cooldown
@@ -211,7 +200,6 @@ class PPINOTCoordinationManager {
     
     // Restauración INSTANTÁNEA - sin delay para máxima velocidad
     this.attemptRestoration();
-    */
   }
 
   // === LÓGICA DE RESTAURACIÓN ===
@@ -748,13 +736,7 @@ function debugElementDetection() {
 }
 
 // Función para forzar la creación de elementos Target/Scope
-// DESHABILITADA: Usar el nuevo sistema de detección automática de relaciones
 function forceCreateTargetScope() {
-  console.log('⚠️ forceCreateTargetScope DESHABILITADA - usar sistema de detección automática');
-  return false; // Deshabilitado para evitar generación automática no deseada
-  
-  // Código original comentado:
-  /*
   console.log('🔧 Forzando creación de elementos Target/Scope...');
   
   if (typeof resolve !== 'undefined') {
@@ -850,7 +832,6 @@ function forceCreateTargetScope() {
     console.log('❌ resolve no disponible');
     return false;
   }
-  */
 }
 
 // Hacer las funciones disponibles globalmente
