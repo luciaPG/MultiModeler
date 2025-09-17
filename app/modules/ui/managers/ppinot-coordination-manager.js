@@ -19,7 +19,7 @@ class PPINOTCoordinationManager {
     
     this.restorationTriggers = new Set();
     this.maxRestorationAttempts = 3;
-    this.restorationCooldown = 0; // Optimización INSTANTÁNEA: Sin cooldown entre intentos
+    this.restorationCooldown = 5000; // 5 segundos entre intentos
     
     this.init();
   }
@@ -49,6 +49,7 @@ class PPINOTCoordinationManager {
           
           if (elementRegistry && modeling && canvas) {
             this.restorationState.modelerReady = true;
+            console.log('✅ Modeler completamente funcional detectado');
             this.attemptRestoration();
           } else {
             setTimeout(checkModeler, 500);
@@ -102,10 +103,12 @@ class PPINOTCoordinationManager {
           if (event.context && event.context.shape && 
               (event.context.shape.type.includes('PPINOT') || 
                event.context.shape.businessObject?.$type?.includes('PPINOT'))) {
+            console.log('🎯 Elemento PPINOT creado, verificando restauración...');
             this.triggerRestoration('element.created');
           }
         });
         
+        console.log('🎧 Listeners de canvas configurados');
       } else {
         setTimeout(setupCanvasListeners, 1000);
       }
@@ -118,8 +121,13 @@ class PPINOTCoordinationManager {
         // Optimización: Log eliminado para mejorar rendimiento
         // console.log('🔄 Configurando auto-restauración...');
     
-    // Verificar si hay datos para restaurar al cargar la página
+    // Verificar si hay datos para restaurar al cargar la página - DESHABILITADO
     const checkForData = () => {
+      console.log('⚠️ checkForData DESHABILITADO - usar sistema de detección automática');
+      return; // Deshabilitado para evitar restauración automática no deseada
+      
+      // Código original comentado:
+      /*
       try {
         const ppinotData = ppinotStorageManager.loadPPINOTElements();
         if (ppinotData.elements.length > 0) {
@@ -145,15 +153,31 @@ class PPINOTCoordinationManager {
       } catch (error) {
         console.log('❌ Error verificando datos PPINOT:', error.message);
       }
+      */
     };
     
-    // Verificar inmediatamente - SIN timeouts adicionales para evitar recargas
+    // Verificar inmediatamente
     checkForData();
+    
+    // Optimización: Reducir delays para mejorar rendimiento
+    // Verificar también después de un delay para asegurar que el modeler esté listo
+    setTimeout(checkForData, 1000); // Reducido de 3000ms a 1000ms
+    
+    // Verificar después de que se detecten PPIs (para segunda recarga)
+    setTimeout(checkForData, 2000); // Reducido de 5000ms a 2000ms
+    
+    // Optimización: Reducir frecuencia de verificaciones periódicas para mejorar rendimiento
+    // setInterval(checkForData, 10000); // Comentado para reducir carga del sistema
   }
 
   // === GESTIÓN DE TRIGGERS ===
 
   triggerRestoration(source) {
+    console.log(`⚠️ triggerRestoration DESHABILITADO desde: ${source} - usar sistema de detección automática`);
+    return false; // Deshabilitado completamente para evitar regeneración automática
+    
+    // Código original comentado para evitar regeneración:
+    /*
     const now = Date.now();
     
     // Verificar cooldown
@@ -187,6 +211,7 @@ class PPINOTCoordinationManager {
     
     // Restauración INSTANTÁNEA - sin delay para máxima velocidad
     this.attemptRestoration();
+    */
   }
 
   // === LÓGICA DE RESTAURACIÓN ===
@@ -218,13 +243,6 @@ class PPINOTCoordinationManager {
     // console.log(`🎯 Triggers activos: ${Array.from(this.restorationTriggers).join(', ')}`);
     
     try {
-      // Suspender autoguardado durante la restauración para evitar que sobreescriba storage sin Target/Scope
-      const registry = getServiceRegistry && getServiceRegistry();
-      const autoSaveMgr = registry?.get('localStorageAutoSaveManager');
-      if (autoSaveMgr && typeof autoSaveMgr.suspendAutoSave === 'function') {
-        autoSaveMgr.suspendAutoSave();
-      }
-
       const success = await this.performRestoration();
       
       if (success) {
@@ -242,14 +260,6 @@ class PPINOTCoordinationManager {
       console.error('❌ Error en restauración PPINOT:', error);
       return false;
     } finally {
-      // Reanudar autoguardado tras la restauración
-      try {
-        const registry2 = getServiceRegistry && getServiceRegistry();
-        const autoSaveMgr2 = registry2?.get('localStorageAutoSaveManager');
-        if (autoSaveMgr2 && typeof autoSaveMgr2.resumeAutoSave === 'function') {
-          autoSaveMgr2.resumeAutoSave();
-        }
-      } catch (_) { /* no-op */ }
       this.restorationState.isRestoring = false;
     }
   }
@@ -283,43 +293,14 @@ class PPINOTCoordinationManager {
       if (autoSaveMgr && typeof autoSaveMgr.restorePPIState === 'function') {
         console.log('🤝 Delegando restauración PPINOT a LocalStorageAutoSaveManager.restorePPIState()');
         const ok = await autoSaveMgr.restorePPIState();
-        if (ok) {
-          this.syncWithOtherSystems();
-          return true;
-        }
-        // Fallback si no se restauró nada desde autosave
-        console.log('⚠️ Autosave no restauró elementos PPINOT, aplicando fallback directo');
+        // Mantener sincronización unificada tras la restauración
+        this.syncWithOtherSystems();
+        return !!ok;
       }
 
-      // Fallback directo: recrear Target/Scope vinculados con PPIs actuales a partir de storage
-      const modeler = registry?.get('BpmnModeler');
-      if (!modeler) return false;
-      const elementRegistry = modeler.get('elementRegistry');
-      const ppiOnCanvas = elementRegistry.getAll().filter(el => el && (el.type === 'PPINOT:Ppi' || el.businessObject?.$type === 'PPINOT:Ppi'));
-      const currentPpiIds = new Set(ppiOnCanvas.map(p => p.id));
-
-      const isTarget = (el) => (el.metadata && el.metadata.isTarget) || (typeof el.type === 'string' && el.type.indexOf('Target') >= 0) || (el.id && el.id.indexOf('Target') >= 0) || (el.name && /target/i.test(el.name));
-      const isScope = (el) => (el.metadata && el.metadata.isScope) || (typeof el.type === 'string' && el.type.indexOf('Scope') >= 0) || (el.id && el.id.indexOf('Scope') >= 0) || (el.name && /scope/i.test(el.name));
-      const targets = ppinotData.elements.filter(el => isTarget(el) && currentPpiIds.has(el.parentId));
-      const scopes = ppinotData.elements.filter(el => isScope(el) && currentPpiIds.has(el.parentId));
-
-      if (targets.length === 0 && scopes.length === 0) {
-        return true; // Nada que restaurar
-      }
-
-      await this.restoreElements(modeler, targets, scopes);
-      if (ppinotData.relationships && ppinotData.relationships.length) {
-        await this.restoreRelationships(modeler, ppinotData.relationships);
-      }
-      this.syncWithOtherSystems();
-      // Guardar estado actualizado inmediatamente (evita perder Target/Scope en la siguiente recarga)
-      try {
-        const ppiCore = registry?.get('PPICore');
-        if (ppiCore && typeof ppiCore.forceSavePPINOTElements === 'function') {
-          ppiCore.forceSavePPINOTElements();
-        }
-      } catch (_) { /* no-op */ }
-      return true;
+      // Si no existe el autosave manager, no intentar crear elementos aquí para evitar huérfanos
+      console.warn('⚠️ localStorageAutoSaveManager no disponible; omitiendo creación directa para evitar huérfanos');
+      return false;
       
     } catch (error) {
       console.error('❌ Error en performRestoration:', error);
@@ -339,7 +320,7 @@ class PPINOTCoordinationManager {
       
       // Buscar PPI principal para posicionamiento
       const ppiElement = elementRegistry.filter(element => 
-        element.businessObject && element.businessObject.$type === 'PPINOT:ppi'
+        element.businessObject && element.businessObject.$type === 'PPINOT:Ppi'
       )[0];
       
       let basePosition = { x: 100, y: 100 };
@@ -464,7 +445,7 @@ class PPINOTCoordinationManager {
           if (childElement.businessObject) {
             childElement.businessObject.$parent = parentElement.businessObject;
             
-            if (parentElement.businessObject && parentElement.businessObject.$type === 'PPINOT:ppi') {
+            if (parentElement.businessObject && parentElement.businessObject.$type === 'PPINOT:Ppi') {
               if (!parentElement.businessObject.children) {
                 parentElement.businessObject.children = [];
               }
@@ -767,7 +748,13 @@ function debugElementDetection() {
 }
 
 // Función para forzar la creación de elementos Target/Scope
+// DESHABILITADA: Usar el nuevo sistema de detección automática de relaciones
 function forceCreateTargetScope() {
+  console.log('⚠️ forceCreateTargetScope DESHABILITADA - usar sistema de detección automática');
+  return false; // Deshabilitado para evitar generación automática no deseada
+  
+  // Código original comentado:
+  /*
   console.log('🔧 Forzando creación de elementos Target/Scope...');
   
   if (typeof resolve !== 'undefined') {
@@ -863,6 +850,7 @@ function forceCreateTargetScope() {
     console.log('❌ resolve no disponible');
     return false;
   }
+  */
 }
 
 // Hacer las funciones disponibles globalmente

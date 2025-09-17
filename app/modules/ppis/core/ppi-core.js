@@ -396,35 +396,26 @@ class PPICore {
       // Optimización: Reducir logs de debug para mejorar rendimiento
       // console.log(`🔍 Elementos PPI encontrados: ${ppiElements.length}`);
       
-      // Optimización: Buscar elementos Target y Scope de forma más eficiente
+      // Optimización: Detectar hijos PPINOT (Target, Scope, Medidas, Condition, etc.) de forma robusta
       const ppiChildren = [];
       for (const element of allElements) {
-        // Verificar si es un elemento PPINOT válido (optimizado)
-        if (element.type === 'PPINOT:Scope' || element.type === 'PPINOT:Target' ||
-            element.type === 'PPINOT:Measure' || element.type === 'PPINOT:Condition') {
-          ppiChildren.push(element);
+        // Ignorar labels
+        if (element.type === 'label' || (element.businessObject && element.businessObject.$type === 'label')) {
           continue;
         }
-        
-        // Verificar businessObject de forma más eficiente
-        if (element.businessObject) {
-          const boType = element.businessObject.$type;
-          if (boType === 'PPINOT:Scope' || boType === 'PPINOT:Target' ||
-              boType === 'PPINOT:Measure' || boType === 'PPINOT:Condition') {
-            ppiChildren.push(element);
-            continue;
-          }
-        }
-        
-        // Verificar ID de forma más eficiente
-        if (element.id && (element.id.includes('Target') || element.id.includes('Scope'))) {
+        const type = element.type || '';
+        const boType = (element.businessObject && element.businessObject.$type) || '';
+
+        // Cualquier elemento PPINOT que no sea el propio PPI se considera candidato
+        const isPPINOTAny = (type.startsWith('PPINOT:') || boType.startsWith('PPINOT:')) && (type !== 'PPINOT:Ppi' && boType !== 'PPINOT:Ppi');
+
+        // Señales adicionales (IDs o metadata) para Target/Scope
+        const isTargetOrScopeById = element.id && (element.id.includes('Target') || element.id.includes('Scope'));
+        const isTargetOrScopeByMeta = element.metadata && (element.metadata.isTarget || element.metadata.isScope);
+
+        if (isPPINOTAny || isTargetOrScopeById || isTargetOrScopeByMeta) {
           ppiChildren.push(element);
           continue;
-        }
-        
-        // Verificar metadata de forma más eficiente
-        if (element.metadata && (element.metadata.isTarget || element.metadata.isScope)) {
-          ppiChildren.push(element);
         }
       }
       
@@ -471,8 +462,9 @@ class PPICore {
       // console.log(`🔍 Elementos Target/Scope asociados encontrados: ${uniqueAssociated.length}`);
       // uniqueAssociated.forEach(el => console.log(`  - Associated: ${el.id} (${el.type})`));
       
-      // Combinar todos los elementos PPINOT
-      const allPPINOTElements = [...ppiElements, ...ppiChildren, ...uniqueAssociated];
+      // Combinar todos los elementos PPINOT (excluyendo labels por seguridad)
+      const allPPINOTElements = [...ppiElements, ...ppiChildren, ...uniqueAssociated]
+        .filter(e => e && e.type !== 'label' && (!e.businessObject || e.businessObject.$type !== 'label'));
       
       // Crear relaciones padre-hijo
       const relationships = [];
@@ -526,44 +518,69 @@ class PPICore {
       
       // Optimización: Crear relaciones de forma más eficiente
       for (const childEl of ppiChildren) {
-        // Determinar el tipo de elemento hijo de forma más eficiente
-        let childType = 'unknown';
+        // Determinar el tipo de elemento hijo de forma más eficiente y generalizada
+        const boType = (childEl.businessObject && childEl.businessObject.$type) || '';
+        const elType = childEl.type || '';
+        let childType = boType || elType || 'unknown';
         let isTarget = false;
         let isScope = false;
-        
-        if (childEl.type === 'PPINOT:Target' || 
-            (childEl.businessObject && childEl.businessObject.$type === 'PPINOT:Target') ||
-            childEl.id.includes('Target')) {
+
+        if (childType.includes('Target') || (childEl.id && childEl.id.includes('Target'))) {
           childType = 'PPINOT:Target';
           isTarget = true;
-        } else if (childEl.type === 'PPINOT:Scope' || 
-                   (childEl.businessObject && childEl.businessObject.$type === 'PPINOT:Scope') ||
-                   childEl.id.includes('Scope')) {
+        } else if (childType.includes('Scope') || (childEl.id && childEl.id.includes('Scope'))) {
           childType = 'PPINOT:Scope';
           isScope = true;
-        } else if (childEl.type === 'PPINOT:Measure' || 
-                   (childEl.businessObject && childEl.businessObject.$type === 'PPINOT:Measure')) {
-          childType = 'PPINOT:Measure';
-        } else if (childEl.type === 'PPINOT:Condition' || 
-                   (childEl.businessObject && childEl.businessObject.$type === 'PPINOT:Condition')) {
-          childType = 'PPINOT:Condition';
         }
-        
-        // Determinar padre de forma más eficiente
+
+        // Determinar padre: usar primero el $parent del BO, luego el shape.parent, luego fallback al primer PPI
         let parentId = null;
         let parentType = null;
         let parentName = '';
-        
-        if (childEl.parent && childEl.parent.id) {
+
+        if (childEl.businessObject && childEl.businessObject.$parent && childEl.businessObject.$parent.id) {
+          parentId = childEl.businessObject.$parent.id;
+          parentType = (childEl.businessObject.$parent.$type) || (childEl.parent && childEl.parent.type) || null;
+          parentName = childEl.businessObject.$parent.name || '';
+        } else if (childEl.parent && childEl.parent.id) {
           parentId = childEl.parent.id;
           parentType = childEl.parent.type;
           parentName = childEl.parent.businessObject ? childEl.parent.businessObject.name : '';
         } else if (ppiElements.length > 0) {
-          // Usar el primer PPI disponible
-          const ppiElement = ppiElements[0];
-          parentId = ppiElement.id;
-          parentType = ppiElement.type;
-          parentName = ppiElement.businessObject ? ppiElement.businessObject.name : '';
+          // Buscar PPI contenedor o más cercano por geometría
+          const childBounds = childEl.bounds || { x: childEl.x || 0, y: childEl.y || 0, width: childEl.width || 0, height: childEl.height || 0 };
+          const childCenter = { x: childBounds.x + childBounds.width / 2, y: childBounds.y + childBounds.height / 2 };
+
+          let bestPpi = null;
+          let bestDist = Infinity;
+
+          for (const ppi of ppiElements) {
+            const ppiBounds = ppi.bounds || { x: ppi.x || 0, y: ppi.y || 0, width: ppi.width || 0, height: ppi.height || 0 };
+            const ppiCenter = { x: ppiBounds.x + ppiBounds.width / 2, y: ppiBounds.y + ppiBounds.height / 2 };
+
+            const inside = (childCenter.x >= ppiBounds.x && childCenter.x <= ppiBounds.x + ppiBounds.width &&
+                            childCenter.y >= ppiBounds.y && childCenter.y <= ppiBounds.y + ppiBounds.height);
+            const dist = Math.hypot(childCenter.x - ppiCenter.x, childCenter.y - ppiCenter.y);
+
+            // Priorizar contención; si no, usar la distancia mínima
+            if (inside) {
+              bestPpi = ppi;
+              bestDist = -1; // mejor posible
+              break;
+            }
+            if (dist < bestDist) {
+              bestDist = dist;
+              bestPpi = ppi;
+            }
+          }
+
+          // Umbral de proximidad razonable para considerar pertenencia si no hay contención
+          const proximityThreshold = 400;
+          if (bestPpi && (bestDist < 0 || bestDist <= proximityThreshold)) {
+            parentId = bestPpi.id;
+            parentType = bestPpi.type;
+            parentName = bestPpi.businessObject ? bestPpi.businessObject.name : '';
+          }
         }
         
         if (parentId) {
@@ -606,24 +623,26 @@ class PPICore {
         if (ppiElements.length > 0 && ppiChildren.length > 0) {
           // Optimización: Reducir logs de debug
           // console.log('🎯 Disparando restauración de elementos Target/Scope...');
-          setTimeout(() => {
-            const coordinationManager = registry && registry.get ? registry.get('PPINOTCoordinationManager') : null;
-            if (coordinationManager) {
-              coordinationManager.triggerRestoration('ppi.detection');
-            }
-          }, 1000);
+          // Deshabilitado para evitar regeneración automática
+          // setTimeout(() => {
+          //   const coordinationManager = registry && registry.get ? registry.get('PPINOTCoordinationManager') : null;
+          //   if (coordinationManager) {
+          //     coordinationManager.triggerRestoration('ppi.detection');
+          //   }
+          // }, 1000);
         }
         
-        // También disparar restauración si hay elementos Target/Scope existentes
+        // También disparar restauración si hay elementos Target/Scope existentes - DESHABILITADO
         if (ppiElements.length > 0 && (ppiChildren.length > 0)) {
           // Optimización: Reducir logs de debug para mejorar rendimiento
           // console.log('🎯 Disparando restauración de elementos Target/Scope existentes...');
-          setTimeout(() => {
-            const coordinationManager = registry && registry.get ? registry.get('PPINOTCoordinationManager') : null;
-            if (coordinationManager) {
-              coordinationManager.triggerRestoration('ppi.existing');
-            }
-          }, 1500);
+          // Deshabilitado para evitar regeneración automática
+          // setTimeout(() => {
+          //   const coordinationManager = registry && registry.get ? registry.get('PPINOTCoordinationManager') : null;
+          //   if (coordinationManager) {
+          //     coordinationManager.triggerRestoration('ppi.existing');
+          //   }
+          // }, 1500);
         }
       } else {
         // Fallback al sistema anterior

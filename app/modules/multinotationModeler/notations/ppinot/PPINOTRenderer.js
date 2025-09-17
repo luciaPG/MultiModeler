@@ -1411,18 +1411,36 @@ this.getShapePath = function (shape) {
 
   if (isPPINOTConnection(type)) {
     var waypoints = shape.waypoints || [];
-    if (waypoints.length < 2) {
+
+    // Fallback: if waypoints are missing/invalid, synthesize from source/target
+    var valid = Array.isArray(waypoints) && waypoints.length >= 2 && waypoints.every(function(p){
+      return p && typeof p.x === 'number' && typeof p.y === 'number' && isFinite(p.x) && isFinite(p.y);
+    });
+
+    if (!valid && shape.source && shape.target) {
+      var sx = shape.source.x + (shape.source.width || 0) / 2;
+      var sy = shape.source.y + (shape.source.height || 0) / 2;
+      var tx = shape.target.x + (shape.target.width || 0) / 2;
+      var ty = shape.target.y + (shape.target.height || 0) / 2;
+
+      var fallback = [];
+      if (type === 'PPINOT:GroupedBy') {
+        var midY = (sy + ty) / 2;
+        fallback = [ ['M', sx, sy], ['L', sx, midY], ['L', tx, midY], ['L', tx, ty] ];
+      } else {
+        fallback = [ ['M', sx, sy], ['L', tx, ty] ];
+      }
+      return componentsToPath(fallback);
+    }
+
+    if (!valid) {
       return 'M0,0 L0,0';
     }
 
-    var connectionPath = [
-      ['M', waypoints[0].x, waypoints[0].y]
-    ];
-
+    var connectionPath = [ ['M', waypoints[0].x, waypoints[0].y] ];
     for (var i = 1; i < waypoints.length; i++) {
       connectionPath.push(['L', waypoints[i].x, waypoints[i].y]);
     }
-
     return componentsToPath(connectionPath);
   }
 
@@ -1458,27 +1476,42 @@ this.drawConnection = function (p, element) {
 this.getConnectionPath = function (connection) {
     var waypoints = connection.waypoints || [];
 
-    if (waypoints.length < 2) {
+    var valid = Array.isArray(waypoints) && waypoints.length >= 2 && waypoints.every(function(p){
+      var point = p && (p.original || p);
+      return point && typeof point.x === 'number' && typeof point.y === 'number' && isFinite(point.x) && isFinite(point.y);
+    });
+
+    // Fallback: synthesize from source/target centers if invalid
+    if (!valid && connection.source && connection.target) {
+      var sx = connection.source.x + (connection.source.width || 0) / 2;
+      var sy = connection.source.y + (connection.source.height || 0) / 2;
+      var tx = connection.target.x + (connection.target.width || 0) / 2;
+      var ty = connection.target.y + (connection.target.height || 0) / 2;
+
+      var fallback = [];
+      if (connection.type === 'PPINOT:GroupedBy') {
+        var midY = (sy + ty) / 2;
+        fallback = [ ['M', sx, sy], ['L', sx, midY], ['L', tx, midY], ['L', tx, ty] ];
+      } else {
+        fallback = [ ['M', sx, sy], ['L', tx, ty] ];
+      }
+      return componentsToPath(fallback);
+    }
+
+    if (!valid) {
       return 'M0,0 L0,0';
     }
 
-    waypoints = waypoints.map(function (p) {
+    var normalized = waypoints.map(function (p) {
       var point = p.original || p;
       return {
-        x: typeof point.x === 'number' && !isNaN(point.x) && isFinite(point.x) ? point.x : 0,
-        y: typeof point.y === 'number' && !isNaN(point.y) && isFinite(point.y) ? point.y : 0
+        x: point.x,
+        y: point.y
       };
     });
 
-    if (!waypoints[0] || typeof waypoints[0].x !== 'number' || typeof waypoints[0].y !== 'number') {
-      return 'M0,0 L0,0';
-    }
-
-    var connectionPath = [
-      ['M', waypoints[0].x, waypoints[0].y]
-    ];
-
-    waypoints.forEach(function (waypoint, index) {
+    var connectionPath = [ ['M', normalized[0].x, normalized[0].y] ];
+    normalized.forEach(function (waypoint, index) {
       if (index !== 0) {
         connectionPath.push(['L', waypoint.x, waypoint.y]);
       }

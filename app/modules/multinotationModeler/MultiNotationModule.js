@@ -1,4 +1,5 @@
 import ReplaceModule from 'bpmn-js/lib/features/replace';
+import NoopReplaceConnectionBehavior from './behaviour/NoopReplaceConnectionBehavior';
 import PopupMenuModule from 'bpmn-js/lib/features/popup-menu';
 import LabelEditingModule from 'bpmn-js/lib/features/label-editing';
 import MultiNotationPaletteProvider from './MultiNotationPaletteProvider';
@@ -9,6 +10,7 @@ import MultiNotationReplaceMenuProvider from './MultiNotationReplaceMenuProvider
 import MultiNotationConnect from './MultiNotationConnect';
 import BendpointBehavior from './behaviour/BendpointBehavior';
 import ReplaceConnectionBehaviour from './behaviour/ReplaceConnectionBehaviour';
+import CustomConnectionRulesGuard from './behaviour/CustomConnectionRulesGuard';
 
 export default {
   __depends__: [
@@ -25,7 +27,9 @@ export default {
     'multiNotationReplaceMenuProvider',
     'connect',
     'bendpointBehavior',
-    'replaceConnectionBehaviour'
+    'replaceConnectionBehaviour',
+    'customConnectionRulesGuard',
+    'noopReplaceConnectionBehavior'
   ],
 
   multiNotationPaletteProvider:    ['type', MultiNotationPaletteProvider],
@@ -35,5 +39,10 @@ export default {
   multiNotationReplaceMenuProvider: ['type', MultiNotationReplaceMenuProvider],
   connect: ['type', MultiNotationConnect],
   bendpointBehavior: ['type', BendpointBehavior],
-  replaceConnectionBehaviour: ['type', ReplaceConnectionBehaviour]
+  replaceConnectionBehaviour: ['type', ReplaceConnectionBehaviour],
+  customConnectionRulesGuard: ['type', CustomConnectionRulesGuard],
+  // Override bpmn-js default ReplaceConnectionBehavior by registering under the same token
+  replaceConnectionBehavior: ['type', NoopReplaceConnectionBehavior],
+  // keep our custom behavior (independent helpers)
+  noopReplaceConnectionBehavior: ['type', NoopReplaceConnectionBehavior]
 };

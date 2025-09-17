@@ -14,6 +14,8 @@ import './modules/ui/managers/localstorage-autosave-manager.js';
 import './modules/ui/managers/ppinot-storage-manager.js';
 import './modules/ui/managers/ppinot-coordination-manager.js';
 import './modules/ui/managers/import-export-manager.js';
+import './modules/ui/core/direct-restore-manager.js';
+import './modules/ui/core/relationship-manager.js';
 import { initializeCommunicationSystem } from './modules/ui/core/CommunicationSystem.js';
 import { getServiceRegistry } from './modules/ui/core/ServiceRegistry.js';
 import { resolve } from './services/global-access.js';
@@ -63,6 +65,7 @@ let isModelerInitialized = false;
 // flags no usados eliminados para satisfacer el linter
 let appInitialized = false;
 let isOpenButtonClicked = false;
+let _initializing = false;
 
 // Sistema de sincronización para carga consistente
 const loadingState = {
@@ -105,8 +108,8 @@ function checkAllModulesReady() {
 // Timeout de seguridad para evitar cargas infinitas
 let loadingTimeout = null;
 function startLoadingTimeout() {
-  // Timeout optimizado para experiencia de usuario óptima
-  const timeoutMs = 3000; // 3 segundos para permitir inicialización completa
+  // Timeout ultra-corto para experiencia de usuario óptima
+  const timeoutMs = 1000; // 1 segundo máximo
   
   loadingTimeout = setTimeout(() => {
     console.warn('⚠️ Timeout de carga alcanzado, forzando finalización...');
@@ -168,12 +171,6 @@ function waitForAllModules(callback) {
 
 // Función para mostrar pantalla de carga
 function showLoadingScreen() {
-  // Verificar si ya existe una pantalla de carga
-  if (document.getElementById('app-loading-screen')) {
-    console.log('⚠️ Pantalla de carga ya existe, saltando...');
-    return;
-  }
-  
   const loadingHTML = `
     <div id="app-loading-screen" style="
       position: fixed;
@@ -267,31 +264,39 @@ function isAppReallyWorking() {
   return true;
 }
 
-// Flag para evitar múltiples inicializaciones simultáneas
-let _initializing = false;
-
 // Inicialización principal de la aplicación
 async function initializeApp() {
-  // Verificar si ya está inicializando para evitar múltiples llamadas
   if (_initializing) {
-    console.log('🔄 Inicialización ya en progreso, saltando...');
     return;
   }
-  
-  // Verificar si ya está inicializado para evitar múltiples llamadas
-  if (appInitialized) {
-    console.log('✅ Aplicación ya inicializada, saltando reinicialización...');
-    return;
-  }
-  
-  // Verificar si realmente está funcionando (solo si está marcado como inicializado)
+  _initializing = true;
+  // Verificar si realmente está inicializado y funcionando
   if (isAppReallyWorking()) {
     console.log('✅ Aplicación ya inicializada y funcionando, saltando reinicialización...');
     return;
   }
   
-  // Marcar como inicializando para evitar llamadas múltiples
-  _initializing = true;
+  // Si está marcado como inicializado pero no funciona, reinicializar
+  if (appInitialized && !isAppReallyWorking()) {
+    console.log('🔄 Aplicación marcada como inicializada pero no funciona, reinicializando...');
+    
+    // Solo reinicializar si realmente es necesario
+    const container = document.getElementById('modeler-container');
+    if (!container || container.children.length === 0) {
+      console.log('🔄 Contenedor vacío, reinicializando...');
+      appInitialized = false;
+      modeler = null;
+      app = null;
+      // Limpiar pantalla de carga existente
+      const existingLoader = document.getElementById('app-loading-screen');
+      if (existingLoader) {
+        existingLoader.remove();
+      }
+    } else {
+      console.log('✅ Contenedor tiene contenido, continuando sin reinicialización...');
+      return; // No reinicializar si el contenedor tiene contenido
+    }
+  }
   
   try {
     console.log('🚀 Iniciando carga sincronizada de la aplicación...');
@@ -368,7 +373,7 @@ async function initializeApp() {
     const needsModularInit = !app;
     
     if (needsModularInit) {
-      // Inicializando aplicación modular
+      if (!appInitialized) updateLoadingProgress('Inicializando aplicación modular...');
       try {
         // Inicialización con timeout optimizado para recargas
         const timeoutMs = appInitialized ? 1000 : 2000; // Timeout más corto en recargas
@@ -413,29 +418,8 @@ async function initializeApp() {
       // Aplicación modular ya existe con extensiones
     }
     
-    // Las extensiones ya están registradas en el constructor del modeler
-    // No necesitamos registrarlas manualmente con registerPackage
-    if (app && modeler) {
-      console.log('✅ Extensiones PPINOT y RALph ya registradas en el constructor del modeler');
-      
-      // Solo registrar en el service registry para referencia
-      const sr = getServiceRegistry();
-      if (sr) {
-        if (app.multinotationModeler && app.multinotationModeler.ppinot) {
-          sr.register('PPINOTModdle', app.multinotationModeler.ppinot);
-          console.log('✅ PPINOTModdle registrado en ServiceRegistry');
-        }
-        if (app.multinotationModeler && app.multinotationModeler.ralph) {
-          sr.register('RALphModdle', app.multinotationModeler.ralph);
-          console.log('✅ RALphModdle registrado en ServiceRegistry');
-        }
-      }
-    } else {
-      console.warn('⚠️ Aplicación modular o modeler no disponible, continuando sin extensiones...');
-      console.log('🔍 Debug - app:', !!app);
-      console.log('🔍 Debug - app.multinotationModeler:', !!(app && app.multinotationModeler));
-      console.log('🔍 Debug - modeler:', !!modeler);
-    }
+    // Los moddles PPINOT y RALPH ya se registraron en el constructor del modeler
+    console.log('✅ Moddles PPINOT y RALPH ya registrados en el constructor del modeler');
     
     // Notificar al core que el modelador está disponible (por si acaso no lo detectó antes)
     if (app && app.core && app.core.eventBus) {
@@ -471,7 +455,7 @@ async function initializeApp() {
     clearLoadingTimeout(); // Limpiar timeout de seguridad
     
     if (!wasAlreadyInitialized) {
-      // ¡Aplicación lista!
+      updateLoadingProgress('¡Aplicación lista!');
     } else {
       // En recargas, sin pantalla de carga
     }
@@ -555,7 +539,6 @@ function setupUIEvents() {
           $('#continue-diagram-btn').hide();
           const registry = getServiceRegistry();
           const manager = registry ? registry.get('localStorageAutoSaveManager') : null;
-          const ppinotStorageManager = registry ? registry.get('PPINOTStorageManager') : null;
           if (manager) {
             // RESETEAR localStorage para nuevo diagrama
             console.log('🔄 Reseteando localStorage para nuevo diagrama...');
@@ -565,12 +548,6 @@ function setupUIEvents() {
             if (typeof manager.markRestored === 'function') manager.markRestored();
             if (typeof manager.dismissDraftNotification === 'function') manager.dismissDraftNotification();
           }
-          // Limpiar datos PPINOT (Target/Scope/Relaciones) para evitar restauración en diagrama nuevo
-          try {
-            if (ppinotStorageManager && typeof ppinotStorageManager.clearPPINOTData === 'function') {
-              ppinotStorageManager.clearPPINOTData();
-            }
-          } catch (_) { /* no-op */ }
         } catch (_) { /* no-op */ }
 
         // Preparar UI
@@ -614,45 +591,54 @@ function setupUIEvents() {
         } else {
           console.log('✅ Aplicación ya inicializada, continuando con restauración...');
         }
-        // Restaurar desde el autosave manager
+        // Usar el nuevo sistema de restauración directa
         const registry = getServiceRegistry();
         const manager = registry ? registry.get('localStorageAutoSaveManager') : null;
-        if (manager && typeof manager.forceRestore === 'function') {
-          // Suspender autoguardado durante restauración para evitar errores
-          if (typeof manager.suspendAutoSave === 'function') manager.suspendAutoSave();
-          const restored = await manager.forceRestore();
-          // forceRestore ya incluye la restauración de BPMN, no es necesario llamarla de nuevo
-          if (restored) {
-            // Marcar como restaurado para suprimir futuros avisos
-            try { if (typeof manager.markRestored === 'function') manager.markRestored(); } catch (_) { /* no-op */ }
-            // Aplicar configuración de paneles guardada
-            try {
-              const panelManager = resolve('PanelManagerInstance');
-              if (panelManager && typeof panelManager.applyConfiguration === 'function') {
-                await panelManager.applyConfiguration();
+        const directManager = registry ? registry.get('DirectRestoreManager') : null;
+        
+        if (manager && directManager) {
+          try {
+            // 1. Restaurar BPMN primero
+            console.log('🔄 Restaurando BPMN...');
+            const bpmnRestored = await manager.restoreBpmnState();
+            
+            if (bpmnRestored) {
+              // 2. Aplicar configuración de paneles
+              try {
+                const panelManager = resolve('PanelManagerInstance');
+                if (panelManager && typeof panelManager.applyConfiguration === 'function') {
+                  await panelManager.applyConfiguration();
+                }
+              } catch (e) {
+                console.warn('[WARN] No se pudo aplicar configuración de paneles:', e);
               }
-            } catch (e) {
-              console.warn('[WARN] No se pudo aplicar la configuración de paneles guardada:', e);
+              
+              // 3. Usar restauración directa para elementos PPINOT
+              console.log('🔄 Usando restauración directa para elementos PPINOT...');
+              setTimeout(async () => {
+                const ppiRestored = await directManager.loadAndRestoreFromStorage();
+                console.log(`✅ Restauración PPINOT directa: ${ppiRestored ? 'ÉXITO' : 'FALLO'}`);
+              }, 1000);
+              
+              // Marcar como restaurado
+              try { if (typeof manager.markRestored === 'function') manager.markRestored(); } catch (_) { /* no-op */ }
+            } else {
+              console.warn('[WARN] No se pudo restaurar BPMN, creando nuevo diagrama');
+              await initModeler();
             }
-            // 2) Restaurar PPIs cuando el panel ya existe - DESHABILITADO
-            // forceRestore ya incluye la restauración de PPIs, no es necesario llamarla de nuevo
-            console.log('ℹ️ Restauración PPI manejada por forceRestore');
-          }
-          if (!restored) {
-            console.warn('[WARN] No se pudo restaurar el borrador, creando nuevo diagrama');
+          } catch (error) {
+            console.error('[ERROR] Error en restauración:', error);
             await initModeler();
           }
-          // Reanudar autoguardado
-          if (typeof manager.resumeAutoSave === 'function') manager.resumeAutoSave();
         } else {
-          console.warn('[WARN] Autosave manager no disponible, creando nuevo diagrama');
+          console.warn('[WARN] Managers no disponibles, creando nuevo diagrama');
           await initModeler();
         }
-        // Ajustes de interfaz tras restaurar - Optimización Ultra
+        // Ajustes de interfaz tras restaurar
         setTimeout(() => {
           // Evitar forzar eventos de resize para no provocar reflows perceptibles
           // El zoom/posición se restauran desde LocalStorageAutoSaveManager cuando procede
-        }, 50); // Optimización Ultra: Reducir de 500ms a 50ms
+        }, 500);
       } catch (e) {
         console.error('[ERROR] Error al continuar borrador:', e);
         showErrorMessage('Error al cargar borrador: ' + e.message);
@@ -716,11 +702,11 @@ async function openDiagramHandler() {
       console.log('[DEBUG] Diagrama BPMN abierto correctamente.');
     }
 
-    // Ajustes de interfaz tras cargar - Optimización Ultra
+    // Ajustes de interfaz tras cargar
     setTimeout(() => {
       // Evitar forzar eventos de resize para no provocar reflows perceptibles
       // El zoom/posición se restauran desde LocalStorageAutoSaveManager cuando procede
-    }, 50); // Optimización Ultra: Reducir de 500ms a 50ms
+    }, 500);
 
   } catch (e) {
     if (e && e.message === 'Operación cancelada') {

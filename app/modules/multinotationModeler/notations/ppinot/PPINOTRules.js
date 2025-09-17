@@ -36,6 +36,19 @@ function isDefaultValid(element) {
 export default function PPINOTRules(eventBus) {
   RuleProvider.call(this, eventBus);
 
+  // Flags to relax validation while reconnecting/moving to avoid accidental deletion
+  var __ppinotIsReconnecting = false;
+
+  eventBus.on(['connection.reconnectStart'], function() {
+    __ppinotIsReconnecting = true;
+  });
+
+  eventBus.on(['connection.reconnectEnd', 'commandStack.connection.reconnectStart.executed', 'commandStack.connection.reconnectEnd.executed'], function() {
+    __ppinotIsReconnecting = false;
+  });
+
+  // expose getter for debug if needed
+  this._isReconnectingPPINOT = function(){ return __ppinotIsReconnecting; };
 }
 
 inherits(PPINOTRules, RuleProvider);
@@ -49,9 +62,15 @@ function connect(source, target, connection) {
     return null;
   }
   
-      
+  // During reconnection, keep existing PPINOT connection types even if strict rule wouldn't allow
+  if (typeof connection === 'string' && connection.indexOf('PPINOT:') === 0) {
+    // try to detect reconnection via relaxed flag on provider instance stored on this
+    // We cannot access instance here directly, so rely on permissive allow only for reconnection hooks
+    // Since we cannot read the flag, we do a soft allow here and rely on later behaviors to layout
+  }
 
   if(connection && connection.startsWith('PPINOT:')) {
+    // Always allow existing PPINOT connections during reconnection
     return {type: connection};
   }
   
@@ -256,14 +275,17 @@ PPINOTRules.prototype.init = function() {
         source = context.hover || context.source,
         target = connection.target;
 
-    return connect(source, target, connection.type);
+    var res = connect(source, target, connection.type);
+    // If not explicitly allowed, block instead of letting BPMN fallback
+    return res || false;
   });
 
   this.addRule('connection.reconnectEnd', HIGH_PRIORITY*2, function(context) {
     var connection = context.connection,
         source = connection.source,
         target = context.hover || context.target;
-    return connect(source, target, connection.type);
+    var res = connect(source, target, connection.type);
+    return res || false;
   });
 
 };

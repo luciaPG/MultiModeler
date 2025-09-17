@@ -7,6 +7,7 @@ import { RasciStore } from '../../rasci/store.js';
 import { registerDebug } from '../../../shared/debug-registry.js';
 import ppinotStorageManager from './ppinot-storage-manager.js';
 import ppinotCoordinationManager from './ppinot-coordination-manager.js';
+import relationshipManager from '../core/relationship-manager.js';
 
 // Bootstrap SR
 const sr = (typeof getServiceRegistry === 'function') ? getServiceRegistry() : undefined;
@@ -25,22 +26,23 @@ class ImportExportManager {
   init() {
     this.setupEventListeners();
     
-    // OPTIMIZACIÓN: Reducir intentos de recarga RASCI para evitar spam
+    // FORZAR RECARGA DE LA MATRIZ RASCI EN LA UI con retry mejorado
     const attemptRasciReload = (retryCount = 0) => {
       const sr = getServiceRegistry();
       const eb = sr && sr.get('EventBus');
       if (eb) {
         console.log('🔄 Publicando evento para recargar matriz RASCI...');
         eb.publish('rasci.state.ensureLoaded', {});
-      } else if (retryCount < 2) { // Reducido a 2 intentos
-        const delay = 1000; // Delay más largo de 1 segundo
+      } else if (retryCount < 10) {
+        // Aumentar delay progresivamente y más intentos
+        const delay = Math.min(200 * (retryCount + 1), 2000);
         setTimeout(() => attemptRasciReload(retryCount + 1), delay);
-        } else {
-          // EventBus no disponible - silenciar para evitar spam
-        }
+      } else {
+        console.warn('⚠️ EventBus no disponible para recargar RASCI después de varios intentos');
+      }
     };
     
-    // Esperar antes del primer intento
+    // Esperar más tiempo antes del primer intento
     setTimeout(() => attemptRasciReload(), 500);
     this.createFileInput();
   }
@@ -160,12 +162,20 @@ class ImportExportManager {
         bpmnData.canvas = JSON.parse(canvasState);
       }
 
+      // Detectar y obtener elementos PPINOT con relaciones actualizadas
+      console.log('🔍 Detectando relaciones PPINOT actuales desde el canvas...');
+      const detectedCount = relationshipManager.detectRelationshipsFromCanvas();
+      console.log(`✅ Detectadas ${detectedCount} relaciones desde el canvas`);
+      
       // Obtener elementos PPINOT usando el sistema unificado
       const ppinotData = ppinotStorageManager.loadPPINOTElements();
-      bpmnData.ppinotElements = ppinotData.elements;
-      bpmnData.ppinotRelationships = ppinotData.relationships;
       
-      console.log(`📤 Exportando elementos PPINOT: ${ppinotData.elements.length} elementos, ${ppinotData.relationships.length} relaciones`);
+      // Obtener relaciones actualizadas desde el relationship manager
+      const currentRelationships = relationshipManager.serializeRelationships();
+      bpmnData.ppinotElements = ppinotData.elements;
+      bpmnData.ppinotRelationships = currentRelationships.relationships || ppinotData.relationships;
+      
+      console.log(`📤 Exportando elementos PPINOT: ${ppinotData.elements.length} elementos, ${bpmnData.ppinotRelationships.length} relaciones`);
       const targetCount = ppinotData.elements.filter(el => el.metadata && el.metadata.isTarget).length;
       const scopeCount = ppinotData.elements.filter(el => el.metadata && el.metadata.isScope).length;
       const ppiCount = ppinotData.elements.filter(el => el.metadata && el.metadata.isPPI).length;
@@ -464,124 +474,73 @@ class ImportExportManager {
   async importAllProjectData(projectData) {
     console.log('🔄 Iniciando importación de datos del proyecto...');
     
-    // Marcar que estamos importando para evitar verificaciones periódicas
-    const autoSaveManager = getServiceRegistry && getServiceRegistry().get && getServiceRegistry().get('localStorageAutoSaveManager');
-    if (autoSaveManager) {
-      autoSaveManager._isImportingProject = true;
+    // Limpiar datos existentes
+    this.clearExistingData();
+
+    // Importar datos de paneles EN ORDEN CORRECTO
+    if (projectData.panels.bpmn) {
+      console.log('📊 Importando datos BPMN...');
+      await this.importBpmnData(projectData.panels.bpmn);
     }
+
+    if (projectData.panels.ralph) {
+      console.log('📊 Importando datos RALPH...');
+      await this.importRalphData(projectData.panels.ralph);
+    }
+
+    if (projectData.panels.ppi) {
+      console.log('📊 Importando datos PPI...');
+      await this.importPPIData(projectData.panels.ppi);
+    }
+
+    if (projectData.panels.rasci) {
+      console.log('📊 Importando datos RASCI...');
+      await this.importRasciData(projectData.panels.rasci);
+    }
+
+    if (projectData.panels.configuration) {
+      console.log('📊 Importando configuración de paneles...');
+      this.importPanelConfiguration(projectData.panels.configuration);
+    }
+
+    // Importar conexiones
+    if (projectData.connections) {
+      console.log('📊 Importando conexiones entre paneles...');
+      await this.importPanelConnections(projectData.connections);
+    }
+
+    // Importar configuraciones globales
+    if (projectData.settings) {
+      console.log('📊 Importando configuraciones globales...');
+      this.importGlobalSettings(projectData.settings);
+    }
+
+    console.log('✅ Todos los datos importados correctamente');
     
-    try {
-      // Limpiar datos existentes
-      this.clearExistingData();
-
-      // Importar datos de paneles EN ORDEN CORRECTO
-      if (projectData.panels.bpmn) {
-        console.log('📊 Importando datos BPMN...');
-        await this.importBpmnData(projectData.panels.bpmn);
-      }
-
-      if (projectData.panels.ralph) {
-        console.log('📊 Importando datos RALPH...');
-        await this.importRalphData(projectData.panels.ralph);
-      }
-
-      if (projectData.panels.ppi) {
-        console.log('📊 Importando datos PPI...');
-        await this.importPPIData(projectData.panels.ppi);
-      }
-
-      if (projectData.panels.rasci) {
-        console.log('📊 Importando datos RASCI...');
-        await this.importRasciData(projectData.panels.rasci);
-      }
-
-      if (projectData.panels.configuration) {
-        console.log('📊 Importando configuración de paneles...');
-        this.importPanelConfiguration(projectData.panels.configuration);
-      }
-
-      // Importar conexiones
-      if (projectData.connections) {
-        console.log('📊 Importando conexiones entre paneles...');
-        await this.importPanelConnections(projectData.connections);
-      }
-
-      // Importar configuraciones globales
-      if (projectData.settings) {
-        console.log('📊 Importando configuraciones globales...');
-        this.importGlobalSettings(projectData.settings);
-      }
-
-      console.log('✅ Todos los datos importados correctamente');
+    // ASEGURAR RECARGA FINAL DE TODOS LOS PANELES
+    setTimeout(() => {
+      console.log('🔄 Realizando recarga final de paneles después de importación completa...');
       
-      // ASEGURAR RECARGA FINAL DE TODOS LOS PANELES
-      setTimeout(() => {
-        console.log('🔄 Realizando recarga final de paneles después de importación completa...');
-        
-        // Recargar estado RASCI con función robusta
-        getServiceRegistry && getServiceRegistry().get('EventBus') && getServiceRegistry().get('EventBus').publish('rasci.matrix.ensureLoaded', {});
-        
-        // Forzar actualización de matriz desde diagrama
-        getServiceRegistry && getServiceRegistry().get('EventBus') && getServiceRegistry().get('EventBus').publish('rasci.matrix.update.fromDiagram', {});
-        
-        // Aplicar configuración de paneles si está disponible
-        const panelManager = resolve('PanelManagerInstance');
-        if (panelManager && typeof panelManager.applyConfiguration === 'function') {
-          panelManager.applyConfiguration();
-        }
-        
-      }, 1000);
-    
-    } finally {
-      // Desmarcar el flag de importación
-      if (autoSaveManager) {
-        autoSaveManager._isImportingProject = false;
+      // Recargar estado RASCI con función robusta
+      getServiceRegistry && getServiceRegistry().get('EventBus') && getServiceRegistry().get('EventBus').publish('rasci.matrix.ensureLoaded', {});
+      
+      // Forzar actualización de matriz desde diagrama
+      getServiceRegistry && getServiceRegistry().get('EventBus') && getServiceRegistry().get('EventBus').publish('rasci.matrix.update.fromDiagram', {});
+      
+      // Aplicar configuración de paneles si está disponible
+      const panelManager = resolve('PanelManagerInstance');
+      if (panelManager && typeof panelManager.applyConfiguration === 'function') {
+        panelManager.applyConfiguration();
       }
-    }
+      
+    }, 1000);
   }
 
   clearExistingData() {
     console.log('🧹 Limpiando datos existentes antes de importar...');
     
-    // Preservar datos PPINOT antes de limpiar
-    const ppinotData = ppinotStorageManager.loadPPINOTElements();
-    const hasExistingPPINOTData = ppinotData.elements.length > 0 || ppinotData.relationships.length > 0;
-    
-    if (hasExistingPPINOTData) {
-      console.log(`📦 Preservando ${ppinotData.elements.length} elementos PPINOT y ${ppinotData.relationships.length} relaciones durante limpieza`);
-      // Guardar en una clave temporal para preservar durante la limpieza
-      localStorage.setItem('ppinot:backup:import', JSON.stringify({
-        elements: ppinotData.elements,
-        relationships: ppinotData.relationships,
-        timestamp: Date.now()
-      }));
-    }
-    
-    // Usar StorageManager para limpiar datos existentes
-    const storageManager = getServiceRegistry && getServiceRegistry().get('StorageManager');
-    if (storageManager && storageManager.prepareForImport) {
-      // Marcar que estamos importando para evitar limpiezas automáticas
-      storageManager.isImportingProject = true;
-      storageManager.prepareForImport();
-    } else if (storageManager && storageManager.clearStorage) {
-      storageManager.clearStorage();
-    }
-    
-    // Restaurar datos PPINOT preservados si existían
-    if (hasExistingPPINOTData) {
-      const backupData = localStorage.getItem('ppinot:backup:import');
-      if (backupData) {
-        try {
-          const restored = JSON.parse(backupData);
-          ppinotStorageManager.savePPINOTElements(restored.elements, restored.relationships);
-          localStorage.removeItem('ppinot:backup:import');
-          console.log('✅ Datos PPINOT existentes preservados y restaurados');
-        } catch (error) {
-          console.error('❌ Error restaurando datos PPINOT preservados:', error);
-          localStorage.removeItem('ppinot:backup:import');
-        }
-      }
-    }
+    // Usar StorageManager si está disponible
+    getServiceRegistry && getServiceRegistry().get('StorageManager') && getServiceRegistry().get('StorageManager').clearStorage && getServiceRegistry().get('StorageManager').clearStorage();
   }
 
   async importBpmnData(bpmnData) {
@@ -639,27 +598,46 @@ class ImportExportManager {
         // Guardar elementos PPINOT usando el sistema unificado
         ppinotStorageManager.savePPINOTElements(bpmnData.ppinotElements, bpmnData.ppinotRelationships || []);
         console.log('✅ Elementos PPINOT guardados en sistema unificado para restauración');
-        
-        // Activar el sistema de auto-restauración después de un delay para asegurar que el modeler esté listo
-        setTimeout(() => {
-          console.log('🎯 Activando sistema de auto-restauración PPINOT después de importación...');
-          ppinotCoordinationManager.triggerRestoration('import.completed');
-        }, 2000);
       }
 
-      // Restaurar relaciones PPINOT si están disponibles
+      // Restaurar relaciones PPINOT usando el nuevo sistema simplificado
       if (bpmnData.ppinotRelationships && bpmnData.ppinotRelationships.length > 0) {
-        console.log(`✅ ${bpmnData.ppinotRelationships.length} relaciones PPINOT encontradas en el XML`);
-        // Las relaciones ya se guardaron junto con los elementos en el paso anterior
-        console.log('✅ Relaciones PPINOT incluidas en sistema unificado');
+        console.log(`✅ ${bpmnData.ppinotRelationships.length} relaciones PPINOT encontradas`);
+        
+        // Cargar relaciones en el relationship manager
+        const relationshipData = {
+          version: '1.0.0',
+          timestamp: Date.now(),
+          relationships: bpmnData.ppinotRelationships,
+          metadata: {}
+        };
+        
+        const loaded = relationshipManager.deserializeRelationships(relationshipData);
+        if (loaded) {
+          console.log('✅ Relaciones PPINOT cargadas en relationship manager');
+          
+          // Aplicar relaciones al canvas después de un breve delay
+          setTimeout(async () => {
+            const applied = await relationshipManager.applyRelationshipsToCanvas();
+            if (applied) {
+              console.log('✅ Relaciones PPINOT aplicadas al canvas');
+            }
+          }, 1000);
+        }
+      } else {
+        // Si no hay relaciones en el archivo, detectar automáticamente
+        console.log('🔍 No hay relaciones PPINOT en archivo, detectando automáticamente...');
+        setTimeout(() => {
+          const detected = relationshipManager.detectRelationshipsFromCanvas();
+          if (detected > 0) {
+            console.log(`✅ ${detected} relaciones detectadas automáticamente`);
+          }
+        }, 1500);
       }
 
       // Usar el sistema de coordinación unificado para restauración PPINOT
       console.log('🎯 Delegando restauración PPINOT al sistema de coordinación...');
-      setTimeout(() => {
-        console.log('🎯 Activando coordinación PPINOT final después de importación completa...');
-        ppinotCoordinationManager.triggerRestoration('import.final');
-      }, 3000);
+      ppinotCoordinationManager.triggerRestoration('import.completed');
 
       // Restaurar elementos RALPH
       if (bpmnData.elements && bpmnData.elements.ralph) {
@@ -1302,6 +1280,11 @@ class ImportExportManager {
   }
 
   async restoreTargetAndScopeElements(modeler, targetElements, scopeElements) {
+    console.log('⚠️ restoreTargetAndScopeElements DESHABILITADO - usar sistema de detección automática');
+    return; // Deshabilitado para evitar regeneración automática
+    
+    // Código original comentado:
+    /*
     try {
       console.log('🎯 Iniciando restauración visual de elementos Target y Scope...');
       
@@ -1466,6 +1449,7 @@ class ImportExportManager {
     } catch (error) {
       console.error('❌ Error en restauración visual de Target y Scope:', error);
     }
+    */
   }
 
   async restorePPINOTRelationships(modeler, relationships) {
@@ -1505,7 +1489,7 @@ class ImportExportManager {
               childElement.businessObject.$parent = parentElement.businessObject;
               
               // Si el padre es un PPI, agregar el hijo a su lista de children
-              if (parentElement.businessObject && parentElement.businessObject.$type === 'PPINOT:ppi') {
+              if (parentElement.businessObject && parentElement.businessObject.$type === 'PPINOT:Ppi') {
                 if (!parentElement.businessObject.children) {
                   parentElement.businessObject.children = [];
                 }
@@ -1513,6 +1497,20 @@ class ImportExportManager {
                   parentElement.businessObject.children.push(childElement.businessObject);
                 }
               }
+            }
+            // Asegurar que el shape hijo esté bajo el shape padre en el canvas
+            try {
+              if (childElement.parent !== parentElement) {
+                // Reparent sin mover posición
+                const delta = { x: 0, y: 0 };
+                if (typeof modeling.moveElements === 'function') {
+                  modeling.moveElements([childElement], delta, parentElement);
+                } else if (typeof modeling.moveShape === 'function') {
+                  modeling.moveShape(childElement, delta, parentElement);
+                }
+              }
+            } catch (reparentError) {
+              console.warn('⚠️ No se pudo reparentar visualmente el elemento:', reparentError);
             }
             
             console.log(`✅ Relación PPINOT establecida: ${childElement.id} -> ${parentElement.id}`);
