@@ -56,20 +56,16 @@ class LocalStorageAutoSaveManager {
     this.draftNotificationEl = null;
     this.suspended = false; // suspender autoguardado durante restauraciones
     this._autoRestoreDone = false; // restauración automática realizada una vez
-      this._ppiRestoredOnce = false; // asegurar restauración PPI única
-      this._postRestoreCooldownUntil = 0; // evitar reacciones inmediatas tras restaurar
-      this.postRestoreCooldownMs = 0; // Optimización INSTANTÁNEA: Sin cooldown
+    this._ppiRestoredOnce = false; // asegurar restauración PPI única
+    this._postRestoreCooldownUntil = 0; // evitar reacciones inmediatas tras restaurar
+    this.postRestoreCooldownMs = 2500;
     this._antiFlickerApplied = false;
-    // Control fino de restauración PPI post import
-    this._ppiRestoreInFlight = false;
-    this._ppiRestoreTimer = null;
     
     this.init();
   }
   
   init() {
-    // Optimización: Log eliminado para mejorar rendimiento
-    // console.log('💾 Inicializando LocalStorage AutoSave Manager...');
+    console.log('💾 Inicializando LocalStorage AutoSave Manager...');
     
     // Cargar estado guardado al inicializar
     this.loadState();
@@ -95,11 +91,7 @@ class LocalStorageAutoSaveManager {
     // Configurar listener para beforeunload
     this.setupBeforeUnloadListener();
     
-    // Configurar auto-restauración mejorada para recargas de página
-    this.setupPageReloadRestoration();
-    
-    // Optimización: Log eliminado para mejorar rendimiento
-    // console.log('✅ LocalStorage AutoSave Manager inicializado');
+    console.log('✅ LocalStorage AutoSave Manager inicializado');
   }
   
   // === VERIFICACIÓN DE BORRADORES EXISTENTES ===
@@ -313,6 +305,7 @@ class LocalStorageAutoSaveManager {
       };
       
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(storageData));
+      console.log('💾 Datos guardados en localStorage');
       return true;
     } catch (error) {
       console.error('❌ Error guardando en localStorage:', error);
@@ -332,6 +325,7 @@ class LocalStorageAutoSaveManager {
       
       // Verificar TTL
       if (Date.now() - storageData.savedAt > this.TTL_MS) {
+        console.log('⏰ Datos expirados, eliminando del localStorage');
         this.clearStorage();
         return null;
       }
@@ -344,9 +338,11 @@ class LocalStorageAutoSaveManager {
         (value.rasci && Array.isArray(value.rasci.roles) && value.rasci.roles.length > 0)
       );
       if (!hasContent) {
+        console.log('ℹ️ Datos presentes pero sin contenido útil, se ignoran');
         return null;
       }
       
+      console.log('📂 Datos cargados desde localStorage');
       return storageData.value;
     } catch (error) {
       console.error('❌ Error cargando desde localStorage:', error);
@@ -357,6 +353,7 @@ class LocalStorageAutoSaveManager {
   clearStorage() {
     try {
       localStorage.removeItem(this.STORAGE_KEY);
+      console.log('🗑️ Datos eliminados del localStorage');
       return true;
     } catch (error) {
       console.error('❌ Error eliminando del localStorage:', error);
@@ -380,6 +377,8 @@ class LocalStorageAutoSaveManager {
         return false;
       }
       
+      console.log('💾 Guardando estado en localStorage...');
+      
       // Actualizar estado del BPMN
       await this.updateBpmnState();
       
@@ -401,8 +400,10 @@ class LocalStorageAutoSaveManager {
       if (success) {
         this.lastSaveTime = now;
         this.showSaveIndicator();
+        console.log('✅ Estado guardado en localStorage exitosamente');
         return true;
       } else {
+        console.warn('⚠️ No se pudo guardar estado en localStorage');
         return false;
       }
       
@@ -413,7 +414,7 @@ class LocalStorageAutoSaveManager {
   }
 
   // === ESPERAS UTILITARIAS ===
-  async waitFor(conditionFn, { attempts = 1, delayMs = 0 } = {}) { // Optimización INSTANTÁNEA: Sin esperas
+  async waitFor(conditionFn, { attempts = 50, delayMs = 100 } = {}) {
     for (let i = 0; i < attempts; i++) {
       try {
         if (conditionFn()) return true;
@@ -441,6 +442,7 @@ class LocalStorageAutoSaveManager {
         
         return true;
       } else {
+        console.log('ℹ️ No hay estado guardado en localStorage');
         return false;
       }
       
@@ -720,28 +722,16 @@ class LocalStorageAutoSaveManager {
                 enriched.scopePosition = { x: scopeElt.x, y: scopeElt.y };
                 enriched.scopeElementId = scopeElt.id;
                 enriched.scope = scopeElt.businessObject.name || '';
-                // Guardar la relación padre-hijo
-                enriched.scopeParentId = ppiShape.id;
               }
               if (targetElt) {
                 enriched.targetPosition = { x: targetElt.x, y: targetElt.y };
                 enriched.targetElementId = targetElt.id;
                 enriched.target = targetElt.businessObject.name || '';
-                // Guardar la relación padre-hijo
-                enriched.targetParentId = ppiShape.id;
               }
-              
-              // También guardar información del PPI padre para facilitar la restauración
-              enriched.ppiPosition = { x: ppiShape.x, y: ppiShape.y };
-              enriched.ppiSize = { width: ppiShape.width, height: ppiShape.height };
             }
           }
           return enriched;
         });
-        
-        // También sincronizar con el sistema PPINOT unificado
-        this.syncWithPPINOTSystem(elementRegistry);
-        
         this.projectState.ppi.lastUpdate = Date.now();
       }
     } catch (error) {
@@ -755,45 +745,6 @@ class LocalStorageAutoSaveManager {
       this.projectState.rasci.matrixData = RasciStore.getMatrix();
     } catch (error) {
       console.error('❌ Error actualizando estado RASCI:', error);
-    }
-  }
-  
-  syncWithPPINOTSystem(elementRegistry) {
-    try {
-      if (!elementRegistry) return;
-      
-      // Recopilar todos los elementos PPINOT del canvas
-      const allElements = elementRegistry.getAll();
-      const ppinotElements = allElements.filter(el => 
-        el.type && (el.type.includes('PPINOT') || el.type.includes('Ppi')) ||
-        (el.businessObject && el.businessObject.$type && el.businessObject.$type.includes('PPINOT'))
-      );
-      
-      const relationships = [];
-      
-      // Crear relaciones padre-hijo basadas en el canvas actual
-      ppinotElements.forEach(el => {
-        if (el.parent && el.parent.type && (el.parent.type.includes('PPINOT') || el.parent.type.includes('Ppi'))) {
-          relationships.push({
-            childId: el.id,
-            parentId: el.parent.id,
-            childType: el.type || (el.businessObject && el.businessObject.$type),
-            parentType: el.parent.type || (el.parent.businessObject && el.parent.businessObject.$type),
-            childName: (el.businessObject && el.businessObject.name) || el.id,
-            parentName: (el.parent.businessObject && el.parent.businessObject.name) || el.parent.id,
-            timestamp: Date.now()
-          });
-        }
-      });
-      
-      // Sincronizar con el sistema PPINOT unificado
-      const ppinotStorageManager = resolve('PPINOTStorageManager');
-      if (ppinotStorageManager && ppinotElements.length > 0) {
-        ppinotStorageManager.savePPINOTElements(ppinotElements, relationships);
-      }
-      
-    } catch (error) {
-      console.error('❌ Error sincronizando con sistema PPINOT:', error);
     }
   }
   
@@ -822,8 +773,7 @@ class LocalStorageAutoSaveManager {
       }
     }, this.autoSaveFrequency);
     
-    // Optimización: Log eliminado para mejorar rendimiento
-    // console.log(`🔄 Autoguardado iniciado cada ${this.autoSaveFrequency}ms`);
+    console.log(`🔄 Autoguardado iniciado cada ${this.autoSaveFrequency}ms`);
   }
   
   stopAutoSave() {
@@ -880,26 +830,22 @@ class LocalStorageAutoSaveManager {
 
       // Asegurar restauración de PPIs justo después de render completo del BPMN
       try {
-        eventBus.on('import.done', () => {
-          // Debounce y single-flight para evitar alternancias
-          if (this._ppiRestoreInFlight) return;
-          clearTimeout(this._ppiRestoreTimer);
-          this._ppiRestoreTimer = setTimeout(async () => {
-            try {
-              if (this._restoringPPI || this._ppiRestoredOnce) return;
-              const hasPPIs = this.projectState && this.projectState.ppi && Array.isArray(this.projectState.ppi.indicators) && this.projectState.ppi.indicators.length > 0;
-              if (!hasPPIs) return;
-              this._ppiRestoreInFlight = true;
-              await this.waitFor(() => {
-                const mgr = resolve('PPIManagerInstance');
-                return mgr && mgr.core && typeof mgr.core.addPPI === 'function';
-              }, { attempts: 30, delayMs: 100 });
-              await new Promise(r => setTimeout(r, 80));
-              const ok = await this.restorePPIState();
-              if (ok) this._ppiRestoredOnce = true;
-            } catch (_) { /* no-op */ }
-            finally { this._ppiRestoreInFlight = false; }
-          }, 120);
+        eventBus.on('import.done', async () => {
+          try {
+            // Evitar múltiples ejecuciones simultáneas o repetidas
+            if (this._restoringPPI || this._ppiRestoredOnce) return;
+            const hasPPIs = this.projectState && this.projectState.ppi && Array.isArray(this.projectState.ppi.indicators) && this.projectState.ppi.indicators.length > 0;
+            if (!hasPPIs) return;
+            // Esperar a que PPIManager esté listo
+            await this.waitFor(() => {
+              const mgr = resolve('PPIManagerInstance');
+              return mgr && mgr.core && typeof mgr.core.addPPI === 'function';
+            }, { attempts: 30, delayMs: 100 });
+            // Pequeño delay para asegurar gráficos creados
+            await new Promise(r => setTimeout(r, 50));
+            const ok = await this.restorePPIState();
+            if (ok) this._ppiRestoredOnce = true;
+          } catch (_) { /* no-op */ }
         });
       } catch (_) { /* no-op */ }
 
@@ -1176,7 +1122,7 @@ class LocalStorageAutoSaveManager {
       console.log('✅ Canvas considerado saludable para máximo rendimiento');
       return true;
       
-          } catch (error) {
+    } catch (error) {
       console.warn('⚠️ Canvas no saludable:', error);
       return false;
     }
@@ -1220,13 +1166,13 @@ class LocalStorageAutoSaveManager {
           console.warn('⚠️ Canvas aún no saludable después del reset');
           return false;
         }
-            }
-          } catch (error) {
+      }
+    } catch (error) {
       console.error('❌ Error en reset del canvas:', error);
       return false;
     }
   }
-  
+
   // === RESTAURACIÓN DE ESTADO ===
   
   async restoreBpmnState() {
@@ -1243,35 +1189,138 @@ class LocalStorageAutoSaveManager {
       if (!this.projectState.bpmn || !this.projectState.bpmn.xml || !modeler) {
         console.warn('⚠️ No hay datos BPMN para restaurar o modeler no disponible');
         this._restoringBpmn = false;
-      return false;
+        return false;
       }
       
-        console.log('🔄 Restaurando estado BPMN desde localStorage...');
+      console.log('🔄 Restaurando estado BPMN desde localStorage...');
       
-      // OPTIMIZACIÓN RADICAL: Saltar limpieza del canvas para máximo rendimiento
-      // La limpieza manual puede causar problemas de SVGMatrix
-      console.log('⚡ Saltando limpieza del canvas para máximo rendimiento');
-        
-        // Restaurar XML
-        await modeler.importXML(this.projectState.bpmn.xml);
+      // Preparar el canvas antes de importar
+      try {
+        const canvas = modeler.get('canvas');
+        if (canvas) {
+          // Limpiar elementos existentes
+          const rootElement = canvas.getRootElement();
+          if (rootElement) {
+            const elements = rootElement.children.slice();
+            elements.forEach(element => {
+              if (element.id !== '__implicitroot_0') {
+                try {
+                  canvas.removeShape(element);
+                } catch (removeError) {
+                  console.warn('⚠️ Error removiendo elemento:', removeError);
+                }
+              }
+            });
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ No se pudo preparar el canvas:', error);
+      }
       
-      // OPTIMIZACIÓN RADICAL: Sin espera para máximo rendimiento
-      // await new Promise(resolve => setTimeout(resolve, 200)); // ELIMINADO
-        
-        // OPTIMIZACIÓN RADICAL: Saltar restauración de zoom/viewbox para evitar errores SVGMatrix
-        // Los errores de SVGMatrix causan lentitud extrema y problemas de estabilidad
-        console.log('⚡ Saltando restauración de zoom/viewbox para evitar errores SVGMatrix');
-        console.log('⚡ Esto previene errores de "Failed to execute inverse on SVGMatrix"');
-        
-        // OPTIMIZACIÓN RADICAL: Saltar restauración de selección para máximo rendimiento
-        console.log('⚡ Saltando restauración de selección para máximo rendimiento');
-        
-        console.log('✅ Estado BPMN restaurado desde localStorage');
+      // Restaurar XML
+      await modeler.importXML(this.projectState.bpmn.xml);
+      
+      // Esperar un poco para que se procese la importación
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Restaurar zoom y posición
+      if (this.projectState.bpmn.zoom && this.projectState.bpmn.position) {
+        try {
+          const canvas = modeler.get('canvas');
+          if (canvas) {
+            // Verificación de salud del canvas temporalmente deshabilitada para evitar resets innecesarios
+            console.log('ℹ️ Verificación de salud del canvas deshabilitada para evitar resets');
+            /*
+            if (!this.isCanvasHealthy(canvas)) {
+              console.warn('⚠️ Canvas no saludable, aplicando reset...');
+              const resetSuccess = await this.forceCanvasReset(canvas);
+              if (!resetSuccess) {
+                console.warn('⚠️ No se pudo resetear el canvas, pero continuando con valores por defecto');
+                // No retornar aquí, continuar con valores por defecto
+              }
+            }
+            */
+            
+            // Validar y aplicar zoom
+            const zoom = parseFloat(this.projectState.bpmn.zoom);
+            if (!isNaN(zoom) && zoom > 0 && zoom <= 10) {
+              try {
+                // Verificar el zoom actual antes de aplicar
+                const currentZoom = canvas.zoom();
+                if (Math.abs(currentZoom - zoom) > 0.01) { // Solo aplicar si hay diferencia significativa
+                  canvas.zoom(zoom);
+                  console.log('✅ Zoom restaurado:', zoom, '(anterior:', currentZoom, ')');
+                } else {
+                  console.log('ℹ️ Zoom ya está en el valor correcto:', currentZoom);
+                }
+              } catch (zoomError) {
+                console.warn('⚠️ Error aplicando zoom:', zoomError);
+                // Intentar aplicar zoom por defecto si hay error
+                try {
+                  canvas.zoom(1);
+                  console.log('✅ Zoom aplicado por defecto debido a error');
+                } catch (defaultZoomError) {
+                  console.warn('⚠️ No se pudo aplicar zoom por defecto:', defaultZoomError);
+                }
+              }
+            }
+            
+            // Validar y aplicar posición
+            const position = this.projectState.bpmn.position;
+            if (position && 
+                typeof position.x === 'number' && !isNaN(position.x) &&
+                typeof position.y === 'number' && !isNaN(position.y) &&
+                typeof position.width === 'number' && !isNaN(position.width) && position.width > 0 &&
+                typeof position.height === 'number' && !isNaN(position.height) && position.height > 0) {
+              try {
+                // Verificar la posición actual antes de aplicar
+                const currentViewbox = canvas.viewbox();
+                const positionDiff = Math.abs(currentViewbox.x - position.x) + 
+                                   Math.abs(currentViewbox.y - position.y) + 
+                                   Math.abs(currentViewbox.width - position.width) + 
+                                   Math.abs(currentViewbox.height - position.height);
+                
+                if (positionDiff > 1) { // Solo aplicar si hay diferencia significativa
+                  canvas.viewbox(position);
+                  console.log('✅ Posición restaurada:', position);
+                } else {
+                  console.log('ℹ️ Posición ya está correcta:', currentViewbox);
+                }
+              } catch (viewboxError) {
+                console.warn('⚠️ Error aplicando viewbox:', viewboxError);
+                // Intentar aplicar posición por defecto si hay error
+                try {
+                  canvas.viewbox({ x: 0, y: 0, width: 1000, height: 1000 });
+                  console.log('✅ Posición aplicada por defecto debido a error');
+                } catch (defaultViewboxError) {
+                  console.warn('⚠️ No se pudo aplicar posición por defecto:', defaultViewboxError);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.warn('⚠️ Error en restauración de zoom/posición:', error);
+        }
+      }
+      
+      // Restaurar selección
+      if (this.projectState.bpmn.selection) {
+        try {
+          const selection = modeler.get('selection');
+          if (selection) {
+            selection.select(this.projectState.bpmn.selection);
+          }
+        } catch (error) {
+          console.warn('⚠️ No se pudo restaurar selección:', error);
+        }
+      }
+      
+      console.log('✅ Estado BPMN restaurado desde localStorage');
       // Iniciar cooldown post-restauración para evitar reacciones inmediatas
       this._postRestoreCooldownUntil = Date.now() + this.postRestoreCooldownMs;
       this._restoringBpmn = false;
       setTimeout(() => this.disableAntiFlicker(), this.postRestoreCooldownMs);
-        return true;
+      return true;
       
     } catch (error) {
       console.error('❌ Error restaurando estado BPMN:', error);
@@ -1290,9 +1339,8 @@ class LocalStorageAutoSaveManager {
       this._restoringPPI = true;
       this.enableAntiFlicker();
       
-      // Optimización: Reducir logs de debug para mejorar rendimiento
-      // console.log('🚀 INICIANDO RESTAURACIÓN PPI - DEBUG COMPLETO');
-      // console.log('📊 Project State PPI:', this.projectState.ppi);
+      console.log('🚀 INICIANDO RESTAURACIÓN PPI - DEBUG COMPLETO');
+      console.log('📊 Project State PPI:', this.projectState.ppi);
       
       const ppiManager = resolve('PPIManagerInstance');
       if (this.projectState.ppi.indicators && ppiManager && ppiManager.core) {
@@ -1347,7 +1395,7 @@ class LocalStorageAutoSaveManager {
               if (!ppiShape || !ppiShape.businessObject) return;
 
               // Esperar de forma estricta al shape del PPI antes de crear hijos
-              const waitForElementById = async (id, attempts = 1, delayMs = 0) => { // Optimización INSTANTÁNEA: Sin esperas
+              const waitForElementById = async (id, attempts = 15, delayMs = 100) => {
                 for (let i = 0; i < attempts; i++) {
                   const found = elementRegistry.get(id);
                   if (found) return found;
@@ -1357,7 +1405,7 @@ class LocalStorageAutoSaveManager {
               };
 
               if (!ppiShape) {
-                ppiShape = await waitForElementById(ppi.id, 3, 2); // Optimización ULTRA-RADICAL: Reducir a mínimo
+                ppiShape = await waitForElementById(ppi.id, 20, 100);
                 if (!ppiShape) {
                   // No crear Target/Scope sin el PPI presente para evitar parenting incorrecto
                   continue;
@@ -1366,123 +1414,16 @@ class LocalStorageAutoSaveManager {
 
               // Buscar elementos Scope y Target asociados al PPI
               const allElements = elementRegistry.getAll();
-              
-              // Primero buscar por parent directo
-              let scopeElt = allElements.find(el => 
+              const scopeElt = allElements.find(el => 
                 el && el.businessObject && 
                 el.businessObject.$type === 'PPINOT:Scope' &&
-                el.parent === ppiShape && el.type !== 'label'
+                el.parent === ppiShape
               );
-              let targetElt = allElements.find(el => 
+              const targetElt = allElements.find(el => 
                 el && el.businessObject && 
                 el.businessObject.$type === 'PPINOT:Target' &&
-                el.parent === ppiShape && el.type !== 'label'
+                el.parent === ppiShape
               );
-              
-              // Si no se encuentran por parent directo, buscar por IDs guardados
-              if (!scopeElt && ppi.scopeElementId) {
-                scopeElt = allElements.find(el => 
-                  el && el.id === ppi.scopeElementId && 
-                  el.businessObject && el.businessObject.$type === 'PPINOT:Scope' &&
-                  el.type !== 'label'
-                );
-              }
-              if (!targetElt && ppi.targetElementId) {
-                targetElt = allElements.find(el => 
-                  el && el.id === ppi.targetElementId && 
-                  el.businessObject && el.businessObject.$type === 'PPINOT:Target' &&
-                  el.type !== 'label'
-                );
-              }
-              
-              // Si aún no se encuentran, buscar por proximidad y tipo
-              if (!scopeElt) {
-                scopeElt = allElements.find(el => {
-                  if (!el || !el.businessObject || el.businessObject.$type !== 'PPINOT:Scope' || el.type === 'label') {
-                    return false;
-                  }
-                  // Verificar si está cerca del PPI (dentro de 100px)
-                  const distance = Math.sqrt(
-                    Math.pow((el.x || 0) - (ppiShape.x || 0), 2) + 
-                    Math.pow((el.y || 0) - (ppiShape.y || 0), 2)
-                  );
-                  return distance < 100;
-                });
-              }
-              if (!targetElt) {
-                targetElt = allElements.find(el => {
-                  if (!el || !el.businessObject || el.businessObject.$type !== 'PPINOT:Target' || el.type === 'label') {
-                    return false;
-                  }
-                  // Verificar si está cerca del PPI (dentro de 100px)
-                  const distance = Math.sqrt(
-                    Math.pow((el.x || 0) - (ppiShape.x || 0), 2) + 
-                    Math.pow((el.y || 0) - (ppiShape.y || 0), 2)
-                  );
-                  return distance < 100;
-                });
-              }
-              
-              console.log(`🔍 Buscando Target/Scope en canvas para PPI ${ppi.elementId}:`);
-              console.log(`  - Total elementos en canvas: ${allElements.length}`);
-              console.log(`  - Scope encontrado: ${scopeElt ? scopeElt.id : 'ninguno'}`);
-              console.log(`  - Target encontrado: ${targetElt ? targetElt.id : 'ninguno'}`);
-              console.log(`  - PPI shape ID: ${ppiShape.id}`);
-              console.log(`  - PPI shape parent: ${ppiShape.parent ? ppiShape.parent.id : 'none'}`);
-              if (scopeElt) console.log(`  - Scope parent: ${scopeElt.parent ? scopeElt.parent.id : 'none'}`);
-              if (targetElt) console.log(`  - Target parent: ${targetElt.parent ? targetElt.parent.id : 'none'}`);
-              
-              // Debug: mostrar todos los elementos Target/Scope en el canvas
-              const allTargetScopeElements = allElements.filter(el => 
-                el && el.businessObject && (
-                  el.businessObject.$type === 'PPINOT:Target' ||
-                  el.businessObject.$type === 'PPINOT:Scope'
-                ) && el.type !== 'label'
-              );
-              console.log(`  - Total elementos Target/Scope en canvas: ${allTargetScopeElements.length}`);
-              allTargetScopeElements.forEach(el => {
-                console.log(`    * ${el.id} (${el.businessObject.$type}) - Parent: ${el.parent ? el.parent.id : 'none'}`);
-              });
-
-              // Si no tenemos ids persistidos pero existen en canvas, capturarlos para futuros guardados
-              if (!ppi.scopeElementId && scopeElt) ppi.scopeElementId = scopeElt.id;
-              if (!ppi.targetElementId && targetElt) ppi.targetElementId = targetElt.id;
-              
-              // Asegurar que los elementos encontrados estén correctamente parenteados
-              if (scopeElt && scopeElt.parent !== ppiShape) {
-                console.log(`🔧 Re-parenteando Scope ${scopeElt.id} bajo PPI ${ppiShape.id}`);
-                try {
-                  modeling.moveShape(scopeElt, { x: 0, y: 0 }, ppiShape);
-                } catch (error) {
-                  console.warn(`⚠️ Error re-parenteando Scope: ${error.message}`);
-                }
-              }
-              if (targetElt && targetElt.parent !== ppiShape) {
-                console.log(`🔧 Re-parenteando Target ${targetElt.id} bajo PPI ${ppiShape.id}`);
-                try {
-                  modeling.moveShape(targetElt, { x: 0, y: 0 }, ppiShape);
-                } catch (error) {
-                  console.warn(`⚠️ Error re-parenteando Target: ${error.message}`);
-                }
-              }
-
-              // Si siguen faltando IDs, intentar descubrirlos desde la semántica (extensionElements del process)
-              if ((!ppi.scopeElementId || !ppi.targetElementId) && elementRegistry) {
-                try {
-                  const canvas = modeler.get('canvas');
-                  const rootEl = canvas.getRootElement();
-                  const processBo = rootEl && rootEl.businessObject ? rootEl.businessObject : null;
-                  const extVals = (processBo && processBo.extensionElements && Array.isArray(processBo.extensionElements.values)) ? processBo.extensionElements.values : [];
-                  const scopeExts = extVals.filter(v => v && typeof v.$type === 'string' && v.$type.toLowerCase() === 'ppinot:scope');
-                  const targetExts = extVals.filter(v => v && typeof v.$type === 'string' && v.$type.toLowerCase() === 'ppinot:target');
-                  if (!ppi.scopeElementId && scopeExts.length === 1) {
-                    ppi.scopeElementId = scopeExts[0].id;
-                  }
-                  if (!ppi.targetElementId && targetExts.length === 1) {
-                    ppi.targetElementId = targetExts[0].id;
-                  }
-                } catch (_) { /* no-op */ }
-              }
 
               // Si aún faltan IDs, buscar en el sistema PPINOT unificado
               if ((!ppi.scopeElementId || !ppi.targetElementId)) {
@@ -1523,75 +1464,46 @@ class LocalStorageAutoSaveManager {
                 try { modeling.updateLabel(ppiShape, ppi.title); } catch (_) { ppiShape.businessObject.name = ppi.title; eventBus.fire('element.changed', { element: ppiShape }); }
               }
 
-              // Crear Scope/Target: deshabilitado si faltan IDs guardados (no recrear)
+              // Crear Scope/Target si faltan (usar IDs guardados si están disponibles)
+              const defaultSize = (type) => {
+                // tamaños pequeños por defecto si no están en la fábrica
+                return type === 'PPINOT:Scope' ? { width: 28, height: 28 } : { width: 25, height: 25 };
+              };
 
               let scopeShape = scopeElt;
               let targetShape = targetElt;
 
-              // Posicionamiento se mantiene solo para mover existentes; no se crean nuevos
+              // Posiciones relativas simples dentro del PPI
+              const ppiCenter = { x: ppiShape.x + ppiShape.width / 2, y: ppiShape.y + ppiShape.height / 2 };
 
               // Obtener el contenedor correcto (root del canvas)
               // canvas disponible si se requiere más adelante
-
+              
               if (!scopeShape) {
-                // Permitir crear si tenemos un ID válido (del estado o del XML semántico)
-                if (ppi.scopeElementId) {
-                  const existingById = elementRegistry.get(ppi.scopeElementId);
-                  if (existingById) {
-                    scopeShape = existingById;
-                    if (scopeShape.parent !== ppiShape) {
-                      try { modeling.moveShape(scopeShape, { x: 0, y: 0 }, ppiShape); } catch (_) { /* ignore */ }
-                    }
-                  } else {
-                    const size = { width: 28, height: 28 };
+                const scopeBOShape = elementFactory.create('shape', { type: 'PPINOT:Scope', ...defaultSize('PPINOT:Scope') });
                 const pos = (ppi.scopePosition && typeof ppi.scopePosition.x === 'number' && typeof ppi.scopePosition.y === 'number')
                   ? ppi.scopePosition
-                      : { x: ppiShape.x - 40, y: ppiShape.y };
-                    const shape = elementFactory.create('shape', { id: ppi.scopeElementId, type: 'PPINOT:Scope', ...size });
-                    scopeShape = modeling.createShape(shape, pos, ppiShape);
-                  }
-                } else {
-                  console.log('ℹ️ Omitiendo creación de Scope: no hay scopeElementId');
+                  : { x: ppiCenter.x - 60, y: ppiCenter.y };
+                scopeShape = modeling.createShape(scopeBOShape, pos, ppiShape);
+                if (ppi.scopeElementId) {
+                  try { scopeShape.id = ppi.scopeElementId; } catch(_) { /* ignore id assignment errors */ }
                 }
               } else if (ppi.scopePosition && typeof ppi.scopePosition.x === 'number' && typeof ppi.scopePosition.y === 'number') {
                 const delta = { x: ppi.scopePosition.x - scopeShape.x, y: ppi.scopePosition.y - scopeShape.y };
                 if (delta.x || delta.y) modeling.moveElements([scopeShape], delta, ppiShape);
-                // Verificar y corregir relación padre-hijo si es necesaria
-                if (scopeShape.parent !== ppiShape) {
-                  try {
-                    modeling.moveShape(scopeShape, { x: 0, y: 0 }, ppiShape);
-                  } catch (_) { /* ignore parent assignment errors */ }
-                }
               }
               if (!targetShape) {
-                // Permitir crear si tenemos un ID válido (del estado o del XML semántico)
-                if (ppi.targetElementId) {
-                  const existingById = elementRegistry.get(ppi.targetElementId);
-                  if (existingById) {
-                    targetShape = existingById;
-                    if (targetShape.parent !== ppiShape) {
-                      try { modeling.moveShape(targetShape, { x: 0, y: 0 }, ppiShape); } catch (_) { /* ignore */ }
-                    }
-                  } else {
-                    const size = { width: 25, height: 25 };
+                const targetBOShape = elementFactory.create('shape', { type: 'PPINOT:Target', ...defaultSize('PPINOT:Target') });
                 const pos = (ppi.targetPosition && typeof ppi.targetPosition.x === 'number' && typeof ppi.targetPosition.y === 'number')
                   ? ppi.targetPosition
-                      : { x: ppiShape.x + ppiShape.width + 40, y: ppiShape.y };
-                    const shape = elementFactory.create('shape', { id: ppi.targetElementId, type: 'PPINOT:Target', ...size });
-                    targetShape = modeling.createShape(shape, pos, ppiShape);
-                  }
-                } else {
-                  console.log('ℹ️ Omitiendo creación de Target: no hay targetElementId');
+                  : { x: ppiCenter.x + 60, y: ppiCenter.y };
+                targetShape = modeling.createShape(targetBOShape, pos, ppiShape);
+                if (ppi.targetElementId) {
+                  try { targetShape.id = ppi.targetElementId; } catch(_) { /* ignore id assignment errors */ }
                 }
               } else if (ppi.targetPosition && typeof ppi.targetPosition.x === 'number' && typeof ppi.targetPosition.y === 'number') {
                 const delta = { x: ppi.targetPosition.x - targetShape.x, y: ppi.targetPosition.y - targetShape.y };
                 if (delta.x || delta.y) modeling.moveElements([targetShape], delta, ppiShape);
-                // Verificar y corregir relación padre-hijo si es necesaria
-                if (targetShape.parent !== ppiShape) {
-                  try {
-                    modeling.moveShape(targetShape, { x: 0, y: 0 }, ppiShape);
-                  } catch (_) { /* ignore parent assignment errors */ }
-                }
               }
 
               if (scopeShape && typeof ppi.scope === 'string' && ppi.scope) {
@@ -1602,6 +1514,66 @@ class LocalStorageAutoSaveManager {
                 try { modeling.updateLabel(targetShape, ppi.target); } catch (_) { targetShape.businessObject.name = ppi.target; eventBus.fire('element.changed', { element: targetShape }); }
               }
             }
+
+            // === NUEVO: Restaurar medidas PPINOT (base y agregadas) y reparentar al PPI ===
+            try {
+              const sr = typeof getServiceRegistry === 'function' ? getServiceRegistry() : null;
+              const ppinotStorageManager = (sr && sr.get) ? sr.get('PPINOTStorageManager') : resolve && resolve('PPINOTStorageManager');
+              if (ppinotStorageManager && typeof ppinotStorageManager.loadPPINOTElements === 'function') {
+                const data = ppinotStorageManager.loadPPINOTElements();
+                const allEls = Array.isArray(data.elements) ? data.elements : [];
+                const rels = Array.isArray(data.relationships) ? data.relationships : [];
+
+                const isMeasureType = (t) => {
+                  if (!t || typeof t !== 'string') return false;
+                  return t.startsWith('PPINOT:') && (
+                    t.includes('Measure') || t.includes('Aggregated') || t.includes('Derived') || t.includes('Time') || t.includes('Count') || t.includes('Data') || t.includes('State')
+                  ) && !t.endsWith('Target') && !t.endsWith('Scope') && !t.endsWith('Ppi');
+                };
+
+                // Reparentar todas las medidas conocidas (NO crear nuevas)
+                for (const el of allEls) {
+                  const type = el.type || (el.businessObject && el.businessObject.$type) || '';
+                  if (!isMeasureType(type)) continue;
+
+                  const childId = el.id;
+                  // Obtener padre por parentId o por relaciones
+                  let parentId = el.parentId || null;
+                  if (!parentId) {
+                    const r = rels.find(r => r.childId === childId);
+                    if (r) parentId = r.parentId;
+                  }
+                  if (!parentId) continue;
+
+                  const parentShape = elementRegistry.get(parentId);
+                  if (!parentShape) continue;
+
+                  const childShape = elementRegistry.get(childId);
+                  if (childShape) {
+                    // Reparent si no está bajo el PPI esperado
+                    try {
+                      if (childShape.parent !== parentShape) {
+                        const delta = { x: 0, y: 0 };
+                        modeling.moveElements([childShape], delta, parentShape);
+                        // Mover también su label externo si existe
+                        if (childShape.label) {
+                          try { modeling.moveElements([childShape.label], { x: 0, y: 0 }, parentShape); } catch (_) { /* no-op */ }
+                        }
+                      }
+                    } catch (_) { /* no-op */ }
+                    // Asegurar relación BO
+                    try {
+                      if (childShape.businessObject && parentShape.businessObject) {
+                        childShape.businessObject.$parent = parentShape.businessObject;
+                        // Mantener array children en el padre para facilitar futuras detecciones
+                        if (!Array.isArray(parentShape.businessObject.children)) parentShape.businessObject.children = [];
+                        if (!parentShape.businessObject.children.includes(childShape.businessObject)) parentShape.businessObject.children.push(childShape.businessObject);
+                      }
+                    } catch (_) { /* no-op */ }
+                  }
+                }
+              }
+            } catch (_) { /* no-op */ }
           }
         } catch (e) {
           // no-op: si falla la sincronización de labels, no interrumpir la restauración
@@ -1650,15 +1622,13 @@ class LocalStorageAutoSaveManager {
             // console.log(`  - Targets: ${targetElements.length}`);
             // console.log(`  - Scopes: ${scopeElements.length}`);
             
-            // Optimización: Comentado para evitar warnings de linter y mejorar rendimiento
-            // ppiElements.forEach(ppi => {
-            //   const children = allElements.filter(el => el.parent === ppi);
-            //   // Optimización: Reducir logs de debug para mejorar rendimiento
-            //   // console.log(`  PPI ${ppi.id} tiene ${children.length} hijos`);
-            //   // children.forEach(child => {
-            //   //   console.log(`    - ${child.id} (${child.businessObject ? child.businessObject.$type : 'unknown'})`);
-            //   // });
-            // });
+            ppiElements.forEach(ppi => {
+              const children = allElements.filter(el => el.parent === ppi);
+              console.log(`  PPI ${ppi.id} tiene ${children.length} hijos`);
+              children.forEach(child => {
+                console.log(`    - ${child.id} (${child.businessObject ? child.businessObject.$type : 'unknown'})`);
+              });
+            });
           }
         } catch (error) {
           console.warn('⚠️ Error en debug final:', error);
@@ -1685,27 +1655,20 @@ class LocalStorageAutoSaveManager {
   }
   
   async forceRestore() {
-    // Optimización RADICAL: Evitar restauraciones múltiples
-    if (this._forceRestoreInProgress) {
-      console.log('🚫 Restauración ya en progreso, saltando...');
-      return true;
-    }
-    
-    this._forceRestoreInProgress = true;
     console.log('📂 Forzando restauración manual...');
     
-    try {
     // 1) Cargar estado desde localStorage en memoria
     const loaded = this.loadState();
-      if (!loaded) {
-        console.warn('⚠️ No hay estado para restaurar');
-        return false;
-      }
-      
-      // 2) Suspender autoguardado durante la restauración y activar anti-flicker
+    if (!loaded) {
+      console.warn('⚠️ No hay estado para restaurar');
+      return false;
+    }
+    
+    // 2) Suspender autoguardado durante la restauración y activar anti-flicker
     this.suspendAutoSave();
-      this.enableAntiFlicker();
-      
+    this.enableAntiFlicker();
+    
+    try {
       // 3) Esperar a que el modeler esté disponible
       const modeler = resolve('BpmnModeler');
       if (!modeler) {
@@ -1716,38 +1679,28 @@ class LocalStorageAutoSaveManager {
       // 4) Importar BPMN primero
       if (this.projectState.bpmn && this.projectState.bpmn.xml) {
         console.log('🔄 Restaurando diagrama BPMN...');
-      await this.restoreBpmnState();
-        // SIN ESPERA - continuar inmediatamente
+        await this.restoreBpmnState();
+        
+        // Esperar un poco para que el modeler procese el XML
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
       
       // 5) Restaurar PPIs (Scope/Target incluidos) una sola vez
       if (!this._ppiRestoredOnce && this.projectState.ppi && this.projectState.ppi.indicators && !this._restoringPPI) {
         console.log('🔄 Restaurando elementos PPINOT (manual)...');
-        console.log('🔍 Verificando PPIManager...');
-        
-        // SIN ESPERA - PPIManager debe estar listo instantáneamente
-        
-        const mgr = resolve('PPIManagerInstance');
-        console.log('🔍 PPIManager encontrado:', !!mgr);
-        if (mgr) {
-          console.log('🔍 PPIManager.core:', !!mgr.core);
-          console.log('🔍 PPIManager.core.addPPI:', typeof (mgr.core && mgr.core.addPPI));
-        }
-        
-        if (mgr && mgr.core && typeof mgr.core.addPPI === 'function') {
-          console.log('✅ PPIManager disponible, restaurando PPIs...');
-          const ok = await this.restorePPIState();
-          if (ok) this._ppiRestoredOnce = true;
-          console.log('✅ Restauración PPI completada:', ok);
-        } else {
-          // PPIManager no disponible - continuar sin reintento para máxima velocidad
-          console.log('⚠️ PPIManager no disponible, continuando sin reintento...');
-        }
-        // SIN ESPERA - continuar inmediatamente
+        console.log('🔄 Esperando a que PPIManager esté listo (manual)...');
+        // Optimización: Reducir intentos y delay para mejor rendimiento
+        await this.waitFor(() => {
+          const mgr = resolve('PPIManagerInstance');
+          return mgr && mgr.core && typeof mgr.core.addPPI === 'function';
+        }, { attempts: 10, delayMs: 50 });
+        const ok = await this.restorePPIState();
+        if (ok) this._ppiRestoredOnce = true;
+        // Optimización: Reducir espera para mejor rendimiento
+        await new Promise(resolve => setTimeout(resolve, 50));
       } else if (this._restoringPPI) {
         console.log('ℹ️ Restauración PPI ya en progreso, saltando...');
       }
-      
       // Extender cooldown tras restauración completa
       this._postRestoreCooldownUntil = Date.now() + this.postRestoreCooldownMs;
       
@@ -1809,282 +1762,6 @@ class LocalStorageAutoSaveManager {
       this.startAutoSave(); // Reiniciar con nueva frecuencia
     }
     console.log(`🔄 Frecuencia de autoguardado actualizada a ${ms}ms`);
-  }
-  
-  // === RESTAURACIÓN MEJORADA PARA RECARGAS ===
-  
-  setupPageReloadRestoration() {
-    // Protección contra ejecuciones múltiples
-    if (this._pageReloadRestorationSetup) {
-      console.log('ℹ️ setupPageReloadRestoration ya configurado, saltando...');
-      return;
-    }
-    this._pageReloadRestorationSetup = true;
-    
-    // ELIMINADO: Restauraciones automáticas que causan recargas adicionales
-    // La restauración se maneja directamente en initializeApp()
-    
-    // Verificación periódica MÁS CONSERVADORA - solo si es necesario
-    this._periodicCheckCounter = 0;
-    this._periodicCheckInterval = setInterval(() => {
-      this._periodicCheckCounter++;
-      
-      // Solo ejecutar verificación si:
-      // 1. No hay una restauración en progreso
-      // 2. Han pasado menos de 10 verificaciones (evitar bucles infinitos)
-      // 3. No estamos importando
-      if (!this._restoringPPI && 
-          this._periodicCheckCounter <= 10 &&
-          !this._isImportingProject) {
-        this.periodicRestoreCheck();
-      } else if (this._periodicCheckCounter > 10) {
-        // Detener verificaciones periódicas después de 10 intentos
-        console.log('🛑 Deteniendo verificaciones periódicas (límite alcanzado)');
-        clearInterval(this._periodicCheckInterval);
-      }
-    }, 30000); // Aumentado a 30 segundos en lugar de 15
-  }
-  
-  checkAndRestoreAfterPageLoad() {
-    try {
-      // Solo restaurar si hay datos guardados y no estamos ya restaurando
-      const savedState = this.loadFromStorage();
-      if (!savedState || this._restoringPPI) return;
-      
-      // Verificar si tenemos datos PPI para restaurar
-      const hasValidPPIData = savedState.ppi && 
-                              savedState.ppi.indicators && 
-                              Array.isArray(savedState.ppi.indicators) && 
-                              savedState.ppi.indicators.length > 0;
-      
-      if (hasValidPPIData) {
-        console.log('🔄 Detectado datos PPI guardados, verificando si necesitan restauración...');
-        
-        // Verificar si ya existen elementos PPI en el canvas
-        const modeler = resolve('BpmnModeler');
-        if (modeler) {
-          const elementRegistry = modeler.get('elementRegistry');
-          const existingPPIs = elementRegistry.getAll().filter(el => 
-            el.type === 'PPINOT:Ppi' || 
-            (el.businessObject && el.businessObject.$type === 'PPINOT:Ppi')
-          );
-          
-          // Si hay datos guardados pero no elementos en el canvas, restaurar
-          if (existingPPIs.length === 0) {
-            console.log('🎯 No se encontraron elementos PPI en el canvas, iniciando restauración...');
-            this.restorePPIState();
-          } else {
-            // Verificar si las relaciones padre-hijo están correctas
-            this.verifyAndRestoreParentChildRelationships();
-          }
-        }
-      }
-      
-      // También verificar datos PPINOT usando el sistema unificado
-      const ppinotStorageManager = resolve('PPINOTStorageManager');
-      if (ppinotStorageManager) {
-        const ppinotData = ppinotStorageManager.loadPPINOTElements();
-        if (ppinotData && (ppinotData.elements.length > 0 || ppinotData.relationships.length > 0)) {
-          console.log('🔄 Detectados datos PPINOT unificados, activando coordinación...');
-          const coordinationManager = resolve('PPINOTCoordinationManager');
-          if (coordinationManager) {
-            coordinationManager.triggerRestoration('page.reload');
-          }
-        }
-      }
-      
-    } catch (error) {
-      console.error('❌ Error en checkAndRestoreAfterPageLoad:', error);
-    }
-  }
-  
-  verifyAndRestoreParentChildRelationships() {
-    try {
-      const modeler = resolve('BpmnModeler');
-      if (!modeler) return;
-      
-      const elementRegistry = modeler.get('elementRegistry');
-      const ppiElements = elementRegistry.getAll().filter(el => 
-        el.type === 'PPINOT:Ppi' || 
-        (el.businessObject && el.businessObject.$type === 'PPINOT:Ppi')
-      );
-      
-      // Verificar si cada PPI tiene sus elementos Target/Scope como hijos
-      let missingRelationships = 0;
-      
-      ppiElements.forEach(ppi => {
-        // Buscar elementos Target/Scope huérfanos que deberían ser hijos de este PPI
-        const allElements = elementRegistry.getAll();
-        const orphanedTargets = allElements.filter(el => 
-          (el.type === 'PPINOT:Target' || (el.businessObject && el.businessObject.$type === 'PPINOT:Target')) &&
-          (!el.parent || el.parent.id !== ppi.id)
-        );
-        const orphanedScopes = allElements.filter(el => 
-          (el.type === 'PPINOT:Scope' || (el.businessObject && el.businessObject.$type === 'PPINOT:Scope')) &&
-          (!el.parent || el.parent.id !== ppi.id)
-        );
-        
-        if (orphanedTargets.length > 0 || orphanedScopes.length > 0) {
-          missingRelationships++;
-        }
-      });
-      
-      if (missingRelationships > 0) {
-        console.log(`⚠️ Detectadas ${missingRelationships} relaciones padre-hijo faltantes, restaurando...`);
-        // Activar el sistema de coordinación para restaurar relaciones
-        const coordinationManager = resolve('PPINOTCoordinationManager');
-        if (coordinationManager) {
-          coordinationManager.triggerRestoration('relationships.missing');
-        }
-      }
-      
-    } catch (error) {
-      console.error('❌ Error verificando relaciones padre-hijo:', error);
-    }
-  }
-  
-  periodicRestoreCheck() {
-    // Solo verificar si no estamos en proceso de restauración
-    if (this._restoringPPI || this._isImportingProject) {
-      console.log('⏭️ Saltando verificación periódica (restauración o importación en progreso)');
-      return;
-    }
-    
-    try {
-      const modeler = resolve('BpmnModeler');
-      if (!modeler) {
-        console.log('⏭️ Saltando verificación periódica (modeler no disponible)');
-        return;
-      }
-      
-      // Verificar si hay datos guardados pero elementos faltantes
-      const savedState = this.loadFromStorage();
-      if (savedState && savedState.ppi && savedState.ppi.indicators && savedState.ppi.indicators.length > 0) {
-        const elementRegistry = modeler.get('elementRegistry');
-        const existingPPIs = elementRegistry.getAll().filter(el => 
-          el.type === 'PPINOT:Ppi' || 
-          (el.businessObject && el.businessObject.$type === 'PPINOT:Ppi')
-        );
-        
-        // Solo restaurar si hay una diferencia significativa (más de 1 elemento faltante)
-        const missingCount = savedState.ppi.indicators.length - existingPPIs.length;
-        if (missingCount > 1) {
-          console.log(`🔍 Verificación periódica: ${missingCount} elementos PPI faltantes detectados`);
-          this._periodicCheckCounter = Math.min(this._periodicCheckCounter + 1, 999); // Incrementar contador
-          this.restorePPIState();
-        } else if (existingPPIs.length > 0 && missingCount <= 1) {
-          // Solo verificar relaciones si no faltan elementos importantes
-          this.verifyAndRestoreParentChildRelationships();
-        }
-      } else {
-        console.log('⏭️ Saltando verificación periódica (no hay datos PPI guardados)');
-      }
-      
-    } catch (error) {
-      // Silenciar errores de verificación periódica para evitar spam en console
-      console.warn('⚠️ Error en verificación periódica (silenciado):', error.message);
-    }
-  }
-  
-  // === CONTROL DE VERIFICACIONES PERIÓDICAS ===
-  
-  // Nueva función para detener verificaciones periódicas
-  stopPeriodicChecks() {
-    if (this._periodicCheckInterval) {
-      console.log('🛑 Deteniendo verificaciones periódicas por solicitud del usuario');
-      clearInterval(this._periodicCheckInterval);
-      this._periodicCheckInterval = null;
-      this._periodicCheckCounter = 999; // Marcar como completado
-    }
-  }
-  
-  // Nueva función para reiniciar verificaciones periódicas
-  restartPeriodicChecks() {
-    this.stopPeriodicChecks();
-    console.log('🔄 Reiniciando verificaciones periódicas...');
-    this._periodicCheckCounter = 0;
-    this._periodicCheckInterval = setInterval(() => {
-      this._periodicCheckCounter++;
-      
-      if (!this._restoringPPI && 
-          this._periodicCheckCounter <= 3 && // Reducido a 3 intentos
-          !this._isImportingProject) {
-        this.periodicRestoreCheck();
-      } else if (this._periodicCheckCounter > 3) {
-        this.stopPeriodicChecks();
-      }
-    }, 60000); // Aumentado a 60 segundos
-  }
-  
-  // Función para verificar el estado de las verificaciones
-  getPeriodicCheckStatus() {
-    return {
-      active: !!this._periodicCheckInterval,
-      counter: this._periodicCheckCounter || 0,
-      importing: !!this._isImportingProject,
-      restoring: !!this._restoringPPI
-    };
-  }
-
-  // === MÉTODO PARA RESETEAR ESTADO DEL PROYECTO ===
-  clearProjectState() {
-    console.log('🔄 Limpiando estado del proyecto para nuevo diagrama...');
-    
-    try {
-      // Limpiar localStorage
-      localStorage.removeItem('projectState');
-      localStorage.removeItem('ppinotElements');
-      localStorage.removeItem('ppinotRelationships');
-      
-      // Limpiar datos específicos de RASCI
-      localStorage.removeItem('rasciMatrixData');
-      localStorage.removeItem('rasciRoles');
-      localStorage.removeItem('rasciMatrix');
-      localStorage.removeItem('rasciRolesData');
-      
-      // Resetear estado interno con estructura completa por defecto
-      this.projectState = {
-        bpmn: {
-          xml: null,
-          canvas: null,
-          selection: null,
-          zoom: 1,
-          position: { x: 0, y: 0 }
-        },
-        ppi: {
-          indicators: [],
-          relationships: {},
-          lastUpdate: null
-        },
-        rasci: {
-          roles: [],
-          matrixData: {},
-          tasks: []
-        },
-        panels: {
-          activePanels: ['bpmn'],
-          layout: '2v',
-          order: ['bpmn']
-        },
-        metadata: {
-          lastSave: null,
-          version: '1.0.0',
-          projectName: 'Proyecto BPMN'
-        }
-      };
-      
-      // Resetear flags de restauración
-      this._autoRestoreDone = false;
-      this._ppiRestoredOnce = false;
-      this._restoringPPI = false;
-      this._forceRestoreInProgress = false;
-      
-      console.log('✅ Estado del proyecto limpiado correctamente (incluyendo datos RASCI)');
-      return true;
-    } catch (error) {
-      console.error('❌ Error limpiando estado del proyecto:', error);
-      return false;
-    }
   }
 }
 

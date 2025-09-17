@@ -90,6 +90,7 @@ class PanelManager {
         });
         
         if (panelCountChanged) {
+          console.log('🔍 Detectado cambio en número de paneles, recalculando...');
           clearTimeout(resizeTimeout);
           resizeTimeout = setTimeout(() => {
             this.recalculatePanelSizes();

@@ -373,16 +373,16 @@ RALphRules.prototype.init = function() {
     var connection = context.connection,
         source = context.hover || context.source,
         target = connection.target;
-
-    return simpleConnection(source, target, connection.type);
+    var res = simpleConnection(source, target, connection.type);
+    return res || false;
   });
 
   this.addRule('connection.reconnectEnd', HIGH_PRIORITY*2, function(context) {
     var connection = context.connection,
         source = connection.source,
         target = context.hover || context.target;
-
-    return simpleConnection(source, target, connection.type);
+    var res = simpleConnection(source, target, connection.type);
+    return res || false;
   });
 
 

@@ -24,6 +24,11 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
 
   CommandInterceptor.call(this, eventBus);
 
+  var elementRegistry;
+  try {
+    elementRegistry = bpmnjs && bpmnjs.get && bpmnjs.get('elementRegistry');
+  } catch (e) {}
+
   // Initialize PPINOTElements array if it doesn't exist
   if (!bpmnjs._PPINOTElements) {
     bpmnjs._PPINOTElements = [];
@@ -180,7 +185,8 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
         businessObject = connection.businessObject;
 
     if (!businessObject || !source || !target) {
-      return false;
+      // Do not fail hard; avoid triggering deletion cascades
+      return true;
     }
 
     var parent = connection.parent;
@@ -211,25 +217,39 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
       collectionAdd(PPINOTElements, businessObject);
     }
 
-    // Validate and filter waypoints
-    if (connection.waypoints) {
-      // Filter out any invalid waypoints
-      var validWaypoints = connection.waypoints.filter(function(p) {
-        return p && typeof p.x === 'number' && typeof p.y === 'number' && 
+    // Validate and filter waypoints; if invalid or <2, recompute a safe fallback
+    (function ensureValidWaypoints() {
+      var current = Array.isArray(connection.waypoints) ? connection.waypoints : [];
+      var valid = current.filter(function(p) {
+        return p && typeof p.x === 'number' && typeof p.y === 'number' &&
                !isNaN(p.x) && !isNaN(p.y) && isFinite(p.x) && isFinite(p.y);
       });
 
-      // Only update if we have valid waypoints
-      if (validWaypoints.length >= 2) {
-        assign(businessObject, {
-          waypoints: validWaypoints.map(function(p) {
-            return { x: p.x, y: p.y };
-          })
-        });
-        // Update the connection's waypoints to only include valid ones
-        connection.waypoints = validWaypoints;
+      if (valid.length < 2) {
+        var sx = source.x + (source.width || 0) / 2;
+        var sy = source.y + (source.height || 0) / 2;
+        var tx = target.x + (target.width || 0) / 2;
+        var ty = target.y + (target.height || 0) / 2;
+
+        var recomputed;
+        if (connection.type === 'PPINOT:GroupedBy') {
+          var midY = (sy + ty) / 2;
+          recomputed = [ { x: sx, y: sy }, { x: sx, y: midY }, { x: tx, y: midY }, { x: tx, y: ty } ];
+        } else {
+          recomputed = [ { x: sx, y: sy }, { x: tx, y: ty } ];
+        }
+
+        connection.waypoints = recomputed;
+        assign(businessObject, { waypoints: recomputed });
+        return;
       }
-    }
+
+      // Persist filtered valid waypoints
+      assign(businessObject, {
+        waypoints: valid.map(function(p) { return { x: p.x, y: p.y }; })
+      });
+      connection.waypoints = valid;
+    })();
 
     // update source and target references
     if (source && target) {
@@ -288,6 +308,17 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
       }
       businessObject.$parent = null;
     }
+
+    // Disparar guardado unificado de PPINOT tras cambio de parent
+    try {
+      if (typeof getServiceRegistry === 'function') {
+        const sr = getServiceRegistry();
+        const ppiCore = sr && sr.get && sr.get('PPICore');
+        if (ppiCore && typeof ppiCore.debouncedSavePPINOTElements === 'function') {
+          ppiCore.debouncedSavePPINOTElements();
+        }
+      }
+    } catch (_) { /* no-op */ }
   });
 
   this.executed([
@@ -341,6 +372,55 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
   }
 
   this.postExecute('canvas.updateRoot', updatePPINOTElementsRoot);
+
+  // After moving shapes, ensure PPINOT connections keep valid waypoints and adapt position
+  eventBus.on('elements.move.end', function(event) {
+    try { console.log('[PPINOT][Updater][elements.move.end]', { count: (event && event.context && (event.context.shapes||[]).length) || 0 }); } catch (e) {}
+    var shapes = (event && event.context && event.context.shapes) || [];
+    if (!shapes.length) return;
+
+    function isPPINOTConn(c) {
+      return c && c.type && /^PPINOT:/.test(c.type);
+    }
+
+    function recompute(conn) {
+      var s = conn.source, t = conn.target;
+      if (!s || !t) return null;
+      var sx = s.x + (s.width || 0) / 2;
+      var sy = s.y + (s.height || 0) / 2;
+      var tx = t.x + (t.width || 0) / 2;
+      var ty = t.y + (t.height || 0) / 2;
+      if (conn.type === 'PPINOT:GroupedBy') {
+        var midY = (sy + ty) / 2;
+        return [ { x: sx, y: sy }, { x: sx, y: midY }, { x: tx, y: midY }, { x: tx, y: ty } ];
+      }
+      return [ { x: sx, y: sy }, { x: tx, y: ty } ];
+    }
+
+    var touchedConnections = Object.create(null);
+
+    shapes.forEach(function(s) {
+      (s.outgoing || []).concat(s.incoming || []).forEach(function(c) {
+        if (!isPPINOTConn(c)) return;
+        if (touchedConnections[c.id]) return;
+        touchedConnections[c.id] = true;
+
+        try {
+          var wps = Array.isArray(c.waypoints) ? c.waypoints : [];
+          var valid = wps.length >= 2 && wps.every(function(p){ return p && typeof p.x === 'number' && typeof p.y === 'number'; });
+          if (!valid) {
+            var recomputed = recompute(c);
+            if (recomputed && recomputed.length >= 2) {
+              try { console.log('[PPINOT][Updater][recompute]', { id: c.id, type: c.type, len: recomputed.length }); } catch (e) {}
+              modeling.updateWaypoints(c, recomputed);
+              return;
+            }
+          }
+          modeling.layoutConnection(c);
+        } catch (err) {}
+      });
+    });
+  });
 }
 
 /**

@@ -33,6 +33,14 @@ function createPpiPanel() {
           const container = document.getElementById('panel-container') || document.body;
           container.appendChild(panel);
 
+          console.log('[Panel Registry] PPI panel HTML content injected');
+          console.log('[Panel Registry] HTML content length:', html.length);
+          console.log('[Panel Registry] Panel element after injection:', panel);
+
+          // Ahora sí podemos buscar el contenedor
+          const ppiListElement = panel.querySelector('#ppi-list');
+          console.log('[Panel Registry] ppi-list encontrado?', !!ppiListElement);
+
           // 🔧 Reenganchar PPI Manager
           if (typeof getServiceRegistry === 'function') {
             const serviceRegistry = getServiceRegistry();
@@ -41,6 +49,7 @@ function createPpiPanel() {
             if (ppiManagerInstance && typeof ppiManagerInstance.refreshPPIList === 'function') {
               setTimeout(() => {
                 try {
+                  console.log('[Panel Registry] 🔄 Llamando refreshPPIList después de montar el panel');
                   ppiManagerInstance.refreshPPIList();
                 } catch (err) {
                   console.warn('[Panel Registry] ⚠️ Error en refreshPPIList:', err);

@@ -17,14 +17,6 @@ class PPIManager {
     this._isDeleting = false;
     this._recentlyDeletedElements = new Map();
     this._creationCooldownMs = 1500;
-    
-    // Circuit breaker para evitar spam de refreshPPIList
-    this._refreshAttempts = 0;
-    this._refreshMaxAttempts = 10;
-    this._refreshCircuitOpen = false;
-    this._refreshCircuitResetTime = 10000; // 10 segundos
-    this._lastRefreshTime = 0;
-    this._refreshDebounceMs = 100;
     this.eventBus = getEventBus();
     this.adapter = ppiAdapter;
     
@@ -130,7 +122,7 @@ class PPIManager {
       }
       
       if (attempts < maxAttempts) {
-        setTimeout(checkModeler, 50); // Optimización Ultra: Reducir de 1000ms a 50ms
+        setTimeout(checkModeler, 1000);
       }
     };
     checkModeler();
@@ -155,7 +147,7 @@ class PPIManager {
       // Obtener modelador solo del adapter
       const modeler = this.adapter && this.adapter.getBpmnModeler ? this.adapter.getBpmnModeler() : null;
       if (!modeler) {
-        setTimeout(() => this.setupSyncManager(), 50); // Optimización Ultra: Reducir de 1000ms a 50ms
+        setTimeout(() => this.setupSyncManager(), 1000);
         return;
       }
 
@@ -772,7 +764,32 @@ class PPIManager {
       // Silenciar feedback de creación de PPI para evitar molestias en UI
       
       // Asegurar que la UI está disponible y el DOM está listo
-      this.refreshPPIList();
+      const attemptRefresh = (retryCount = 0) => {
+        if (this.ui && this.ui.refreshPPIList) {
+          // Verificar que el panel PPI está montado y el contenedor DOM existe
+          const ppiPanel = document.getElementById('ppi-panel');
+          const ppiListContainer = document.getElementById('ppi-list');
+          
+          if (ppiPanel && ppiListContainer) {
+            this.ui.refreshPPIList();
+          } else if (retryCount < 5) {
+            // Aumentar delay progresivamente
+            const delay = Math.min(300 * (retryCount + 1), 2000);
+            setTimeout(() => attemptRefresh(retryCount + 1), delay);
+          } else {
+            // Solo mostrar warning si realmente no se puede encontrar después de varios intentos
+            if (retryCount === 5) {
+              console.warn('[PPI-Manager] ppi-list container not available after retries - panel may not be mounted yet');
+            }
+          }
+        } else if (retryCount < 3) {
+          setTimeout(() => attemptRefresh(retryCount + 1), 300);
+        } else {
+          console.warn('[PPI-Manager] UI not available for refresh after retries');
+        }
+      };
+      
+      attemptRefresh();
       
       // Guardar elementos PPINOT después de crear
       if (this.core.debouncedSavePPINOTElements) {
@@ -1330,34 +1347,6 @@ class PPIManager {
   }
 
   refreshPPIList() {
-    const now = Date.now();
-    
-    // Circuit breaker: Si está abierto, verificar si es tiempo de reset
-    if (this._refreshCircuitOpen) {
-      if (now - this._lastRefreshTime > this._refreshCircuitResetTime) {
-        this._refreshCircuitOpen = false;
-        this._refreshAttempts = 0;
-      } else {
-        // Circuit abierto, salir silenciosamente
-        return;
-      }
-    }
-    
-    // Debounce: Evitar llamadas muy frecuentes
-    if (now - this._lastRefreshTime < this._refreshDebounceMs) {
-      return;
-    }
-    
-    this._lastRefreshTime = now;
-    this._refreshAttempts++;
-    
-    // Verificar límite de intentos
-    if (this._refreshAttempts > this._refreshMaxAttempts) {
-      this._refreshCircuitOpen = true;
-      console.warn('[PPI-Manager] Circuit breaker activado - demasiados intentos de refresh. Pausando por', this._refreshCircuitResetTime / 1000, 'segundos');
-      return;
-    }
-    
     const attemptRefresh = (retryCount = 0) => {
       if (this.ui && typeof this.ui.refreshPPIList === 'function') {
         // Verificar que el panel PPI está montado y el contenedor DOM existe
@@ -1366,20 +1355,20 @@ class PPIManager {
         
         if (ppiPanel && ppiListContainer) {
           this.ui.refreshPPIList();
-          // Reset contador en caso de éxito
-          this._refreshAttempts = Math.max(0, this._refreshAttempts - 1);
-        } else if (retryCount < 3) { // Reducido de 5 a 3
-          const delay = Math.min(300 * (retryCount + 1), 1000); // Reducido delay máximo
+        } else if (retryCount < 5) {
+          // Aumentar delay progresivamente
+          const delay = Math.min(300 * (retryCount + 1), 2000);
           setTimeout(() => attemptRefresh(retryCount + 1), delay);
         } else {
-          // Silenciar warning para evitar spam - el panel se montará cuando sea necesario
+          // Solo mostrar warning si realmente no se puede encontrar después de varios intentos
+          if (retryCount === 5) {
+            console.warn('[PPI-Manager] ppi-list container not available after retries - panel may not be mounted yet');
+          }
         }
       } else if (retryCount < 2) {
         setTimeout(() => attemptRefresh(retryCount + 1), 300);
       } else {
-        if (this._refreshAttempts === 1) {
-          console.warn('[PPI-Manager] UI not available for refreshPPIList after retries');
-        }
+        console.warn('[PPI-Manager] UI not available for refreshPPIList after retries');
       }
     };
     
@@ -1453,6 +1442,7 @@ class PPIManager {
       const coordinationManager = registry?.get('PPINOTCoordinationManager');
       
       if (coordinationManager) {
+        console.log('🎯 Delegando restauración PPINOT al sistema de coordinación...');
         coordinationManager.triggerRestoration('ppi.manager.request');
       } else {
         // Fallback al método anterior

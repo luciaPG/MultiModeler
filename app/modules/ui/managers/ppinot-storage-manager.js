@@ -45,7 +45,10 @@ class PPINOTStorageManager {
         timestamp: timestamp,
         ttl: this.TTL_MS,
         elements: elements.map(el => {
-          const parentId = el.parent?.id || el.parentId || (el.businessObject && el.businessObject.parent && el.businessObject.parent.id);
+          const parentId = (el.businessObject && el.businessObject.$parent && el.businessObject.$parent.id)
+                           || el.parent?.id
+                           || el.parentId
+                           || (el.businessObject && el.businessObject.parent && el.businessObject.parent.id);
           
           // Optimización: Logs eliminados para mejorar rendimiento
           // Debug: log parentId for Target/Scope elements
@@ -83,9 +86,9 @@ class PPINOTStorageManager {
                        el.id?.includes('Scope') ||
                        (el.businessObject?.name && el.businessObject.name.toLowerCase().includes('scope')) ||
                        (el.metadata && el.metadata.isScope),
-              isPPI: el.type?.includes('PPI') || 
-                     el.businessObject?.$type?.includes('PPI') ||
-                     el.id?.includes('PPI') ||
+              isPPI: el.type?.includes('Ppi') || 
+                     el.businessObject?.$type?.includes('Ppi') ||
+                     el.id?.includes('Ppi') ||
                      (el.metadata && el.metadata.isPPI)
             }
           };
