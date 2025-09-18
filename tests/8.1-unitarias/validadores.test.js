@@ -7,6 +7,149 @@
 
 const { createValidBpmnXml, createValidMmProject } = require('../utils/test-helpers');
 
+// -------------------------------------------------------------
+// Mocks mínimos para dependencias internas del validador RASCI
+// -------------------------------------------------------------
+
+const createLocalStorageMock = () => ({
+  store: {},
+  getItem: jest.fn(function(key) { return Object.prototype.hasOwnProperty.call(this.store, key) ? this.store[key] : null; }),
+  setItem: jest.fn(function(key, value) { this.store[key] = value; }),
+  removeItem: jest.fn(function(key) { delete this.store[key]; }),
+  clear: jest.fn(function() { this.store = {}; })
+});
+
+const mockLocalStorage = createLocalStorageMock();
+
+Object.defineProperty(global, 'localStorage', {
+  value: mockLocalStorage,
+  writable: true
+});
+
+// Mock de EventBus compartido entre módulos
+const mockEventBus = {
+  subscribers: {},
+  subscribe: jest.fn(function(event, callback) {
+    if (!this.subscribers[event]) {
+      this.subscribers[event] = [];
+    }
+    this.subscribers[event].push(callback);
+    return () => {
+      this.subscribers[event] = (this.subscribers[event] || []).filter(cb => cb !== callback);
+    };
+  }),
+  publish: jest.fn(function(event, data) {
+    (this.subscribers[event] || []).forEach(cb => cb(data));
+  }),
+  clear: jest.fn(function() { this.subscribers = {}; })
+};
+
+jest.mock('../../app/modules/ui/core/event-bus.js', () => ({
+  __esModule: true,
+  EventBus: class { },
+  getEventBus: () => mockEventBus
+}));
+
+const serviceRegistryMock = {
+  services: {},
+  functions: {},
+  register(serviceName, instance) {
+    this.services[serviceName] = { instance };
+  },
+  get(name) {
+    return this.services[name]?.instance;
+  },
+  has(name) {
+    return Object.prototype.hasOwnProperty.call(this.services, name);
+  },
+  registerFunction(name, fn) {
+    this.functions[name] = { fn };
+  },
+  getFunction(name) {
+    return this.functions[name]?.fn;
+  },
+  call(name, ...args) {
+    const fn = this.getFunction(name);
+    if (!fn) {
+      throw new Error(`Function not found: ${name}`);
+    }
+    return fn(...args);
+  }
+};
+
+jest.mock('../../app/modules/ui/core/ServiceRegistry.js', () => ({
+  __esModule: true,
+  ServiceRegistry: class { },
+  getServiceRegistry: () => serviceRegistryMock
+}));
+
+let mockStoredRoles = [];
+let mockStoredMatrix = {};
+
+jest.mock('../../app/modules/rasci/store.js', () => ({
+  __esModule: true,
+  RasciStore: {
+    getRoles: jest.fn(() => mockStoredRoles),
+    setRoles: jest.fn((roles) => { mockStoredRoles = Array.isArray(roles) ? roles : []; }),
+    getMatrix: jest.fn(() => mockStoredMatrix),
+    setMatrix: jest.fn((matrix) => { mockStoredMatrix = matrix || {}; })
+  }
+}));
+
+jest.mock('../../app/modules/rasci/mapping/main-mapper.js', () => ({
+  __esModule: true,
+  executeSimpleRasciMapping: jest.fn(() => ({}))
+}));
+
+jest.mock('../../app/modules/rasci/RASCIAdapter.js', () => {
+  const mockAdapter = {
+    bridge: {
+      registerModeler: jest.fn(),
+      serviceRegistry: serviceRegistryMock,
+      initialize: jest.fn(() => Promise.resolve()),
+      getModeler: jest.fn(() => null),
+      getSharedData: jest.fn(() => null),
+      getModule: jest.fn(() => null),
+      communicate: jest.fn(() => Promise.resolve(null))
+    },
+    getBpmnModeler: jest.fn(() => null),
+    getRoles: jest.fn(() => []),
+    getMatrixData: jest.fn(() => ({})),
+    communicateWithPPIs: jest.fn(() => Promise.resolve(null)),
+    updateMatrixData: jest.fn(() => true)
+  };
+
+  return {
+    __esModule: true,
+    default: mockAdapter,
+    RASCIAdapter: class {
+      constructor() {
+        return mockAdapter;
+      }
+    }
+  };
+});
+
+jest.mock('../../app/modules/rasci/ui/matrix-ui-validator.js', () => ({
+  __esModule: true,
+  rasciUIValidator: {
+    validateMatrix: jest.fn(() => ({ isValid: true, criticalErrors: [], warnings: [] }))
+  },
+  RasciMatrixUIValidator: class { }
+}));
+
+const mockBpmnTasks = [];
+
+jest.mock('../../app/modules/rasci/core/matrix-manager.js', () => ({
+  __esModule: true,
+  getBpmnTasks: jest.fn(() => mockBpmnTasks.slice()),
+  __setMockBpmnTasks: (tasks) => {
+    mockBpmnTasks.splice(0, mockBpmnTasks.length, ...tasks);
+  }
+}));
+
+const matrixManagerMock = require('../../app/modules/rasci/core/matrix-manager.js');
+
 describe('8.1 Pruebas Unitarias - Validadores', () => {
   describe('Validador BPMN - Lógica Básica', () => {
     test('debe validar XML BPMN válido', () => {
@@ -94,75 +237,146 @@ describe('8.1 Pruebas Unitarias - Validadores', () => {
   });
 
   describe('Validador RASCI', () => {
-    test('debe validar matriz RASCI completa', async () => {
-      try {
-        const { RasciMatrixValidator } = await import('../../app/modules/rasci/validation/matrix-validator.js');
-        
-        const validRasci = {
-          roles: ['Role_1', 'Role_2'],
-          tasks: ['Task_1'],
-          matrix: {
-            'Task_1': {
-              'Role_1': 'A',  // Accountable
-              'Role_2': 'R'   // Responsible
-            }
-          }
-        };
+    let RasciMatrixValidator;
+    let validator;
 
-        // Simular validación básica
-        expect(validRasci.roles.length).toBeGreaterThan(0);
-        expect(validRasci.tasks.length).toBeGreaterThan(0);
-        expect(Object.keys(validRasci.matrix).length).toBeGreaterThan(0);
-      } catch (error) {
-        // Si no se puede importar, hacer validación básica
-        const validRasci = {
-          roles: ['Role_1', 'Role_2'],
-          tasks: ['Task_1'],
-          matrix: {
-            'Task_1': {
-              'Role_1': 'A',
-              'Role_2': 'R'
-            }
-          }
-        };
-        
-        expect(validRasci.roles.length).toBeGreaterThan(0);
-        expect(validRasci.tasks.length).toBeGreaterThan(0);
-      }
+    beforeAll(async () => {
+      ({ RasciMatrixValidator } = await import('../../app/modules/rasci/validation/matrix-validator.js'));
     });
 
-    test('debe detectar matriz RASCI incompleta', () => {
-      const incompleteRasci = {
-        roles: ['Role_1'],
-        tasks: ['Task_1'],
-        matrix: {
-          'Task_1': {
-            'Role_1': 'A'  // Solo Accountable, falta Responsible
-          }
+    beforeEach(() => {
+      mockLocalStorage.clear();
+      jest.clearAllMocks();
+      mockEventBus.subscribers = {};
+      mockStoredRoles = [];
+      mockStoredMatrix = {};
+      matrixManagerMock.__setMockBpmnTasks(['Task_1', 'Task_2']);
+      validator = new RasciMatrixValidator();
+    });
+
+    test('debe validar matriz consistente con tareas BPMN', () => {
+      matrixManagerMock.__setMockBpmnTasks(['Task_1']);
+      const roles = ['Analista', 'Supervisor'];
+      const matrix = {
+        Task_1: {
+          Analista: 'R',
+          Supervisor: 'A'
         }
       };
 
-      // Validación básica - debe tener al menos un Responsible
-      const task1Assignments = Object.values(incompleteRasci.matrix['Task_1']);
-      const hasResponsible = task1Assignments.includes('R');
-      
-      expect(hasResponsible).toBe(false); // Detecta que falta Responsible
+      const summary = validator.validateMatrix(roles, matrix, roles);
+
+      expect(summary.isValid).toBe(true);
+      expect(summary.criticalErrors).toHaveLength(0);
+      expect(summary.warnings).toHaveLength(0);
     });
 
-    test('debe validar asignaciones RASCI válidas', () => {
-      const validAssignments = ['R', 'A', 'S', 'C', 'I'];
-      
-      validAssignments.forEach(assignment => {
-        expect(['R', 'A', 'S', 'C', 'I'].includes(assignment)).toBe(true);
-      });
+    test('debe marcar tareas sin responsable como error crítico', () => {
+      matrixManagerMock.__setMockBpmnTasks(['Task_1']);
+      const roles = ['Analista', 'Supervisor'];
+      const matrix = {
+        Task_1: {
+          Analista: 'A',
+          Supervisor: 'C'
+        }
+      };
+
+      const summary = validator.validateMatrix(roles, matrix, roles);
+
+      expect(summary.isValid).toBe(false);
+      expect(summary.criticalErrors.some(err => err.message.includes('no tiene ningún responsable'))).toBe(true);
     });
 
-    test('debe rechazar asignaciones RASCI inválidas', () => {
-      const invalidAssignments = ['X', 'Y', 'Z', '1', ''];
-      
-      invalidAssignments.forEach(assignment => {
-        expect(['R', 'A', 'S', 'C', 'I'].includes(assignment)).toBe(false);
-      });
+    test('debe detectar responsables duplicados en la misma tarea', () => {
+      matrixManagerMock.__setMockBpmnTasks(['Task_1']);
+      const roles = ['Analista', 'Supervisor'];
+      const matrix = {
+        Task_1: {
+          Analista: 'R',
+          Supervisor: 'R'
+        }
+      };
+
+      const summary = validator.validateMatrix(roles, matrix, roles);
+
+      expect(summary.isValid).toBe(false);
+      expect(summary.criticalErrors.find(err => err.message.includes('múltiples responsables'))).toBeDefined();
+    });
+
+    test('debe detectar múltiples aprobadores en una tarea', () => {
+      matrixManagerMock.__setMockBpmnTasks(['Task_1']);
+      const roles = ['Analista', 'Supervisor'];
+      const matrix = {
+        Task_1: {
+          Analista: 'A',
+          Supervisor: 'A'
+        }
+      };
+
+      const summary = validator.validateMatrix(roles, matrix, roles);
+
+      expect(summary.isValid).toBe(false);
+      expect(summary.criticalErrors.find(err => err.message.includes('múltiples aprobadores'))).toBeDefined();
+    });
+
+    test('debe limpiar tareas que no existen en el modelo BPMN', () => {
+      matrixManagerMock.__setMockBpmnTasks(['Task_1']);
+      const roles = ['Analista', 'Supervisor'];
+      const matrix = {
+        Task_1: {
+          Analista: 'R',
+          Supervisor: 'A'
+        },
+        Task_orphan: {
+          Analista: 'R'
+        }
+      };
+
+      const summary = validator.validateMatrix(roles, matrix, roles);
+
+      expect(summary.isValid).toBe(true);
+      expect(matrix.Task_orphan).toBeUndefined();
+    });
+
+    test('debe advertir cuando un rol de soporte no está definido en PPINOT', () => {
+      matrixManagerMock.__setMockBpmnTasks(['Task_1']);
+      const roles = ['Analista', 'Soporte'];
+      const matrix = {
+        Task_1: {
+          Analista: 'R',
+          Soporte: 'S'
+        }
+      };
+
+      const organizationalRoles = ['Analista'];
+      const summary = validator.validateMatrix(roles, matrix, organizationalRoles);
+
+      expect(summary.isValid).toBe(true);
+      expect(summary.warnings.some(warning => warning.message.includes('no está definido en el modelo organizativo'))).toBe(true);
+    });
+
+    test('validateSpecificCell debe rechazar caracteres inválidos', () => {
+      const cellResult = validator.validateSpecificCell('Analista', 'Task_1', 'X');
+
+      expect(cellResult.isValid).toBe(false);
+      expect(cellResult.issues[0]).toContain('Caracteres inválidos');
+    });
+
+    test('validateRealTime devuelve únicamente errores críticos', () => {
+      matrixManagerMock.__setMockBpmnTasks(['Task_1']);
+      const roles = ['Analista', 'Supervisor'];
+      const matrix = {
+        Task_1: {
+          Analista: 'A',
+          Supervisor: 'A'
+        }
+      };
+
+      const summary = validator.validateRealTime(roles, matrix, roles);
+
+      expect(summary.hasCriticalErrors).toBe(true);
+      expect(summary.warnings).toHaveLength(0);
+      expect(summary.criticalErrors.length).toBeGreaterThan(0);
     });
   });
 

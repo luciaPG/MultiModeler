@@ -103,6 +103,11 @@ export class AutosaveManager {
 
     } catch (error) {
       if (this.eventBus) {
+        this.eventBus.publish('autosave.error', {
+          error: error,
+          timestamp: new Date().toISOString()
+        });
+        
         this.eventBus.publish('autosave.completed', {
           success: false,
           error: error,
@@ -508,57 +513,74 @@ export class AutosaveManager {
       }
       
       // CRÍTICO: Disparar eventos específicos del sistema RASCI para actualización visual
+      // TIMING FIX: Esperar un poco para asegurar que la UI esté inicializada
       if (this.eventBus) {
-        // 1. Evento principal de actualización de matriz
-        this.eventBus.publish('rasci.matrix.updated', { 
-          matrix: rasciData.matrix || {},
-          matrixData: rasciData.matrix || {}
-        });
-        
-        // 2. Evento de actualización de roles
-        if (rasciData.roles && rasciData.roles.length > 0) {
-          this.eventBus.publish('rasci.roles.updated', { roles: rasciData.roles });
-        }
-        
-        // 3. Evento específico para forzar actualización desde diagrama
-        this.eventBus.publish('rasci.matrix.update.fromDiagram', {
-          source: 'autosave.restore',
-          forceUpdate: true
-        });
-        
-        // 4. Evento de restauración completa
-        this.eventBus.publish('rasci.restored', {
-          roles: rasciData.roles || [],
-          matrix: rasciData.matrix || {},
-          source: 'autosave'
-        });
-        
-        console.log('✅ Eventos RASCI del sistema disparados para actualización visual');
+        setTimeout(() => {
+          console.log('🔄 Disparando eventos RASCI después de delay para asegurar UI lista...');
+          
+          // 1. Evento principal de actualización de matriz
+          this.eventBus.publish('rasci.matrix.updated', { 
+            matrix: rasciData.matrix || {},
+            matrixData: rasciData.matrix || {}
+          });
+          
+          // 2. Evento de actualización de roles
+          if (rasciData.roles && rasciData.roles.length > 0) {
+            this.eventBus.publish('rasci.roles.updated', { roles: rasciData.roles });
+          }
+          
+          // 3. Evento específico para forzar actualización desde diagrama
+          this.eventBus.publish('rasci.matrix.update.fromDiagram', {
+            source: 'autosave.restore',
+            forceUpdate: true
+          });
+          
+          // 4. Evento de restauración completa
+          this.eventBus.publish('rasci.restored', {
+            roles: rasciData.roles || [],
+            matrix: rasciData.matrix || {},
+            source: 'autosave'
+          });
+          
+          console.log('✅ Eventos RASCI del sistema disparados para actualización visual (con delay)');
+        }, 1000); // Esperar 1 segundo para que la UI esté lista
       }
       
-      // CRÍTICO: Llamar funciones directas de actualización del sistema
-      try {
-        const serviceRegistry = await import('../modules/ui/core/ServiceRegistry.js');
-        const registry = serviceRegistry.getServiceRegistry();
-        
-        // Intentar llamar updateMatrixFromDiagram
-        const updateMatrixFromDiagram = registry?.getFunction && registry.getFunction('updateMatrixFromDiagram');
-        if (updateMatrixFromDiagram && typeof updateMatrixFromDiagram === 'function') {
-          console.log('🔄 Llamando updateMatrixFromDiagram() del sistema...');
-          updateMatrixFromDiagram();
-          console.log('✅ updateMatrixFromDiagram() ejecutado');
+      // CRÍTICO: Llamar funciones directas de actualización del sistema (con delay adicional)
+      setTimeout(async () => {
+        try {
+          const serviceRegistry = await import('../modules/ui/core/ServiceRegistry.js');
+          const registry = serviceRegistry.getServiceRegistry();
+          
+          console.log('🔄 Ejecutando funciones directas de actualización RASCI...');
+          
+          // ARREGLO BUCLE INFINITO: NO llamar updateMatrixFromDiagram desde autosave
+          // updateMatrixFromDiagram puede causar bucles infinitos durante restauración
+          console.log('⚠️ Omitiendo updateMatrixFromDiagram() para evitar bucle infinito durante restauración');
+          
+          // Intentar llamar reloadRasciMatrix
+          const reloadRasciMatrix = registry?.getFunction && registry.getFunction('reloadRasciMatrix');
+          if (reloadRasciMatrix && typeof reloadRasciMatrix === 'function') {
+            console.log('🔄 Llamando reloadRasciMatrix() del sistema...');
+            reloadRasciMatrix();
+            console.log('✅ reloadRasciMatrix() ejecutado');
+          }
+          
+          // FORZAR re-render directo como último recurso
+          const renderMatrix = registry?.getFunction && registry.getFunction('renderMatrix');
+          if (renderMatrix && typeof renderMatrix === 'function') {
+            const rasciPanel = document.querySelector('#rasci-panel');
+            if (rasciPanel) {
+              console.log('🔄 Forzando renderMatrix() directo...');
+              renderMatrix(rasciPanel, rasciData.roles || [], null);
+              console.log('✅ renderMatrix() forzado ejecutado');
+            }
+          }
+          
+        } catch (error) {
+          console.warn('No se pudieron llamar funciones directas de actualización RASCI:', error);
         }
-        
-        // Intentar llamar reloadRasciMatrix
-        const reloadRasciMatrix = registry?.getFunction && registry.getFunction('reloadRasciMatrix');
-        if (reloadRasciMatrix && typeof reloadRasciMatrix === 'function') {
-          console.log('🔄 Llamando reloadRasciMatrix() del sistema...');
-          reloadRasciMatrix();
-          console.log('✅ reloadRasciMatrix() ejecutado');
-        }
-      } catch (error) {
-        console.warn('No se pudieron llamar funciones directas de actualización RASCI:', error);
-      }
+      }, 1500); // Delay adicional después de los eventos
       
     } catch (error) {
       console.warn('Error restaurando datos RASCI:', error);

@@ -37,7 +37,7 @@ class ImportExportManager {
         const delay = Math.min(200 * (retryCount + 1), 2000);
         setTimeout(() => attemptRasciReload(retryCount + 1), delay);
       } else {
-        console.warn('⚠️ EventBus no disponible para recargar RASCI después de varios intentos');
+        console.warn('⚠️ EventBus no disponible para recargar RASCI después de varios intentos - continuando sin recargar');
       }
     };
     

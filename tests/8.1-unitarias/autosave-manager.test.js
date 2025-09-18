@@ -288,7 +288,11 @@ describe('8.1 Pruebas Unitarias - AutosaveManager', () => {
       const result = await autosaveManager.performAutosave();
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Modeler error');
+      expect(result.error).toBeDefined();
+      
+      // El error puede ser un objeto Error o un string
+      const errorMessage = typeof result.error === 'string' ? result.error : result.error.message;
+      expect(errorMessage).toContain('Modeler error');
 
       const errorEvents = mockEventBus.published.filter(
         event => event.eventType === 'autosave.error'
@@ -297,9 +301,11 @@ describe('8.1 Pruebas Unitarias - AutosaveManager', () => {
     });
 
     test('debe manejar errores del storage', async () => {
-      mockStorageManager.save.mockResolvedValue({ 
-        success: false, 
-        error: 'Storage full' 
+      // El nuevo AutosaveManager usa localStorage directamente, no storageManager.save()
+      // Vamos a hacer que localStorage.setItem falle
+      const originalSetItem = localStorage.setItem;
+      localStorage.setItem = jest.fn().mockImplementation(() => {
+        throw new Error('Storage full');
       });
 
       const autosaveManager = new AutosaveManager({
@@ -313,7 +319,13 @@ describe('8.1 Pruebas Unitarias - AutosaveManager', () => {
       const result = await autosaveManager.performAutosave();
 
       expect(result.success).toBe(false);
-      expect(mockStorageManager.save).toHaveBeenCalled();
+      expect(result.error).toBeDefined();
+      
+      const errorMessage = typeof result.error === 'string' ? result.error : result.error.message;
+      expect(errorMessage).toContain('Storage full');
+      
+      // Restaurar localStorage
+      localStorage.setItem = originalSetItem;
     });
   });
 
@@ -382,10 +394,17 @@ describe('8.1 Pruebas Unitarias - AutosaveManager', () => {
       autosaveManager.markAsChanged();
       await autosaveManager.performAutosave();
 
-      const saveCall = mockStorageManager.save.mock.calls[0][0];
-      expect(saveCall.bpmn).toBeDefined();
-      expect(saveCall.timestamp).toBeDefined();
-      expect(saveCall.autosaved).toBe(true);
+      // El nuevo AutosaveManager guarda en localStorage directamente
+      const savedData = localStorage.getItem('draft:multinotation');
+      expect(savedData).toBeDefined();
+      
+      const parsedData = JSON.parse(savedData);
+      expect(parsedData.data.bpmn).toBeDefined();
+      expect(parsedData.timestamp).toBeDefined();
+      expect(parsedData.autosaved).toBe(true);
+      
+      // Verificar que también llama a storageManager.save() para compatibilidad
+      expect(mockStorageManager.save).toHaveBeenCalled();
     });
 
     test('debe responder a cambios en RASCI', () => {

@@ -1,32 +1,13 @@
 // Utilidades comunes para testing
 import { MockBpmnModeler } from '../mocks/bpmn-modeler.mock.js';
+import { CLEAN_BPMN_DIAGRAM_XML } from '../../app/modules/bpmn/validators.js';
 
 /**
  * Crea un diagrama BPMN válido básico para testing
+ * Usa el XML canónico del módulo de validadores BPMN
  */
 export function createValidBpmnXml() {
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" 
-                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" 
-                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" 
-                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI" 
-                  id="Definitions_1" 
-                  targetNamespace="http://bpmn.io/schema/bpmn">
-  <bpmn:process id="Process_1" isExecutable="false">
-    <bpmn:startEvent id="StartEvent_1" name="Inicio">
-      <bpmn:outgoing>Flow_1</bpmn:outgoing>
-    </bpmn:startEvent>
-    <bpmn:task id="Task_1" name="Tarea 1">
-      <bpmn:incoming>Flow_1</bpmn:incoming>
-      <bpmn:outgoing>Flow_2</bpmn:outgoing>
-    </bpmn:task>
-    <bpmn:endEvent id="EndEvent_1" name="Fin">
-      <bpmn:incoming>Flow_2</bpmn:incoming>
-    </bpmn:endEvent>
-    <bpmn:sequenceFlow id="Flow_1" sourceRef="StartEvent_1" targetRef="Task_1" />
-    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_1" targetRef="EndEvent_1" />
-  </bpmn:process>
-</bpmn:definitions>`;
+  return CLEAN_BPMN_DIAGRAM_XML;
 }
 
 /**
@@ -140,6 +121,18 @@ export function waitFor(ms = 100) {
 export function createMockModeler(options = {}) {
   const modeler = new MockBpmnModeler(options);
   
+  // Si se proporciona XML, parsear y generar elementos realistas
+  if (modeler.xml || options.xml) {
+    const xml = modeler.xml || options.xml;
+    const elementRegistry = modeler.get('elementRegistry');
+    
+    // Parsear elementos del XML y agregarlos al registry
+    const elements = parseElementsFromXml(xml);
+    elements.forEach(element => {
+      elementRegistry.add(element);
+    });
+  }
+  
   // Agregar elementos adicionales si se especifican
   if (options.elements) {
     const elementRegistry = modeler.get('elementRegistry');
@@ -149,6 +142,58 @@ export function createMockModeler(options = {}) {
   }
   
   return modeler;
+}
+
+/**
+ * Parsea elementos BPMN del XML para crear elementos mock realistas
+ */
+function parseElementsFromXml(xml) {
+  if (!xml || typeof xml !== 'string') return [];
+  
+  const elements = [];
+  
+  // Buscar eventos de inicio
+  const startEventRegex = /<bpmn:startEvent[^>]*id="([^"]*)"[^>]*name="([^"]*)"/g;
+  let match;
+  while ((match = startEventRegex.exec(xml)) !== null) {
+    elements.push({
+      id: match[1],
+      type: 'bpmn:StartEvent',
+      businessObject: { $type: 'bpmn:StartEvent', id: match[1], name: match[2] }
+    });
+  }
+  
+  // Buscar eventos de fin
+  const endEventRegex = /<bpmn:endEvent[^>]*id="([^"]*)"[^>]*name="([^"]*)"/g;
+  while ((match = endEventRegex.exec(xml)) !== null) {
+    elements.push({
+      id: match[1],
+      type: 'bpmn:EndEvent',
+      businessObject: { $type: 'bpmn:EndEvent', id: match[1], name: match[2] }
+    });
+  }
+  
+  // Buscar tareas
+  const taskRegex = /<bpmn:task[^>]*id="([^"]*)"[^>]*name="([^"]*)"/g;
+  while ((match = taskRegex.exec(xml)) !== null) {
+    elements.push({
+      id: match[1],
+      type: 'bpmn:Task',
+      businessObject: { $type: 'bpmn:Task', id: match[1], name: match[2] }
+    });
+  }
+  
+  // Buscar flujos secuenciales
+  const flowRegex = /<bpmn:sequenceFlow[^>]*id="([^"]*)"[^>]*sourceRef="([^"]*)"[^>]*targetRef="([^"]*)"/g;
+  while ((match = flowRegex.exec(xml)) !== null) {
+    elements.push({
+      id: match[1],
+      type: 'bpmn:SequenceFlow',
+      businessObject: { $type: 'bpmn:SequenceFlow', id: match[1], sourceRef: match[2], targetRef: match[3] }
+    });
+  }
+  
+  return elements;
 }
 
 /**
