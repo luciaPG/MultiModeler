@@ -12,6 +12,10 @@ module.exports = {
   transform: {
     '^.+\\.js$': 'babel-jest',
   },
+
+  transformIgnorePatterns: [
+    '/node_modules/(?!bpmn-js|diagram-js|didi|min-dash|min-dom|tiny-svg|ids|inherits-browser)'
+  ],
   
   // Configuración para módulos
   moduleNameMapper: {

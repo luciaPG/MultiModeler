@@ -12,13 +12,26 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/app/$1',
     '^@modules/(.*)$': '<rootDir>/app/modules/$1',
-    '^@tests/(.*)$': '<rootDir>/tests/$1'
+    '^@tests/(.*)$': '<rootDir>/tests/$1',
+    // SOLUCIÓN ESM: Mock completo de bpmn-js y dependencias ESM
+    '^bpmn-js/lib/Modeler$': '<rootDir>/tests/__mocks__/bpmn-js.js',
+    '^bpmn-js$': '<rootDir>/tests/__mocks__/bpmn-js.js',
+    '^bpmn-js/lib/util/ModelUtil$': '<rootDir>/tests/__mocks__/bpmn-js-util-ModelUtil.js',
+    '^bpmn-js/(.*)$': '<rootDir>/tests/__mocks__/bpmn-js.js',
+    '^diagram-js/(.*)$': '<rootDir>/tests/__mocks__/bpmn-js.js',
+    '^min-dash$': '<rootDir>/tests/__mocks__/min-dash.js',
+    '^inherits-browser$': '<rootDir>/tests/__mocks__/inherits-browser.js'
   },
 
   // Transformaciones
   transform: {
     '^.+\\.(js|jsx)$': 'babel-jest'
   },
+
+  // SOLUCIÓN ESM: Permitir transformación de dependencias ESM específicas (mejorada)
+  transformIgnorePatterns: [
+    '/node_modules/(?!bpmn-js|diagram-js|didi|min-dash|min-dom|tiny-svg|ids|inherits-browser|moddle|moddle-xml|bpmn-moddle)'
+  ],
 
   // Archivos a ignorar
   testPathIgnorePatterns: [
