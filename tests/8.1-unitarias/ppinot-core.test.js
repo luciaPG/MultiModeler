@@ -50,31 +50,8 @@ describe('8.1 Pruebas Unitarias - PPINOT Core', () => {
         });
         
       } catch (error) {
-        // Test básico de tipos PPINOT
-        const ppinotTypes = {
-          TimeMeasure: {
-            type: 'TimeMeasure',
-            properties: ['from', 'to', 'unit'],
-            description: 'Mide tiempo entre dos puntos'
-          },
-          CountMeasure: {
-            type: 'CountMeasure', 
-            properties: ['target', 'condition'],
-            description: 'Cuenta ocurrencias de elementos'
-          },
-          DataMeasure: {
-            type: 'DataMeasure',
-            properties: ['dataObject', 'attribute'],
-            description: 'Mide valores de datos'
-          }
-        };
-        
-        Object.keys(ppinotTypes).forEach(typeName => {
-          const type = ppinotTypes[typeName];
-          expect(type.type).toBe(typeName);
-          expect(Array.isArray(type.properties)).toBe(true);
-          expect(typeof type.description).toBe('string');
-        });
+        // Si falla la importación real, el test DEBE fallar
+        throw new Error('PPINOTTypes real no se pudo importar - esto indica un problema en el sistema: ' + error.message);
       }
     });
 

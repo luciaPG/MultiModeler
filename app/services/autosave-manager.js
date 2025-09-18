@@ -507,12 +507,57 @@ export class AutosaveManager {
         console.log('✅ RASCI también restaurado via RASCIAdapter');
       }
       
+      // CRÍTICO: Disparar eventos específicos del sistema RASCI para actualización visual
       if (this.eventBus) {
+        // 1. Evento principal de actualización de matriz
+        this.eventBus.publish('rasci.matrix.updated', { 
+          matrix: rasciData.matrix || {},
+          matrixData: rasciData.matrix || {}
+        });
+        
+        // 2. Evento de actualización de roles
+        if (rasciData.roles && rasciData.roles.length > 0) {
+          this.eventBus.publish('rasci.roles.updated', { roles: rasciData.roles });
+        }
+        
+        // 3. Evento específico para forzar actualización desde diagrama
+        this.eventBus.publish('rasci.matrix.update.fromDiagram', {
+          source: 'autosave.restore',
+          forceUpdate: true
+        });
+        
+        // 4. Evento de restauración completa
         this.eventBus.publish('rasci.restored', {
           roles: rasciData.roles || [],
           matrix: rasciData.matrix || {},
           source: 'autosave'
         });
+        
+        console.log('✅ Eventos RASCI del sistema disparados para actualización visual');
+      }
+      
+      // CRÍTICO: Llamar funciones directas de actualización del sistema
+      try {
+        const serviceRegistry = await import('../modules/ui/core/ServiceRegistry.js');
+        const registry = serviceRegistry.getServiceRegistry();
+        
+        // Intentar llamar updateMatrixFromDiagram
+        const updateMatrixFromDiagram = registry?.getFunction && registry.getFunction('updateMatrixFromDiagram');
+        if (updateMatrixFromDiagram && typeof updateMatrixFromDiagram === 'function') {
+          console.log('🔄 Llamando updateMatrixFromDiagram() del sistema...');
+          updateMatrixFromDiagram();
+          console.log('✅ updateMatrixFromDiagram() ejecutado');
+        }
+        
+        // Intentar llamar reloadRasciMatrix
+        const reloadRasciMatrix = registry?.getFunction && registry.getFunction('reloadRasciMatrix');
+        if (reloadRasciMatrix && typeof reloadRasciMatrix === 'function') {
+          console.log('🔄 Llamando reloadRasciMatrix() del sistema...');
+          reloadRasciMatrix();
+          console.log('✅ reloadRasciMatrix() ejecutado');
+        }
+      } catch (error) {
+        console.warn('No se pudieron llamar funciones directas de actualización RASCI:', error);
       }
       
     } catch (error) {

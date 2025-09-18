@@ -7,7 +7,10 @@
 
 import { createValidMmProject, createValidBpmnXml } from '../utils/test-helpers.js';
 
-// Clase para validación de archivos .mmproject
+// Configurar localStorage para usar AutosaveManager real
+require('../utils/ensure-localstorage.js');
+
+// VALIDACIÓN REAL: Usar AutosaveManager para generar proyectos reales
 class MmProjectValidator {
   constructor() {
     this.requiredFields = ['version', 'bpmn', 'ppinot', 'rasci'];
@@ -171,8 +174,19 @@ class MmProjectValidator {
   }
 }
 
-describe('8.1 Pruebas Unitarias - BPMN Validators Avanzados', () => {
+describe('8.1 Pruebas Unitarias - Validación Formato .mmproject', () => {
   let validator;
+  let AutosaveManager;
+
+  beforeAll(async () => {
+    // Importar AutosaveManager real para generar proyectos reales
+    const autosaveModule = await import('../../app/services/autosave-manager.js');
+    AutosaveManager = autosaveModule.AutosaveManager || autosaveModule.default;
+    
+    if (!AutosaveManager) {
+      throw new Error('AutosaveManager real no encontrado - necesario para validación de proyectos reales');
+    }
+  });
 
   beforeEach(() => {
     validator = new MmProjectValidator();
@@ -182,6 +196,50 @@ describe('8.1 Pruebas Unitarias - BPMN Validators Avanzados', () => {
     test('debe validar proyecto .mmproject válido', () => {
       const validProject = createValidMmProject();
       const result = validator.validateProject(validProject);
+      
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+      expect(result.summary.structureValid).toBe(true);
+    });
+
+    test('debe validar proyecto .mmproject generado por AutosaveManager REAL', async () => {
+      // USAR AUTOSAVE MANAGER REAL para generar proyecto
+      const mockModeler = {
+        saveXML: jest.fn().mockResolvedValue({ xml: createValidBpmnXml() }),
+        get: jest.fn().mockReturnValue({
+          getAll: jest.fn().mockReturnValue([])
+        })
+      };
+      
+      const mockEventBus = {
+        publish: jest.fn(),
+        subscribe: jest.fn()
+      };
+      
+      const autosaveManager = new AutosaveManager({
+        modeler: mockModeler,
+        eventBus: mockEventBus,
+        enabled: false // No queremos timers en test
+      });
+      
+      // GENERAR proyecto real usando AutosaveManager
+      const proyectoReal = await autosaveManager.createCompleteProject();
+      
+      console.log('🔍 Proyecto generado por AutosaveManager real:', Object.keys(proyectoReal));
+      
+      // VALIDAR que el proyecto real tiene la estructura correcta
+      expect(proyectoReal).toBeDefined();
+      expect(proyectoReal.version).toBeDefined();
+      expect(proyectoReal.bpmn).toBeDefined();
+      expect(proyectoReal.ppinot).toBeDefined();
+      expect(proyectoReal.rasci).toBeDefined();
+      expect(proyectoReal.metadata).toBeDefined();
+      expect(proyectoReal.welcomeScreenFormat).toBeDefined();
+      
+      // VALIDAR usando el validador
+      const result = validator.validateProject(proyectoReal);
+      
+      console.log('🔍 Resultado validación proyecto real:', result);
       
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
