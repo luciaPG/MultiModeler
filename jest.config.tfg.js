@@ -26,10 +26,10 @@ module.exports = {
     '<rootDir>/tests/sprint1/' // Archivos antiguos
   ],
 
-  // Configuración de cobertura
-  collectCoverage: true,
+  // Configuración de cobertura (solo reportes esenciales)
+  collectCoverage: false, // Deshabilitado por defecto para evitar reportes masivos
   coverageDirectory: 'reports/coverage-tfg',
-  coverageReporters: ['text', 'lcov', 'html', 'json'],
+  coverageReporters: ['text', 'json'], // Solo texto y JSON, sin HTML masivo
   
   // Incluir todos los archivos fuente para cobertura
   collectCoverageFrom: [
