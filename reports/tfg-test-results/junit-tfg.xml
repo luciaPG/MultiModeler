@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="11" failures="0" errors="0" time="2.349">
+  <testsuite name="8.1 RASCI Core - Código Real Sin Fallbacks" errors="0" failures="0" skipped="0" timestamp="2025-09-18T10:42:40" time="2.163" tests="11">
+    <testcase classname="8.1 RASCI Core - Código Real Sin Fallbacks REAL: RasciStore debe importar y usar RasciStore real" name="8.1 RASCI Core - Código Real Sin Fallbacks REAL: RasciStore debe importar y usar RasciStore real" time="0.016">
+    </testcase>
+    <testcase classname="8.1 RASCI Core - Código Real Sin Fallbacks REAL: RasciStore debe manejar roles reales en RasciStore" name="8.1 RASCI Core - Código Real Sin Fallbacks REAL: RasciStore debe manejar roles reales en RasciStore" time="0.002">
+    </testcase>
+    <testcase classname="8.1 RASCI Core - Código Real Sin Fallbacks REAL: RasciStore debe manejar matriz RASCI real en RasciStore" name="8.1 RASCI Core - Código Real Sin Fallbacks REAL: RasciStore debe manejar matriz RASCI real en RasciStore" time="0.002">
+    </testcase>
+    <testcase classname="8.1 RASCI Core - Código Real Sin Fallbacks REAL: RASCIAdapter debe importar y usar RASCIAdapter real" name="8.1 RASCI Core - Código Real Sin Fallbacks REAL: RASCIAdapter debe importar y usar RASCIAdapter real" time="0.025">
+    </testcase>
+    <testcase classname="8.1 RASCI Core - Código Real Sin Fallbacks REAL: RASCIAdapter debe actualizar datos reales en RASCIAdapter" name="8.1 RASCI Core - Código Real Sin Fallbacks REAL: RASCIAdapter debe actualizar datos reales en RASCIAdapter" time="0.041">
+    </testcase>
+    <testcase classname="8.1 RASCI Core - Código Real Sin Fallbacks REAL: Problemas Específicos de Target y Scope debe detectar problema real de targets PPINOT inconsistentes" name="8.1 RASCI Core - Código Real Sin Fallbacks REAL: Problemas Específicos de Target y Scope debe detectar problema real de targets PPINOT inconsistentes" time="0.025">
+    </testcase>
+    <testcase classname="8.1 RASCI Core - Código Real Sin Fallbacks REAL: Problemas Específicos de Target y Scope debe validar matriz RASCI real con roles duplicados" name="8.1 RASCI Core - Código Real Sin Fallbacks REAL: Problemas Específicos de Target y Scope debe validar matriz RASCI real con roles duplicados" time="0.023">
+    </testcase>
+    <testcase classname="8.1 RASCI Core - Código Real Sin Fallbacks REAL: RASCIAdapter debe usar RASCIAdapter real sin fallbacks" name="8.1 RASCI Core - Código Real Sin Fallbacks REAL: RASCIAdapter debe usar RASCIAdapter real sin fallbacks" time="0.001">
+    </testcase>
+    <testcase classname="8.1 RASCI Core - Código Real Sin Fallbacks REAL: RASCIAdapter debe procesar datos reales en RASCIAdapter" name="8.1 RASCI Core - Código Real Sin Fallbacks REAL: RASCIAdapter debe procesar datos reales en RASCIAdapter" time="0.004">
+    </testcase>
+    <testcase classname="8.1 RASCI Core - Código Real Sin Fallbacks REAL: Sincronización RASCI-BPMN debe sincronizar cambios BPMN reales con matriz RASCI" name="8.1 RASCI Core - Código Real Sin Fallbacks REAL: Sincronización RASCI-BPMN debe sincronizar cambios BPMN reales con matriz RASCI" time="0.38">
+    </testcase>
+    <testcase classname="8.1 RASCI Core - Código Real Sin Fallbacks REAL: Validación de Consistencia RASCI debe validar reglas RASCI reales y detectar violaciones" name="8.1 RASCI Core - Código Real Sin Fallbacks REAL: Validación de Consistencia RASCI debe validar reglas RASCI reales y detectar violaciones" time="0.018">
+    </testcase>
+  </testsuite>
+</testsuites>

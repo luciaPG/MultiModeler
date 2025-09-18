@@ -24,6 +24,7 @@
         "test:real-system": "jest tests/8.1-unitarias/real-system-validation.test.js --config jest.config.tfg.js",
         "test:real-coordination": "jest tests/8.2-integracion/real-coordination.test.js --config jest.config.tfg.js",
         "test:real-e2e": "jest tests/8.3-ui-e2e/real-application-e2e.test.js --config jest.config.tfg.js",
+        "test:ppinot-problems": "jest tests/8.1-unitarias/ppinot-localstorage-parentescos.test.js --config jest.config.tfg.js",
         "test:real": "jest --config jest.config.real.js",
         "test:real-coverage": "jest --config jest.config.real.js --coverage",
         "test:tfg": "jest --config jest.config.tfg.js --coverage",
