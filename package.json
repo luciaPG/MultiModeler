@@ -30,7 +30,8 @@
         "test:sprint1": "jest tests/sprint1",
         "test:report": "node scripts/generate-test-report.js",
         "test:all": "npm run test:tfg && npm run test:report",
-        "clean:reports": "node scripts/clean-reports.js"
+        "clean:reports": "node scripts/clean-reports.js",
+        "report:final": "node scripts/generate-final-tfg-report.js"
     },
     "repository": {
         "type": "git",
