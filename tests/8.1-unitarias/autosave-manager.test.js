@@ -45,130 +45,14 @@ describe('8.1 Pruebas Unitarias - AutosaveManager', () => {
   let mockEventBus;
 
   beforeAll(async () => {
-    try {
-      const autosaveModule = await import('../../app/services/autosave-manager.js');
-      AutosaveManager = autosaveModule.AutosaveManager || autosaveModule.default;
-    } catch (error) {
-      // Si no existe el módulo, crear implementación mock
-      AutosaveManager = class MockAutosaveManager {
-        constructor(options = {}) {
-          this.modeler = options.modeler;
-          this.storageManager = options.storageManager;
-          this.eventBus = options.eventBus;
-          this.interval = options.interval || 5000;
-          this.enabled = options.enabled !== false;
-          this.hasChanges = false;
-          this.autosaveTimer = null;
-          this.isAutosaving = false;
-          
-          if (this.eventBus && this.enabled) {
-            this.setupEventListeners();
-          }
-        }
-        
-        setupEventListeners() {
-          const changeEvents = [
-            'element.changed',
-            'element.added',
-            'element.removed',
-            'shape.added',
-            'shape.removed',
-            'connection.added',
-            'connection.removed'
-          ];
-          
-          changeEvents.forEach(event => {
-            this.eventBus.subscribe(event, (data) => {
-              this.markAsChanged();
-            });
-          });
-        }
-        
-        markAsChanged() {
-          this.hasChanges = true;
-          if (this.enabled && !this.autosaveTimer) {
-            this.scheduleAutosave();
-          }
-        }
-        
-        scheduleAutosave() {
-          if (this.autosaveTimer) {
-            clearTimeout(this.autosaveTimer);
-          }
-          
-          this.autosaveTimer = setTimeout(() => {
-            this.performAutosave();
-          }, this.interval);
-        }
-        
-        async performAutosave() {
-          if (this.isAutosaving || !this.hasChanges) {
-            return { success: false, reason: 'Already saving or no changes' };
-          }
-          
-          try {
-            this.isAutosaving = true;
-            
-            // Obtener XML del modelador
-            const xmlResult = await this.modeler.saveXML();
-            const xml = xmlResult.xml || xmlResult;
-            
-            // Guardar usando StorageManager
-            const saveResult = await this.storageManager.save({
-              bpmn: xml,
-              timestamp: new Date().toISOString(),
-              autosaved: true
-            });
-            
-            if (saveResult.success) {
-              this.hasChanges = false;
-              this.eventBus?.publish('autosave.completed', {
-                timestamp: new Date().toISOString(),
-                success: true
-              });
-            }
-            
-            return saveResult;
-            
-          } catch (error) {
-            this.eventBus?.publish('autosave.error', {
-              error: error.message,
-              timestamp: new Date().toISOString()
-            });
-            return { success: false, error: error.message };
-          } finally {
-            this.isAutosaving = false;
-            this.autosaveTimer = null;
-          }
-        }
-        
-        enable() {
-          this.enabled = true;
-          if (this.hasChanges) {
-            this.scheduleAutosave();
-          }
-        }
-        
-        disable() {
-          this.enabled = false;
-          if (this.autosaveTimer) {
-            clearTimeout(this.autosaveTimer);
-            this.autosaveTimer = null;
-          }
-        }
-        
-        forceAutosave() {
-          return this.performAutosave();
-        }
-        
-        destroy() {
-          this.disable();
-          // Cleanup event listeners if needed
-        }
-      };
+    // IMPORTACIÓN REAL - SIN FALLBACKS
+    const autosaveModule = await import('../../app/services/autosave-manager.js');
+    AutosaveManager = autosaveModule.AutosaveManager || autosaveModule.default;
+    
+    if (!AutosaveManager) {
+      throw new Error('AutosaveManager real no encontrado - test debe fallar si la implementación no existe');
     }
   });
-
   beforeEach(() => {
     // Setup mocks
     mockModeler = {

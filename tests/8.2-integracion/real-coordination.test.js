@@ -107,8 +107,8 @@ describe('8.2 Coordinación Real Entre Módulos', () => {
         expect(typeof coreInstance.loadModel).toBe('function');
         expect(typeof coreInstance.getBPMNElements).toBe('function');
       } else {
-        // Si falla, es información valiosa sobre el estado del sistema
-        expect(coreInstance).toBeDefined(); // Al menos debe haberse creado
+        // Si falla, el test DEBE fallar - no usar aserciones triviales
+        throw new Error('Core real no se inicializó correctamente - esto es un fallo real del sistema');
       }
     });
 
@@ -180,14 +180,12 @@ describe('8.2 Coordinación Real Entre Módulos', () => {
         console.log('Error en coordinación real save/load:', error.message);
       }
 
-      // Si el test no fue exitoso, verificar que al menos se intentó
+      // Si el test no fue exitoso, DEBE fallar
       if (!testSuccess) {
-        // Esto indica un problema real en la coordinación
-        expect(realEventBus).toBeDefined();
-        expect(realServiceRegistry).toBeDefined();
-      } else {
-        expect(testSuccess).toBe(true);
+        throw new Error('Coordinación real save/load falló - esto indica un problema real en el sistema');
       }
+      
+      expect(testSuccess).toBe(true);
     });
   });
 
@@ -241,16 +239,12 @@ describe('8.2 Coordinación Real Entre Módulos', () => {
         console.log('Error en RASCIManager real:', error.message);
       }
 
-      // Verificar que al menos se intentó la coordinación
-      expect(realEventBus).toBeDefined();
-      
-      if (coordinationSuccess) {
-        expect(coordinationSuccess).toBe(true);
-      } else {
-        // Si no funcionó, es información valiosa sobre problemas reales
-        const allEvents = realEventBus.getHistory();
-        expect(allEvents.length).toBeGreaterThan(0); // Al menos debe haber eventos
+      // Si la coordinación falló, el test DEBE fallar
+      if (!coordinationSuccess) {
+        throw new Error('Coordinación RASCI real falló - esto indica un problema real en el sistema');
       }
+      
+      expect(coordinationSuccess).toBe(true);
     });
 
     test('debe ejercitar change-queue-manager real', async () => {
@@ -260,11 +254,11 @@ describe('8.2 Coordinación Real Entre Módulos', () => {
       try {
         const queueModule = await import('../../app/modules/rasci/core/change-queue-manager.js');
         
-        // Verificar que las funciones reales existen
-        expect(queueModule.addChangeToQueue).toBeDefined();
-        expect(queueModule.processPendingChanges).toBeDefined();
-        expect(queueModule.getQueueInfo).toBeDefined();
-        expect(queueModule.clearPendingChanges).toBeDefined();
+        // Verificar que las funciones reales existen - si faltan, el test DEBE fallar
+        if (!queueModule.addChangeToQueue) throw new Error('addChangeToQueue no existe en el módulo real');
+        if (!queueModule.processPendingChanges) throw new Error('processPendingChanges no existe en el módulo real');
+        if (!queueModule.getQueueInfo) throw new Error('getQueueInfo no existe en el módulo real');
+        if (!queueModule.clearPendingChanges) throw new Error('clearPendingChanges no existe en el módulo real');
 
         // WHEN: Usar la cola real de cambios
         const realChange = {
@@ -510,8 +504,8 @@ describe('8.2 Coordinación Real Entre Módulos', () => {
       if (pipelineSuccess) {
         expect(pipelineSuccess).toBe(true);
       } else {
-        // Si el pipeline falló, es información crítica
-        expect(realEventBus).toBeDefined();
+        // Si el pipeline falló, el test DEBE fallar
+        throw new Error('Pipeline save/load real falló - esto indica un problema crítico en el sistema');
       }
     });
   });

@@ -148,6 +148,9 @@ export class AutosaveManager {
 
     // Obtener datos RASCI
     await this.capturarDatosRASCI(project);
+    
+    // Obtener datos RALPH
+    await this.capturarDatosRALPH(project);
 
     return project;
   }
@@ -230,23 +233,100 @@ export class AutosaveManager {
 
   async capturarDatosRASCI(project) {
     try {
+      // 1. Intentar desde RasciStore
       const { RasciStore } = await import('../modules/rasci/store.js');
-      const roles = RasciStore.getRoles();
-      const matrix = RasciStore.getMatrix();
+      let roles = RasciStore.getRoles();
+      let matrix = RasciStore.getMatrix();
       
+      console.log('🔍 RASCI desde RasciStore:', { roles, matrix });
+      
+      // 2. Si no hay datos, intentar desde ServiceRegistry
+      if ((!roles || roles.length === 0) || (!matrix || Object.keys(matrix).length === 0)) {
+        const serviceRegistry = await import('../modules/ui/core/ServiceRegistry.js');
+        const registry = serviceRegistry.getServiceRegistry();
+        
+        const rasciAdapter = registry?.get('RASCIAdapter');
+        if (rasciAdapter) {
+          if (!roles || roles.length === 0) {
+            roles = rasciAdapter.getRoles && rasciAdapter.getRoles() || [];
+          }
+          if (!matrix || Object.keys(matrix).length === 0) {
+            matrix = rasciAdapter.getMatrix && rasciAdapter.getMatrix() || {};
+          }
+          console.log('🔍 RASCI desde RASCIAdapter:', { roles, matrix });
+        }
+      }
+      
+      // 3. Guardar roles si existen
       if (Array.isArray(roles) && roles.length > 0) {
         project.rasci.roles = roles;
         project.welcomeScreenFormat.rasci.roles = roles;
+        console.log('✅ RASCI roles guardados:', roles.length);
+      } else {
+        console.log('⚠️ No se encontraron roles RASCI');
       }
       
+      // 4. Guardar matriz si existe
       if (matrix && typeof matrix === 'object' && Object.keys(matrix).length > 0) {
         project.rasci.matrix = matrix;
         project.rasci.tasks = Object.keys(matrix);
         project.welcomeScreenFormat.rasci.matrix = matrix;
         project.welcomeScreenFormat.rasci.tasks = Object.keys(matrix);
+        console.log('✅ RASCI matriz guardada:', Object.keys(matrix).length, 'tareas');
+      } else {
+        console.log('⚠️ No se encontró matriz RASCI');
       }
+      
     } catch (error) {
       console.warn('Error capturando datos RASCI:', error);
+    }
+  }
+
+  async capturarDatosRALPH(project) {
+    try {
+      // Intentar capturar datos RALPH desde diferentes fuentes
+      const serviceRegistry = await import('../modules/ui/core/ServiceRegistry.js');
+      const registry = serviceRegistry.getServiceRegistry();
+      
+      // Intentar obtener desde ServiceRegistry
+      const ralphAdapter = registry?.get('RALPHAdapter');
+      if (ralphAdapter && typeof ralphAdapter.getSymbols === 'function') {
+        const symbols = ralphAdapter.getSymbols();
+        if (symbols && symbols.length > 0) {
+          project.ralph.roles = symbols;
+          project.welcomeScreenFormat.ralph = { roles: symbols };
+          console.log('✅ RALPH símbolos guardados desde adapter:', symbols.length);
+          return;
+        }
+      }
+      
+      // Intentar obtener desde el modeler (canvas)
+      if (this.modeler && typeof this.modeler.get === 'function') {
+        const elementRegistry = this.modeler.get('elementRegistry');
+        if (elementRegistry && typeof elementRegistry.getAll === 'function') {
+          const allElements = elementRegistry.getAll();
+          const ralphElements = allElements.filter(el => {
+            const type = el.type || (el.businessObject && el.businessObject.$type) || '';
+            return type.startsWith('RALPH:') || type.startsWith('ralph:');
+          });
+          
+          if (ralphElements.length > 0) {
+            const ralphSymbols = ralphElements.map(el => ({
+              id: el.id,
+              name: el.businessObject?.name || el.id,
+              type: el.type,
+              position: { x: el.x || 0, y: el.y || 0, width: el.width || 0, height: el.height || 0 },
+              businessObject: el.businessObject
+            }));
+            
+            project.ralph.roles = ralphSymbols;
+            project.welcomeScreenFormat.ralph = { roles: ralphSymbols };
+            console.log('✅ RALPH símbolos guardados desde canvas:', ralphSymbols.length);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Error capturando datos RALPH:', error);
     }
   }
 
@@ -303,6 +383,11 @@ export class AutosaveManager {
       // Restaurar RASCI
       if (projectData.rasci) {
         await this.restaurarDatosRASCI(projectData.rasci);
+      }
+      
+      // Restaurar RALPH
+      if (projectData.ralph) {
+        await this.restaurarDatosRALPH(projectData.ralph);
       }
 
       if (this.eventBus) {
@@ -393,17 +478,91 @@ export class AutosaveManager {
 
   async restaurarDatosRASCI(rasciData) {
     try {
+      console.log('🔄 Restaurando datos RASCI:', rasciData);
+      
       const { RasciStore } = await import('../modules/rasci/store.js');
       
-      if (rasciData.roles && Array.isArray(rasciData.roles)) {
+      if (rasciData.roles && Array.isArray(rasciData.roles) && rasciData.roles.length > 0) {
         RasciStore.setRoles(rasciData.roles);
+        console.log('✅ RASCI roles restaurados:', rasciData.roles.length);
       }
       
-      if (rasciData.matrix && typeof rasciData.matrix === 'object') {
+      if (rasciData.matrix && typeof rasciData.matrix === 'object' && Object.keys(rasciData.matrix).length > 0) {
         RasciStore.setMatrix(rasciData.matrix);
+        console.log('✅ RASCI matriz restaurada:', Object.keys(rasciData.matrix).length, 'tareas');
       }
+      
+      // También intentar restaurar via ServiceRegistry
+      const serviceRegistry = await import('../modules/ui/core/ServiceRegistry.js');
+      const registry = serviceRegistry.getServiceRegistry();
+      const rasciAdapter = registry?.get('RASCIAdapter');
+      
+      if (rasciAdapter) {
+        if (rasciAdapter.setRoles && rasciData.roles) {
+          rasciAdapter.setRoles(rasciData.roles);
+        }
+        if (rasciAdapter.setMatrix && rasciData.matrix) {
+          rasciAdapter.setMatrix(rasciData.matrix);
+        }
+        console.log('✅ RASCI también restaurado via RASCIAdapter');
+      }
+      
+      if (this.eventBus) {
+        this.eventBus.publish('rasci.restored', {
+          roles: rasciData.roles || [],
+          matrix: rasciData.matrix || {},
+          source: 'autosave'
+        });
+      }
+      
     } catch (error) {
       console.warn('Error restaurando datos RASCI:', error);
+    }
+  }
+
+  async restaurarDatosRALPH(ralphData) {
+    try {
+      console.log('🔄 Restaurando datos RALPH:', ralphData);
+      
+      // Intentar restaurar via ServiceRegistry
+      const serviceRegistry = await import('../modules/ui/core/ServiceRegistry.js');
+      const registry = serviceRegistry.getServiceRegistry();
+      const ralphAdapter = registry?.get('RALPHAdapter');
+      
+      if (ralphAdapter && ralphData.roles) {
+        if (ralphAdapter.setSymbols && Array.isArray(ralphData.roles)) {
+          ralphAdapter.setSymbols(ralphData.roles);
+          console.log('✅ RALPH símbolos restaurados via adapter:', ralphData.roles.length);
+        }
+      }
+      
+      // Si hay elementos RALPH con posiciones, intentar restaurarlos al canvas
+      if (this.modeler && ralphData.roles && Array.isArray(ralphData.roles)) {
+        const elementFactory = this.modeler.get('elementFactory');
+        const modeling = this.modeler.get('modeling');
+        
+        if (elementFactory && modeling) {
+          ralphData.roles.forEach(symbol => {
+            if (symbol.position && symbol.type && symbol.type.startsWith('RALPH:')) {
+              try {
+                const element = elementFactory.createShape({
+                  id: symbol.id,
+                  type: symbol.type,
+                  businessObject: symbol.businessObject
+                });
+                
+                modeling.createShape(element, symbol.position, this.modeler.get('canvas').getRootElement());
+                console.log('✅ RALPH símbolo restaurado al canvas:', symbol.id);
+              } catch (error) {
+                console.warn('Error restaurando símbolo RALPH al canvas:', symbol.id, error);
+              }
+            }
+          });
+        }
+      }
+      
+    } catch (error) {
+      console.warn('Error restaurando datos RALPH:', error);
     }
   }
 

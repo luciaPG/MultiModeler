@@ -27,41 +27,26 @@ describe('8.1 Pruebas Unitarias - RASCI Core', () => {
 
   describe('RasciStore - Gestión de Datos', () => {
     test('debe manejar operaciones básicas de roles', async () => {
-      try {
-        const { RasciStore } = await import('../../app/modules/rasci/store.js');
-        
-        // Test de setRoles
-        if (typeof RasciStore.setRoles === 'function') {
-          RasciStore.setRoles(['Analista', 'Supervisor']);
-          expect(mockLocalStorage.setItem).toHaveBeenCalled();
-        }
-        
-        // Test de getRoles
-        if (typeof RasciStore.getRoles === 'function') {
-          mockLocalStorage.data['rasciRoles'] = JSON.stringify(['Role1', 'Role2']);
-          const roles = RasciStore.getRoles();
-          expect(roles).toBeDefined();
-        }
-        
-        // Test de setMatrix
-        if (typeof RasciStore.setMatrix === 'function') {
-          const matrix = { 'Task_1': { 'Analista': 'R' } };
-          RasciStore.setMatrix(matrix);
-          expect(mockLocalStorage.setItem).toHaveBeenCalled();
-        }
-        
-        expect(true).toBe(true); // Test básico de importación exitosa
-        
-      } catch (error) {
-        // Si hay error de importación, hacer test básico
-        const basicStore = {
-          roles: ['Analista', 'Supervisor'],
-          matrix: { 'Task_1': { 'Analista': 'R', 'Supervisor': 'A' } }
-        };
-        
-        expect(basicStore.roles.length).toBe(2);
-        expect(Object.keys(basicStore.matrix).length).toBe(1);
-      }
+      // IMPORTACIÓN REAL - SIN FALLBACKS
+      const { RasciStore } = await import('../../app/modules/rasci/store.js');
+      
+      // Verificar que las funciones reales existen
+      if (!RasciStore.setRoles) throw new Error('RasciStore.setRoles no existe en el módulo real');
+      if (!RasciStore.getRoles) throw new Error('RasciStore.getRoles no existe en el módulo real');
+      if (!RasciStore.setMatrix) throw new Error('RasciStore.setMatrix no existe en el módulo real');
+      
+      // Test de setRoles REAL
+      RasciStore.setRoles(['Analista', 'Supervisor']);
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('rasci_roles_data', JSON.stringify(['Analista', 'Supervisor']));
+      
+      // Test de getRoles REAL - después de setRoles, debe devolver los roles seteados
+      const roles = RasciStore.getRoles();
+      expect(roles).toEqual(['Analista', 'Supervisor']);
+      
+      // Test de setMatrix REAL
+      const matrix = { 'Task_1': { 'Analista': 'R' } };
+      RasciStore.setMatrix(matrix);
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('rasci_matrix_data', JSON.stringify(matrix));
     });
 
     test('debe validar estructura de datos RASCI', () => {
@@ -90,47 +75,29 @@ describe('8.1 Pruebas Unitarias - RASCI Core', () => {
 
   describe('RASCIAdapter - Integración', () => {
     test('debe importar y instanciar RASCIAdapter', async () => {
-      try {
-        const rasciModule = await import('../../app/modules/rasci/RASCIAdapter.js');
-        const RASCIAdapter = rasciModule.RASCIAdapter || rasciModule.default;
-        
-        if (RASCIAdapter) {
-          // Test de construcción
-          const adapter = new RASCIAdapter();
-          expect(adapter).toBeDefined();
-          
-          // Test de métodos básicos si existen
-          if (typeof adapter.initialize === 'function') {
-            adapter.initialize();
-          }
-          
-          if (typeof adapter.getRoles === 'function') {
-            const roles = adapter.getRoles();
-            expect(Array.isArray(roles) || roles === null || roles === undefined).toBe(true);
-          }
-          
-          if (typeof adapter.getMatrix === 'function') {
-            const matrix = adapter.getMatrix();
-            expect(typeof matrix === 'object' || matrix === null || matrix === undefined).toBe(true);
-          }
-        }
-        
-        expect(true).toBe(true); // Importación exitosa
-        
-      } catch (error) {
-        // Si hay problemas de importación, test básico
-        const mockAdapter = {
-          roles: [],
-          matrix: {},
-          initialize: () => true,
-          getRoles: () => [],
-          getMatrix: () => ({})
-        };
-        
-        expect(mockAdapter.initialize()).toBe(true);
-        expect(Array.isArray(mockAdapter.getRoles())).toBe(true);
-        expect(typeof mockAdapter.getMatrix()).toBe('object');
-      }
+      // IMPORTACIÓN REAL - SIN FALLBACKS
+      const rasciModule = await import('../../app/modules/rasci/RASCIAdapter.js');
+      const RASCIAdapter = rasciModule.RASCIAdapter || rasciModule.default;
+      
+      if (!RASCIAdapter) throw new Error('RASCIAdapter no encontrado en el módulo real');
+      
+      // Test de construcción REAL
+      const adapter = new RASCIAdapter();
+      expect(adapter).toBeDefined();
+      
+      // Verificar que métodos reales existen
+      if (!adapter.initialize) throw new Error('adapter.initialize no existe en RASCIAdapter real');
+      if (!adapter.getRoles) throw new Error('adapter.getRoles no existe en RASCIAdapter real');
+      if (!adapter.getMatrixData) throw new Error('adapter.getMatrixData no existe en RASCIAdapter real');
+      
+      // Test de métodos REALES
+      adapter.initialize();
+      
+      const roles = adapter.getRoles();
+      expect(Array.isArray(roles) || roles === null || roles === undefined).toBe(true);
+      
+      const matrix = adapter.getMatrixData();
+      expect(typeof matrix === 'object' || matrix === null || matrix === undefined).toBe(true);
     });
 
     test('debe manejar comunicación con otros módulos', async () => {
