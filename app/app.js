@@ -10,7 +10,7 @@ import { PanelLoader } from './modules/ui/components/panel-loader.js';
 import modelerManager from './modules/ui/managers/modeler-manager.js';
 import './modules/ui/managers/panel-manager.js';
 import './modules/ui/managers/cookie-autosave-manager.js';
-import './modules/ui/managers/localstorage-autosave-manager.js';
+import './services/autosave-manager.js';
 import './modules/ui/managers/ppinot-storage-manager.js';
 import './modules/ui/managers/ppinot-coordination-manager.js';
 import './modules/ui/managers/import-export-manager.js';
@@ -487,6 +487,35 @@ async function initializeApp() {
     }
     
     console.log('✅ Aplicación VisualPPINOT inicializada correctamente.');
+    
+    // INICIALIZAR AUTOSAVE MANAGER CON DEPENDENCIAS REALES
+    try {
+      const registry = getServiceRegistry();
+      const { getEventBus } = await import('./modules/ui/core/event-bus.js');
+      const eventBus = getEventBus();
+      
+      // Crear instancia del AutosaveManager con dependencias reales
+      const createAutosaveManager = registry.get('createAutosaveManager');
+      if (createAutosaveManager && modeler && eventBus) {
+        const autosaveInstance = createAutosaveManager({
+          modeler: modeler,
+          eventBus: eventBus,
+          enabled: true,
+          interval: 5000 // 5 segundos
+        });
+        
+        // Reemplazar el placeholder con la instancia real
+        registry.register('localStorageAutoSaveManager', autosaveInstance, { 
+          description: 'Instancia autosave con dependencias reales' 
+        });
+        
+        console.log('✅ AutosaveManager inicializado con dependencias reales');
+      } else {
+        console.warn('⚠️ No se pudo inicializar AutosaveManager: dependencias faltantes');
+      }
+    } catch (error) {
+      console.warn('⚠️ Error inicializando AutosaveManager:', error);
+    }
     
     // Inicializar sistema de autoguardado si está habilitado
     if (autoSaveEnabled && !autoSaveInterval) {

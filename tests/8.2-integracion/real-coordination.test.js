@@ -297,12 +297,8 @@ describe('8.2 Coordinación Real Entre Módulos', () => {
         // El error es información valiosa
       }
 
-      if (queueManagerSuccess) {
-        expect(queueManagerSuccess).toBe(true);
-      } else {
-        // Si falló, verificar que al menos se intentó
-        expect(true).toBe(true); // Test que indica que se intentó la verificación real
-      }
+      // THEN: ChangeQueueManager real debe funcionar (sin fallback)
+      expect(queueManagerSuccess).toBe(true);
     });
   });
 
@@ -564,13 +560,14 @@ describe('8.2 Coordinación Real Entre Módulos', () => {
         
         console.log('✅ initializeApplication funcionó correctamente');
         
-        if (appInstance.core) {
-          expect(appInstance.core.initialized).toBe(true);
-        }
+        // THEN: initializeApplication real debe funcionar
+        expect(appInstance).toBeDefined();
+        expect(appInstance.core).toBeDefined();
+        expect(appInstance.core.initialized).toBe(true);
+      } else {
+        // THEN: Si falla, debe fallar el test (no fallback)
+        expect(initError).toBeNull(); // Esto fallará si hay error real
       }
-
-      // En cualquier caso, el test debe completarse
-      expect(true).toBe(true);
     });
 
     test('debe detectar problemas reales en la coordinación multi-notación', async () => {

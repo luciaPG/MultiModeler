@@ -5,6 +5,9 @@
  * Crítico para la experiencia de usuario y prevención de pérdida de datos.
  */
 
+// Configurar localStorage para tests
+require('../utils/ensure-localstorage.js');
+
 const { createValidBpmnXml } = require('../utils/test-helpers');
 
 // Mock para el EventBus

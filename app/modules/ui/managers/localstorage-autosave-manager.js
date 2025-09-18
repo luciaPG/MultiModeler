@@ -1762,12 +1762,13 @@ class LocalStorageAutoSaveManager {
 export { LocalStorageAutoSaveManager };
 
 // Register in ServiceRegistry
-const registry = getServiceRegistry();
-if (registry) {
-  registry.register('LocalStorageAutoSaveManager', LocalStorageAutoSaveManager, { 
-    description: 'Autosave (localStorage)' 
-  });
-  registry.register('localStorageAutoSaveManager', new LocalStorageAutoSaveManager(), { 
-    description: 'Instancia autosave localStorage' 
-  });
-}
+// DESHABILITADO: El nuevo AutosaveManager limpio se registra en su lugar
+// const registry = getServiceRegistry();
+// if (registry) {
+//   registry.register('LocalStorageAutoSaveManager', LocalStorageAutoSaveManager, { 
+//     description: 'Autosave (localStorage)' 
+//   });
+//   registry.register('localStorageAutoSaveManager', new LocalStorageAutoSaveManager(), { 
+//     description: 'Instancia autosave localStorage' 
+//   });
+// }
