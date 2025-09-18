@@ -16,6 +16,7 @@
         "test:coverage": "jest --coverage --config jest.config.tfg.js",
         "test:unitarias": "jest tests/8.1-unitarias --config jest.config.tfg.js",
         "test:integracion": "jest tests/8.2-integracion --config jest.config.tfg.js",
+    "test:integracion-avanzada": "jest tests/8.2-integracion/advanced-integration.test.js --config jest.config.tfg.js",
         "test:ui-e2e": "jest tests/8.3-ui-e2e --config jest.config.tfg.js",
         "test:tfg": "jest --config jest.config.tfg.js --coverage",
         "test:sprint1": "jest tests/sprint1",
