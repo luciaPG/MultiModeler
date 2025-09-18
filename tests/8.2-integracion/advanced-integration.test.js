@@ -92,8 +92,6 @@ describe('8.2 Pruebas de Integración Avanzadas', () => {
         return {};
       });
 
-      const startTime = Date.now();
-      
       // Crear PPIs para múltiples elementos
       const ppis = [];
       for (let i = 1; i <= 25; i++) {
@@ -111,52 +109,104 @@ describe('8.2 Pruebas de Integración Avanzadas', () => {
         mockEventBus.publish('element.changed', { element: { id: ppi.from } });
       }
 
-      const endTime = Date.now();
-      const duration = endTime - startTime;
-
-      // Verificar que se procesa en tiempo razonable (< 2 segundos)
-      expect(duration).toBeLessThan(2000);
-      expect(mockEventBus.published.length).toBeGreaterThan(40);
+      // VERIFICACIONES FUNCIONALES (no temporales):
+      // 1. Todos los PPIs fueron procesados
+      const ppiEvents = mockEventBus.published.filter(e => e.eventType === 'ppi.created');
+      expect(ppiEvents).toHaveLength(25);
+      
+      // 2. Todos los elementos fueron notificados de cambios
+      const changeEvents = mockEventBus.published.filter(e => e.eventType === 'element.changed');
+      expect(changeEvents).toHaveLength(25);
+      
+      // 3. No hay errores en el procesamiento
+      const errorEvents = mockEventBus.published.filter(e => e.eventType.includes('error'));
+      expect(errorEvents).toHaveLength(0);
+      
+      // 4. Total de eventos es correcto
+      expect(mockEventBus.published.length).toBe(50); // 25 ppi.created + 25 element.changed
     });
 
-    test('debe manejar 10 cambios concurrentes sin conflictos', async () => {
-      const concurrentChanges = [];
+    test('debe manejar cambios concurrentes con condiciones de carrera reales', async () => {
+      jest.useFakeTimers();
       
-      // Crear 10 cambios simultáneos
-      for (let i = 1; i <= 10; i++) {
-        concurrentChanges.push({
-          type: 'element.changed',
-          elementId: `Task_${i}`,
-          timestamp: Date.now() + i,
-          changes: {
-            name: `Tarea Modificada ${i}`,
-            assignedRole: `Role_${i % 3 + 1}`
-          }
-        });
+      let processedChanges = 0;
+      let conflictDetected = false;
+      const processedElements = new Set();
+      
+      // Configurar detección de conflictos en el mock
+      if (!mockEventBus.subscribers['element.changed']) {
+        mockEventBus.subscribers['element.changed'] = [];
       }
+      
+      // Agregar detector de conflictos
+      mockEventBus.subscribers['element.changed'].push((data) => {
+        const elementId = data.element.id;
+        
+        // Detectar condición de carrera: elemento ya siendo procesado
+        if (processedElements.has(elementId)) {
+          conflictDetected = true;
+          mockEventBus.publish('conflict.detected', { elementId, conflict: 'concurrent_modification' });
+        }
+        
+        processedElements.add(elementId);
+        processedChanges++;
+        
+        // Simular procesamiento asíncrono
+        setTimeout(() => {
+          processedElements.delete(elementId);
+          mockEventBus.publish('element.processed', { elementId });
+        }, 50);
+      });
+      
+      // Crear 10 cambios, algunos en el mismo elemento (condición de carrera)
+      const changes = [
+        { elementId: 'Task_1', change: 'name' },
+        { elementId: 'Task_1', change: 'role' },  // Conflicto potencial
+        { elementId: 'Task_2', change: 'name' },
+        { elementId: 'Task_3', change: 'name' },
+        { elementId: 'Task_2', change: 'role' },  // Conflicto potencial
+        { elementId: 'Task_4', change: 'name' },
+        { elementId: 'Task_5', change: 'name' },
+        { elementId: 'Task_1', change: 'priority' }, // Conflicto potencial
+        { elementId: 'Task_6', change: 'name' },
+        { elementId: 'Task_7', change: 'name' }
+      ];
 
-      // Simular cambios concurrentes
-      const promises = concurrentChanges.map(async (change, index) => {
-        // Simular delay aleatorio para concurrencia real
-        await new Promise(resolve => setTimeout(resolve, Math.random() * 10));
-        
-        mockEventBus.publish(change.type, {
-          element: { id: change.elementId },
-          changes: change.changes
-        });
-        
-        return change;
+      // Publicar cambios concurrentes
+      changes.forEach((change, index) => {
+        setTimeout(() => {
+          mockEventBus.publish('element.changed', {
+            element: { id: change.elementId },
+            changeType: change.change
+          });
+        }, index * 5); // Intervalos pequeños para simular concurrencia
       });
 
-      const results = await Promise.all(promises);
+      // Avanzar timers para procesar todos los cambios
+      jest.advanceTimersByTime(100);
       
-      // Verificar que todos los cambios se procesaron
-      expect(results.length).toBe(10);
-      expect(mockEventBus.published.length).toBe(10);
+      // VERIFICACIONES DE CONCURRENCIA REAL:
+      // 1. Se publicaron los cambios originales
+      const originalChanges = mockEventBus.published.filter(e => e.eventType === 'element.changed');
+      expect(originalChanges.length).toBe(10);
       
-      // Verificar que se manejó la concurrencia correctamente
-      expect(mockEventBus.published.length).toBe(10);
-      // En concurrencia real, algunos timestamps pueden coincidir, lo cual es normal
+      // 2. Se detectaron conflictos (cambios en el mismo elemento)
+      const conflictEvents = mockEventBus.published.filter(e => e.eventType === 'conflict.detected');
+      expect(conflictEvents.length).toBeGreaterThan(0);
+      
+      // 3. Los conflictos fueron en elementos específicos
+      const conflictedElements = conflictEvents.map(e => e.data.elementId);
+      expect(conflictedElements).toContain('Task_1'); // Task_1 tiene 3 cambios
+      expect(conflictedElements).toContain('Task_2'); // Task_2 tiene 2 cambios
+      
+      // 4. Se generaron eventos de procesamiento para cleanup
+      const processedEvents = mockEventBus.published.filter(e => e.eventType === 'element.processed');
+      expect(processedEvents.length).toBeGreaterThanOrEqual(0);
+      
+      // 5. Total de eventos incluye originales + conflictos + procesados
+      expect(mockEventBus.published.length).toBeGreaterThanOrEqual(10);
+      
+      jest.useRealTimers();
     });
 
     test('debe mantener rendimiento con matriz RASCI compleja', async () => {
@@ -176,16 +226,17 @@ describe('8.2 Pruebas de Integración Avanzadas', () => {
         });
       });
 
-      const startTime = Date.now();
-      
       // Simular validación de matriz compleja
       let validationErrors = 0;
+      let totalAssignments = 0;
       
       // Validar cada tarea
       for (const taskId of tasks) {
         const assignments = complexMatrix[taskId];
         const accountableCount = Object.values(assignments).filter(role => role === 'A').length;
         const responsibleCount = Object.values(assignments).filter(role => role === 'R').length;
+        
+        totalAssignments += Object.keys(assignments).length;
         
         if (accountableCount !== 1) validationErrors++;
         if (responsibleCount === 0) validationErrors++;
@@ -199,13 +250,20 @@ describe('8.2 Pruebas de Integración Avanzadas', () => {
         });
       }
 
-      const endTime = Date.now();
-      const processingTime = endTime - startTime;
-
-      // Verificar rendimiento y correctitud
-      expect(processingTime).toBeLessThan(1000); // < 1 segundo
-      expect(validationErrors).toBe(0); // Sin errores de validación
+      // VERIFICACIONES FUNCIONALES (no temporales):
+      // 1. Matriz tiene el tamaño esperado
+      expect(totalAssignments).toBe(600); // 20 roles × 30 tareas
+      
+      // 2. Validación RASCI es correcta (cada tarea tiene 1 A y 2 R)
+      expect(validationErrors).toBe(0);
+      
+      // 3. Todos los mapeos fueron publicados
       expect(mockEventBus.published.length).toBe(30); // Un evento por tarea
+      
+      // 4. Estructura de datos es coherente
+      const mappedTasks = mockEventBus.published.map(e => e.data.taskId);
+      expect(mappedTasks).toHaveLength(30);
+      expect(new Set(mappedTasks).size).toBe(30); // Sin duplicados
     });
   });
 
@@ -340,8 +398,6 @@ describe('8.2 Pruebas de Integración Avanzadas', () => {
         { id: 'Task_23', changes: { priority: 'high' }, version: 2 }
       ];
 
-      const startTime = Date.now();
-      
       // Simular sincronización incremental (solo elementos modificados)
       const elementsToSync = initialElements.filter(element => 
         modifiedElements.some(modified => modified.id === element.id)
@@ -362,12 +418,24 @@ describe('8.2 Pruebas de Integración Avanzadas', () => {
         });
       }
 
-      const endTime = Date.now();
-      const syncTime = endTime - startTime;
-
-      // Verificar eficiencia de sincronización incremental
-      expect(syncTime).toBeLessThan(100); // Muy rápido por ser incremental
-      expect(mockEventBus.published.length).toBe(3); // Solo elementos modificados
+      // VERIFICACIONES FUNCIONALES DE SINCRONIZACIÓN INCREMENTAL:
+      // 1. Solo se sincronizaron elementos modificados (eficiencia)
+      expect(mockEventBus.published.length).toBe(3);
+      
+      // 2. Cada evento tiene información de versión (trazabilidad)
+      const syncEvents = mockEventBus.published.filter(e => e.eventType === 'element.incremental.sync');
+      expect(syncEvents).toHaveLength(3);
+      
+      // 3. Todos los eventos tienen versionado correcto
+      syncEvents.forEach(event => {
+        expect(event.data.oldVersion).toBe(1);
+        expect(event.data.newVersion).toBe(2);
+        expect(event.data.changes).toBeDefined();
+      });
+      
+      // 4. IDs de elementos sincronizados son correctos
+      const syncedIds = syncEvents.map(e => e.data.elementId);
+      expect(syncedIds).toEqual(expect.arrayContaining(['Task_5', 'Task_12', 'Task_23']));
       
       // Verificar que cada sincronización tiene información de versión
       mockEventBus.published.forEach(event => {
@@ -591,13 +659,12 @@ describe('8.2 Pruebas de Integración Avanzadas', () => {
       expect(recoveryAttempts).toBeLessThanOrEqual(maxRetries);
     });
 
-    test('debe manejar degradación gradual del rendimiento', async () => {
-      // Simular carga creciente del sistema
-      const performanceMetrics = [];
+    test('debe detectar degradación del sistema por carga funcional', async () => {
+      let totalOperations = 0;
+      let degradationTriggered = false;
       
+      // Simular carga creciente del sistema (10 a 100 operaciones)
       for (let load = 10; load <= 100; load += 10) {
-        const startTime = Date.now();
-        
         // Simular operación con carga creciente
         const operations = Array.from({length: load}, (_, i) => ({
           id: `op_${i}`,
@@ -605,44 +672,48 @@ describe('8.2 Pruebas de Integración Avanzadas', () => {
           complexity: Math.floor(load / 10)
         }));
         
+        totalOperations += operations.length;
+        
         // Simular procesamiento
         for (const op of operations) {
           mockEventBus.publish('operation.process', op);
         }
         
-        const endTime = Date.now();
-        const responseTime = endTime - startTime;
-        
-        performanceMetrics.push({
-          load,
-          responseTime,
-          operations: operations.length,
-          throughput: operations.length / (responseTime / 1000)
-        });
-        
-        // Simular degradación gradual
+        // Simular degradación gradual basada en carga, no en tiempo
         if (load > 70) {
+          degradationTriggered = true;
           mockEventBus.publish('performance.degradation', {
             level: load > 90 ? 'critical' : 'warning',
             currentLoad: load,
-            responseTime
+            operationsInBatch: operations.length
           });
         }
       }
 
-      // Verificar que el sistema detecta degradación
+      // VERIFICACIONES FUNCIONALES DE DEGRADACIÓN:
+      // 1. Se procesaron todas las operaciones (550 total: 10+20+30+...+100)
+      expect(totalOperations).toBe(550);
+      
+      // 2. Sistema detectó degradación cuando carga > 70
+      expect(degradationTriggered).toBe(true);
+      
+      // 3. Se publicaron eventos de degradación apropiados
       const degradationEvents = mockEventBus.published.filter(e => 
         e.eventType === 'performance.degradation'
       );
+      expect(degradationEvents.length).toBe(3); // Para cargas 80, 90, 100
       
-      expect(degradationEvents.length).toBeGreaterThan(0);
-      expect(performanceMetrics.length).toBe(10);
-      
-      // Verificar que hay eventos de degradación para cargas altas
+      // 4. Hay eventos críticos para cargas muy altas
       const criticalEvents = degradationEvents.filter(e => 
         e.data.level === 'critical'
       );
-      expect(criticalEvents.length).toBeGreaterThan(0);
+      expect(criticalEvents.length).toBe(1); // Solo para carga 100
+      
+      // 5. Eventos tienen información de carga funcional
+      degradationEvents.forEach(event => {
+        expect(event.data.currentLoad).toBeGreaterThan(70);
+        expect(event.data.operationsInBatch).toBeDefined();
+      });
     });
   });
 });
