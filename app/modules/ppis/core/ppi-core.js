@@ -394,8 +394,7 @@ class PPICore {
       );
       
       // Optimización: Reducir logs de debug para mejorar rendimiento
-      // console.log(`🔍 Elementos PPI encontrados: ${ppiElements.length}`);
-      
+      // 
       // Optimización: Detectar hijos PPINOT (Target, Scope, Medidas, Condition, etc.) de forma robusta
       const ppiChildren = [];
       for (const element of allElements) {
@@ -420,8 +419,7 @@ class PPICore {
       }
       
       // Optimización: Reducir logs de debug
-      // console.log(`🔍 Elementos Target/Scope encontrados: ${ppiChildren.length}`);
-      
+      // 
       // Optimización: Buscar elementos Target/Scope asociados de forma más eficiente
       const associatedTargetScope = new Set();
       for (const ppi of ppiElements) {
@@ -459,7 +457,7 @@ class PPICore {
       const uniqueAssociated = Array.from(associatedTargetScope);
       
       // Optimización: Reducir logs de debug para mejorar rendimiento
-      // console.log(`🔍 Elementos Target/Scope asociados encontrados: ${uniqueAssociated.length}`);
+      // 
       // uniqueAssociated.forEach(el => console.log(`  - Associated: ${el.id} (${el.type})`));
       
       // Combinar todos los elementos PPINOT (excluyendo labels por seguridad)
@@ -601,28 +599,25 @@ class PPICore {
       }
       
       // Optimización: Reducir logs de debug para mejorar rendimiento
-      // console.log(`🔗 Relaciones creadas: ${relationships.length}`);
+      
       // relationships.forEach(rel => console.log(`  - ${rel.childName} (${rel.childType}) -> ${rel.parentName} (${rel.parentType})`));
       
       // Usar el sistema unificado para guardar
       const registry = getServiceRegistry && getServiceRegistry();
       // Optimización: Reducir logs de debug
-      // console.log('🔍 [DEBUG] Service registry disponible:', !!registry);
-      
+      // 
       const ppinotStorageManager = registry && registry.get ? registry.get('PPINOTStorageManager') : null;
-      // console.log('🔍 [DEBUG] PPINOTStorageManager disponible:', !!ppinotStorageManager);
-      // console.log('🔍 [DEBUG] Elementos a guardar:', allPPINOTElements.length);
-      // console.log('🔍 [DEBUG] Relaciones a guardar:', relationships.length);
-      
+      // 
+      // 
+      // 
       if (ppinotStorageManager) {
-        // console.log('🔍 [DEBUG] Llamando ppinotStorageManager.savePPINOTElements...');
+        // 
         ppinotStorageManager.savePPINOTElements(allPPINOTElements, relationships);
-        // console.log('🔍 [DEBUG] Resultado del guardado:', saveResult);
-        
+        // 
         // Si se crearon elementos Target/Scope por defecto, disparar restauración
         if (ppiElements.length > 0 && ppiChildren.length > 0) {
           // Optimización: Reducir logs de debug
-          // console.log('🎯 Disparando restauración de elementos Target/Scope...');
+          // 
           setTimeout(() => {
             const coordinationManager = registry && registry.get ? registry.get('PPINOTCoordinationManager') : null;
             if (coordinationManager) {
@@ -634,7 +629,7 @@ class PPICore {
         // También disparar restauración si hay elementos Target/Scope existentes
         if (ppiElements.length > 0 && (ppiChildren.length > 0)) {
           // Optimización: Reducir logs de debug para mejorar rendimiento
-          // console.log('🎯 Disparando restauración de elementos Target/Scope existentes...');
+          // 
           setTimeout(() => {
             const coordinationManager = registry && registry.get ? registry.get('PPINOTCoordinationManager') : null;
             if (coordinationManager) {
@@ -645,7 +640,7 @@ class PPICore {
       } else {
         // Fallback al sistema anterior
         // Optimización: Reducir logs de debug para mejorar rendimiento
-        // console.log('⚠️ [DEBUG] PPINOTStorageManager no disponible, usando fallback');
+        // 
         this.savePPINOTRelationshipsToXML(relationships);
       }
       
@@ -748,8 +743,7 @@ class PPICore {
     const startTime = performance.now();
     try {
       // Optimización: Reducir logs de debug para mejorar rendimiento
-      // console.log('🔄 Cargando elementos PPINOT desde localStorage...');
-      
+      // 
       // Usar el sistema unificado para cargar datos
       const registry = getServiceRegistry && getServiceRegistry();
       const ppinotStorageManager = registry && registry.get ? registry.get('PPINOTStorageManager') : null;
@@ -759,32 +753,31 @@ class PPICore {
         
         if (ppinotData.elements.length === 0) {
           // Optimización: Reducir logs de debug para mejorar rendimiento
-          // console.log('ℹ️ No hay elementos PPINOT guardados');
+          // 
           return false;
         }
 
         // Optimización: Reducir logs de debug para mejorar rendimiento
-        // console.log(`🔍 Cargados ${ppinotData.elements.length} elementos PPINOT desde sistema unificado`);
-
+        // 
         // Guardar para restauración posterior
         this.pendingPPINOTRestore = ppinotData.elements;
         this.pendingPPINOTRelationships = ppinotData.relationships;
 
         // Optimización: Reducir logs de debug para mejorar rendimiento
-        // console.log('✅ Elementos PPINOT cargados correctamente desde sistema unificado');
+        // 
         return true;
       } else {
         // Fallback al sistema anterior
         const ppinotElementsData = localStorage.getItem('ppinotElements');
         if (!ppinotElementsData) {
           // Optimización: Reducir logs de debug para mejorar rendimiento
-          // console.log('ℹ️ No hay elementos PPINOT guardados en localStorage');
+          // 
           return false;
         }
 
         const ppinotElements = JSON.parse(ppinotElementsData);
         // Optimización: Reducir logs de debug para mejorar rendimiento
-        // console.log(`🔍 Cargados ${ppinotElements.length} elementos PPINOT desde localStorage (fallback)`);
+        
 
         if (!Array.isArray(ppinotElements)) {
           console.error('❌ Datos PPINOT inválidos: no es un array');
@@ -800,7 +793,7 @@ class PPICore {
             if (Array.isArray(ppinotRelationships)) {
               this.pendingPPINOTRelationships = ppinotRelationships;
               // Optimización: Reducir logs de debug para mejorar rendimiento
-              // console.log(`🔗 Cargadas ${ppinotRelationships.length} relaciones PPINOT desde localStorage`);
+              
             }
           } catch (error) {
             console.error('❌ Error cargando relaciones PPINOT:', error);

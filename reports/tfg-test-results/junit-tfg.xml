@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="20" failures="0" errors="0" time="0.843">
+  <testsuite name="8.2 Pruebas de Integración - Multi-notación" errors="0" failures="0" skipped="0" timestamp="2025-09-18T09:35:38" time="0.716" tests="20">
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración BPMN + PPINOT debe vincular PPIs a elementos BPMN correctamente" name="8.2 Pruebas de Integración - Multi-notación Integración BPMN + PPINOT debe vincular PPIs a elementos BPMN correctamente" time="0.008">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración BPMN + PPINOT debe sincronizar cambios en BPMN con PPIs existentes" name="8.2 Pruebas de Integración - Multi-notación Integración BPMN + PPINOT debe sincronizar cambios en BPMN con PPIs existentes" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración BPMN + RALPH debe asignar roles a tareas BPMN" name="8.2 Pruebas de Integración - Multi-notación Integración BPMN + RALPH debe asignar roles a tareas BPMN" time="0">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración BPMN + RALPH debe validar permisos de roles en ejecución" name="8.2 Pruebas de Integración - Multi-notación Integración BPMN + RALPH debe validar permisos de roles en ejecución" time="0">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración RASCI + BPMN + RALPH debe mapear automáticamente RASCI con elementos BPMN y roles RALPH" name="8.2 Pruebas de Integración - Multi-notación Integración RASCI + BPMN + RALPH debe mapear automáticamente RASCI con elementos BPMN y roles RALPH" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración RASCI + BPMN + RALPH debe detectar conflictos entre RASCI y RALPH" name="8.2 Pruebas de Integración - Multi-notación Integración RASCI + BPMN + RALPH debe detectar conflictos entre RASCI y RALPH" time="0">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración Completa: Persistencia Multi-notación debe guardar y cargar proyecto con todas las notaciones" name="8.2 Pruebas de Integración - Multi-notación Integración Completa: Persistencia Multi-notación debe guardar y cargar proyecto con todas las notaciones" time="0">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración Completa: Persistencia Multi-notación debe sincronizar cambios entre notaciones durante guardado automático" name="8.2 Pruebas de Integración - Multi-notación Integración Completa: Persistencia Multi-notación debe sincronizar cambios entre notaciones durante guardado automático" time="0">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Validación Cruzada de Notaciones debe validar consistencia entre BPMN y RASCI" name="8.2 Pruebas de Integración - Multi-notación Validación Cruzada de Notaciones debe validar consistencia entre BPMN y RASCI" time="0">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Validación Cruzada de Notaciones debe detectar PPIs huérfanos (sin elementos BPMN correspondientes)" name="8.2 Pruebas de Integración - Multi-notación Validación Cruzada de Notaciones debe detectar PPIs huérfanos (sin elementos BPMN correspondientes)" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar importación de proyecto corrupto" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar importación de proyecto corrupto" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe sincronizar cambios concurrentes entre notaciones" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe sincronizar cambios concurrentes entre notaciones" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe validar dependencias circulares entre roles" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe validar dependencias circulares entre roles" time="0.002">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar eliminación en cascada de elementos" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar eliminación en cascada de elementos" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe recuperar estado tras error de sincronización" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe recuperar estado tras error de sincronización" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar migración entre versiones de proyecto" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar migración entre versiones de proyecto" time="0.009">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe validar integridad referencial completa" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe validar integridad referencial completa" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe manejar conflictos entre roles RASCI y RALPH" name="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe manejar conflictos entre roles RASCI y RALPH" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe manejar rollback cuando falla integración" name="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe manejar rollback cuando falla integración" time="0.002">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe verificar orden correcto de eventos en operaciones complejas" name="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe verificar orden correcto de eventos en operaciones complejas" time="0.001">
+    </testcase>
+  </testsuite>
+</testsuites>

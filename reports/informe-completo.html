@@ -1,0 +1,400 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informe de Tests - ppinot-visual</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            background-color: #f5f5f5;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            padding: 30px; 
+            border-radius: 10px; 
+            margin-bottom: 30px; 
+            text-align: center;
+        }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .header p { font-size: 1.1em; opacity: 0.9; }
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            gap: 20px; 
+            margin-bottom: 30px; 
+        }
+        .stat-card { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-2px); }
+        .stat-number { font-size: 2.5em; font-weight: bold; margin-bottom: 10px; }
+        .stat-label { color: #666; font-size: 1.1em; }
+        .success { color: #27ae60; }
+        .error { color: #e74c3c; }
+        .warning { color: #f39c12; }
+        .info { color: #3498db; }
+        .section { 
+            background: white; 
+            margin-bottom: 30px; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            overflow: hidden;
+        }
+        .section-header { 
+            background: #f8f9fa; 
+            padding: 20px; 
+            border-bottom: 1px solid #dee2e6; 
+        }
+        .section-header h2 { color: #495057; }
+        .section-content { padding: 20px; }
+        .sprint-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 20px; 
+        }
+        .sprint-card { 
+            border: 1px solid #dee2e6; 
+            border-radius: 8px; 
+            overflow: hidden;
+        }
+        .sprint-header { 
+            padding: 15px; 
+            font-weight: bold; 
+            color: white;
+        }
+        .sprint-1 { background: #3498db; }
+        .sprint-2 { background: #9b59b6; }
+        .sprint-3 { background: #e67e22; }
+        .sprint-4 { background: #1abc9c; }
+        .sprint-5 { background: #34495e; }
+        .sprint-body { padding: 15px; background: white; }
+        .test-stat { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .progress-bar { 
+            width: 100%; 
+            height: 20px; 
+            background: #ecf0f1; 
+            border-radius: 10px; 
+            overflow: hidden; 
+            margin: 10px 0;
+        }
+        .progress-fill { 
+            height: 100%; 
+            background: linear-gradient(90deg, #27ae60, #2ecc71); 
+            transition: width 0.3s ease;
+        }
+        .coverage-section { margin-top: 20px; }
+        .coverage-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 10px 0; 
+            border-bottom: 1px solid #eee;
+        }
+        .coverage-bar { 
+            width: 200px; 
+            height: 10px; 
+            background: #ecf0f1; 
+            border-radius: 5px; 
+            overflow: hidden;
+        }
+        .coverage-fill { 
+            height: 100%; 
+            background: linear-gradient(90deg, #e74c3c, #f39c12, #27ae60);
+        }
+        .timestamp { 
+            text-align: center; 
+            color: #666; 
+            margin-top: 30px; 
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+        }
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .header { padding: 20px; }
+            .header h1 { font-size: 2em; }
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Informe de Tests</h1>
+            <p>ppinot-visual v0.5.0</p>
+            <p>A visual modeler of Process Performance Indicators based on PPINOT and built with bpmn-js</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number success">185</div>
+                <div class="stat-label">Tests Exitosos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number error">2</div>
+                <div class="stat-label">Tests Fallidos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number info">194</div>
+                <div class="stat-label">Total Tests</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number warning">
+                    95%
+                </div>
+                <div class="stat-label">Tasa de Éxito</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2>🚀 Resultados por Sprint</h2>
+            </div>
+            <div class="section-content">
+                <div class="sprint-grid">
+                    
+                        <div class="sprint-card">
+                            <div class="sprint-header sprint-1">
+                                SPRINT1
+                            </div>
+                            <div class="sprint-body">
+                                <div class="test-stat">
+                                    <span>Total:</span>
+                                    <span><strong>170</strong></span>
+                                </div>
+                                <div class="test-stat">
+                                    <span>Exitosos:</span>
+                                    <span class="success"><strong>165</strong></span>
+                                </div>
+                                <div class="test-stat">
+                                    <span>Fallidos:</span>
+                                    <span class="error"><strong>2</strong></span>
+                                </div>
+                                <div class="test-stat">
+                                    <span>Pendientes:</span>
+                                    <span class="warning"><strong>3</strong></span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 97.05882352941177%"></div>
+                                </div>
+                                <div style="text-align: center; margin-top: 10px;">
+                                    <span class="error">
+                                        ❌ FALLOS
+                                    </span>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    
+                        <div class="sprint-card">
+                            <div class="sprint-header sprint-2">
+                                SPRINT2
+                            </div>
+                            <div class="sprint-body">
+                                <div class="test-stat">
+                                    <span>Total:</span>
+                                    <span><strong>6</strong></span>
+                                </div>
+                                <div class="test-stat">
+                                    <span>Exitosos:</span>
+                                    <span class="success"><strong>5</strong></span>
+                                </div>
+                                <div class="test-stat">
+                                    <span>Fallidos:</span>
+                                    <span class="error"><strong>0</strong></span>
+                                </div>
+                                <div class="test-stat">
+                                    <span>Pendientes:</span>
+                                    <span class="warning"><strong>1</strong></span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 83.33333333333334%"></div>
+                                </div>
+                                <div style="text-align: center; margin-top: 10px;">
+                                    <span class="success">
+                                        ✅ ÉXITO
+                                    </span>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    
+                        <div class="sprint-card">
+                            <div class="sprint-header sprint-3">
+                                SPRINT3
+                            </div>
+                            <div class="sprint-body">
+                                <div class="test-stat">
+                                    <span>Total:</span>
+                                    <span><strong>6</strong></span>
+                                </div>
+                                <div class="test-stat">
+                                    <span>Exitosos:</span>
+                                    <span class="success"><strong>5</strong></span>
+                                </div>
+                                <div class="test-stat">
+                                    <span>Fallidos:</span>
+                                    <span class="error"><strong>0</strong></span>
+                                </div>
+                                <div class="test-stat">
+                                    <span>Pendientes:</span>
+                                    <span class="warning"><strong>1</strong></span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 83.33333333333334%"></div>
+                                </div>
+                                <div style="text-align: center; margin-top: 10px;">
+                                    <span class="success">
+                                        ✅ ÉXITO
+                                    </span>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    
+                        <div class="sprint-card">
+                            <div class="sprint-header sprint-4">
+                                SPRINT4
+                            </div>
+                            <div class="sprint-body">
+                                <div class="test-stat">
+                                    <span>Total:</span>
+                                    <span><strong>6</strong></span>
+                                </div>
+                                <div class="test-stat">
+                                    <span>Exitosos:</span>
+                                    <span class="success"><strong>5</strong></span>
+                                </div>
+                                <div class="test-stat">
+                                    <span>Fallidos:</span>
+                                    <span class="error"><strong>0</strong></span>
+                                </div>
+                                <div class="test-stat">
+                                    <span>Pendientes:</span>
+                                    <span class="warning"><strong>1</strong></span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 83.33333333333334%"></div>
+                                </div>
+                                <div style="text-align: center; margin-top: 10px;">
+                                    <span class="success">
+                                        ✅ ÉXITO
+                                    </span>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    
+                        <div class="sprint-card">
+                            <div class="sprint-header sprint-5">
+                                SPRINT5
+                            </div>
+                            <div class="sprint-body">
+                                <div class="test-stat">
+                                    <span>Total:</span>
+                                    <span><strong>6</strong></span>
+                                </div>
+                                <div class="test-stat">
+                                    <span>Exitosos:</span>
+                                    <span class="success"><strong>5</strong></span>
+                                </div>
+                                <div class="test-stat">
+                                    <span>Fallidos:</span>
+                                    <span class="error"><strong>0</strong></span>
+                                </div>
+                                <div class="test-stat">
+                                    <span>Pendientes:</span>
+                                    <span class="warning"><strong>1</strong></span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 83.33333333333334%"></div>
+                                </div>
+                                <div style="text-align: center; margin-top: 10px;">
+                                    <span class="success">
+                                        ✅ ÉXITO
+                                    </span>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2>📈 Cobertura de Código</h2>
+            </div>
+            <div class="section-content">
+                <div class="coverage-section">
+                    
+                        <div class="coverage-item">
+                            <span><strong>Líneas:</strong></span>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="coverage-bar">
+                                    <div class="coverage-fill" style="width: 2%"></div>
+                                </div>
+                                <span><strong>2%</strong></span>
+                            </div>
+                        </div>
+                    
+                        <div class="coverage-item">
+                            <span><strong>Funciones:</strong></span>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="coverage-bar">
+                                    <div class="coverage-fill" style="width: 2%"></div>
+                                </div>
+                                <span><strong>2%</strong></span>
+                            </div>
+                        </div>
+                    
+                        <div class="coverage-item">
+                            <span><strong>Ramas:</strong></span>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="coverage-bar">
+                                    <div class="coverage-fill" style="width: 1%"></div>
+                                </div>
+                                <span><strong>1%</strong></span>
+                            </div>
+                        </div>
+                    
+                        <div class="coverage-item">
+                            <span><strong>Declaraciones:</strong></span>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="coverage-bar">
+                                    <div class="coverage-fill" style="width: 2%"></div>
+                                </div>
+                                <span><strong>2%</strong></span>
+                            </div>
+                        </div>
+                    
+                </div>
+            </div>
+        </div>
+
+        <div class="timestamp">
+            <p><strong>Informe generado:</strong> 17/09/2025, 19:15:27</p>
+            <p><strong>Versión del proyecto:</strong> 0.5.0</p>
+        </div>
+    </div>
+</body>
+</html>

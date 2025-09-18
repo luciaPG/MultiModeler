@@ -30,7 +30,7 @@ class ImportExportManager {
       const sr = getServiceRegistry();
       const eb = sr && sr.get('EventBus');
       if (eb) {
-        console.log('🔄 Publicando evento para recargar matriz RASCI...');
+        
         eb.publish('rasci.state.ensureLoaded', {});
       } else if (retryCount < 10) {
         // Aumentar delay progresivamente y más intentos
@@ -407,7 +407,6 @@ class ImportExportManager {
 
   async loadProjectFromFile(file) {
     try {
-      console.log('🔄 Iniciando importación del proyecto...');
       
       const fileContent = await this.readFileAsText(file);
       const projectData = JSON.parse(fileContent);
@@ -427,7 +426,6 @@ class ImportExportManager {
       await this.importAllProjectData(projectData);
       
       this.showMessage('Proyecto importado correctamente', 'success');
-      console.log('✅ Importación completada');
       
     } catch (error) {
       console.error('❌ Error en importación:', error);
@@ -463,7 +461,6 @@ class ImportExportManager {
   }
 
   async importAllProjectData(projectData) {
-    console.log('🔄 Iniciando importación de datos del proyecto...');
     
     // Limpiar datos existentes
     this.clearExistingData();
@@ -506,11 +503,9 @@ class ImportExportManager {
       this.importGlobalSettings(projectData.settings);
     }
 
-    console.log('✅ Todos los datos importados correctamente');
     
     // ASEGURAR RECARGA FINAL DE TODOS LOS PANELES
     setTimeout(() => {
-      console.log('🔄 Realizando recarga final de paneles después de importación completa...');
       
       // Recargar estado RASCI con función robusta
       getServiceRegistry && getServiceRegistry().get('EventBus') && getServiceRegistry().get('EventBus').publish('rasci.matrix.ensureLoaded', {});
@@ -528,7 +523,6 @@ class ImportExportManager {
   }
 
   clearExistingData() {
-    console.log('🧹 Limpiando datos existentes antes de importar...');
     
     // Usar StorageManager si está disponible
     getServiceRegistry && getServiceRegistry().get('StorageManager') && getServiceRegistry().get('StorageManager').clearStorage && getServiceRegistry().get('StorageManager').clearStorage();
@@ -546,18 +540,17 @@ class ImportExportManager {
         
         // Importar el XML
         await modeler.importXML(bpmnData.diagram);
-        console.log('✅ Diagrama XML importado correctamente');
+        
       }
 
       // Restaurar estado del canvas
       if (bpmnData.canvas) {
         localStorage.setItem('bpmnCanvasState', JSON.stringify(bpmnData.canvas));
-        console.log('✅ Estado del canvas restaurado');
+        
       }
 
       // Restaurar elementos PPINOT si están disponibles
       if (bpmnData.ppinotElements && bpmnData.ppinotElements.length > 0) {
-        console.log(`✅ ${bpmnData.ppinotElements.length} elementos PPINOT encontrados en el XML`);
         
         // Buscar elementos Target y Scope usando múltiples criterios
         const targetElements = bpmnData.ppinotElements.filter(el => {
@@ -588,36 +581,36 @@ class ImportExportManager {
         
         // Guardar elementos PPINOT usando el sistema unificado
         ppinotStorageManager.savePPINOTElements(bpmnData.ppinotElements, bpmnData.ppinotRelationships || []);
-        console.log('✅ Elementos PPINOT guardados en sistema unificado para restauración');
+        
       }
 
       // Restaurar relaciones PPINOT si están disponibles
       if (bpmnData.ppinotRelationships && bpmnData.ppinotRelationships.length > 0) {
-        console.log(`✅ ${bpmnData.ppinotRelationships.length} relaciones PPINOT encontradas en el XML`);
+        
         // Guardar relaciones PPINOT en localStorage para restauración posterior
         localStorage.setItem('ppinotRelationships', JSON.stringify(bpmnData.ppinotRelationships));
-        console.log('✅ Relaciones PPINOT guardadas en localStorage para restauración');
+        
       }
 
       // Usar el sistema de coordinación unificado para restauración PPINOT
-      console.log('🎯 Delegando restauración PPINOT al sistema de coordinación...');
+      
       ppinotCoordinationManager.triggerRestoration('import.completed');
 
       // Restaurar elementos RALPH
       if (bpmnData.elements && bpmnData.elements.ralph) {
         localStorage.setItem('bpmnRALPHElements', JSON.stringify(bpmnData.elements.ralph));
-        console.log('✅ Elementos RALPH restaurados');
+        
       }
 
       // Restaurar relaciones
       if (bpmnData.relationships) {
         if (bpmnData.relationships.parentChild) {
           localStorage.setItem('bpmnParentChildRelations', JSON.stringify(bpmnData.relationships.parentChild));
-          console.log('✅ Relaciones padre-hijo restauradas');
+          
         }
         // PPI localStorage deshabilitado - relaciones PPINOT no se guardan en localStorage
         if (bpmnData.relationships.ppinot) {
-          console.log('ℹ️ Relaciones PPINOT encontradas pero localStorage deshabilitado');
+          
         }
       }
 
@@ -637,19 +630,19 @@ class ImportExportManager {
         ppiData.indicators.forEach(ppi => {
           ppiManager.core.addPPI(ppi);
         });
-        console.log(`✅ ${ppiData.indicators.length} indicadores PPI restaurados`);
+        
       }
 
       // Restaurar relaciones
       if (ppiData.relationships) {
         localStorage.setItem('ppiRelationships', JSON.stringify(ppiData.relationships));
-        console.log('✅ Relaciones PPI restauradas');
+        
       }
 
       // Restaurar configuraciones
       if (ppiData.settings) {
         localStorage.setItem('ppiSettings', JSON.stringify(ppiData.settings));
-        console.log('✅ Configuraciones PPI restauradas');
+        
       }
 
     } catch (error) {
@@ -665,13 +658,13 @@ class ImportExportManager {
       // Restaurar roles
       if (rasciData.roles) {
         RasciStore.setRoles(rasciData.roles);
-        console.log(`✅ ${rasciData.roles.length} roles RASCI restaurados`);
+        
       }
 
       // Restaurar matriz
       if (rasciData.matrix) {
         RasciStore.setMatrix(rasciData.matrix);
-        console.log('✅ Matriz RASCI restaurada');
+        
       }
 
       // Restaurar tareas
@@ -683,12 +676,12 @@ class ImportExportManager {
         if (sr && sr.get('RASCIAdapter')) {
           sr.get('RASCIAdapter').setTasks(tasks);
         }
-        console.log(`✅ ${tasks.length} tareas RASCI restauradas`);
+        
       }
 
       // Restaurar configuraciones
       if (rasciData.settings) {
-        console.log('✅ Configuraciones RASCI restauradas');
+        
       }
 
       // OPTIMIZACIÓN: Reducir intentos de recarga RASCI para evitar spam
@@ -696,7 +689,7 @@ class ImportExportManager {
         const sr = getServiceRegistry();
         const eb = sr && sr.get('EventBus');
         if (eb) {
-          console.log('🔄 Publicando evento para recargar matriz RASCI después de importación...');
+          
           eb.publish('rasci.state.ensureLoaded', {});
         } else if (retryCount < 2) { // Reducido a 2 intentos
           const delay = 1000; // Delay más largo de 1 segundo
@@ -704,7 +697,7 @@ class ImportExportManager {
         } else {
           // Solo mostrar warning si realmente es necesario
           if (retryCount === 2) {
-            console.log('ℹ️ EventBus no disponible para recargar RASCI después de importación, continuando...');
+            
           }
         }
       };
@@ -725,12 +718,12 @@ class ImportExportManager {
       if (ralphData.elements) {
         // Guardar elementos RALPH para que el módulo los cargue
         localStorage.setItem('bpmnRALPHElements', JSON.stringify(ralphData.elements));
-        console.log(`✅ ${ralphData.elements.length} elementos RALPH restaurados`);
+        
       }
 
       if (ralphData.settings) {
         localStorage.setItem('ralphSettings', JSON.stringify(ralphData.settings));
-        console.log('✅ Configuraciones RALPH restauradas');
+        
       }
 
       // Señal al EventBus para asegurar carga del estado RALPH
@@ -882,7 +875,7 @@ class ImportExportManager {
     });
     
     reloadBtn.addEventListener('click', () => {
-      console.log('🔄 Usuario eligió recargar la aplicación');
+      
       this.hideNotification(notification);
       setTimeout(() => {
         this.reloadApplication();
@@ -921,7 +914,7 @@ class ImportExportManager {
       if (modeler && 
           modeler.importXML && 
           typeof modeler.importXML === 'function') {
-        console.log('✅ Modeler está listo');
+        
         return;
       }
       
@@ -943,8 +936,7 @@ class ImportExportManager {
       // Buscar elementos PPINOT en el XML (incluyendo Target y Scope)
       const ppinotNodes = xmlDoc.querySelectorAll('[ppinot\\:measureType], [ppinot\\:baseMeasure], [ppinot\\:derivedMeasure], [ppinot\\:aggregatedMeasure], [ppinot\\:target], [ppinot\\:scope], PPINOT\\:ppi, PPINOT\\:target, PPINOT\\:scope');
 
-      console.log(`🔍 Encontrados ${ppinotNodes.length} nodos PPINOT con atributos`);
-
+      
       ppinotNodes.forEach(node => {
         const element = {
           id: node.getAttribute('id'),
@@ -964,8 +956,7 @@ class ImportExportManager {
 
       // Buscar elementos Target y Scope que pueden estar como elementos separados
       const targetNodes = xmlDoc.querySelectorAll('[id*="Target"], [id*="Scope"]');
-      console.log(`🎯 Encontrados ${targetNodes.length} nodos Target/Scope por ID`);
-
+      
       targetNodes.forEach(node => {
         const element = {
           id: node.getAttribute('id'),
@@ -1004,7 +995,7 @@ class ImportExportManager {
         console.log(`  🎨 BPMNShape Target/Scope: ${element.name} - ID: ${element.id}`);
       });
 
-      console.log(`✅ Total de elementos PPINOT extraídos: ${ppinotElements.length}`);
+      
       return ppinotElements;
     } catch (error) {
       console.error('Error extrayendo elementos PPINOT del XML:', error);
@@ -1022,12 +1013,10 @@ class ImportExportManager {
       const ppiElement = xmlDoc.querySelector('PPINOT\\:ppi');
       const ppiId = ppiElement ? ppiElement.getAttribute('id') : null;
       
-      console.log(`🔍 Elemento PPI principal encontrado: ${ppiId}`);
-
+      
       // Buscar elementos PPINOT específicos
       const ppinotElements = xmlDoc.querySelectorAll('[ppinot\\:measureType], [ppinot\\:baseMeasure], [ppinot\\:derivedMeasure], [ppinot\\:aggregatedMeasure], [ppinot\\:target], [ppinot\\:scope], PPINOT\\:ppi, PPINOT\\:target, PPINOT\\:scope');
       
-      console.log(`🔍 Encontrados ${ppinotElements.length} elementos PPINOT en el XML`);
       
       ppinotElements.forEach(element => {
         const elementId = element.getAttribute('id');
@@ -1062,7 +1051,6 @@ class ImportExportManager {
 
       // Buscar elementos Target y Scope específicos y asociarlos con el PPI principal
       const targetScopeElements = xmlDoc.querySelectorAll('[id*="Target"], [id*="Scope"]');
-      console.log(`🎯 Encontrados ${targetScopeElements.length} elementos Target/Scope específicos`);
       
       targetScopeElements.forEach(element => {
         const elementId = element.getAttribute('id');
@@ -1105,7 +1093,7 @@ class ImportExportManager {
         }
       });
 
-      console.log(`✅ Total de relaciones PPINOT extraídas: ${relationships.length}`);
+      
       return relationships;
     } catch (error) {
       console.error('Error extrayendo relaciones PPINOT del XML:', error);
@@ -1117,32 +1105,27 @@ class ImportExportManager {
 
   async restorePPINOTElementsAfterLoad() {
     try {
-      console.log('🔄 Iniciando restauración de elementos PPINOT después de la carga...');
-      console.log('🔍 ServiceRegistry disponible:', !!getServiceRegistry);
       
       // Obtener el modeler del ServiceRegistry
       const sr = getServiceRegistry();
-      console.log('🔍 ServiceRegistry obtenido:', !!sr);
       
       let modeler = sr && sr.get ? sr.get('BPMNModeler') : null;
-      console.log('🔍 Modeler obtenido del ServiceRegistry:', !!modeler);
       
       // Si no está en ServiceRegistry, intentar obtenerlo de otras formas
       if (!modeler) {
-        console.log('🔍 Intentando obtener modeler de otras formas...');
         
         // Intentar desde el panel manager
         const panelManager = sr && sr.get ? sr.get('PanelManager') : null;
         if (panelManager && panelManager.getBpmnModeler) {
           modeler = panelManager.getBpmnModeler();
-          console.log('🔍 Modeler obtenido del PanelManager:', !!modeler);
+          
         }
         
         // Intentar desde el modeler manager
         const modelerManager = sr && sr.get ? sr.get('ModelerManager') : null;
         if (modelerManager && modelerManager.getModeler) {
           modeler = modelerManager.getModeler();
-          console.log('🔍 Modeler obtenido del ModelerManager:', !!modeler);
+          
         }
         
         // Intentar desde el DOM
@@ -1150,21 +1133,21 @@ class ImportExportManager {
           const canvasElement = document.querySelector('.bjs-container');
           if (canvasElement && canvasElement.__modeler) {
             modeler = canvasElement.__modeler;
-            console.log('🔍 Modeler obtenido del DOM:', !!modeler);
+            
           }
         }
         
         // Intentar desde window global
         if (!modeler && window.bpmnModeler) {
           modeler = window.bpmnModeler;
-          console.log('🔍 Modeler obtenido de window.bpmnModeler:', !!modeler);
+          
         }
         
         // Intentar desde globalThis (comentado por problemas de linting)
         // try {
         //   if (!modeler && typeof globalThis !== 'undefined' && globalThis && globalThis.bpmnModeler) {
         //     modeler = globalThis.bpmnModeler;
-        //     console.log('🔍 Modeler obtenido de globalThis.bpmnModeler:', !!modeler);
+        //     
         //   }
         // } catch (e) {
         //   // globalThis no está disponible
@@ -1176,15 +1159,14 @@ class ImportExportManager {
           for (const element of allElements) {
             if (element.__modeler || element.modeler) {
               modeler = element.__modeler || element.modeler;
-              console.log('🔍 Modeler encontrado en elemento DOM:', element.tagName, !!modeler);
+              
               break;
             }
           }
         }
       }
       
-      console.log('🔍 Modeler final:', !!modeler);
-      console.log('🔍 Modeler type:', typeof modeler);
+      
       
       if (!modeler) {
         console.log('⚠️ Modeler no disponible para restauración PPINOT');
@@ -1194,18 +1176,16 @@ class ImportExportManager {
 
       // Obtener elementos PPINOT guardados
       const ppinotElementsData = localStorage.getItem('ppinotElements');
-      console.log('🔍 Datos PPINOT en localStorage:', ppinotElementsData ? 'SÍ' : 'NO');
       
       if (!ppinotElementsData) {
-        console.log('ℹ️ No hay elementos PPINOT para restaurar');
+        
         console.log('🔍 Claves en localStorage:', Object.keys(localStorage));
         return;
       }
 
       const ppinotElements = JSON.parse(ppinotElementsData);
-      console.log(`🔍 Restaurando ${ppinotElements.length} elementos PPINOT...`);
-      console.log('🔍 Elementos PPINOT:', ppinotElements);
-
+      
+      
       // Obtener relaciones PPINOT guardadas
       const ppinotRelationshipsData = localStorage.getItem('ppinotRelationships');
       const ppinotRelationships = ppinotRelationshipsData ? JSON.parse(ppinotRelationshipsData) : [];
@@ -1215,9 +1195,8 @@ class ImportExportManager {
       const targetElements = ppinotElements.filter(el => el.id && el.id.includes('Target'));
       const scopeElements = ppinotElements.filter(el => el.id && el.id.includes('Scope'));
       
-      console.log(`🎯 Elementos Target encontrados: ${targetElements.length}`);
-      console.log(`🎯 Elementos Scope encontrados: ${scopeElements.length}`);
-
+      
+      
       // Restaurar elementos Target y Scope visualmente
       await this.restoreTargetAndScopeElements(modeler, targetElements, scopeElements);
 
@@ -1236,7 +1215,6 @@ class ImportExportManager {
       localStorage.removeItem('ppinotElements');
       localStorage.removeItem('ppinotRelationships');
       
-      console.log('✅ Restauración de elementos PPINOT completada');
       
     } catch (error) {
       console.error('❌ Error restaurando elementos PPINOT después de la carga:', error);
@@ -1245,7 +1223,6 @@ class ImportExportManager {
 
   async restoreTargetAndScopeElements(modeler, targetElements, scopeElements) {
     try {
-      console.log('🎯 Iniciando restauración visual de elementos Target y Scope...');
       
       const elementFactory = modeler.get('elementFactory');
       const modeling = modeler.get('modeling');
@@ -1272,7 +1249,7 @@ class ImportExportManager {
           x: ppiBounds.x + ppiBounds.width + 20,
           y: ppiBounds.y + 50
         };
-        console.log(`🎯 Posicionando Target/Scope cerca del PPI en: ${basePosition.x}, ${basePosition.y}`);
+        
       }
       
       // Restaurar elementos Target
@@ -1283,7 +1260,7 @@ class ImportExportManager {
           // Verificar si el elemento ya existe en el canvas
           const existingElement = elementRegistry.get(targetData.id);
           if (existingElement) {
-            console.log(`ℹ️ Target ya existe en el canvas: ${targetData.id}`);
+            
             continue;
           }
           
@@ -1332,7 +1309,6 @@ class ImportExportManager {
           createdTarget.label = createdLabel;
           createdLabel.labelTarget = createdTarget;
           
-          console.log(`✅ Target creado: ${createdTarget.id}`);
           
         } catch (error) {
           console.error(`❌ Error creando Target ${targetData.id}:`, error);
@@ -1347,7 +1323,7 @@ class ImportExportManager {
           // Verificar si el elemento ya existe en el canvas
           const existingElement = elementRegistry.get(scopeData.id);
           if (existingElement) {
-            console.log(`ℹ️ Scope ya existe en el canvas: ${scopeData.id}`);
+            
             continue;
           }
           
@@ -1396,14 +1372,12 @@ class ImportExportManager {
           createdScope.label = createdLabel;
           createdLabel.labelTarget = createdScope;
           
-          console.log(`✅ Scope creado: ${createdScope.id}`);
           
         } catch (error) {
           console.error(`❌ Error creando Scope ${scopeData.id}:`, error);
         }
       }
       
-      console.log('✅ Restauración visual de Target y Scope completada');
       
     } catch (error) {
       console.error('❌ Error en restauración visual de Target y Scope:', error);
@@ -1471,14 +1445,14 @@ class ImportExportManager {
               console.warn('⚠️ No se pudo reparentar visualmente el elemento:', reparentError);
             }
             
-            console.log(`✅ Relación PPINOT establecida: ${childElement.id} -> ${parentElement.id}`);
+            
           } else {
             // Para otros elementos, crear conexión visual
             modeling.connect(childElement, parentElement, {
               type: 'bpmn:Association'
             });
             
-            console.log(`✅ Conexión visual creada: ${childElement.id} -> ${parentElement.id}`);
+            
           }
           
         } catch (error) {
@@ -1486,7 +1460,6 @@ class ImportExportManager {
         }
       }
       
-      console.log('✅ Restauración de relaciones PPINOT completada');
       
     } catch (error) {
       console.error('❌ Error en restauración de relaciones PPINOT:', error);
@@ -1503,7 +1476,6 @@ class ImportExportManager {
     
     const checkModeler = () => {
       attempts++;
-      console.log(`🔍 Intento ${attempts}/${maxAttempts} de encontrar el modeler...`);
       
       // Buscar el modeler de todas las formas posibles
       let modeler = null;
@@ -1513,7 +1485,7 @@ class ImportExportManager {
       if (sr) {
         modeler = sr.get('BPMNModeler');
         if (modeler) {
-          console.log('✅ Modeler encontrado en ServiceRegistry');
+          
           this.restorePPINOTElementsWithModeler(modeler);
           return;
         }
@@ -1527,7 +1499,7 @@ class ImportExportManager {
           if (prop.includes('modeler') || prop.includes('Modeler')) {
             const potentialModeler = canvasElement[prop];
             if (potentialModeler && typeof potentialModeler.get === 'function') {
-              console.log('✅ Modeler encontrado en DOM:', prop);
+              
               this.restorePPINOTElementsWithModeler(potentialModeler);
               return;
             }
@@ -1537,7 +1509,7 @@ class ImportExportManager {
       
       // 3. Buscar en window
       if (window.bpmnModeler && typeof window.bpmnModeler.get === 'function') {
-        console.log('✅ Modeler encontrado en window.bpmnModeler');
+        
         this.restorePPINOTElementsWithModeler(window.bpmnModeler);
         return;
       }
@@ -1545,7 +1517,7 @@ class ImportExportManager {
       // 4. Buscar en globalThis (comentado por problemas de linting)
       // try {
       //   if (typeof globalThis !== 'undefined' && globalThis && globalThis.bpmnModeler && typeof globalThis.bpmnModeler.get === 'function') {
-      //     console.log('✅ Modeler encontrado en globalThis.bpmnModeler');
+      //     
       //     this.restorePPINOTElementsWithModeler(globalThis.bpmnModeler);
       //     return;
       //   }
@@ -1560,7 +1532,7 @@ class ImportExportManager {
           if (prop.includes('modeler') || prop.includes('Modeler')) {
             const potentialModeler = element[prop];
             if (potentialModeler && typeof potentialModeler.get === 'function') {
-              console.log('✅ Modeler encontrado en elemento DOM:', element.tagName, prop);
+              
               this.restorePPINOTElementsWithModeler(potentialModeler);
               return;
             }
@@ -1571,7 +1543,7 @@ class ImportExportManager {
       if (attempts < maxAttempts) {
         setTimeout(checkModeler, 500); // Reintentar cada 500ms
       } else {
-        console.log('❌ No se pudo encontrar el modeler después de', maxAttempts, 'intentos');
+        
       }
     };
     
@@ -1629,7 +1601,7 @@ class ImportExportManager {
       subtree: true
     });
     
-    console.log('✅ Listeners de modeler configurados');
+    
   }
 
   async restorePPINOTElementsWithModeler() {
@@ -1654,7 +1626,6 @@ class ImportExportManager {
       
       // Si no está en ServiceRegistry, intentar obtenerlo de otras formas
       if (!modeler) {
-        console.log('🔍 Intentando obtener modeler para prueba...');
         
         // Intentar desde el panel manager
         const panelManager = sr && sr.get ? sr.get('PanelManager') : null;
@@ -1692,11 +1663,10 @@ class ImportExportManager {
       }
 
       const rootElement = canvas.getRootElement();
-      console.log('🔍 Elemento raíz del canvas:', rootElement);
-
+      
       // Crear Target de prueba
       try {
-        console.log('🎯 Creando Target de prueba...');
+        
         const targetElement = elementFactory.createShape({
           type: 'PPINOT:Target',
           businessObject: {
@@ -1707,7 +1677,6 @@ class ImportExportManager {
         });
         
         const createdTarget = modeling.createShape(targetElement, { x: 300, y: 200 }, rootElement);
-        console.log('✅ Target de prueba creado:', createdTarget.id);
         
       } catch (error) {
         console.error('❌ Error creando Target de prueba:', error);
@@ -1715,7 +1684,7 @@ class ImportExportManager {
 
       // Crear Scope de prueba
       try {
-        console.log('🎯 Creando Scope de prueba...');
+        
         const scopeElement = elementFactory.createShape({
           type: 'PPINOT:Scope',
           businessObject: {
@@ -1726,13 +1695,11 @@ class ImportExportManager {
         });
         
         const createdScope = modeling.createShape(scopeElement, { x: 400, y: 200 }, rootElement);
-        console.log('✅ Scope de prueba creado:', createdScope.id);
         
       } catch (error) {
         console.error('❌ Error creando Scope de prueba:', error);
       }
 
-      console.log('✅ Elementos de prueba creados');
       
     } catch (error) {
       console.error('❌ Error en creación de elementos de prueba:', error);
@@ -1743,7 +1710,6 @@ class ImportExportManager {
 
   // Función de utilidad para limpiar localStorage completamente
   clearAllProjectData() {
-    console.log('🧹 Limpiando todos los datos del proyecto...');
     
     // Lista de claves que queremos preservar (preferencias del usuario)
     const keysToKeep = ['userPreferences', 'theme', 'globalSettings'];
@@ -1767,7 +1733,7 @@ class ImportExportManager {
     RasciStore.setRoles([]);
     RasciStore.setMatrix({});
     
-    console.log('✅ Todos los datos del proyecto limpiados');
+    
   }
 
   generateFileName() {
@@ -1809,10 +1775,9 @@ class ImportExportManager {
       setTimeout(() => {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        console.log('🧹 Enlace y URL limpiados');
+        
       }, 100);
       
-      console.log('✅ Descarga iniciada correctamente');
       
     } catch (error) {
       console.error('❌ Error en downloadFile:', error);
