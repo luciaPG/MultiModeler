@@ -1,13 +1,19 @@
 /**
- * 8.2 PRUEBAS DE INTEGRACIÓN AVANZADAS - Tests de Rendimiento y Casos Edge
+ * 8.2 PRUEBAS DE INTEGRACIÓN AVANZADAS - Tests Reales y Casos Edge
  * 
- * Tests adicionales que cubren casos complejos, rendimiento y seguridad
- * para hacer el sistema aún más robusto.
+ * Tests que cubren integración real entre componentes del sistema multinotación
+ * usando validadores y servicios reales en lugar de solo mocks.
  */
 
+import { describe, test, expect, beforeEach, jest } from '@jest/globals';
+
+// Importar componentes reales para tests de integración
+import { getBpmnElementStats, extractSequenceFlowsFromXml } from '../../app/modules/bpmn/validators.js';
+import { RasciMatrixValidator } from '../../app/modules/rasci/validation/matrix-validator.js';
+import { isSupportedType } from '../../app/modules/multinotationModeler/notations/ppinot/config.js';
+import { Ralph as RALPHTypes } from '../../app/modules/multinotationModeler/notations/ralph/Types.js';
+
 const { createValidBpmnXml, createValidMmProject } = require('../utils/test-helpers');
-import { describe, test, expect, beforeEach } from '@jest/globals';
-import { jest } from '@jest/globals';
 
 describe('8.2 Pruebas de Integración Avanzadas', () => {
   let mockModeler;
