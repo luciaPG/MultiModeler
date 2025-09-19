@@ -368,11 +368,18 @@ describe('8.1 Pruebas Unitarias - MultiNotation Core', () => {
 
     test('debe sincronizar cambios entre notaciones de forma específica', async () => {
       jest.resetModules();
+      jest.clearAllMocks(); // Limpiar todos los mocks
 
+      // Limpieza completa del estado global
       const { getEventBus } = await import('../../app/modules/ui/core/event-bus.js');
       const { getServiceRegistry } = await import('../../app/modules/ui/core/ServiceRegistry.js');
       const { default: moduleBridge } = await import('../../app/modules/ui/core/ModuleBridge.js');
       const rasciAdapterModule = await import('../../app/modules/rasci/RASCIAdapter.js');
+      
+      // Importar la función real sin mocks
+      jest.doMock('../../app/modules/rasci/index.js', () => {
+        return jest.requireActual('../../app/modules/rasci/index.js');
+      });
       const { initialize: initializeRasci } = await import('../../app/modules/rasci/index.js');
 
       const eventBus = getEventBus();
@@ -382,6 +389,7 @@ describe('8.1 Pruebas Unitarias - MultiNotation Core', () => {
       serviceRegistry.clear();
       serviceRegistry.register('EventBus', eventBus);
 
+      // Resetear completamente el moduleBridge
       moduleBridge.modules.clear();
       moduleBridge.sharedData.clear();
       moduleBridge.modelers.clear();
@@ -390,16 +398,42 @@ describe('8.1 Pruebas Unitarias - MultiNotation Core', () => {
       moduleBridge.initialized = false;
       await moduleBridge.initialize();
 
+      // Usar la instancia singleton pero limpiar su estado 
       const rasciAdapter = rasciAdapterModule.default;
-      console.log('DEBUG rasciAdapter:', rasciAdapter);
+      
+      // Limpiar el estado del adaptador más agresivamente
+      if (rasciAdapter.matrixData) {
+        rasciAdapter.matrixData = { roles: [], tasks: [], assignments: {} };
+      }
+      
+      // Limpiar cualquier estado interno que pueda tener
+      if (rasciAdapter.manager) {
+        rasciAdapter.manager = null;
+      }
+      
       serviceRegistry.register('RASCIAdapter', rasciAdapter);
       await rasciAdapter.initialize();
 
-      console.log('DEBUG Iniciando initializeRasci...');
-      const rasciInitialization = await initializeRasci({ eventBus, adapter: rasciAdapter });
-      console.log('DEBUG rasciInitialization:', rasciInitialization);
+      // Verificar que tenemos la función real
+      console.log('initializeRasci is real function:', typeof initializeRasci === 'function' && !initializeRasci._isMockFunction);
+
+      // Intentar inicializar RASCI con debugging
+      let rasciInitialization;
+      try {
+        rasciInitialization = await initializeRasci({ eventBus, adapter: rasciAdapter });
+        console.log('RASCI initialization result:', rasciInitialization);
+      } catch (error) {
+        console.error('Error initializing RASCI:', error);
+        throw error;
+      }
+      
       const rasciManager = rasciInitialization?.manager;
-      console.log('DEBUG rasciManager:', rasciManager);
+
+      // Debugging adicional si rasciManager es undefined
+      if (!rasciManager) {
+        console.log('rasciInitialization:', rasciInitialization);
+        console.log('Expected manager property, got:', Object.keys(rasciInitialization || {}));
+      }
 
       // Verificar que rasciManager existe y tiene el método getMatrixData
       expect(rasciManager).toBeDefined();

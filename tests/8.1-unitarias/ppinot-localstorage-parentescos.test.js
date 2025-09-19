@@ -682,7 +682,15 @@ describe('8.1 PPINOT - LocalStorage y Parentescos', () => {
 
       try {
         const serializedData = JSON.stringify(ppiComplejo);
-        storageResult.dataSize = new TextEncoder().encode(serializedData).length;
+        // Usar Buffer si TextEncoder no está disponible (Node.js environment)
+        let dataSize;
+        if (typeof TextEncoder !== 'undefined') {
+          dataSize = new TextEncoder().encode(serializedData).length;
+        } else {
+          // Fallback para Node.js
+          dataSize = Buffer.byteLength(serializedData, 'utf8');
+        }
+        storageResult.dataSize = dataSize;
         
         // Simular límite de localStorage (típicamente 5-10MB)
         const STORAGE_LIMIT = 5 * 1024 * 1024; // 5MB
@@ -705,6 +713,7 @@ describe('8.1 PPINOT - LocalStorage y Parentescos', () => {
         }
       } catch (error) {
         storageResult.error = error.message;
+        storageResult.success = false;
       }
 
       // THEN: Verificar manejo de límites

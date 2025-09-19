@@ -1,5 +1,6 @@
 // Setup para testing environment
 import '@testing-library/jest-dom';
+import { jest, beforeAll, afterAll, afterEach } from '@jest/globals';
 
 // Mock para localStorage
 const localStorageMock = {
@@ -53,8 +54,15 @@ global.ResizeObserver = jest.fn().mockImplementation(() => ({
 global.requestAnimationFrame = jest.fn(cb => setTimeout(cb, 0));
 global.cancelAnimationFrame = jest.fn(clearTimeout);
 
-// Mock básico para fetch
-global.fetch = jest.fn();
+// Mock básico para fetch - retorna una promesa resuelta con HTML válido
+global.fetch = () => Promise.resolve({
+  ok: true,
+  status: 200,
+  text: () => Promise.resolve('<div class="mock-panel">Mock Panel Content</div>'),
+  json: () => Promise.resolve({}),
+  blob: () => Promise.resolve(new Blob()),
+  arrayBuffer: () => Promise.resolve(new ArrayBuffer(0))
+});
 
 // Configuración para evitar warnings de console
 const originalError = console.error;
