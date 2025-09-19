@@ -18,7 +18,7 @@ import { initRasciMapping, executeSimpleRasciMapping } from './mapping/index.js'
 import { rasciAutoMapping } from './mapping/auto-mapper.js';
 
 // Change queue management
-import { changeQueueManager, addChangeToQueue, processPendingChanges, getQueueInfo, clearPendingChanges, debugQueueStatus } from './core/change-queue-manager.js';
+import { changeQueueManager, addChangeToQueue, processPendingChanges, getQueueInfo, clearPendingChanges } from './core/change-queue-manager.js';
 
 // Debug helper
 import './debug-helper.js';

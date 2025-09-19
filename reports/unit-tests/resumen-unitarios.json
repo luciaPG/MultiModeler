@@ -1,0 +1,16 @@
+{
+  "timestamp": "2025-09-18T08:49:36.980Z",
+  "totalTests": 109,
+  "passingTests": 109,
+  "failingTests": 0,
+  "successRate": "100%",
+  "coverageModules": {
+    "eventBus": "74.35%",
+    "serviceRegistry": "69.76%",
+    "rasciStore": "80%",
+    "applicationState": "69.23%",
+    "globalAccess": "75%"
+  },
+  "methodology": "Capítulo 8.1 - Pruebas Unitarias TFG",
+  "conclusion": "Tests unitarios completos y listos para defensa"
+}

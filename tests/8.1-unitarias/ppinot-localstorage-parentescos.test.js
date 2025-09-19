@@ -682,8 +682,7 @@ describe('8.1 PPINOT - LocalStorage y Parentescos', () => {
 
       try {
         const serializedData = JSON.stringify(ppiComplejo);
-        // Usar Buffer.byteLength en lugar de TextEncoder para Node.js
-        storageResult.dataSize = Buffer.byteLength(serializedData, 'utf8');
+        storageResult.dataSize = new TextEncoder().encode(serializedData).length;
         
         // Simular límite de localStorage (típicamente 5-10MB)
         const STORAGE_LIMIT = 5 * 1024 * 1024; // 5MB

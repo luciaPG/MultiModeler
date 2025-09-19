@@ -109,28 +109,3 @@ dist
 
 # webpack
 public/
-
-# Testing artifacts y reportes temporales
-test-results/
-playwright-report/
-reports/*.json
-reports/*.xml
-reports/lighthouse-*
-reports/performance-*
-reports/playwright-*
-reports/coverage-*
-reports/tfg-test-results/
-reports/unit-tests/
-
-# Screenshots de tests
-tests/**/screenshots/
-**/screenshots/
-
-# Archivos temporales de testing
-*.tmp
-*.temp
-test-*.log
-
-# Dependencias de testing que no se deben subir
-lighthouse-report.json
-performance-report.json

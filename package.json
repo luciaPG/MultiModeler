@@ -1,72 +1,100 @@
 {
-  "name": "ppinot-visual",
-  "version": "0.5.0",
-  "description": "Visual PPINOT Modeler with BPMN, RASCI and RALPH integration",
-  "main": "app/app.js",
-  "scripts": {
-    "start": "webpack serve --mode development",
-    "build": "webpack --mode production",
-    "test": "npx jest --config jest.config.tfg.js --passWithNoTests --verbose --no-cache",
-    "test:unit": "npx jest --config jest.config.tfg.js tests/8.1-unitarias --verbose --no-cache",
-    "test:integration": "npx jest --config jest.config.tfg.js tests/8.2-integracion --verbose --no-cache",
-    "test:acceptance": "npx jest --config jest.config.tfg.js tests/8.3-aceptacion --verbose --no-cache",
-    "test:ui": "npx jest --config jest.config.tfg.js tests/8.3-ui-e2e --verbose --no-cache",
-    "test:all": "npm run test && npm run test:e2e",
-    "test:coverage": "npx jest --config jest.config.tfg.js --coverage",
-    "clean:reports": "node scripts/clean-reports.js",
-    "generate:report": "node scripts/generate-final-tfg-report.js",
-    "lint": "eslint app/ tests/ --ext .js",
-    "serve": "http-server . -p 3000 -c-1"
-  },
-  "keywords": [
-    "bpmn",
-    "ppinot",
-    "ralph",
-    "rasci",
-    "process-modeling",
-    "visual-modeling"
-  ],
-  "author": "TFG Student",
-  "license": "MIT",
-  "devDependencies": {
-    "@babel/core": "^7.23.0",
-    "@babel/preset-env": "^7.23.0",
-    "@jest/globals": "^29.7.0",
-    "@testing-library/jest-dom": "^6.8.0",
-    "babel-loader": "^9.1.3",
-    "copy-webpack-plugin": "^13.0.1",
-    "css-loader": "^6.8.1",
-    "eslint": "^8.50.0",
-    "html-webpack-plugin": "^5.5.3",
-    "http-server": "^14.1.1",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
-    "jest-junit": "^16.0.0",
-    "style-loader": "^3.3.3",
-    "webpack": "^5.88.2",
-    "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^4.15.1"
-  },
-  "dependencies": {
-    "bpmn-js": "^17.0.2",
-    "bpmn-js-properties-panel": "^5.0.0",
-    "diagram-js": "^14.0.0",
-    "inherits-browser": "^0.1.0",
-    "jquery": "^3.7.1",
-    "min-dash": "^4.2.1"
-  },
-  "jest": {
-    "testEnvironment": "jsdom",
-    "setupFilesAfterEnv": [
-      "./tests/setup.js"
-    ],
-    "moduleNameMapping": {
-      "\\.(css|less|scss|sass)$": "identity-obj-proxy"
+    "name": "ppinot-visual",
+    "version": "0.5.0",
+    "description": "A visual modeler of Process Performance Indicators based on PPINOT and built with bpmn-js",
+    "scripts": {
+        "all": "run-s lint build",
+        "build": "webpack --mode production",
+        "build:hybrid": "webpack --mode production",
+        "dev": "webpack-dev-server --open",
+        "dev:hybrid": "webpack-dev-server --open --env target=hybrid",
+        "lint": "eslint .",
+        "start": "run-s dev",
+        "start:hybrid": "run-s dev:hybrid",
+        "test": "jest --config jest.config.tfg.js",
+        "test:watch": "jest --watch --config jest.config.tfg.js",
+        "test:coverage": "jest --coverage --coverageReporters=text --config jest.config.tfg.js",
+        "test:coverage-html": "jest --coverage --coverageReporters=text,html --config jest.config.tfg.js",
+        "test:unitarias": "jest tests/8.1-unitarias --config jest.config.tfg.js",
+        "test:integracion": "jest tests/8.2-integracion --config jest.config.tfg.js",
+    "test:integracion-avanzada": "jest tests/8.2-integracion/advanced-integration.test.js --config jest.config.tfg.js",
+        "test:ui-e2e": "jest tests/8.3-ui-e2e --config jest.config.tfg.js",
+        "test:ui-experiencia": "jest tests/8.3-ui-e2e/experiencia-usuario-avanzada.test.js --config jest.config.tfg.js",
+        "test:ui-componentes": "jest tests/8.3-ui-e2e/componentes-ui-criticos.test.js --config jest.config.tfg.js",
+        "test:real-system": "jest tests/8.1-unitarias/real-system-validation.test.js --config jest.config.tfg.js",
+        "test:real-coordination": "jest tests/8.2-integracion/real-coordination.test.js --config jest.config.tfg.js",
+        "test:real-e2e": "jest tests/8.3-ui-e2e/real-application-e2e.test.js --config jest.config.tfg.js",
+        "test:ppinot-problems": "jest tests/8.1-unitarias/ppinot-localstorage-parentescos.test.js --config jest.config.tfg.js",
+        "test:initialize-real": "jest tests/8.1-unitarias/initialize-application-real.test.js --config jest.config.tfg.js",
+        "test:initialize-fixed": "jest tests/8.1-unitarias/initialize-application-fixed.test.js --config jest.config.tfg.js",
+        "test:comunicacion-real": "jest tests/8.1-unitarias/comunicacion-real-notaciones.test.js --config jest.config.tfg.js",
+        "test:multinotation-real": "jest tests/8.1-unitarias/multinotation-core-real.test.js --config jest.config.tfg.js",
+        "test:rasci-real": "jest tests/8.1-unitarias/rasci-core-real.test.js --config jest.config.tfg.js",
+        "test:unitarias-reales": "jest tests/8.1-unitarias/*-real.test.js --config jest.config.tfg.js",
+        "test:real": "jest --config jest.config.real.js",
+        "test:real-coverage": "jest --config jest.config.real.js --coverage",
+        "test:tfg": "jest --config jest.config.tfg.js --coverage",
+        "test:sprint1": "jest tests/sprint1",
+        "test:report": "node scripts/generate-test-report.js",
+        "test:all": "npm run test:tfg && npm run test:report",
+        "clean:reports": "node scripts/clean-reports.js",
+        "report:final": "node scripts/generate-final-tfg-report.js"
     },
-    "collectCoverageFrom": [
-      "app/**/*.js",
-      "!app/**/*.test.js",
-      "!**/node_modules/**"
-    ]
-  }
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/isa-group/ppinot-visual"
+    },
+    "keywords": [
+        "ppinot",
+        "visual ppinot",
+        "bpmn",
+        "ppis"
+    ],
+    "author": {
+        "name": "ISA Group",
+        "url": "https://github.com/isa-group"
+    },
+    "contributors": [
+        {
+            "name": "ISA Group contributors",
+            "url": "https://github.com/isa-group"
+        }
+    ],
+    "license": "MIT",
+    "devDependencies": {
+        "@babel/core": "^7.26.7",
+        "@babel/preset-env": "^7.28.3",
+        "@testing-library/jest-dom": "^6.8.0",
+        "babel-jest": "^30.1.2",
+        "babel-loader": "^9.2.1",
+        "canvas": "^3.2.0",
+        "copy-webpack-plugin": "^11.0.0",
+        "css-loader": "^7.1.2",
+        "eslint": "^6.5.1",
+        "eslint-plugin-bpmn-io": "^0.10.0",
+        "identity-obj-proxy": "^3.0.0",
+        "ids": "latest",
+        "jest": "^30.1.3",
+        "jest-environment-jsdom": "^30.1.2",
+        "jest-html-reporter": "^4.3.0",
+        "jest-junit": "^16.0.0",
+        "jsdom": "^27.0.0",
+        "json-loader": "^0.5.7",
+        "npm-run-all": "^4.1.5",
+        "raw-loader": "^4.0.2",
+        "style-loader": "^4.0.0",
+        "webpack": "^5.88.0",
+        "webpack-cli": "^5.1.4",
+        "webpack-dev-server": "^4.15.2"
+    },
+    "dependencies": {
+        "bpmn-js": "^18.6.2",
+        "bpmn-moddle": "latest",
+        "diagram-js": "latest",
+        "inherits": "latest",
+        "jquery": "^3.4.1",
+        "min-dash": "^4.2.2",
+        "ppinot-visual": "file:",
+        "tiny-svg": "latest"
+    }
 }

@@ -336,13 +336,16 @@ describe('8.2 Coordinación Real Entre Módulos', () => {
         if (!queueModule.getQueueInfo) throw new Error('getQueueInfo no existe en el módulo real');
         if (!queueModule.clearPendingChanges) throw new Error('clearPendingChanges no existe en el módulo real');
 
-        // WHEN: Usar la cola real de cambios con parámetros RASCI correctos
-        const taskName = 'Task_Real_1';
-        const roleName = 'Role_Analyst';
-        const value = 'R';
+        // WHEN: Usar la cola real de cambios
+        const realChange = {
+          type: 'task.added',
+          elementId: 'Task_Real_1',
+          elementName: 'Tarea Real de Prueba',
+          timestamp: Date.now()
+        };
 
-        // Añadir cambio a la cola real con parámetros individuales
-        queueModule.addChangeToQueue(taskName, roleName, value);
+        // Añadir cambio a la cola real
+        queueModule.addChangeToQueue(realChange);
 
         // Obtener información real de la cola
         const queueInfo = queueModule.getQueueInfo();

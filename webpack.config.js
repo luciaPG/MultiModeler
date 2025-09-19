@@ -20,6 +20,13 @@ module.exports = {
                 }
             },
          
+            {
+                test: /\.json$/,
+                type: 'javascript/auto', 
+                use: {
+                    loader: 'json-loader'
+                }
+            },
                         {
               test: /\.css$/,
               use: ['style-loader', 'css-loader']
@@ -83,7 +90,7 @@ module.exports = {
         static: {
             directory: path.join(__dirname, 'public')
         },
-        port: 9000,
+        port: 9002,
         hot: true,
         open: true,
         historyApiFallback: true,

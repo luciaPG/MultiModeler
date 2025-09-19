@@ -37,7 +37,7 @@ describe('8.1 Pruebas Unitarias - RASCI Core', () => {
       
       // Test de setRoles REAL
       RasciStore.setRoles(['Analista', 'Supervisor']);
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('rasciRoles', JSON.stringify(['Analista', 'Supervisor']));
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('rasci_roles_data', JSON.stringify(['Analista', 'Supervisor']));
       
       // Test de getRoles REAL - después de setRoles, debe devolver los roles seteados
       const roles = RasciStore.getRoles();
@@ -46,7 +46,7 @@ describe('8.1 Pruebas Unitarias - RASCI Core', () => {
       // Test de setMatrix REAL
       const matrix = { 'Task_1': { 'Analista': 'R' } };
       RasciStore.setMatrix(matrix);
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('rasciMatrixData', JSON.stringify(matrix));
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('rasci_matrix_data', JSON.stringify(matrix));
     });
 
     test('debe validar estructura de datos RASCI', () => {

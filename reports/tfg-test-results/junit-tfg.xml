@@ -1,17 +1,318 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="45" failures="0" errors="0" time="11.733">
-  <testsuite name="8.2 Pruebas de Integración Avanzadas" errors="0" failures="0" skipped="0" timestamp="2025-09-19T13:46:38" time="2.724" tests="10">
-    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe sincronizar diagrama grande (50+ elementos) en tiempo razonable" name="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe sincronizar diagrama grande (50+ elementos) en tiempo razonable" time="0.025">
+<testsuites name="jest tests" tests="227" failures="9" errors="0" time="19.77">
+  <testsuite name="8.1 Pruebas Unitarias - MultiNotation Core" errors="0" failures="1" skipped="0" timestamp="2025-09-18T15:55:36" time="1.983" tests="6">
+    <testcase classname="8.1 Pruebas Unitarias - MultiNotation Core Inicialización de Aplicación debe inicializar módulos principales correctamente" name="8.1 Pruebas Unitarias - MultiNotation Core Inicialización de Aplicación debe inicializar módulos principales correctamente" time="0.107">
     </testcase>
-    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe manejar cambios concurrentes con condiciones de carrera reales" name="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe manejar cambios concurrentes con condiciones de carrera reales" time="0.009">
+    <testcase classname="8.1 Pruebas Unitarias - MultiNotation Core Inicialización de Aplicación debe registrar servicios en ServiceRegistry durante inicialización" name="8.1 Pruebas Unitarias - MultiNotation Core Inicialización de Aplicación debe registrar servicios en ServiceRegistry durante inicialización" time="0.002">
     </testcase>
-    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe mantener rendimiento con matriz RASCI compleja" name="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe mantener rendimiento con matriz RASCI compleja" time="0.005">
+    <testcase classname="8.1 Pruebas Unitarias - MultiNotation Core Comunicación Entre Módulos debe facilitar comunicación RASCI ↔ PPINOT" name="8.1 Pruebas Unitarias - MultiNotation Core Comunicación Entre Módulos debe facilitar comunicación RASCI ↔ PPINOT" time="0.13">
     </testcase>
-    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe manejar PPIs con múltiples referencias cruzadas" name="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe manejar PPIs con múltiples referencias cruzadas" time="0.008">
+    <testcase classname="8.1 Pruebas Unitarias - MultiNotation Core Comunicación Entre Módulos debe sincronizar cambios entre notaciones de forma específica" name="8.1 Pruebas Unitarias - MultiNotation Core Comunicación Entre Módulos debe sincronizar cambios entre notaciones de forma específica" time="0.009">
+      <failure>TypeError: Cannot read properties of undefined (reading &apos;getMatrixData&apos;)
+    at getMatrixData (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\multinotation-core.test.js:407:27)
+    at Generator.call (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\multinotation-core.test.js:2:1)
+    at Generator._invoke [as next] (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\multinotation-core.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\multinotation-core.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\multinotation-core.test.js:2:1)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - MultiNotation Core Validación Cross-Notation debe detectar inconsistencias específicas entre BPMN y RASCI" name="8.1 Pruebas Unitarias - MultiNotation Core Validación Cross-Notation debe detectar inconsistencias específicas entre BPMN y RASCI" time="0.003">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - MultiNotation Core Validación Cross-Notation debe validar integridad de datos entre notaciones" name="8.1 Pruebas Unitarias - MultiNotation Core Validación Cross-Notation debe validar integridad de datos entre notaciones" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 PPINOT - LocalStorage y Parentescos" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:55:36" time="2.389" tests="11">
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos LocalStorage: Persistencia de PPIs debe guardar y cargar PPIs con targets correctamente" name="8.1 PPINOT - LocalStorage y Parentescos LocalStorage: Persistencia de PPIs debe guardar y cargar PPIs con targets correctamente" time="0.057">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos LocalStorage: Persistencia de PPIs debe manejar PPIs huérfanos (targets inexistentes)" name="8.1 PPINOT - LocalStorage y Parentescos LocalStorage: Persistencia de PPIs debe manejar PPIs huérfanos (targets inexistentes)" time="0.003">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos Parentescos: Medidas Padre-Hijo debe validar jerarquía de medidas padre-hijo correctamente" name="8.1 PPINOT - LocalStorage y Parentescos Parentescos: Medidas Padre-Hijo debe validar jerarquía de medidas padre-hijo correctamente" time="0.003">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos Parentescos: Medidas Padre-Hijo debe detectar parentescos circulares o inválidos" name="8.1 PPINOT - LocalStorage y Parentescos Parentescos: Medidas Padre-Hijo debe detectar parentescos circulares o inválidos" time="0.136">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos Scope: Validación de Ámbitos debe validar scope correcto para cada tipo de medida" name="8.1 PPINOT - LocalStorage y Parentescos Scope: Validación de Ámbitos debe validar scope correcto para cada tipo de medida" time="0.016">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos Targets: Vinculación con Elementos BPMN debe sincronizar targets cuando cambian elementos BPMN" name="8.1 PPINOT - LocalStorage y Parentescos Targets: Vinculación con Elementos BPMN debe sincronizar targets cuando cambian elementos BPMN" time="0.097">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos Targets: Vinculación con Elementos BPMN debe manejar targets con tipos de elemento específicos" name="8.1 PPINOT - LocalStorage y Parentescos Targets: Vinculación con Elementos BPMN debe manejar targets con tipos de elemento específicos" time="0.003">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos Persistencia: Problemas Reales de LocalStorage debe detectar y manejar corrupción de datos PPINOT" name="8.1 PPINOT - LocalStorage y Parentescos Persistencia: Problemas Reales de LocalStorage debe detectar y manejar corrupción de datos PPINOT" time="0.034">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos Persistencia: Problemas Reales de LocalStorage debe manejar límites de localStorage con PPIs complejos" name="8.1 PPINOT - LocalStorage y Parentescos Persistencia: Problemas Reales de LocalStorage debe manejar límites de localStorage con PPIs complejos" time="0.006">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos Medidas Hijas: Relaciones Complejas debe validar dependencias entre medidas hijas" name="8.1 PPINOT - LocalStorage y Parentescos Medidas Hijas: Relaciones Complejas debe validar dependencias entre medidas hijas" time="0.002">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos Problemas Reales: Casos de Debugging debe reproducir y diagnosticar problemas específicos del sistema" name="8.1 PPINOT - LocalStorage y Parentescos Problemas Reales: Casos de Debugging debe reproducir y diagnosticar problemas específicos del sistema" time="0.07">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 Validación del Sistema Real - Sin Mocks Falsos" errors="0" failures="7" skipped="0" timestamp="2025-09-18T15:55:36" time="4.973" tests="12">
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: MultiNotationModelerCore debe importar y instanciar el MultiNotationModelerCore real" name="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: MultiNotationModelerCore debe importar y instanciar el MultiNotationModelerCore real" time="0.764">
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: MultiNotationModelerCore debe inicializar el core real y publicar eventos reales" name="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: MultiNotationModelerCore debe inicializar el core real y publicar eventos reales" time="0.014">
+      <failure>Error: expect(received).toBeGreaterThan(expected)
+
+Expected: &gt; 0
+Received:   0
+    at toBeGreaterThan (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:123:44)
+    at Generator.call (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at Generator._invoke [as next] (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: MultiNotationModelerCore debe registrar y obtener módulos reales" name="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: MultiNotationModelerCore debe registrar y obtener módulos reales" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: EventBus del Sistema debe usar el EventBus real del sistema" name="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: EventBus del Sistema debe usar el EventBus real del sistema" time="0.009">
+      <failure>Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: 1
+Received: 0
+    at toBe (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:191:33)
+    at Generator.call (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at Generator._invoke [as next] (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: ServiceRegistry del Sistema debe usar el ServiceRegistry real del sistema" name="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: ServiceRegistry del Sistema debe usar el ServiceRegistry real del sistema" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: StorageManager del Sistema debe usar el StorageManager real del sistema" name="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: StorageManager del Sistema debe usar el StorageManager real del sistema" time="0.009">
+      <failure>Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: &quot;function&quot;
+Received: &quot;undefined&quot;
+    at toBe (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:270:46)
+    at Generator.call (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at Generator._invoke [as next] (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: RASCI Manager y Adapter debe importar y usar el RASCIAdapter real" name="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: RASCI Manager y Adapter debe importar y usar el RASCIAdapter real" time="0.011">
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: RASCI Manager y Adapter debe inicializar el módulo RASCI real" name="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: RASCI Manager y Adapter debe inicializar el módulo RASCI real" time="1.84">
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: Coordinación Multi-Notación debe coordinar entre EventBus real y Core real" name="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: Coordinación Multi-Notación debe coordinar entre EventBus real y Core real" time="0.024">
+      <failure>Error: expect(received).toBeGreaterThan(expected)
+
+Expected: &gt; 0
+Received:   0
+    at toBeGreaterThan (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:479:41)
+    at Generator.call (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at Generator._invoke [as next] (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: Coordinación Multi-Notación debe usar ServiceRegistry real para dependencias" name="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: Coordinación Multi-Notación debe usar ServiceRegistry real para dependencias" time="0.011">
+      <failure>Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: false
+Received: &quot;&quot;
+    at toBe (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:518:33)
+    at Generator.call (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at Generator._invoke [as next] (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: Persistencia y Almacenamiento debe guardar y cargar datos reales en localStorage" name="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: Persistencia y Almacenamiento debe guardar y cargar datos reales en localStorage" time="0.004">
+      <failure>Error: expect(received).toBeNull()
+
+Received: [TypeError: realStorageManager.save is not a function]
+    at toBeNull (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:583:25)
+    at Generator.call (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at Generator._invoke [as next] (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: Integración Completa del Sistema debe inicializar la aplicación real completa" name="8.1 Validación del Sistema Real - Sin Mocks Falsos REAL: Integración Completa del Sistema debe inicializar la aplicación real completa" time="0.064">
+      <failure>Error: expect(received).toBeNull()
+
+Received: [SyntaxError: Cannot use import statement outside a module]
+    at toBeNull (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:631:27)
+    at Generator.call (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at Generator._invoke [as throw] (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="8.3 Componentes UI Críticos" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:55:39" time="3.407" tests="6">
+    <testcase classname="8.3 Componentes UI Críticos Componente: Panel de Propiedades debe actualizar propiedades en tiempo real" name="8.3 Componentes UI Críticos Componente: Panel de Propiedades debe actualizar propiedades en tiempo real" time="0.018">
+    </testcase>
+    <testcase classname="8.3 Componentes UI Críticos Componente: Panel de Propiedades debe validar propiedades antes de aplicar cambios" name="8.3 Componentes UI Críticos Componente: Panel de Propiedades debe validar propiedades antes de aplicar cambios" time="0.004">
+    </testcase>
+    <testcase classname="8.3 Componentes UI Críticos Componente: Toolbar y Menús debe manejar estados de botones dinámicamente" name="8.3 Componentes UI Críticos Componente: Toolbar y Menús debe manejar estados de botones dinámicamente" time="0.018">
+    </testcase>
+    <testcase classname="8.3 Componentes UI Críticos Componente: Toolbar y Menús debe manejar menús contextuales dinámicos" name="8.3 Componentes UI Críticos Componente: Toolbar y Menús debe manejar menús contextuales dinámicos" time="0.023">
+    </testcase>
+    <testcase classname="8.3 Componentes UI Críticos Componente: Sistema de Notificaciones debe gestionar múltiples notificaciones simultáneas" name="8.3 Componentes UI Críticos Componente: Sistema de Notificaciones debe gestionar múltiples notificaciones simultáneas" time="0.004">
+    </testcase>
+    <testcase classname="8.3 Componentes UI Críticos Componente: Canvas y Viewport debe optimizar rendering con viewport virtual" name="8.3 Componentes UI Críticos Componente: Canvas y Viewport debe optimizar rendering con viewport virtual" time="0.024">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 Pruebas Unitarias - StorageManager REAL" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:55:41" time="0.473" tests="8">
+    <testcase classname="8.1 Pruebas Unitarias - StorageManager REAL registro en el ServiceRegistry registra la instancia y los métodos públicos" name="8.1 Pruebas Unitarias - StorageManager REAL registro en el ServiceRegistry registra la instancia y los métodos públicos" time="0.01">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - StorageManager REAL gestión de limpieza básica clearStorage elimina claves no preservadas y limpia RASCI/PPI" name="8.1 Pruebas Unitarias - StorageManager REAL gestión de limpieza básica clearStorage elimina claves no preservadas y limpia RASCI/PPI" time="0.073">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - StorageManager REAL gestión de limpieza básica clearStorage propaga el error cuando forcePanelDataReload falla" name="8.1 Pruebas Unitarias - StorageManager REAL gestión de limpieza básica clearStorage propaga el error cuando forcePanelDataReload falla" time="0.084">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - StorageManager REAL preparación e importación prepareForImport limpia sin marcar storageCleared" name="8.1 Pruebas Unitarias - StorageManager REAL preparación e importación prepareForImport limpia sin marcar storageCleared" time="0.036">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - StorageManager REAL preparación e importación prepareForImport retorna false si la limpieza falla" name="8.1 Pruebas Unitarias - StorageManager REAL preparación e importación prepareForImport retorna false si la limpieza falla" time="0.025">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - StorageManager REAL reset completo de almacenamiento resetStorage crea diagrama limpio y estado inicial" name="8.1 Pruebas Unitarias - StorageManager REAL reset completo de almacenamiento resetStorage crea diagrama limpio y estado inicial" time="0.072">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - StorageManager REAL reset completo de almacenamiento resetStorage retorna false cuando crear el diagrama falla" name="8.1 Pruebas Unitarias - StorageManager REAL reset completo de almacenamiento resetStorage retorna false cuando crear el diagrama falla" time="0.019">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - StorageManager REAL utilidades de almacenamiento createBackup persiste el snapshot del estado actual" name="8.1 Pruebas Unitarias - StorageManager REAL utilidades de almacenamiento createBackup persiste el snapshot del estado actual" time="0.018">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.3 Pruebas UI/E2E - Historias de Usuario" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:55:39" time="3.414" tests="10">
+    <testcase classname="8.3 Pruebas UI/E2E - Historias de Usuario HU-01: Crear Diagrama BPMN debe permitir crear un diagrama BPMN básico" name="8.3 Pruebas UI/E2E - Historias de Usuario HU-01: Crear Diagrama BPMN debe permitir crear un diagrama BPMN básico" time="0.023">
+    </testcase>
+    <testcase classname="8.3 Pruebas UI/E2E - Historias de Usuario HU-01: Crear Diagrama BPMN debe validar diagrama antes de guardar" name="8.3 Pruebas UI/E2E - Historias de Usuario HU-01: Crear Diagrama BPMN debe validar diagrama antes de guardar" time="0.003">
+    </testcase>
+    <testcase classname="8.3 Pruebas UI/E2E - Historias de Usuario HU-05: Crear Matriz RASCI debe permitir crear y editar matriz RASCI" name="8.3 Pruebas UI/E2E - Historias de Usuario HU-05: Crear Matriz RASCI debe permitir crear y editar matriz RASCI" time="0.023">
+    </testcase>
+    <testcase classname="8.3 Pruebas UI/E2E - Historias de Usuario HU-05: Crear Matriz RASCI debe detectar y corregir errores en matriz RASCI" name="8.3 Pruebas UI/E2E - Historias de Usuario HU-05: Crear Matriz RASCI debe detectar y corregir errores en matriz RASCI" time="0.004">
+    </testcase>
+    <testcase classname="8.3 Pruebas UI/E2E - Historias de Usuario HU-07: Sincronizar PPIs debe vincular PPIs a elementos del canvas" name="8.3 Pruebas UI/E2E - Historias de Usuario HU-07: Sincronizar PPIs debe vincular PPIs a elementos del canvas" time="0.002">
+    </testcase>
+    <testcase classname="8.3 Pruebas UI/E2E - Historias de Usuario HU-07: Sincronizar PPIs debe manejar eliminación de elementos vinculados a PPIs" name="8.3 Pruebas UI/E2E - Historias de Usuario HU-07: Sincronizar PPIs debe manejar eliminación de elementos vinculados a PPIs" time="0.002">
+    </testcase>
+    <testcase classname="8.3 Pruebas UI/E2E - Historias de Usuario HU-09: Autoguardado y Recuperación debe autoguardar cambios automáticamente" name="8.3 Pruebas UI/E2E - Historias de Usuario HU-09: Autoguardado y Recuperación debe autoguardar cambios automáticamente" time="0.009">
+    </testcase>
+    <testcase classname="8.3 Pruebas UI/E2E - Historias de Usuario HU-09: Autoguardado y Recuperación debe recuperar proyecto después de cierre inesperado" name="8.3 Pruebas UI/E2E - Historias de Usuario HU-09: Autoguardado y Recuperación debe recuperar proyecto después de cierre inesperado" time="0.002">
+    </testcase>
+    <testcase classname="8.3 Pruebas UI/E2E - Historias de Usuario HU-12: Exportar e Importar Proyectos debe exportar proyecto completo en formato .mmproject" name="8.3 Pruebas UI/E2E - Historias de Usuario HU-12: Exportar e Importar Proyectos debe exportar proyecto completo en formato .mmproject" time="0.004">
+    </testcase>
+    <testcase classname="8.3 Pruebas UI/E2E - Historias de Usuario HU-12: Exportar e Importar Proyectos debe importar proyecto .mmproject sin pérdida de información" name="8.3 Pruebas UI/E2E - Historias de Usuario HU-12: Exportar e Importar Proyectos debe importar proyecto .mmproject sin pérdida de información" time="0.011">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 Pruebas Unitarias - RASCI Core" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:55:42" time="0.449" tests="13">
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RasciStore - Gestión de Datos debe manejar operaciones básicas de roles" name="8.1 Pruebas Unitarias - RASCI Core RasciStore - Gestión de Datos debe manejar operaciones básicas de roles" time="0.059">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RasciStore - Gestión de Datos debe validar estructura de datos RASCI" name="8.1 Pruebas Unitarias - RASCI Core RasciStore - Gestión de Datos debe validar estructura de datos RASCI" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCIAdapter - Integración debe importar y instanciar RASCIAdapter" name="8.1 Pruebas Unitarias - RASCI Core RASCIAdapter - Integración debe importar y instanciar RASCIAdapter" time="0.045">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCIAdapter - Integración debe manejar comunicación con otros módulos" name="8.1 Pruebas Unitarias - RASCI Core RASCIAdapter - Integración debe manejar comunicación con otros módulos" time="0.031">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCI Validation - Validadores Reales debe ejecutar validación de matriz real" name="8.1 Pruebas Unitarias - RASCI Core RASCI Validation - Validadores Reales debe ejecutar validación de matriz real" time="0.119">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCI Validation - Validadores Reales debe validar reglas RASCI básicas" name="8.1 Pruebas Unitarias - RASCI Core RASCI Validation - Validadores Reales debe validar reglas RASCI básicas" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCI Mapping - Mapeo Automático debe ejecutar funciones de mapeo básicas" name="8.1 Pruebas Unitarias - RASCI Core RASCI Mapping - Mapeo Automático debe ejecutar funciones de mapeo básicas" time="0.021">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCI Mapping - Mapeo Automático debe manejar auto-mapping de roles" name="8.1 Pruebas Unitarias - RASCI Core RASCI Mapping - Mapeo Automático debe manejar auto-mapping de roles" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCI UI - Validadores de Interfaz debe manejar validación de UI" name="8.1 Pruebas Unitarias - RASCI Core RASCI UI - Validadores de Interfaz debe manejar validación de UI" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCI UI - Validadores de Interfaz debe generar mensajes de validación" name="8.1 Pruebas Unitarias - RASCI Core RASCI UI - Validadores de Interfaz debe generar mensajes de validación" time="0.019">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCI Change Management debe manejar cola de cambios" name="8.1 Pruebas Unitarias - RASCI Core RASCI Change Management debe manejar cola de cambios" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCI Change Management debe gestionar estado de cambios pendientes" name="8.1 Pruebas Unitarias - RASCI Core RASCI Change Management debe gestionar estado de cambios pendientes" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCI Configuration debe cargar configuración de validación" name="8.1 Pruebas Unitarias - RASCI Core RASCI Configuration debe cargar configuración de validación" time="0.015">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.2 Change Queue Manager Real" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:55:43" time="0.801" tests="6">
+    <testcase classname="8.2 Change Queue Manager Real REAL: Importación y Funciones del Change Queue debe importar change-queue-manager real y exponer funciones" name="8.2 Change Queue Manager Real REAL: Importación y Funciones del Change Queue debe importar change-queue-manager real y exponer funciones" time="0.028">
+    </testcase>
+    <testcase classname="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe añadir cambios reales a la cola y procesarlos" name="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe añadir cambios reales a la cola y procesarlos" time="0.268">
+    </testcase>
+    <testcase classname="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe procesar cambios pendientes reales independientemente" name="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe procesar cambios pendientes reales independientemente" time="0.039">
+    </testcase>
+    <testcase classname="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe limpiar cola real correctamente" name="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe limpiar cola real correctamente" time="0.024">
+    </testcase>
+    <testcase classname="8.2 Change Queue Manager Real REAL: Deduplicación y Optimización debe deduplicar cambios reales correctamente" name="8.2 Change Queue Manager Real REAL: Deduplicación y Optimización debe deduplicar cambios reales correctamente" time="0.069">
+    </testcase>
+    <testcase classname="8.2 Change Queue Manager Real REAL: Debug y Monitoreo debe proporcionar información de debug real" name="8.2 Change Queue Manager Real REAL: Debug y Monitoreo debe proporcionar información de debug real" time="0.029">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 Pruebas Unitarias - EventBus" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:55:42" time="0.367" tests="16">
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Gestión de Instancia Singleton debe crear instancia singleton correctamente" name="8.1 Pruebas Unitarias - EventBus Gestión de Instancia Singleton debe crear instancia singleton correctamente" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Gestión de Instancia Singleton debe mantener estado consistente entre llamadas" name="8.1 Pruebas Unitarias - EventBus Gestión de Instancia Singleton debe mantener estado consistente entre llamadas" time="0.003">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Suscripción y Publicación de Eventos debe registrar y ejecutar suscriptores correctamente" name="8.1 Pruebas Unitarias - EventBus Suscripción y Publicación de Eventos debe registrar y ejecutar suscriptores correctamente" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Suscripción y Publicación de Eventos debe manejar múltiples suscriptores para el mismo evento" name="8.1 Pruebas Unitarias - EventBus Suscripción y Publicación de Eventos debe manejar múltiples suscriptores para el mismo evento" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Suscripción y Publicación de Eventos debe desuscribir correctamente" name="8.1 Pruebas Unitarias - EventBus Suscripción y Publicación de Eventos debe desuscribir correctamente" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Eventos Específicos del Sistema Multi-notación debe manejar eventos BPMN → PPINOT" name="8.1 Pruebas Unitarias - EventBus Eventos Específicos del Sistema Multi-notación debe manejar eventos BPMN → PPINOT" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Eventos Específicos del Sistema Multi-notación debe manejar eventos BPMN → RASCI" name="8.1 Pruebas Unitarias - EventBus Eventos Específicos del Sistema Multi-notación debe manejar eventos BPMN → RASCI" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Eventos Específicos del Sistema Multi-notación debe manejar eventos RASCI → RALPH" name="8.1 Pruebas Unitarias - EventBus Eventos Específicos del Sistema Multi-notación debe manejar eventos RASCI → RALPH" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Gestión de Historial de Eventos debe mantener historial de eventos" name="8.1 Pruebas Unitarias - EventBus Gestión de Historial de Eventos debe mantener historial de eventos" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Gestión de Historial de Eventos debe respetar límite de historial" name="8.1 Pruebas Unitarias - EventBus Gestión de Historial de Eventos debe respetar límite de historial" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Gestión de Historial de Eventos debe incluir timestamp en historial" name="8.1 Pruebas Unitarias - EventBus Gestión de Historial de Eventos debe incluir timestamp en historial" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Manejo de Errores debe manejar callbacks que lanzan excepciones" name="8.1 Pruebas Unitarias - EventBus Manejo de Errores debe manejar callbacks que lanzan excepciones" time="0.148">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Manejo de Errores debe manejar eventos sin suscriptores" name="8.1 Pruebas Unitarias - EventBus Manejo de Errores debe manejar eventos sin suscriptores" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Manejo de Errores debe validar parámetros de suscripción" name="8.1 Pruebas Unitarias - EventBus Manejo de Errores debe validar parámetros de suscripción" time="0.003">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Limpieza y Reset debe limpiar todos los suscriptores" name="8.1 Pruebas Unitarias - EventBus Limpieza y Reset debe limpiar todos los suscriptores" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Limpieza y Reset debe limpiar historial" name="8.1 Pruebas Unitarias - EventBus Limpieza y Reset debe limpiar historial" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 Pruebas Unitarias - BPMN Validators Avanzados" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:55:43" time="0.15" tests="15">
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Validación de Eventos Obligatorios debe validar presencia de evento de inicio" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Validación de Eventos Obligatorios debe validar presencia de evento de inicio" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Validación de Eventos Obligatorios debe detectar ausencia de evento de inicio" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Validación de Eventos Obligatorios debe detectar ausencia de evento de inicio" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Validación de Eventos Obligatorios debe validar presencia de evento de fin" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Validación de Eventos Obligatorios debe validar presencia de evento de fin" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Validación de Eventos Obligatorios debe detectar ausencia de evento de fin" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Validación de Eventos Obligatorios debe detectar ausencia de evento de fin" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Detección de Ciclos Infinitos debe detectar ciclos sin eventos de fin" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Detección de Ciclos Infinitos debe detectar ciclos sin eventos de fin" time="0.006">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Detección de Ciclos Infinitos debe permitir ciclos con eventos de fin" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Detección de Ciclos Infinitos debe permitir ciclos con eventos de fin" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Detección de Ciclos Infinitos debe manejar XML sin ciclos" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Detección de Ciclos Infinitos debe manejar XML sin ciclos" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Detección de Ciclos Infinitos debe detectar ciclos complejos con algoritmo DFS" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Detección de Ciclos Infinitos debe detectar ciclos complejos con algoritmo DFS" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Extracción de Flujos Secuenciales debe extraer flujos del XML canónico" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Extracción de Flujos Secuenciales debe extraer flujos del XML canónico" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Extracción de Flujos Secuenciales debe manejar XML sin flujos" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Extracción de Flujos Secuenciales debe manejar XML sin flujos" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Estadísticas de Elementos BPMN debe contar elementos correctamente en diagrama canónico" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Estadísticas de Elementos BPMN debe contar elementos correctamente en diagrama canónico" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Estadísticas de Elementos BPMN debe manejar modeler sin elementRegistry" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Estadísticas de Elementos BPMN debe manejar modeler sin elementRegistry" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Tests Negativos para BPMN debe rechazar XML BPMN malformado" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Tests Negativos para BPMN debe rechazar XML BPMN malformado" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Tests Negativos para BPMN debe rechazar diagramas sin elementos obligatorios" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Tests Negativos para BPMN debe rechazar diagramas sin elementos obligatorios" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Tests Negativos para BPMN debe detectar elementos BPMN con tipos incorrectos" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Tests Negativos para BPMN debe detectar elementos BPMN con tipos incorrectos" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.2 Pruebas de Integración Avanzadas" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:55:43" time="0.241" tests="10">
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe sincronizar diagrama grande (50+ elementos) en tiempo razonable" name="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe sincronizar diagrama grande (50+ elementos) en tiempo razonable" time="0.009">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe manejar cambios concurrentes con condiciones de carrera reales" name="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe manejar cambios concurrentes con condiciones de carrera reales" time="0.008">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe mantener rendimiento con matriz RASCI compleja" name="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe mantener rendimiento con matriz RASCI compleja" time="0.004">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe manejar PPIs con múltiples referencias cruzadas" name="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe manejar PPIs con múltiples referencias cruzadas" time="0.003">
     </testcase>
     <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe validar límites del sistema y rechazar excesos" name="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe validar límites del sistema y rechazar excesos" time="0.002">
     </testcase>
-    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe manejar sincronización incremental optimizada" name="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe manejar sincronización incremental optimizada" time="0.015">
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe manejar sincronización incremental optimizada" name="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe manejar sincronización incremental optimizada" time="0.006">
     </testcase>
     <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Seguridad y Validación Avanzada debe sanitizar y validar inputs maliciosos en integración" name="8.2 Pruebas de Integración Avanzadas Tests de Seguridad y Validación Avanzada debe sanitizar y validar inputs maliciosos en integración" time="0.004">
     </testcase>
@@ -19,83 +320,263 @@
     </testcase>
     <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Recuperación y Resiliencia debe recuperar estado tras múltiples fallos consecutivos" name="8.2 Pruebas de Integración Avanzadas Tests de Recuperación y Resiliencia debe recuperar estado tras múltiples fallos consecutivos" time="0.002">
     </testcase>
-    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Recuperación y Resiliencia debe detectar degradación del sistema por carga funcional" name="8.2 Pruebas de Integración Avanzadas Tests de Recuperación y Resiliencia debe detectar degradación del sistema por carga funcional" time="0.004">
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Recuperación y Resiliencia debe detectar degradación del sistema por carga funcional" name="8.2 Pruebas de Integración Avanzadas Tests de Recuperación y Resiliencia debe detectar degradación del sistema por carga funcional" time="0.009">
     </testcase>
   </testsuite>
-  <testsuite name="8.2 Pruebas de Integración - Multi-notación" errors="0" failures="0" skipped="0" timestamp="2025-09-19T13:46:38" time="2.734" tests="20">
-    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración BPMN + PPINOT debe vincular PPIs a elementos BPMN correctamente" name="8.2 Pruebas de Integración - Multi-notación Integración BPMN + PPINOT debe vincular PPIs a elementos BPMN correctamente" time="0.02">
+  <testsuite name="8.1 Pruebas Unitarias - Validación Formato .mmproject" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:55:44" time="0.741" tests="5">
+    <testcase classname="8.1 Pruebas Unitarias - Validación Formato .mmproject Validaciones positivas con gestores reales debe validar proyecto .mmproject exportado por ImportExportManager" name="8.1 Pruebas Unitarias - Validación Formato .mmproject Validaciones positivas con gestores reales debe validar proyecto .mmproject exportado por ImportExportManager" time="0.212">
     </testcase>
-    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración BPMN + PPINOT debe sincronizar cambios en BPMN con PPIs existentes" name="8.2 Pruebas de Integración - Multi-notación Integración BPMN + PPINOT debe sincronizar cambios en BPMN con PPIs existentes" time="0.002">
+    <testcase classname="8.1 Pruebas Unitarias - Validación Formato .mmproject Validaciones positivas con gestores reales debe validar proyecto .mmproject generado por AutosaveManager REAL" name="8.1 Pruebas Unitarias - Validación Formato .mmproject Validaciones positivas con gestores reales debe validar proyecto .mmproject generado por AutosaveManager REAL" time="0.045">
     </testcase>
-    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración BPMN + RALPH debe asignar roles a tareas BPMN" name="8.2 Pruebas de Integración - Multi-notación Integración BPMN + RALPH debe asignar roles a tareas BPMN" time="0.003">
+    <testcase classname="8.1 Pruebas Unitarias - Validación Formato .mmproject Validaciones negativas ante cambios estructurales debe rechazar proyecto con paneles críticos faltantes" name="8.1 Pruebas Unitarias - Validación Formato .mmproject Validaciones negativas ante cambios estructurales debe rechazar proyecto con paneles críticos faltantes" time="0.065">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validación Formato .mmproject Validaciones negativas ante cambios estructurales debe detectar incoherencias entre PPIs y conexiones BPMN" name="8.1 Pruebas Unitarias - Validación Formato .mmproject Validaciones negativas ante cambios estructurales debe detectar incoherencias entre PPIs y conexiones BPMN" time="0.069">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validación Formato .mmproject Validaciones negativas ante cambios estructurales debe detectar violaciones críticas en la matriz RASCI" name="8.1 Pruebas Unitarias - Validación Formato .mmproject Validaciones negativas ante cambios estructurales debe detectar violaciones críticas en la matriz RASCI" time="0.086">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.2 Coordinación Real Entre Módulos" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:55:44" time="1.266" tests="9">
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Inicialización y Orquestación del Core debe inicializar MultiNotationModelerCore con dependencias reales" name="8.2 Coordinación Real Entre Módulos REAL: Inicialización y Orquestación del Core debe inicializar MultiNotationModelerCore con dependencias reales" time="0.323">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Inicialización y Orquestación del Core debe coordinar saveModel y loadModel con persistencia real" name="8.2 Coordinación Real Entre Módulos REAL: Inicialización y Orquestación del Core debe coordinar saveModel y loadModel con persistencia real" time="0.119">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: RASCI Manager y Sincronización debe ejercitar RASCIManager real con sincronización BPMN" name="8.2 Coordinación Real Entre Módulos REAL: RASCI Manager y Sincronización debe ejercitar RASCIManager real con sincronización BPMN" time="0.147">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: RASCI Manager y Sincronización debe ejercitar change-queue-manager real" name="8.2 Coordinación Real Entre Módulos REAL: RASCI Manager y Sincronización debe ejercitar change-queue-manager real" time="0.069">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Validación de Comportamientos Observables debe publicar eventos reales cuando se modifican elementos" name="8.2 Coordinación Real Entre Módulos REAL: Validación de Comportamientos Observables debe publicar eventos reales cuando se modifican elementos" time="0.072">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Validación de Comportamientos Observables debe coordinar entre RASCI real y BPMN real" name="8.2 Coordinación Real Entre Módulos REAL: Validación de Comportamientos Observables debe coordinar entre RASCI real y BPMN real" time="0.122">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Pipeline de Guardado/Carga Completo debe ejecutar pipeline completo save/load con módulos reales" name="8.2 Coordinación Real Entre Módulos REAL: Pipeline de Guardado/Carga Completo debe ejecutar pipeline completo save/load con módulos reales" time="0.057">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Detección de Fallos del Sistema debe detectar si initializeApplication falla con el stack real" name="8.2 Coordinación Real Entre Módulos REAL: Detección de Fallos del Sistema debe detectar si initializeApplication falla con el stack real" time="0.077">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Detección de Fallos del Sistema debe detectar problemas reales en la coordinación multi-notación" name="8.2 Coordinación Real Entre Módulos REAL: Detección de Fallos del Sistema debe detectar problemas reales en la coordinación multi-notación" time="0.084">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 Pruebas Unitarias - PPINOT Core Real" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:55:45" time="0.185" tests="11">
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Configuration - Configuración Principal debe cargar PPINOT_CONFIG con estructura completa" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Configuration - Configuración Principal debe cargar PPINOT_CONFIG con estructura completa" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Configuration - Configuración Principal debe incluir todos los tipos soportados desde Types.js" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Configuration - Configuración Principal debe incluir todos los tipos soportados desde Types.js" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Configuration - Configuración Principal debe incluir eventos PPINOT con sincronización" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Configuration - Configuración Principal debe incluir eventos PPINOT con sincronización" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Icons - Iconos SVG Reales debe cargar todos los iconos desde svg/index.js" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Icons - Iconos SVG Reales debe cargar todos los iconos desde svg/index.js" time="0.017">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Icons - Iconos SVG Reales debe mapear correctamente iconos desde svgIcons" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Icons - Iconos SVG Reales debe mapear correctamente iconos desde svgIcons" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Palette - Entradas de Paleta debe definir entradas de paleta completas" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Palette - Entradas de Paleta debe definir entradas de paleta completas" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Utilities - Funciones Utilitarias getIcon debe retornar iconos correctos" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Utilities - Funciones Utilitarias getIcon debe retornar iconos correctos" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Utilities - Funciones Utilitarias isSupportedType debe validar tipos correctamente" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Utilities - Funciones Utilitarias isSupportedType debe validar tipos correctamente" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Utilities - Funciones Utilitarias getPaletteEntry debe encontrar entradas por tipo" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Utilities - Funciones Utilitarias getPaletteEntry debe encontrar entradas por tipo" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Utilities - Funciones Utilitarias publishSynchronization debe publicar eventos correctamente" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Utilities - Funciones Utilitarias publishSynchronization debe publicar eventos correctamente" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Utilities - Funciones Utilitarias publishSynchronization debe fallar con eventBus inválido" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Utilities - Funciones Utilitarias publishSynchronization debe fallar con eventBus inválido" time="0.038">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.2 Pruebas de Integración - Multi-notación" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:55:44" time="0.209" tests="20">
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración BPMN + PPINOT debe vincular PPIs a elementos BPMN correctamente" name="8.2 Pruebas de Integración - Multi-notación Integración BPMN + PPINOT debe vincular PPIs a elementos BPMN correctamente" time="0.004">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración BPMN + PPINOT debe sincronizar cambios en BPMN con PPIs existentes" name="8.2 Pruebas de Integración - Multi-notación Integración BPMN + PPINOT debe sincronizar cambios en BPMN con PPIs existentes" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración BPMN + RALPH debe asignar roles a tareas BPMN" name="8.2 Pruebas de Integración - Multi-notación Integración BPMN + RALPH debe asignar roles a tareas BPMN" time="0.002">
     </testcase>
     <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración BPMN + RALPH debe validar permisos de roles en ejecución" name="8.2 Pruebas de Integración - Multi-notación Integración BPMN + RALPH debe validar permisos de roles en ejecución" time="0.001">
     </testcase>
     <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración RASCI + BPMN + RALPH debe mapear automáticamente RASCI con elementos BPMN y roles RALPH" name="8.2 Pruebas de Integración - Multi-notación Integración RASCI + BPMN + RALPH debe mapear automáticamente RASCI con elementos BPMN y roles RALPH" time="0.002">
     </testcase>
-    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración RASCI + BPMN + RALPH debe detectar conflictos entre RASCI y RALPH" name="8.2 Pruebas de Integración - Multi-notación Integración RASCI + BPMN + RALPH debe detectar conflictos entre RASCI y RALPH" time="0.001">
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración RASCI + BPMN + RALPH debe detectar conflictos entre RASCI y RALPH" name="8.2 Pruebas de Integración - Multi-notación Integración RASCI + BPMN + RALPH debe detectar conflictos entre RASCI y RALPH" time="0">
     </testcase>
-    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración Completa: Persistencia Multi-notación debe guardar y cargar proyecto con todas las notaciones" name="8.2 Pruebas de Integración - Multi-notación Integración Completa: Persistencia Multi-notación debe guardar y cargar proyecto con todas las notaciones" time="0.004">
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración Completa: Persistencia Multi-notación debe guardar y cargar proyecto con todas las notaciones" name="8.2 Pruebas de Integración - Multi-notación Integración Completa: Persistencia Multi-notación debe guardar y cargar proyecto con todas las notaciones" time="0.001">
     </testcase>
-    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración Completa: Persistencia Multi-notación debe sincronizar cambios entre notaciones durante guardado automático" name="8.2 Pruebas de Integración - Multi-notación Integración Completa: Persistencia Multi-notación debe sincronizar cambios entre notaciones durante guardado automático" time="0.002">
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración Completa: Persistencia Multi-notación debe sincronizar cambios entre notaciones durante guardado automático" name="8.2 Pruebas de Integración - Multi-notación Integración Completa: Persistencia Multi-notación debe sincronizar cambios entre notaciones durante guardado automático" time="0.001">
     </testcase>
-    <testcase classname="8.2 Pruebas de Integración - Multi-notación Validación Cruzada de Notaciones debe validar consistencia entre BPMN y RASCI" name="8.2 Pruebas de Integración - Multi-notación Validación Cruzada de Notaciones debe validar consistencia entre BPMN y RASCI" time="0.004">
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Validación Cruzada de Notaciones debe validar consistencia entre BPMN y RASCI" name="8.2 Pruebas de Integración - Multi-notación Validación Cruzada de Notaciones debe validar consistencia entre BPMN y RASCI" time="0.002">
     </testcase>
-    <testcase classname="8.2 Pruebas de Integración - Multi-notación Validación Cruzada de Notaciones debe detectar PPIs huérfanos (sin elementos BPMN correspondientes)" name="8.2 Pruebas de Integración - Multi-notación Validación Cruzada de Notaciones debe detectar PPIs huérfanos (sin elementos BPMN correspondientes)" time="0.001">
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Validación Cruzada de Notaciones debe detectar PPIs huérfanos (sin elementos BPMN correspondientes)" name="8.2 Pruebas de Integración - Multi-notación Validación Cruzada de Notaciones debe detectar PPIs huérfanos (sin elementos BPMN correspondientes)" time="0.003">
     </testcase>
-    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar importación de proyecto corrupto" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar importación de proyecto corrupto" time="0.002">
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar importación de proyecto corrupto" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar importación de proyecto corrupto" time="0.003">
     </testcase>
-    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe sincronizar cambios concurrentes entre notaciones" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe sincronizar cambios concurrentes entre notaciones" time="0.012">
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe sincronizar cambios concurrentes entre notaciones" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe sincronizar cambios concurrentes entre notaciones" time="0.001">
     </testcase>
     <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe validar dependencias circulares entre roles" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe validar dependencias circulares entre roles" time="0.002">
     </testcase>
-    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar eliminación en cascada de elementos" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar eliminación en cascada de elementos" time="0.003">
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar eliminación en cascada de elementos" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar eliminación en cascada de elementos" time="0.002">
     </testcase>
-    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe recuperar estado tras error de sincronización" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe recuperar estado tras error de sincronización" time="0.001">
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe recuperar estado tras error de sincronización" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe recuperar estado tras error de sincronización" time="0.002">
     </testcase>
     <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar migración entre versiones de proyecto" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar migración entre versiones de proyecto" time="0.002">
     </testcase>
-    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe validar integridad referencial completa" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe validar integridad referencial completa" time="0.003">
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe validar integridad referencial completa" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe validar integridad referencial completa" time="0.002">
     </testcase>
-    <testcase classname="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe manejar conflictos entre roles RASCI y RALPH" name="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe manejar conflictos entre roles RASCI y RALPH" time="0.002">
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe manejar conflictos entre roles RASCI y RALPH" name="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe manejar conflictos entre roles RASCI y RALPH" time="0.001">
     </testcase>
-    <testcase classname="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe manejar rollback cuando falla integración" name="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe manejar rollback cuando falla integración" time="0.002">
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe manejar rollback cuando falla integración" name="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe manejar rollback cuando falla integración" time="0.003">
     </testcase>
     <testcase classname="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe verificar orden correcto de eventos en operaciones complejas" name="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe verificar orden correcto de eventos en operaciones complejas" time="0.002">
     </testcase>
   </testsuite>
-  <testsuite name="8.2 Change Queue Manager Real" errors="0" failures="0" skipped="0" timestamp="2025-09-19T13:46:38" time="4.031" tests="6">
-    <testcase classname="8.2 Change Queue Manager Real REAL: Importación y Funciones del Change Queue debe importar change-queue-manager real y exponer funciones" name="8.2 Change Queue Manager Real REAL: Importación y Funciones del Change Queue debe importar change-queue-manager real y exponer funciones" time="0.035">
+  <testsuite name="8.1 Pruebas Unitarias - AutosaveManager" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:55:45" time="0.269" tests="19">
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Inicialización del AutosaveManager debe inicializar correctamente con configuración por defecto" name="8.1 Pruebas Unitarias - AutosaveManager Inicialización del AutosaveManager debe inicializar correctamente con configuración por defecto" time="0.007">
     </testcase>
-    <testcase classname="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe añadir cambios reales a la cola y procesarlos" name="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe añadir cambios reales a la cola y procesarlos" time="0.107">
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Inicialización del AutosaveManager debe inicializar con configuración personalizada" name="8.1 Pruebas Unitarias - AutosaveManager Inicialización del AutosaveManager debe inicializar con configuración personalizada" time="0.002">
     </testcase>
-    <testcase classname="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe procesar cambios pendientes reales independientemente" name="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe procesar cambios pendientes reales independientemente" time="0.024">
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Inicialización del AutosaveManager debe configurar listeners de eventos automáticamente" name="8.1 Pruebas Unitarias - AutosaveManager Inicialización del AutosaveManager debe configurar listeners de eventos automáticamente" time="0.002">
     </testcase>
-    <testcase classname="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe limpiar cola real correctamente" name="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe limpiar cola real correctamente" time="0.03">
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Detección de Cambios debe detectar cambios en elementos BPMN" name="8.1 Pruebas Unitarias - AutosaveManager Detección de Cambios debe detectar cambios en elementos BPMN" time="0.043">
     </testcase>
-    <testcase classname="8.2 Change Queue Manager Real REAL: Deduplicación y Optimización debe deduplicar cambios reales correctamente" name="8.2 Change Queue Manager Real REAL: Deduplicación y Optimización debe deduplicar cambios reales correctamente" time="0.072">
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Detección de Cambios debe detectar adición de elementos" name="8.1 Pruebas Unitarias - AutosaveManager Detección de Cambios debe detectar adición de elementos" time="0.013">
     </testcase>
-    <testcase classname="8.2 Change Queue Manager Real REAL: Debug y Monitoreo debe proporcionar información de debug real" name="8.2 Change Queue Manager Real REAL: Debug y Monitoreo debe proporcionar información de debug real" time="0.025">
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Detección de Cambios debe detectar eliminación de elementos" name="8.1 Pruebas Unitarias - AutosaveManager Detección de Cambios debe detectar eliminación de elementos" time="0.01">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Ejecución de Autoguardado debe ejecutar autoguardado cuando hay cambios" name="8.1 Pruebas Unitarias - AutosaveManager Ejecución de Autoguardado debe ejecutar autoguardado cuando hay cambios" time="0.01">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Ejecución de Autoguardado debe programar autoguardado automático" name="8.1 Pruebas Unitarias - AutosaveManager Ejecución de Autoguardado debe programar autoguardado automático" time="0.005">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Ejecución de Autoguardado debe publicar evento de autoguardado completado" name="8.1 Pruebas Unitarias - AutosaveManager Ejecución de Autoguardado debe publicar evento de autoguardado completado" time="0.012">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Ejecución de Autoguardado no debe ejecutar autoguardado si no hay cambios" name="8.1 Pruebas Unitarias - AutosaveManager Ejecución de Autoguardado no debe ejecutar autoguardado si no hay cambios" time="0.005">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Ejecución de Autoguardado debe evitar autoguardados concurrentes" name="8.1 Pruebas Unitarias - AutosaveManager Ejecución de Autoguardado debe evitar autoguardados concurrentes" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Manejo de Errores debe manejar errores del modelador" name="8.1 Pruebas Unitarias - AutosaveManager Manejo de Errores debe manejar errores del modelador" time="0.003">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Manejo de Errores debe manejar errores del storage" name="8.1 Pruebas Unitarias - AutosaveManager Manejo de Errores debe manejar errores del storage" time="0.006">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Control de Estado debe habilitar y deshabilitar autoguardado" name="8.1 Pruebas Unitarias - AutosaveManager Control de Estado debe habilitar y deshabilitar autoguardado" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Control de Estado debe forzar autoguardado manualmente" name="8.1 Pruebas Unitarias - AutosaveManager Control de Estado debe forzar autoguardado manualmente" time="0.006">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Control de Estado debe limpiar recursos al destruir" name="8.1 Pruebas Unitarias - AutosaveManager Control de Estado debe limpiar recursos al destruir" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Integración con Sistema Multi-notación debe guardar datos de todas las notaciones" name="8.1 Pruebas Unitarias - AutosaveManager Integración con Sistema Multi-notación debe guardar datos de todas las notaciones" time="0.01">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Integración con Sistema Multi-notación debe responder a cambios en RASCI" name="8.1 Pruebas Unitarias - AutosaveManager Integración con Sistema Multi-notación debe responder a cambios en RASCI" time="0.012">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Integración con Sistema Multi-notación debe responder a cambios en PPINOT" name="8.1 Pruebas Unitarias - AutosaveManager Integración con Sistema Multi-notación debe responder a cambios en PPINOT" time="0.001">
     </testcase>
   </testsuite>
-  <testsuite name="8.2 Coordinación Real Entre Módulos" errors="0" failures="0" skipped="0" timestamp="2025-09-19T13:46:38" time="9.981" tests="9">
-    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Inicialización y Orquestación del Core debe inicializar MultiNotationModelerCore con dependencias reales" name="8.2 Coordinación Real Entre Módulos REAL: Inicialización y Orquestación del Core debe inicializar MultiNotationModelerCore con dependencias reales" time="2.094">
+  <testsuite name="8.1 Pruebas Unitarias - ServiceRegistry" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:55:46" time="0.107" tests="11">
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Registro de Servicios debe registrar un servicio correctamente" name="8.1 Pruebas Unitarias - ServiceRegistry Registro de Servicios debe registrar un servicio correctamente" time="0.002">
     </testcase>
-    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Inicialización y Orquestación del Core debe coordinar saveModel y loadModel con persistencia real" name="8.2 Coordinación Real Entre Módulos REAL: Inicialización y Orquestación del Core debe coordinar saveModel y loadModel con persistencia real" time="0.057">
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Registro de Servicios debe sobrescribir servicio existente" name="8.1 Pruebas Unitarias - ServiceRegistry Registro de Servicios debe sobrescribir servicio existente" time="0.001">
     </testcase>
-    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: RASCI Manager y Sincronización debe ejercitar RASCIManager real con sincronización BPMN" name="8.2 Coordinación Real Entre Módulos REAL: RASCI Manager y Sincronización debe ejercitar RASCIManager real con sincronización BPMN" time="0.185">
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Registro de Servicios debe manejar servicios con factory functions" name="8.1 Pruebas Unitarias - ServiceRegistry Registro de Servicios debe manejar servicios con factory functions" time="0.001">
     </testcase>
-    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: RASCI Manager y Sincronización debe ejercitar change-queue-manager real" name="8.2 Coordinación Real Entre Módulos REAL: RASCI Manager y Sincronización debe ejercitar change-queue-manager real" time="0.036">
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Resolución de Servicios debe resolver servicio registrado" name="8.1 Pruebas Unitarias - ServiceRegistry Resolución de Servicios debe resolver servicio registrado" time="0.001">
     </testcase>
-    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Validación de Comportamientos Observables debe publicar eventos reales cuando se modifican elementos" name="8.2 Coordinación Real Entre Módulos REAL: Validación de Comportamientos Observables debe publicar eventos reales cuando se modifican elementos" time="0.062">
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Resolución de Servicios debe retornar undefined para servicio no registrado" name="8.1 Pruebas Unitarias - ServiceRegistry Resolución de Servicios debe retornar undefined para servicio no registrado" time="0.001">
     </testcase>
-    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Validación de Comportamientos Observables debe coordinar entre RASCI real y BPMN real" name="8.2 Coordinación Real Entre Módulos REAL: Validación de Comportamientos Observables debe coordinar entre RASCI real y BPMN real" time="0.118">
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Resolución de Servicios debe manejar servicios singleton" name="8.1 Pruebas Unitarias - ServiceRegistry Resolución de Servicios debe manejar servicios singleton" time="0.001">
     </testcase>
-    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Pipeline de Guardado/Carga Completo debe ejecutar pipeline completo save/load con módulos reales" name="8.2 Coordinación Real Entre Módulos REAL: Pipeline de Guardado/Carga Completo debe ejecutar pipeline completo save/load con módulos reales" time="0.028">
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Gestión de Dependencias debe resolver dependencias automáticamente" name="8.1 Pruebas Unitarias - ServiceRegistry Gestión de Dependencias debe resolver dependencias automáticamente" time="0.001">
     </testcase>
-    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Detección de Fallos del Sistema debe detectar si initializeApplication falla con el stack real" name="8.2 Coordinación Real Entre Módulos REAL: Detección de Fallos del Sistema debe detectar si initializeApplication falla con el stack real" time="4.997">
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Gestión de Dependencias debe manejar dependencias circulares" name="8.1 Pruebas Unitarias - ServiceRegistry Gestión de Dependencias debe manejar dependencias circulares" time="0.001">
     </testcase>
-    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Detección de Fallos del Sistema debe detectar problemas reales en la coordinación multi-notación" name="8.2 Coordinación Real Entre Módulos REAL: Detección de Fallos del Sistema debe detectar problemas reales en la coordinación multi-notación" time="0.01">
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Utilidades del Registry debe listar todos los servicios registrados" name="8.1 Pruebas Unitarias - ServiceRegistry Utilidades del Registry debe listar todos los servicios registrados" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Utilidades del Registry debe verificar existencia de servicios" name="8.1 Pruebas Unitarias - ServiceRegistry Utilidades del Registry debe verificar existencia de servicios" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Utilidades del Registry debe limpiar servicios" name="8.1 Pruebas Unitarias - ServiceRegistry Utilidades del Registry debe limpiar servicios" time="0.01">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 Pruebas Unitarias - Validadores" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:55:45" time="0.197" tests="21">
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador BPMN - Lógica Básica debe validar XML BPMN válido" name="8.1 Pruebas Unitarias - Validadores Validador BPMN - Lógica Básica debe validar XML BPMN válido" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador BPMN - Lógica Básica debe detectar elementos BPMN en XML" name="8.1 Pruebas Unitarias - Validadores Validador BPMN - Lógica Básica debe detectar elementos BPMN en XML" time="0.003">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador BPMN - Lógica Básica debe identificar flujos secuenciales" name="8.1 Pruebas Unitarias - Validadores Validador BPMN - Lógica Básica debe identificar flujos secuenciales" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador PPINOT debe validar estructura de PPI" name="8.1 Pruebas Unitarias - Validadores Validador PPINOT debe validar estructura de PPI" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador PPINOT debe rechazar PPI con datos incompletos" name="8.1 Pruebas Unitarias - Validadores Validador PPINOT debe rechazar PPI con datos incompletos" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador RALPH debe validar definición de roles" name="8.1 Pruebas Unitarias - Validadores Validador RALPH debe validar definición de roles" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador RALPH debe validar restricciones de roles" name="8.1 Pruebas Unitarias - Validadores Validador RALPH debe validar restricciones de roles" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador RASCI debe validar matriz consistente con tareas BPMN" name="8.1 Pruebas Unitarias - Validadores Validador RASCI debe validar matriz consistente con tareas BPMN" time="0.034">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador RASCI debe marcar tareas sin responsable como error crítico" name="8.1 Pruebas Unitarias - Validadores Validador RASCI debe marcar tareas sin responsable como error crítico" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador RASCI debe detectar responsables duplicados en la misma tarea" name="8.1 Pruebas Unitarias - Validadores Validador RASCI debe detectar responsables duplicados en la misma tarea" time="0.003">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador RASCI debe detectar múltiples aprobadores en una tarea" name="8.1 Pruebas Unitarias - Validadores Validador RASCI debe detectar múltiples aprobadores en una tarea" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador RASCI debe limpiar tareas que no existen en el modelo BPMN" name="8.1 Pruebas Unitarias - Validadores Validador RASCI debe limpiar tareas que no existen en el modelo BPMN" time="0.014">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador RASCI debe advertir cuando un rol de soporte no está definido en PPINOT" name="8.1 Pruebas Unitarias - Validadores Validador RASCI debe advertir cuando un rol de soporte no está definido en PPINOT" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador RASCI validateSpecificCell debe rechazar caracteres inválidos" name="8.1 Pruebas Unitarias - Validadores Validador RASCI validateSpecificCell debe rechazar caracteres inválidos" time="0.003">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador RASCI validateRealTime devuelve únicamente errores críticos" name="8.1 Pruebas Unitarias - Validadores Validador RASCI validateRealTime devuelve únicamente errores críticos" time="0.005">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador de Proyecto Completo debe validar proyecto .mmproject completo" name="8.1 Pruebas Unitarias - Validadores Validador de Proyecto Completo debe validar proyecto .mmproject completo" time="0.008">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador de Proyecto Completo debe detectar inconsistencias entre notaciones" name="8.1 Pruebas Unitarias - Validadores Validador de Proyecto Completo debe detectar inconsistencias entre notaciones" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Tests Negativos Explícitos debe rechazar XML BPMN malformado" name="8.1 Pruebas Unitarias - Validadores Tests Negativos Explícitos debe rechazar XML BPMN malformado" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Tests Negativos Explícitos debe rechazar estructuras PPINOT inválidas" name="8.1 Pruebas Unitarias - Validadores Tests Negativos Explícitos debe rechazar estructuras PPINOT inválidas" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Tests Negativos Explícitos debe rechazar matrices RASCI inválidas" name="8.1 Pruebas Unitarias - Validadores Tests Negativos Explícitos debe rechazar matrices RASCI inválidas" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Tests Negativos Explícitos debe fallar validación con datos circulares" name="8.1 Pruebas Unitarias - Validadores Tests Negativos Explícitos debe fallar validación con datos circulares" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.3 E2E Real - Aplicación Completa" errors="0" failures="1" skipped="0" timestamp="2025-09-18T15:55:38" time="8.456" tests="6">
+    <testcase classname="8.3 E2E Real - Aplicación Completa REAL: Inicialización de Aplicación Completa debe inicializar aplicación real y verificar DOM real" name="8.3 E2E Real - Aplicación Completa REAL: Inicialización de Aplicación Completa debe inicializar aplicación real y verificar DOM real" time="1.47">
+      <failure>Error: expect(jest.fn()).toHaveBeenCalled()
+
+Expected number of calls: &gt;= 1
+Received number of calls:    0
+    at toHaveBeenCalled (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.3-ui-e2e\real-application-e2e.test.js:155:40)
+    at Generator.call (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.3-ui-e2e\real-application-e2e.test.js:2:1)
+    at Generator._invoke [as throw] (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.3-ui-e2e\real-application-e2e.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.3-ui-e2e\real-application-e2e.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.3-ui-e2e\real-application-e2e.test.js:2:1)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="8.3 E2E Real - Aplicación Completa REAL: Inicialización de Aplicación Completa debe manejar eventos DOM reales y actualizar estado" name="8.3 E2E Real - Aplicación Completa REAL: Inicialización de Aplicación Completa debe manejar eventos DOM reales y actualizar estado" time="0.102">
+    </testcase>
+    <testcase classname="8.3 E2E Real - Aplicación Completa REAL: Flujos de Usuario End-to-End debe ejecutar flujo completo: crear -&gt; editar -&gt; guardar -&gt; cargar" name="8.3 E2E Real - Aplicación Completa REAL: Flujos de Usuario End-to-End debe ejecutar flujo completo: crear -&gt; editar -&gt; guardar -&gt; cargar" time="0.575">
+    </testcase>
+    <testcase classname="8.3 E2E Real - Aplicación Completa REAL: Verificación de Estado de la Aplicación debe verificar que los servicios reales están registrados correctamente" name="8.3 E2E Real - Aplicación Completa REAL: Verificación de Estado de la Aplicación debe verificar que los servicios reales están registrados correctamente" time="0.014">
+    </testcase>
+    <testcase classname="8.3 E2E Real - Aplicación Completa REAL: Verificación de Estado de la Aplicación debe verificar persistencia real con localStorage del navegador" name="8.3 E2E Real - Aplicación Completa REAL: Verificación de Estado de la Aplicación debe verificar persistencia real con localStorage del navegador" time="0.014">
+    </testcase>
+    <testcase classname="8.3 E2E Real - Aplicación Completa REAL: Detección de Regresiones debe detectar si el sistema real tiene regresiones críticas" name="8.3 E2E Real - Aplicación Completa REAL: Detección de Regresiones debe detectar si el sistema real tiene regresiones críticas" time="3.845">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.3 Experiencia de Usuario Avanzada" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:55:38" time="17.193" tests="12">
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-01: Flujos de Trabajo Complejos debe manejar flujo completo de modelado multi-notación" name="8.3 Experiencia de Usuario Avanzada UX-01: Flujos de Trabajo Complejos debe manejar flujo completo de modelado multi-notación" time="0.019">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-01: Flujos de Trabajo Complejos debe manejar interrupción y recuperación del flujo de trabajo" name="8.3 Experiencia de Usuario Avanzada UX-01: Flujos de Trabajo Complejos debe manejar interrupción y recuperación del flujo de trabajo" time="0.012">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-02: Manejo de Errores y Feedback al Usuario debe mostrar mensajes de error claros y accionables" name="8.3 Experiencia de Usuario Avanzada UX-02: Manejo de Errores y Feedback al Usuario debe mostrar mensajes de error claros y accionables" time="0.005">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-02: Manejo de Errores y Feedback al Usuario debe proporcionar feedback visual inmediato en operaciones" name="8.3 Experiencia de Usuario Avanzada UX-02: Manejo de Errores y Feedback al Usuario debe proporcionar feedback visual inmediato en operaciones" time="11.64">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-03: Rendimiento y Responsividad de UI debe mantener UI responsiva con diagramas grandes" name="8.3 Experiencia de Usuario Avanzada UX-03: Rendimiento y Responsividad de UI debe mantener UI responsiva con diagramas grandes" time="0.206">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-03: Rendimiento y Responsividad de UI debe optimizar rendering con lazy loading" name="8.3 Experiencia de Usuario Avanzada UX-03: Rendimiento y Responsividad de UI debe optimizar rendering con lazy loading" time="0.001">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-04: Accesibilidad y Usabilidad debe soportar navegación por teclado completa" name="8.3 Experiencia de Usuario Avanzada UX-04: Accesibilidad y Usabilidad debe soportar navegación por teclado completa" time="0.001">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-04: Accesibilidad y Usabilidad debe soportar múltiples idiomas y localización" name="8.3 Experiencia de Usuario Avanzada UX-04: Accesibilidad y Usabilidad debe soportar múltiples idiomas y localización" time="0.002">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-05: Flujos de Usuario Avanzados debe manejar colaboración multi-usuario simulada" name="8.3 Experiencia de Usuario Avanzada UX-05: Flujos de Usuario Avanzados debe manejar colaboración multi-usuario simulada" time="0.002">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-05: Flujos de Usuario Avanzados debe manejar flujo de trabajo con validación en tiempo real" name="8.3 Experiencia de Usuario Avanzada UX-05: Flujos de Usuario Avanzados debe manejar flujo de trabajo con validación en tiempo real" time="1.031">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-06: Casos de Uso Extremos y Edge Cases debe manejar pérdida de datos y recuperación graceful" name="8.3 Experiencia de Usuario Avanzada UX-06: Casos de Uso Extremos y Edge Cases debe manejar pérdida de datos y recuperación graceful" time="0.012">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-06: Casos de Uso Extremos y Edge Cases debe optimizar memoria con proyectos muy grandes" name="8.3 Experiencia de Usuario Avanzada UX-06: Casos de Uso Extremos y Edge Cases debe optimizar memoria con proyectos muy grandes" time="0.014">
     </testcase>
   </testsuite>
 </testsuites>

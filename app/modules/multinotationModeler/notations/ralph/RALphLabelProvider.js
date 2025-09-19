@@ -56,40 +56,25 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
     if (canEditRALPHElement(element) && !dualLabelElements.includes(element.type)) {
       
       let targetElement = element;
-      let shouldEdit = false;
       
       // Si es un label externo, editar el label externo
       if (element.type === 'label' && element.labelTarget) {
         targetElement = element;
-        shouldEdit = true;
       } 
-      // Si es el elemento principal
+      // Si es el elemento principal, editar la etiqueta interna
       else if (element.type && element.type.startsWith('RALph:')) {
         if (isExternalLabel(element)) {
-          // Crear label externo si no existe (con doble-click)
+          // Crear label externo si no existe
           if (!element.label) {
             createLabel(element, getExternalLabelPosition(element));
-            
-            // Iniciar edición automáticamente después de crear la etiqueta
-            setTimeout(() => {
-              if (element.label) {
-                createCustomEditor(element.label);
-              }
-            }, 50);
-            return; // Evitar doble llamada a createCustomEditor
           }
           targetElement = element.label;
-          shouldEdit = true;
         } else {
-          // Etiqueta interna - siempre editable
           targetElement = element;
-          shouldEdit = true;
         }
       }
       
-      if (shouldEdit) {
-        createCustomEditor(targetElement);
-      }
+      createCustomEditor(targetElement);
     }
   });
   
@@ -123,13 +108,7 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
   function createCustomEditor(element) {
     // Limpiar editor anterior si existe
     if (activeInput) {
-      try {
-        if (activeInput.parentNode) {
-          activeInput.remove();
-        }
-      } catch (e) {
-        // Elemento ya fue removido, ignorar error
-      }
+      activeInput.remove();
       activeInput = null;
     }
 
@@ -186,24 +165,31 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
       }
     }
     
-    // Crear input simple y funcional
+    // Crear input overlay
     const input = document.createElement('input');
     input.type = 'text';
     input.value = currentText;
     input.style.position = 'fixed';
-    input.style.left = (elementScreenX - 80) + 'px';
-    input.style.top = (elementScreenY - 12) + 'px';
-    input.style.width = '160px';
-    input.style.height = '24px';
-    input.style.fontSize = '12px';
+    
+    // Calcular el ancho del input - muy estrecho y corto
+    const inputWidth = Math.max(60, Math.min(100, element.width * zoom));
+    const inputHeight = Math.max(15, Math.min(18, element.height * zoom));
+    
+    // Centrar el input sobre el elemento
+    input.style.left = (elementScreenX - inputWidth / 2) + 'px';
+    input.style.top = (elementScreenY - inputHeight / 2) + 'px';
+    input.style.width = inputWidth + 'px';
+    input.style.height = inputHeight + 'px';
+    input.style.fontSize = (9 * zoom) + 'px';
     input.style.textAlign = 'center';
     input.style.border = 'none';
-    input.style.borderRadius = '3px';
-    input.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
-    input.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+    input.style.borderRadius = '0px';
+    input.style.backgroundColor = 'white';
     input.style.zIndex = '1000';
     input.style.outline = 'none';
-    input.style.padding = '2px 4px';
+    input.style.padding = '0px';
+    input.style.caretColor = '#000';
+    input.style.color = '#000';
     
     // Agregar al DOM
     document.body.appendChild(input);
@@ -214,13 +200,11 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
     input.focus();
     
     // Manejar eventos
-    let isFinishing = false;
     function finishEditing(save = true) {
-      if (!activeInput || isFinishing) return;
-      isFinishing = true;
+      if (!activeInput) return;
       
       if (save) {
-        const newText = activeInput.value.trim();
+        const newText = input.value.trim();
         
         // Diferenciar entre etiqueta interna y externa
         if (element.type === 'label' && element.labelTarget) {
@@ -259,17 +243,8 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
         }
       }
       
-      // Remover el input
-      try {
-        if (activeInput && activeInput.parentNode) {
-          activeInput.remove();
-        }
-      } catch (e) {
-        // Elemento ya fue removido, ignorar error
-      }
-      
+      input.remove();
       activeInput = null;
-      isFinishing = false;
     }
     
     // Enter para guardar

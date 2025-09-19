@@ -1,0 +1,28 @@
+{
+  "fecha": "18/9/2025, 12:25:01",
+  "testResults": {
+    "unitarios": {
+      "total": 109,
+      "pasando": 109,
+      "porcentaje": 100
+    },
+    "integracion": {
+      "total": 30,
+      "pasando": 30,
+      "porcentaje": 100
+    },
+    "uiE2E": {
+      "total": 34,
+      "pasando": 33,
+      "porcentaje": 97
+    },
+    "total": {
+      "total": 173,
+      "pasando": 172,
+      "porcentaje": 99
+    }
+  },
+  "totalTests": 173,
+  "testsExitosos": 172,
+  "porcentajeExito": 99
+}

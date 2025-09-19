@@ -112,19 +112,8 @@ class PPINOTStorageManager {
       };
 
       // Guardar en localStorage
-      const serializedElements = JSON.stringify(elementsData);
-      const serializedRelationships = JSON.stringify(relationshipsData);
-
-      localStorage.setItem(this.STORAGE_KEYS.ELEMENTS, serializedElements);
-      localStorage.setItem(this.STORAGE_KEYS.RELATIONSHIPS, serializedRelationships);
-
-      // Compatibilidad: mantener también las claves históricas utilizadas por módulos legacy
-      try {
-        localStorage.setItem('ppinotElements', JSON.stringify(elements));
-        localStorage.setItem('ppinotRelationships', JSON.stringify(relationships));
-      } catch (legacyError) {
-        console.warn('⚠️ Error guardando datos PPINOT legacy:', legacyError);
-      }
+      localStorage.setItem(this.STORAGE_KEYS.ELEMENTS, JSON.stringify(elementsData));
+      localStorage.setItem(this.STORAGE_KEYS.RELATIONSHIPS, JSON.stringify(relationshipsData));
       
       // Metadatos
       const metadata = {

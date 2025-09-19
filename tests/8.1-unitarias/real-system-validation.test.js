@@ -118,7 +118,7 @@ describe('8.1 Validación del Sistema Real - Sin Mocks Falsos', () => {
       // Verificar que se publicaron eventos reales
       const history = realEventBus.getHistory();
       const coreInitializedEvents = history.filter(event => 
-        event.event === 'core.initialized' || event.eventType === 'core.initialized'
+        event.eventType === 'core.initialized'
       );
       expect(coreInitializedEvents.length).toBeGreaterThan(0);
       expect(coreInitializedEvents[0].data.success).toBe(true);
@@ -187,7 +187,7 @@ describe('8.1 Validación del Sistema Real - Sin Mocks Falsos', () => {
       const history = realEventBus.getHistory();
       expect(history.length).toBeGreaterThan(0);
       
-      const testEvents = history.filter(e => e.event === 'real.test.event' || e.eventType === 'real.test.event');
+      const testEvents = history.filter(e => e.eventType === 'real.test.event');
       expect(testEvents.length).toBe(1);
       expect(testEvents[0].data).toEqual({ test: 'real data' });
     });
@@ -282,7 +282,7 @@ describe('8.1 Validación del Sistema Real - Sin Mocks Falsos', () => {
       let saveResult = null;
       
       try {
-        saveResult = await realStorageManager.save('testKey', testData);
+        saveResult = await realStorageManager.save(testData);
       } catch (error) {
         saveError = error;
       }
@@ -296,7 +296,7 @@ describe('8.1 Validación del Sistema Real - Sin Mocks Falsos', () => {
       let loadError = null;
       
       try {
-        loadResult = await realStorageManager.load('testKey');
+        loadResult = await realStorageManager.load();
       } catch (error) {
         loadError = error;
       }
@@ -474,7 +474,7 @@ describe('8.1 Validación del Sistema Real - Sin Mocks Falsos', () => {
       // Verificar que el handleModelChanged real fue invocado
       // (el core real debe tener listeners configurados)
       const modelChangedEvents = realEventBus.getHistory().filter(e => 
-        e.event === 'model.changed' || e.eventType === 'model.changed'
+        e.eventType === 'model.changed'
       );
       expect(modelChangedEvents.length).toBeGreaterThan(0);
     });
@@ -498,7 +498,7 @@ describe('8.1 Validación del Sistema Real - Sin Mocks Falsos', () => {
       // WHEN: Registrar y usar servicios reales
       const realTestService = {
         processData: (data) => ({ processed: true, original: data }),
-        validate: (input) => Boolean(input && input.length > 0)
+        validate: (input) => input && input.length > 0
       };
 
       realServiceRegistry.register('RealTestService', realTestService);
@@ -574,7 +574,7 @@ describe('8.1 Validación del Sistema Real - Sin Mocks Falsos', () => {
       let saveResult = null;
       
       try {
-        saveResult = await realStorageManager.save('complexTestKey', complexRealData);
+        saveResult = await realStorageManager.save(complexRealData);
       } catch (error) {
         saveError = error;
       }
@@ -588,7 +588,7 @@ describe('8.1 Validación del Sistema Real - Sin Mocks Falsos', () => {
       let loadResult = null;
       
       try {
-        loadResult = await realStorageManager.load('testKey');
+        loadResult = await realStorageManager.load();
       } catch (error) {
         loadError = error;
       }
@@ -627,24 +627,8 @@ describe('8.1 Validación del Sistema Real - Sin Mocks Falsos', () => {
         importError = error;
       }
 
-      // THEN: Función de inicialización debe existir O error de importación es esperado en Jest
-      if (importError) {
-        // En Jest, varios tipos de errores de importación son esperados
-        const expectedErrors = [
-          'Cannot use import statement outside a module',
-          'Cannot find module \'tiny-svg\'',
-          'Cannot resolve module'
-        ];
-        
-        const hasExpectedError = expectedErrors.some(expectedError => 
-          importError.message.includes(expectedError)
-        );
-        
-        expect(hasExpectedError).toBe(true);
-        console.log('⚠️ Error de importación en Jest - comportamiento esperado:', importError.message);
-        return; // Salir del test - el error es esperado
-      }
-      
+      // THEN: Función de inicialización debe existir
+      expect(importError).toBeNull();
       expect(initializeApplication).toBeDefined();
       expect(typeof initializeApplication).toBe('function');
 

@@ -1,0 +1,447 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="148" failures="10" errors="0" time="18.428">
+  <testsuite name="tests\8.1-unitarias\ppinot-localstorage-parentescos.test.js" errors="0" failures="1" skipped="0" timestamp="2025-09-18T15:49:50" time="3.883" tests="11">
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos › LocalStorage: Persistencia de PPIs" name="debe guardar y cargar PPIs con targets correctamente" time="0.312">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos › LocalStorage: Persistencia de PPIs" name="debe manejar PPIs huérfanos (targets inexistentes)" time="0.004">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos › Parentescos: Medidas Padre-Hijo" name="debe validar jerarquía de medidas padre-hijo correctamente" time="0.003">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos › Parentescos: Medidas Padre-Hijo" name="debe detectar parentescos circulares o inválidos" time="0.053">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos › Scope: Validación de Ámbitos" name="debe validar scope correcto para cada tipo de medida" time="0.005">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos › Targets: Vinculación con Elementos BPMN" name="debe sincronizar targets cuando cambian elementos BPMN" time="0.003">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos › Targets: Vinculación con Elementos BPMN" name="debe manejar targets con tipos de elemento específicos" time="0.002">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos › Persistencia: Problemas Reales de LocalStorage" name="debe detectar y manejar corrupción de datos PPINOT" time="0.005">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos › Persistencia: Problemas Reales de LocalStorage" name="debe manejar límites de localStorage con PPIs complejos" time="0.05">
+      <failure>Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: true
+Received: false
+    at toBe (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\ppinot-localstorage-parentescos.test.js:711:37)
+    at Generator.call (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\ppinot-localstorage-parentescos.test.js:2:1)
+    at Generator._invoke [as next] (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\ppinot-localstorage-parentescos.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\ppinot-localstorage-parentescos.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\ppinot-localstorage-parentescos.test.js:2:1)
+    at _next (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\ppinot-localstorage-parentescos.test.js:2:1)
+    at new Promise (&lt;anonymous&gt;)
+    at Object.&lt;anonymous&gt; (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\ppinot-localstorage-parentescos.test.js:2:1)
+    at Promise.finally.completed (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\node_modules\jest-circus\build\jestAdapterInit.js:1556:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\node_modules\jest-circus\build\jestAdapterInit.js:1496:10)
+    at _callCircusTest (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\node_modules\jest-circus\build\jestAdapterInit.js:1006:40)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at _runTest (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\node_modules\jest-circus\build\jestAdapterInit.js:946:3)
+    at _runTestsForDescribeBlock (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\node_modules\jest-circus\build\jestAdapterInit.js:839:13)
+    at _runTestsForDescribeBlock (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
+    at _runTestsForDescribeBlock (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\node_modules\jest-circus\build\jestAdapterInit.js:829:11)
+    at run (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\node_modules\jest-circus\build\jestAdapterInit.js:757:3)
+    at runAndTransformResultsToJestFormat (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\node_modules\jest-circus\build\jestAdapterInit.js:1917:21)
+    at jestAdapter (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\node_modules\jest-circus\build\runner.js:101:19)
+    at runTestInternal (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\node_modules\jest-runner\build\testWorker.js:275:16)
+    at runTest (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\node_modules\jest-runner\build\testWorker.js:343:7)
+    at Object.worker (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\node_modules\jest-runner\build\testWorker.js:497:12)</failure>
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos › Medidas Hijas: Relaciones Complejas" name="debe validar dependencias entre medidas hijas" time="0.002">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos › Problemas Reales: Casos de Debugging" name="debe reproducir y diagnosticar problemas específicos del sistema" time="0.045">
+    </testcase>
+  </testsuite>
+  <testsuite name="tests\8.1-unitarias\storage-manager-real.test.js" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:49:51" time="5.554" tests="8">
+    <testcase classname="8.1 Pruebas Unitarias - StorageManager REAL › registro en el ServiceRegistry" name="registra la instancia y los métodos públicos" time="0.025">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - StorageManager REAL › gestión de limpieza básica" name="clearStorage elimina claves no preservadas y limpia RASCI/PPI" time="0.086">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - StorageManager REAL › gestión de limpieza básica" name="clearStorage propaga el error cuando forcePanelDataReload falla" time="0.078">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - StorageManager REAL › preparación e importación" name="prepareForImport limpia sin marcar storageCleared" time="0.053">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - StorageManager REAL › preparación e importación" name="prepareForImport retorna false si la limpieza falla" time="0.029">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - StorageManager REAL › reset completo de almacenamiento" name="resetStorage crea diagrama limpio y estado inicial" time="0.048">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - StorageManager REAL › reset completo de almacenamiento" name="resetStorage retorna false cuando crear el diagrama falla" time="0.009">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - StorageManager REAL › utilidades de almacenamiento" name="createBackup persiste el snapshot del estado actual" time="0.006">
+    </testcase>
+  </testsuite>
+  <testsuite name="tests\8.1-unitarias\event-bus.test.js" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:49:56" time="0.545" tests="16">
+    <testcase classname="8.1 Pruebas Unitarias - EventBus › Gestión de Instancia Singleton" name="debe crear instancia singleton correctamente" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus › Gestión de Instancia Singleton" name="debe mantener estado consistente entre llamadas" time="0.003">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus › Suscripción y Publicación de Eventos" name="debe registrar y ejecutar suscriptores correctamente" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus › Suscripción y Publicación de Eventos" name="debe manejar múltiples suscriptores para el mismo evento" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus › Suscripción y Publicación de Eventos" name="debe desuscribir correctamente" time="0.077">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus › Eventos Específicos del Sistema Multi-notación" name="debe manejar eventos BPMN → PPINOT" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus › Eventos Específicos del Sistema Multi-notación" name="debe manejar eventos BPMN → RASCI" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus › Eventos Específicos del Sistema Multi-notación" name="debe manejar eventos RASCI → RALPH" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus › Gestión de Historial de Eventos" name="debe mantener historial de eventos" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus › Gestión de Historial de Eventos" name="debe respetar límite de historial" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus › Gestión de Historial de Eventos" name="debe incluir timestamp en historial" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus › Manejo de Errores" name="debe manejar callbacks que lanzan excepciones" time="0.097">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus › Manejo de Errores" name="debe manejar eventos sin suscriptores" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus › Manejo de Errores" name="debe validar parámetros de suscripción" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus › Limpieza y Reset" name="debe limpiar todos los suscriptores" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus › Limpieza y Reset" name="debe limpiar historial" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="tests\8.1-unitarias\multinotation-core.test.js" errors="0" failures="1" skipped="0" timestamp="2025-09-18T15:49:51" time="6.242" tests="6">
+    <testcase classname="8.1 Pruebas Unitarias - MultiNotation Core › Inicialización de Aplicación" name="debe inicializar módulos principales correctamente" time="0.144">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - MultiNotation Core › Inicialización de Aplicación" name="debe registrar servicios en ServiceRegistry durante inicialización" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - MultiNotation Core › Comunicación Entre Módulos" name="debe facilitar comunicación RASCI ↔ PPINOT" time="0.139">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - MultiNotation Core › Comunicación Entre Módulos" name="debe sincronizar cambios entre notaciones de forma específica" time="0.011">
+      <failure>TypeError: Cannot read properties of undefined (reading &apos;getMatrixData&apos;)
+    at getMatrixData (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\multinotation-core.test.js:407:27)
+    at Generator.call (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\multinotation-core.test.js:2:1)
+    at Generator._invoke [as next] (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\multinotation-core.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\multinotation-core.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\multinotation-core.test.js:2:1)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - MultiNotation Core › Validación Cross-Notation" name="debe detectar inconsistencias específicas entre BPMN y RASCI" time="0.005">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - MultiNotation Core › Validación Cross-Notation" name="debe validar integridad de datos entre notaciones" time="0.003">
+    </testcase>
+  </testsuite>
+  <testsuite name="tests\8.1-unitarias\rasci-core.test.js" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:49:50" time="6.995" tests="13">
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core › RasciStore - Gestión de Datos" name="debe manejar operaciones básicas de roles" time="0.925">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core › RasciStore - Gestión de Datos" name="debe validar estructura de datos RASCI" time="0.005">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core › RASCIAdapter - Integración" name="debe importar y instanciar RASCIAdapter" time="0.087">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core › RASCIAdapter - Integración" name="debe manejar comunicación con otros módulos" time="0.041">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core › RASCI Validation - Validadores Reales" name="debe ejecutar validación de matriz real" time="0.605">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core › RASCI Validation - Validadores Reales" name="debe validar reglas RASCI básicas" time="0.003">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core › RASCI Mapping - Mapeo Automático" name="debe ejecutar funciones de mapeo básicas" time="0.131">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core › RASCI Mapping - Mapeo Automático" name="debe manejar auto-mapping de roles" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core › RASCI UI - Validadores de Interfaz" name="debe manejar validación de UI" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core › RASCI UI - Validadores de Interfaz" name="debe generar mensajes de validación" time="0.015">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core › RASCI Change Management" name="debe manejar cola de cambios" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core › RASCI Change Management" name="debe gestionar estado de cambios pendientes" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core › RASCI Configuration" name="debe cargar configuración de validación" time="0.019">
+    </testcase>
+  </testsuite>
+  <testsuite name="tests\8.1-unitarias\validadores.test.js" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:49:51" time="6.957" tests="21">
+    <testcase classname="8.1 Pruebas Unitarias - Validadores › Validador BPMN - Lógica Básica" name="debe validar XML BPMN válido" time="0.043">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores › Validador BPMN - Lógica Básica" name="debe detectar elementos BPMN en XML" time="0.007">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores › Validador BPMN - Lógica Básica" name="debe identificar flujos secuenciales" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores › Validador PPINOT" name="debe validar estructura de PPI" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores › Validador PPINOT" name="debe rechazar PPI con datos incompletos" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores › Validador RALPH" name="debe validar definición de roles" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores › Validador RALPH" name="debe validar restricciones de roles" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores › Validador RASCI" name="debe validar matriz consistente con tareas BPMN" time="0.036">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores › Validador RASCI" name="debe marcar tareas sin responsable como error crítico" time="0.012">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores › Validador RASCI" name="debe detectar responsables duplicados en la misma tarea" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores › Validador RASCI" name="debe detectar múltiples aprobadores en una tarea" time="0.01">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores › Validador RASCI" name="debe limpiar tareas que no existen en el modelo BPMN" time="0.025">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores › Validador RASCI" name="debe advertir cuando un rol de soporte no está definido en PPINOT" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores › Validador RASCI" name="validateSpecificCell debe rechazar caracteres inválidos" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores › Validador RASCI" name="validateRealTime devuelve únicamente errores críticos" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores › Validador de Proyecto Completo" name="debe validar proyecto .mmproject completo" time="0.032">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores › Validador de Proyecto Completo" name="debe detectar inconsistencias entre notaciones" time="0.003">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores › Tests Negativos Explícitos" name="debe rechazar XML BPMN malformado" time="0.003">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores › Tests Negativos Explícitos" name="debe rechazar estructuras PPINOT inválidas" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores › Tests Negativos Explícitos" name="debe rechazar matrices RASCI inválidas" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores › Tests Negativos Explícitos" name="debe fallar validación con datos circulares" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="tests\8.1-unitarias\ppinot-core.test.js" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:49:57" time="1.832" tests="11">
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real › PPINOT Configuration - Configuración Principal" name="debe cargar PPINOT_CONFIG con estructura completa" time="0.003">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real › PPINOT Configuration - Configuración Principal" name="debe incluir todos los tipos soportados desde Types.js" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real › PPINOT Configuration - Configuración Principal" name="debe incluir eventos PPINOT con sincronización" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real › PPINOT Icons - Iconos SVG Reales" name="debe cargar todos los iconos desde svg/index.js" time="0.007">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real › PPINOT Icons - Iconos SVG Reales" name="debe mapear correctamente iconos desde svgIcons" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real › PPINOT Palette - Entradas de Paleta" name="debe definir entradas de paleta completas" time="0.061">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real › PPINOT Utilities - Funciones Utilitarias" name="getIcon debe retornar iconos correctos" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real › PPINOT Utilities - Funciones Utilitarias" name="isSupportedType debe validar tipos correctamente" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real › PPINOT Utilities - Funciones Utilitarias" name="getPaletteEntry debe encontrar entradas por tipo" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real › PPINOT Utilities - Funciones Utilitarias" name="publishSynchronization debe publicar eventos correctamente" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real › PPINOT Utilities - Funciones Utilitarias" name="publishSynchronization debe fallar con eventBus inválido" time="0.046">
+    </testcase>
+  </testsuite>
+  <testsuite name="tests\8.1-unitarias\bpmn-validators-advanced.test.js" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:49:58" time="1.197" tests="15">
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados › Validación de Eventos Obligatorios" name="debe validar presencia de evento de inicio" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados › Validación de Eventos Obligatorios" name="debe detectar ausencia de evento de inicio" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados › Validación de Eventos Obligatorios" name="debe validar presencia de evento de fin" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados › Validación de Eventos Obligatorios" name="debe detectar ausencia de evento de fin" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados › Detección de Ciclos Infinitos" name="debe detectar ciclos sin eventos de fin" time="0.049">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados › Detección de Ciclos Infinitos" name="debe permitir ciclos con eventos de fin" time="0.022">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados › Detección de Ciclos Infinitos" name="debe manejar XML sin ciclos" time="0.014">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados › Detección de Ciclos Infinitos" name="debe detectar ciclos complejos con algoritmo DFS" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados › Extracción de Flujos Secuenciales" name="debe extraer flujos del XML canónico" time="0.017">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados › Extracción de Flujos Secuenciales" name="debe manejar XML sin flujos" time="0.01">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados › Estadísticas de Elementos BPMN" name="debe contar elementos correctamente en diagrama canónico" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados › Estadísticas de Elementos BPMN" name="debe manejar modeler sin elementRegistry" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados › Tests Negativos para BPMN" name="debe rechazar XML BPMN malformado" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados › Tests Negativos para BPMN" name="debe rechazar diagramas sin elementos obligatorios" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados › Tests Negativos para BPMN" name="debe detectar elementos BPMN con tipos incorrectos" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="tests\8.1-unitarias\service-registry.test.js" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:49:59" time="0.404" tests="11">
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry › Registro de Servicios" name="debe registrar un servicio correctamente" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry › Registro de Servicios" name="debe sobrescribir servicio existente" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry › Registro de Servicios" name="debe manejar servicios con factory functions" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry › Resolución de Servicios" name="debe resolver servicio registrado" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry › Resolución de Servicios" name="debe retornar undefined para servicio no registrado" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry › Resolución de Servicios" name="debe manejar servicios singleton" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry › Gestión de Dependencias" name="debe resolver dependencias automáticamente" time="0.006">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry › Gestión de Dependencias" name="debe manejar dependencias circulares" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry › Utilidades del Registry" name="debe listar todos los servicios registrados" time="0.008">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry › Utilidades del Registry" name="debe verificar existencia de servicios" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry › Utilidades del Registry" name="debe limpiar servicios" time="0.014">
+    </testcase>
+  </testsuite>
+  <testsuite name="tests\8.1-unitarias\real-system-validation.test.js" errors="0" failures="7" skipped="0" timestamp="2025-09-18T15:49:50" time="9.758" tests="12">
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos › REAL: MultiNotationModelerCore" name="debe importar y instanciar el MultiNotationModelerCore real" time="5.79">
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos › REAL: MultiNotationModelerCore" name="debe inicializar el core real y publicar eventos reales" time="0.007">
+      <failure>Error: expect(received).toBeGreaterThan(expected)
+
+Expected: &gt; 0
+Received:   0
+    at toBeGreaterThan (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:123:44)
+    at Generator.call (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at Generator._invoke [as next] (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos › REAL: MultiNotationModelerCore" name="debe registrar y obtener módulos reales" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos › REAL: EventBus del Sistema" name="debe usar el EventBus real del sistema" time="0.042">
+      <failure>Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: 1
+Received: 0
+    at toBe (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:191:33)
+    at Generator.call (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at Generator._invoke [as next] (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos › REAL: ServiceRegistry del Sistema" name="debe usar el ServiceRegistry real del sistema" time="0.003">
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos › REAL: StorageManager del Sistema" name="debe usar el StorageManager real del sistema" time="0.013">
+      <failure>Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: &quot;function&quot;
+Received: &quot;undefined&quot;
+    at toBe (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:270:46)
+    at Generator.call (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at Generator._invoke [as next] (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos › REAL: RASCI Manager y Adapter" name="debe importar y usar el RASCIAdapter real" time="0.078">
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos › REAL: RASCI Manager y Adapter" name="debe inicializar el módulo RASCI real" time="0.537">
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos › REAL: Coordinación Multi-Notación" name="debe coordinar entre EventBus real y Core real" time="0.014">
+      <failure>Error: expect(received).toBeGreaterThan(expected)
+
+Expected: &gt; 0
+Received:   0
+    at toBeGreaterThan (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:479:41)
+    at Generator.call (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at Generator._invoke [as next] (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos › REAL: Coordinación Multi-Notación" name="debe usar ServiceRegistry real para dependencias" time="0.002">
+      <failure>Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: false
+Received: &quot;&quot;
+    at toBe (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:518:33)
+    at Generator.call (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at Generator._invoke [as next] (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos › REAL: Persistencia y Almacenamiento" name="debe guardar y cargar datos reales en localStorage" time="0.003">
+      <failure>Error: expect(received).toBeNull()
+
+Received: [TypeError: realStorageManager.save is not a function]
+    at toBeNull (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:583:25)
+    at Generator.call (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at Generator._invoke [as next] (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="8.1 Validación del Sistema Real - Sin Mocks Falsos › REAL: Integración Completa del Sistema" name="debe inicializar la aplicación real completa" time="0.22">
+      <failure>Error: expect(received).toBeNull()
+
+Received: [Error: Cannot find module &apos;path-intersection&apos; from &apos;node_modules/diagram-js/lib/layout/LayoutUtil.js&apos;·
+Require stack:
+  node_modules/diagram-js/lib/layout/LayoutUtil.js
+  node_modules/diagram-js/lib/core/Canvas.js
+  node_modules/diagram-js/lib/core/index.js
+  node_modules/diagram-js/lib/Diagram.js
+  node_modules/bpmn-js/lib/BaseViewer.js
+  node_modules/bpmn-js/lib/BaseModeler.js
+  node_modules/bpmn-js/lib/Modeler.js
+  app/modules/multinotationModeler/index.js
+  app/modules/index.js
+  tests/8.1-unitarias/real-system-validation.test.js
+]
+    at toBeNull (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:631:27)
+    at Generator.call (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at Generator._invoke [as throw] (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\real-system-validation.test.js:2:1)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="tests\8.1-unitarias\autosave-manager.test.js" errors="0" failures="1" skipped="0" timestamp="2025-09-18T15:49:50" time="9.775" tests="19">
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager › Inicialización del AutosaveManager" name="debe inicializar correctamente con configuración por defecto" time="0.014">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager › Inicialización del AutosaveManager" name="debe inicializar con configuración personalizada" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager › Inicialización del AutosaveManager" name="debe configurar listeners de eventos automáticamente" time="0.003">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager › Detección de Cambios" name="debe detectar cambios en elementos BPMN" time="0.067">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager › Detección de Cambios" name="debe detectar adición de elementos" time="0.005">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager › Detección de Cambios" name="debe detectar eliminación de elementos" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager › Ejecución de Autoguardado" name="debe ejecutar autoguardado cuando hay cambios" time="0.005">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager › Ejecución de Autoguardado" name="debe programar autoguardado automático" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager › Ejecución de Autoguardado" name="debe publicar evento de autoguardado completado" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager › Ejecución de Autoguardado" name="no debe ejecutar autoguardado si no hay cambios" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager › Ejecución de Autoguardado" name="debe evitar autoguardados concurrentes" time="0.006">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager › Manejo de Errores" name="debe manejar errores del modelador" time="0.018">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager › Manejo de Errores" name="debe manejar errores del storage" time="0.008">
+      <failure>Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: false
+Received: true
+    at toBe (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\autosave-manager.test.js:321:30)
+    at Generator.call (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\autosave-manager.test.js:2:1)
+    at Generator._invoke [as next] (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\autosave-manager.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\autosave-manager.test.js:2:1)
+    at asyncGeneratorStep (D:\ETSII\4 CARRERA\2C\TFG\MNModeler\tests\8.1-unitarias\autosave-manager.test.js:2:1)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)</failure>
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager › Control de Estado" name="debe habilitar y deshabilitar autoguardado" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager › Control de Estado" name="debe forzar autoguardado manualmente" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager › Control de Estado" name="debe limpiar recursos al destruir" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager › Integración con Sistema Multi-notación" name="debe guardar datos de todas las notaciones" time="0.005">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager › Integración con Sistema Multi-notación" name="debe responder a cambios en RASCI" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager › Integración con Sistema Multi-notación" name="debe responder a cambios en PPINOT" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="tests\8.1-unitarias\mmproject-format-validation.test.js" errors="0" failures="0" skipped="0" timestamp="2025-09-18T15:49:57" time="7.545" tests="5">
+    <testcase classname="8.1 Pruebas Unitarias - Validación Formato .mmproject › Validaciones positivas con gestores reales" name="debe validar proyecto .mmproject exportado por ImportExportManager" time="0.232">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validación Formato .mmproject › Validaciones positivas con gestores reales" name="debe validar proyecto .mmproject generado por AutosaveManager REAL" time="0.054">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validación Formato .mmproject › Validaciones negativas ante cambios estructurales" name="debe rechazar proyecto con paneles críticos faltantes" time="0.017">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validación Formato .mmproject › Validaciones negativas ante cambios estructurales" name="debe detectar incoherencias entre PPIs y conexiones BPMN" time="0.016">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validación Formato .mmproject › Validaciones negativas ante cambios estructurales" name="debe detectar violaciones críticas en la matriz RASCI" time="0.025">
+    </testcase>
+  </testsuite>
+</testsuites>

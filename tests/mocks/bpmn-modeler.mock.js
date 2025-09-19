@@ -7,7 +7,6 @@ export class MockBpmnModeler {
     this.modeling = new MockModeling();
     this.eventBus = new MockEventBus();
     this.canvas = new MockCanvas();
-    this.elementFactory = new MockElementFactory();
   }
 
   async importXML(xml) {
@@ -18,26 +17,13 @@ export class MockBpmnModeler {
   }
 
   async saveXML(options = {}) {
-    // Generar XML basado en elementos actuales en el registry
-    const elements = this.elementRegistry.getAll();
-    let processContent = '';
-    
-    elements.forEach(element => {
-      if (element.type === 'bpmn:StartEvent') {
-        processContent += `    <bpmn:startEvent id="${element.id}" />\n`;
-      } else if (element.type === 'bpmn:EndEvent') {
-        processContent += `    <bpmn:endEvent id="${element.id}" />\n`;
-      } else if (element.type === 'bpmn:Task') {
-        processContent += `    <bpmn:task id="${element.id}" />\n`;
-      }
-    });
-    
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    const xml = this.xml || `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1">
   <bpmn:process id="Process_1" isExecutable="false">
-${processContent}  </bpmn:process>
+    <bpmn:startEvent id="StartEvent_1" />
+    <bpmn:endEvent id="EndEvent_1" />
+  </bpmn:process>
 </bpmn:definitions>`;
-    
     return { xml };
   }
 
@@ -46,8 +32,7 @@ ${processContent}  </bpmn:process>
       'elementRegistry': this.elementRegistry,
       'modeling': this.modeling,
       'eventBus': this.eventBus,
-      'canvas': this.canvas,
-      'elementFactory': this.elementFactory
+      'canvas': this.canvas
     };
     return services[serviceName];
   }
@@ -176,46 +161,6 @@ class MockEventBus {
   }
 }
 
-class MockElementFactory {
-  constructor() {
-    this.elementIdCounter = 1;
-  }
-
-  createShape(options = {}) {
-    const element = {
-      id: options.id || `${options.type}_${this.elementIdCounter++}`,
-      type: options.type || 'bpmn:Task',
-      businessObject: {
-        $type: options.type || 'bpmn:Task',
-        id: options.id || `${options.type}_${this.elementIdCounter}`,
-        name: options.name || `Element ${this.elementIdCounter}`,
-        ...options
-      },
-      x: options.x || 100,
-      y: options.y || 100,
-      width: options.width || 100,
-      height: options.height || 80
-    };
-    return element;
-  }
-
-  createConnection(options = {}) {
-    return {
-      id: options.id || `Flow_${this.elementIdCounter++}`,
-      type: 'bpmn:SequenceFlow',
-      businessObject: {
-        $type: 'bpmn:SequenceFlow',
-        id: options.id || `Flow_${this.elementIdCounter}`,
-        sourceRef: options.source,
-        targetRef: options.target
-      },
-      source: options.source,
-      target: options.target,
-      waypoints: options.waypoints || []
-    };
-  }
-}
-
 class MockCanvas {
   constructor() {
     this.zoomLevel = 1;
@@ -238,9 +183,3 @@ class MockCanvas {
   }
 }
 
-// CommonJS compatibility
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = MockBpmnModeler;
-  module.exports.MockBpmnModeler = MockBpmnModeler;
-  module.exports.default = MockBpmnModeler;
-}

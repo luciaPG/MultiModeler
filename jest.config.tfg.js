@@ -27,36 +27,16 @@ module.exports = {
   transform: {
     '^.+\\.(js|jsx)$': 'babel-jest'
   },
-  
-  // Configuración de módulos
-  moduleFileExtensions: ['js', 'json', 'jsx', 'ts', 'tsx', 'node'],
 
   // SOLUCIÓN ESM: Permitir transformación de dependencias ESM específicas (mejorada)
   transformIgnorePatterns: [
     '/node_modules/(?!bpmn-js|diagram-js|didi|min-dash|min-dom|tiny-svg|ids|inherits-browser|moddle|moddle-xml|bpmn-moddle)'
   ],
 
-  // Archivos a ignorar - configuración estricta para evitar variaciones
+  // Archivos a ignorar
   testPathIgnorePatterns: [
     '<rootDir>/node_modules/',
-    '<rootDir>/public/', // Archivos públicos que contienen test() pero no son tests
-    '<rootDir>/tests/setup-real-tests.js', // Archivo de setup, no test
-    '<rootDir>/tests/test-autosave-rasci-visual.js', // Archivo de utilidad, no test
-    '<rootDir>/tests/utils/', // Archivos de utilidad, no tests
-    '<rootDir>/scripts/', // Scripts que pueden tener test() pero no son tests
-    '<rootDir>/reports/', // Reportes que no son tests
-    '<rootDir>/coverage/', // Archivos de cobertura
-    '<rootDir>/.*\\.tmp/', // Archivos temporales
-    '<rootDir>/.*~$/', // Archivos de backup
-    '<rootDir>/.*\\.bak$/' // Archivos de backup
-  ],
-  
-  // Patrón más estricto para detectar solo tests reales
-  testMatch: [
-    '<rootDir>/tests/8.1-unitarias/**/*.test.js',
-    '<rootDir>/tests/8.2-integracion/**/*.test.js', 
-    '<rootDir>/tests/8.3-ui-e2e/**/*.test.js',
-    '<rootDir>/tests/8.3-aceptacion/**/*.test.js'
+    '<rootDir>/tests/sprint1/' // Archivos antiguos
   ],
 
   // Configuración de cobertura (solo reportes esenciales)
@@ -95,7 +75,30 @@ module.exports = {
     }
   },
 
-  // CONFIGURACIÓN SIMPLIFICADA - sin projects para evitar duplicaciones
+  // Configuración específica por tipo de prueba
+  projects: [
+    {
+      displayName: '8.1 Pruebas Unitarias',
+      testMatch: ['<rootDir>/tests/8.1-unitarias/**/*.test.js'],
+      coverageDirectory: 'reports/coverage-tfg/unitarias'
+    },
+    {
+      displayName: '8.2 Pruebas de Integración',
+      testMatch: ['<rootDir>/tests/8.2-integracion/**/*.test.js'],
+      coverageDirectory: 'reports/coverage-tfg/integracion'
+    },
+    {
+      displayName: '8.3 Pruebas UI/E2E',
+      testMatch: ['<rootDir>/tests/8.3-ui-e2e/**/*.test.js'],
+      testEnvironment: 'jsdom',
+      coverageDirectory: 'reports/coverage-tfg/ui-e2e'
+    },
+    {
+      displayName: '8.4 Pruebas de Aceptación',
+      testMatch: ['<rootDir>/tests/8.4-aceptacion/**/*.test.js'],
+      coverageDirectory: 'reports/coverage-tfg/aceptacion'
+    }
+  ],
 
   // Reportes personalizados
   reporters: [

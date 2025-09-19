@@ -574,67 +574,6 @@ class StorageManager {
       }
     }, 200);
   }
-
-  // === API DE PERSISTENCIA PARA TESTS ===
-  
-  /**
-   * Save data to localStorage with key prefix
-   * @param {string} key - The key to save under
-   * @param {any} data - The data to save
-   * @param {Object} options - Save options
-   * @returns {Promise<Object>} - Result object
-   */
-  async save(key, data, options = {}) {
-    try {
-      if (!key || typeof key !== 'string') {
-        return { success: false, error: 'Invalid key provided' };
-      }
-      const prefixedKey = key.startsWith('multinotation:') ? key : `multinotation:${key}`;
-      const serializedData = JSON.stringify(data);
-      localStorage.setItem(prefixedKey, serializedData);
-      return { success: true, path: `localStorage:${prefixedKey}` };
-    } catch (error) {
-      console.error('Error saving data:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  /**
-   * Load data from localStorage with key prefix
-   * @param {string} key - The key to load
-   * @returns {Promise<Object>} - Result object with data
-   */
-  async load(key) {
-    try {
-      if (!key || typeof key !== 'string') {
-        return { success: false, error: 'Invalid key provided' };
-      }
-      const prefixedKey = key.startsWith('multinotation:') ? key : `multinotation:${key}`;
-      const data = localStorage.getItem(prefixedKey);
-      if (data === null) {
-        return { success: false, error: 'Not found' };
-      }
-      const parsedData = JSON.parse(data);
-      return { success: true, data: parsedData };
-    } catch (error) {
-      console.error('Error loading data:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  /**
-   * Clear all project data from localStorage
-   * @returns {Promise<Object>} - Result object
-   */
-  async clear() {
-    try {
-      await this.clearStorage();
-      return { success: true };
-    } catch (error) {
-      console.error('Error clearing storage:', error);
-      return { success: false, error: error.message };
-    }
-  }
 }
 
 // Exportar la clase

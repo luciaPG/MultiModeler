@@ -127,16 +127,6 @@ describe('8.3 E2E Real - Aplicación Completa', () => {
       } catch (error) {
         console.log('🔍 Error real en inicialización de aplicación:', error.message);
         // El error es información valiosa sobre problemas reales
-        
-        // Si es error de importación ES6, es comportamiento esperado en Jest
-        if (error.message.includes('Cannot use import statement outside a module')) {
-          console.log('⚠️ Error de importación ES6 en Jest - comportamiento esperado');
-          // Verificar que al menos se intentó acceder al DOM (puede no haberse llamado si la app no se inicializó)
-          expect(realDOM).toBeDefined();
-          // En este caso, el DOM mock no se llama porque la app no se inicializa
-          // Esto es comportamiento esperado en Jest con módulos ES6
-          return; // Salir del test - el error es esperado
-        }
       }
 
       // THEN: Analizar resultado de inicialización real
@@ -160,10 +150,9 @@ describe('8.3 E2E Real - Aplicación Completa', () => {
         realApp = appInstance; // Guardar para cleanup
         
       } else {
-        // Si falla la inicialización, verificar que es por un error conocido
+        // Si falla, verificar que al menos se intentó
         expect(realDOM).toBeDefined();
-        // No esperamos que el DOM se use si la app falla en importación
-        console.log('⚠️ Aplicación falló en inicialización - DOM no se utilizó');
+        expect(realDOM.getElementById).toHaveBeenCalled();
       }
     });
 

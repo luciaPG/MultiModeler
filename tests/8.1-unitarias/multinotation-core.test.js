@@ -367,21 +367,13 @@ describe('8.1 Pruebas Unitarias - MultiNotation Core', () => {
     });
 
     test('debe sincronizar cambios entre notaciones de forma específica', async () => {
-      // Cleanup más agresivo para evitar interferencias
       jest.resetModules();
-      jest.clearAllMocks();
-      
-      // Limpiar localStorage si existe
-      if (typeof localStorage !== 'undefined') {
-        localStorage.clear();
-      }
 
       const { getEventBus } = await import('../../app/modules/ui/core/event-bus.js');
       const { getServiceRegistry } = await import('../../app/modules/ui/core/ServiceRegistry.js');
       const { default: moduleBridge } = await import('../../app/modules/ui/core/ModuleBridge.js');
       const rasciAdapterModule = await import('../../app/modules/rasci/RASCIAdapter.js');
-      const rasciModule = await import('../../app/modules/rasci/index.js');
-      const initializeRasci = rasciModule.initialize;
+      const { initialize: initializeRasci } = await import('../../app/modules/rasci/index.js');
 
       const eventBus = getEventBus();
       eventBus.clear();
@@ -403,19 +395,7 @@ describe('8.1 Pruebas Unitarias - MultiNotation Core', () => {
       await rasciAdapter.initialize();
 
       const rasciInitialization = await initializeRasci({ eventBus, adapter: rasciAdapter });
-      
-      // Agregar timeout para evitar problemas de timing
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
-      const rasciManager = rasciInitialization?.manager;
-
-      // Verificar que rasciManager fue creado correctamente
-      if (!rasciManager) {
-        // Este error indica un problema de timing/concurrencia en la suite de tests
-        // El test funciona individualmente pero puede fallar cuando se ejecuta con otros
-        console.warn('⚠️ RASCI Manager undefined - posible interferencia entre tests');
-        return; // Salir gracefully en lugar de fallar
-      }
+      const rasciManager = rasciInitialization.manager;
 
       rasciAdapter.registerRASCIManager(rasciManager);
 
