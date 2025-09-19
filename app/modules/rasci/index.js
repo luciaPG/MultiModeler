@@ -18,7 +18,7 @@ import { initRasciMapping, executeSimpleRasciMapping } from './mapping/index.js'
 import { rasciAutoMapping } from './mapping/auto-mapper.js';
 
 // Change queue management
-import { changeQueueManager, addChangeToQueue, processPendingChanges, getQueueInfo, clearPendingChanges } from './core/change-queue-manager.js';
+import { changeQueueManager, addChangeToQueue, processPendingChanges, getQueueInfo, clearPendingChanges, debugQueueStatus } from './core/change-queue-manager.js';
 
 // Debug helper
 import './debug-helper.js';
@@ -61,9 +61,14 @@ class RASCIManager {
         this.matrixData = matrixData;
       }
     } else {
-  const sr = typeof getServiceRegistry === 'function' ? getServiceRegistry() : null;
-  const rasciAdapter = this.adapter || (sr && sr.get('RASCIAdapter'));
-  this.matrixData = rasciAdapter && typeof rasciAdapter.getMatrixData === 'function' ? rasciAdapter.getMatrixData() : {};
+      // CONSERVAR estructura inicial cuando no hay adaptador
+      const sr = typeof getServiceRegistry === 'function' ? getServiceRegistry() : null;
+      const rasciAdapter = this.adapter || (sr && sr.get('RASCIAdapter'));
+      
+      if (rasciAdapter && typeof rasciAdapter.getMatrixData === 'function') {
+        this.matrixData = rasciAdapter.getMatrixData();
+      }
+      // NO borrar this.matrixData si no hay adaptador - mantener estructura inicial
     }
     
     // Optimización: Log eliminado para mejorar rendimiento

@@ -8,16 +8,48 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
   // Sistema de edición personalizado solo para conexiones PPINOT
   let activeInput = null;
 
-  // Listener para doble click - solo para conexiones PPINOT
+  // Listener para doble click - para elementos PPINOT
   eventBus.on('element.dblclick', function(event) {
     const element = event.element;
     
-    if (canEditPPINOTConnection(element)) {
+    if (canEditPPINOTElement(element)) {
       
-      // Si el elemento tiene un label, editar el label. Si no, editar el elemento.
       let targetElement = element;
-      if (element.label && element.type !== 'label') {
+      
+      let shouldEdit = false;
+      
+      // Si es una etiqueta externa, editarla directamente
+      if (element.type === 'label') {
+        targetElement = element;
+        shouldEdit = true;
+      }
+      // Si el elemento principal tiene etiqueta externa, editarla
+      else if (element.label) {
         targetElement = element.label;
+        shouldEdit = true;
+      }
+      // Si el elemento debería tener etiqueta externa pero no la tiene, crearla con doble-click
+      else if (shouldCreateExternalLabel(element)) {
+        createLabel(element, getExternalLabelPosition(element));
+        targetElement = element.label;
+        shouldEdit = true;
+        
+        // Iniciar edición automáticamente después de crear la etiqueta
+        setTimeout(() => {
+          if (element.label) {
+            createCustomEditor(element.label);
+          }
+        }, 50);
+        return; // Evitar doble llamada a createCustomEditor
+      }
+      // Si no tiene etiqueta externa, editar el elemento directamente (embedded)
+      else {
+        targetElement = element;
+        shouldEdit = true;
+      }
+      
+      if (!shouldEdit) {
+        return; // No permitir edición
       }
       
       createCustomEditor(targetElement);
@@ -27,7 +59,13 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
   function createCustomEditor(element) {
     // Limpiar editor anterior si existe
     if (activeInput) {
-      activeInput.remove();
+      try {
+        if (activeInput.parentNode) {
+          activeInput.remove();
+        }
+      } catch (e) {
+        // Elemento ya fue removido, ignorar error
+      }
       activeInput = null;
     }
 
@@ -46,22 +84,43 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
     // Obtener texto actual
     const currentText = getPPINOTDefaultText(element.labelTarget || element);
     
-    // Crear input overlay
+    // Encontrar el elemento SVG de texto para posicionamiento
+    const targetSvgElement = element.labelTarget ? 
+      canvas.getGraphics(element.labelTarget) : 
+      canvas.getGraphics(element);
+      
+    if (!targetSvgElement) return;
+    
+    // Buscar el elemento de texto dentro del SVG
+    const svgTextElement = targetSvgElement.querySelector('text') || 
+                          targetSvgElement.querySelector('.djs-label');
+    
+    if (!svgTextElement) return;
+    
+    // Obtener posición exacta del texto SVG
+    const textBounds = svgTextElement.getBoundingClientRect();
+    
+    // Crear input transparente que se superponga exactamente
     const input = document.createElement('input');
     input.type = 'text';
     input.value = currentText;
     input.style.position = 'fixed';
-    input.style.left = elementScreenX + 'px';
-    input.style.top = elementScreenY + 'px';
-    input.style.width = Math.max(80, element.width * zoom) + 'px';
-    input.style.height = Math.max(20, element.height * zoom) + 'px';
-    input.style.fontSize = (12 * zoom) + 'px';
+    input.style.left = textBounds.left + 'px';
+    input.style.top = textBounds.top + 'px';
+    input.style.width = Math.max(textBounds.width, 60) + 'px';
+    input.style.height = textBounds.height + 'px';
+    input.style.fontSize = '14px';
+    input.style.fontFamily = window.getComputedStyle(svgTextElement).fontFamily || 'Arial';
     input.style.textAlign = 'center';
-    input.style.border = '2px solid #0086e6';
-    input.style.borderRadius = '3px';
-    input.style.backgroundColor = 'white';
-    input.style.zIndex = '1000';
+    input.style.border = 'none';
     input.style.outline = 'none';
+    input.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+    input.style.borderRadius = '3px';
+    input.style.zIndex = '1000';
+    input.style.padding = '2px';
+    
+    // Ocultar temporalmente el texto SVG original
+    svgTextElement.style.opacity = '0.3';
     
     // Agregar al DOM
     document.body.appendChild(input);
@@ -73,16 +132,59 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
     
     
     // Manejar eventos
+    let isFinishing = false;
     function finishEditing(save = true) {
-      if (!activeInput) return;
+      if (!activeInput || isFinishing) return;
+      isFinishing = true;
       
       if (save) {
-        const newText = input.value.trim();
+        const newText = activeInput.value.trim();
         updatePPINOTConnectionLabel(element, newText);
       }
       
-      input.remove();
+      // Restaurar opacidad del texto SVG original y limpiar cualquier estado
+      try {
+        if (svgTextElement) {
+          svgTextElement.style.opacity = '';
+          svgTextElement.style.visibility = '';
+          svgTextElement.style.display = '';
+        }
+      } catch (e) {
+        // Ignorar errores
+      }
+      
+      // Forzar re-render inmediato del canvas para limpiar cualquier preview residual
+      try {
+        // Múltiples estrategias para forzar re-render
+        eventBus.fire('canvas.viewbox.changed', { viewbox: canvas.viewbox() });
+        eventBus.fire('element.changed', { element: element });
+        
+        // Forzar repaint del DOM
+        setTimeout(() => {
+          if (svgTextElement) {
+            svgTextElement.style.transform = 'translateZ(0)';
+            setTimeout(() => {
+              if (svgTextElement) {
+                svgTextElement.style.transform = '';
+              }
+            }, 1);
+          }
+        }, 1);
+      } catch (e) {
+        // Ignorar errores
+      }
+      
+      // Remover el input
+      try {
+        if (activeInput && activeInput.parentNode) {
+          activeInput.remove();
+        }
+      } catch (e) {
+        // Elemento ya fue removido, ignorar error
+      }
+      
       activeInput = null;
+      isFinishing = false;
     }
     
     // Enter para guardar
@@ -117,6 +219,19 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
     }
     
     if (element.type && element.type.startsWith('PPINOT:') && isPPINOTConnection(element)) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  function canEditPPINOTElement(element) {
+    // Puede editar cualquier elemento PPINOT (conexiones y elementos) y sus labels
+    if (element.type === 'label' && element.labelTarget && element.labelTarget.type && element.labelTarget.type.startsWith('PPINOT:')) {
+      return true;
+    }
+    
+    if (element.type && element.type.startsWith('PPINOT:')) {
       return true;
     }
     
@@ -308,9 +423,10 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
       }
     }
 
-    if (!shape.labelTarget && !shape.hidden && !shape.label && shouldCreateExternalLabel(shape)) {
-      createLabel(shape, getExternalLabelPosition(shape));
-    }
+    // Labels only created on double-click, not automatically
+    // if (!shape.labelTarget && !shape.hidden && !shape.label && shouldCreateExternalLabel(shape)) {
+    //   createLabel(shape, getExternalLabelPosition(shape));
+    // }
   });
 
   eventBus.on('import.done', function() {
@@ -330,9 +446,10 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
         }
       }
       
-      if (shouldCreateExternalLabel(element) && !element.label) {
-        createLabel(element, getExternalLabelPosition(element));
-      }
+      // Labels only created on double-click, not automatically
+      // if (shouldCreateExternalLabel(element) && !element.label) {
+      //   createLabel(element, getExternalLabelPosition(element));
+      // }
 
       if (element.type && element.type.startsWith('PPINOT:')) {
         element._skipInternalLabel = true;

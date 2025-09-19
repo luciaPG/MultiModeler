@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="45" failures="0" errors="0" time="11.733">
+  <testsuite name="8.2 Pruebas de Integración Avanzadas" errors="0" failures="0" skipped="0" timestamp="2025-09-19T13:46:38" time="2.724" tests="10">
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe sincronizar diagrama grande (50+ elementos) en tiempo razonable" name="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe sincronizar diagrama grande (50+ elementos) en tiempo razonable" time="0.025">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe manejar cambios concurrentes con condiciones de carrera reales" name="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe manejar cambios concurrentes con condiciones de carrera reales" time="0.009">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe mantener rendimiento con matriz RASCI compleja" name="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe mantener rendimiento con matriz RASCI compleja" time="0.005">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe manejar PPIs con múltiples referencias cruzadas" name="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe manejar PPIs con múltiples referencias cruzadas" time="0.008">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe validar límites del sistema y rechazar excesos" name="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe validar límites del sistema y rechazar excesos" time="0.002">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe manejar sincronización incremental optimizada" name="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe manejar sincronización incremental optimizada" time="0.015">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Seguridad y Validación Avanzada debe sanitizar y validar inputs maliciosos en integración" name="8.2 Pruebas de Integración Avanzadas Tests de Seguridad y Validación Avanzada debe sanitizar y validar inputs maliciosos en integración" time="0.004">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Seguridad y Validación Avanzada debe validar integridad de datos durante operaciones críticas" name="8.2 Pruebas de Integración Avanzadas Tests de Seguridad y Validación Avanzada debe validar integridad de datos durante operaciones críticas" time="0.002">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Recuperación y Resiliencia debe recuperar estado tras múltiples fallos consecutivos" name="8.2 Pruebas de Integración Avanzadas Tests de Recuperación y Resiliencia debe recuperar estado tras múltiples fallos consecutivos" time="0.002">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Recuperación y Resiliencia debe detectar degradación del sistema por carga funcional" name="8.2 Pruebas de Integración Avanzadas Tests de Recuperación y Resiliencia debe detectar degradación del sistema por carga funcional" time="0.004">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.2 Pruebas de Integración - Multi-notación" errors="0" failures="0" skipped="0" timestamp="2025-09-19T13:46:38" time="2.734" tests="20">
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración BPMN + PPINOT debe vincular PPIs a elementos BPMN correctamente" name="8.2 Pruebas de Integración - Multi-notación Integración BPMN + PPINOT debe vincular PPIs a elementos BPMN correctamente" time="0.02">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración BPMN + PPINOT debe sincronizar cambios en BPMN con PPIs existentes" name="8.2 Pruebas de Integración - Multi-notación Integración BPMN + PPINOT debe sincronizar cambios en BPMN con PPIs existentes" time="0.002">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración BPMN + RALPH debe asignar roles a tareas BPMN" name="8.2 Pruebas de Integración - Multi-notación Integración BPMN + RALPH debe asignar roles a tareas BPMN" time="0.003">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración BPMN + RALPH debe validar permisos de roles en ejecución" name="8.2 Pruebas de Integración - Multi-notación Integración BPMN + RALPH debe validar permisos de roles en ejecución" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración RASCI + BPMN + RALPH debe mapear automáticamente RASCI con elementos BPMN y roles RALPH" name="8.2 Pruebas de Integración - Multi-notación Integración RASCI + BPMN + RALPH debe mapear automáticamente RASCI con elementos BPMN y roles RALPH" time="0.002">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración RASCI + BPMN + RALPH debe detectar conflictos entre RASCI y RALPH" name="8.2 Pruebas de Integración - Multi-notación Integración RASCI + BPMN + RALPH debe detectar conflictos entre RASCI y RALPH" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración Completa: Persistencia Multi-notación debe guardar y cargar proyecto con todas las notaciones" name="8.2 Pruebas de Integración - Multi-notación Integración Completa: Persistencia Multi-notación debe guardar y cargar proyecto con todas las notaciones" time="0.004">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración Completa: Persistencia Multi-notación debe sincronizar cambios entre notaciones durante guardado automático" name="8.2 Pruebas de Integración - Multi-notación Integración Completa: Persistencia Multi-notación debe sincronizar cambios entre notaciones durante guardado automático" time="0.002">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Validación Cruzada de Notaciones debe validar consistencia entre BPMN y RASCI" name="8.2 Pruebas de Integración - Multi-notación Validación Cruzada de Notaciones debe validar consistencia entre BPMN y RASCI" time="0.004">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Validación Cruzada de Notaciones debe detectar PPIs huérfanos (sin elementos BPMN correspondientes)" name="8.2 Pruebas de Integración - Multi-notación Validación Cruzada de Notaciones debe detectar PPIs huérfanos (sin elementos BPMN correspondientes)" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar importación de proyecto corrupto" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar importación de proyecto corrupto" time="0.002">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe sincronizar cambios concurrentes entre notaciones" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe sincronizar cambios concurrentes entre notaciones" time="0.012">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe validar dependencias circulares entre roles" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe validar dependencias circulares entre roles" time="0.002">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar eliminación en cascada de elementos" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar eliminación en cascada de elementos" time="0.003">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe recuperar estado tras error de sincronización" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe recuperar estado tras error de sincronización" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar migración entre versiones de proyecto" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar migración entre versiones de proyecto" time="0.002">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe validar integridad referencial completa" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe validar integridad referencial completa" time="0.003">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe manejar conflictos entre roles RASCI y RALPH" name="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe manejar conflictos entre roles RASCI y RALPH" time="0.002">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe manejar rollback cuando falla integración" name="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe manejar rollback cuando falla integración" time="0.002">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe verificar orden correcto de eventos en operaciones complejas" name="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe verificar orden correcto de eventos en operaciones complejas" time="0.002">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.2 Change Queue Manager Real" errors="0" failures="0" skipped="0" timestamp="2025-09-19T13:46:38" time="4.031" tests="6">
+    <testcase classname="8.2 Change Queue Manager Real REAL: Importación y Funciones del Change Queue debe importar change-queue-manager real y exponer funciones" name="8.2 Change Queue Manager Real REAL: Importación y Funciones del Change Queue debe importar change-queue-manager real y exponer funciones" time="0.035">
+    </testcase>
+    <testcase classname="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe añadir cambios reales a la cola y procesarlos" name="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe añadir cambios reales a la cola y procesarlos" time="0.107">
+    </testcase>
+    <testcase classname="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe procesar cambios pendientes reales independientemente" name="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe procesar cambios pendientes reales independientemente" time="0.024">
+    </testcase>
+    <testcase classname="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe limpiar cola real correctamente" name="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe limpiar cola real correctamente" time="0.03">
+    </testcase>
+    <testcase classname="8.2 Change Queue Manager Real REAL: Deduplicación y Optimización debe deduplicar cambios reales correctamente" name="8.2 Change Queue Manager Real REAL: Deduplicación y Optimización debe deduplicar cambios reales correctamente" time="0.072">
+    </testcase>
+    <testcase classname="8.2 Change Queue Manager Real REAL: Debug y Monitoreo debe proporcionar información de debug real" name="8.2 Change Queue Manager Real REAL: Debug y Monitoreo debe proporcionar información de debug real" time="0.025">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.2 Coordinación Real Entre Módulos" errors="0" failures="0" skipped="0" timestamp="2025-09-19T13:46:38" time="9.981" tests="9">
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Inicialización y Orquestación del Core debe inicializar MultiNotationModelerCore con dependencias reales" name="8.2 Coordinación Real Entre Módulos REAL: Inicialización y Orquestación del Core debe inicializar MultiNotationModelerCore con dependencias reales" time="2.094">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Inicialización y Orquestación del Core debe coordinar saveModel y loadModel con persistencia real" name="8.2 Coordinación Real Entre Módulos REAL: Inicialización y Orquestación del Core debe coordinar saveModel y loadModel con persistencia real" time="0.057">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: RASCI Manager y Sincronización debe ejercitar RASCIManager real con sincronización BPMN" name="8.2 Coordinación Real Entre Módulos REAL: RASCI Manager y Sincronización debe ejercitar RASCIManager real con sincronización BPMN" time="0.185">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: RASCI Manager y Sincronización debe ejercitar change-queue-manager real" name="8.2 Coordinación Real Entre Módulos REAL: RASCI Manager y Sincronización debe ejercitar change-queue-manager real" time="0.036">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Validación de Comportamientos Observables debe publicar eventos reales cuando se modifican elementos" name="8.2 Coordinación Real Entre Módulos REAL: Validación de Comportamientos Observables debe publicar eventos reales cuando se modifican elementos" time="0.062">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Validación de Comportamientos Observables debe coordinar entre RASCI real y BPMN real" name="8.2 Coordinación Real Entre Módulos REAL: Validación de Comportamientos Observables debe coordinar entre RASCI real y BPMN real" time="0.118">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Pipeline de Guardado/Carga Completo debe ejecutar pipeline completo save/load con módulos reales" name="8.2 Coordinación Real Entre Módulos REAL: Pipeline de Guardado/Carga Completo debe ejecutar pipeline completo save/load con módulos reales" time="0.028">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Detección de Fallos del Sistema debe detectar si initializeApplication falla con el stack real" name="8.2 Coordinación Real Entre Módulos REAL: Detección de Fallos del Sistema debe detectar si initializeApplication falla con el stack real" time="4.997">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Detección de Fallos del Sistema debe detectar problemas reales en la coordinación multi-notación" name="8.2 Coordinación Real Entre Módulos REAL: Detección de Fallos del Sistema debe detectar problemas reales en la coordinación multi-notación" time="0.01">
+    </testcase>
+  </testsuite>
+</testsuites>

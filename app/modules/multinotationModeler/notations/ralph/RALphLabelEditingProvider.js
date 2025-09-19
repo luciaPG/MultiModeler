@@ -77,7 +77,7 @@ export default function RALphLabelEditingProvider(
     });
 
     // Handle double-click events for RALPH elements with dual labels
-    eventBus.on('element.dblclick', function(event) {
+    eventBus.on('element.dblclick', (event) => {
         const element = event.element;
         
         // Define elements that should NOT be editable
@@ -113,6 +113,12 @@ export default function RALphLabelEditingProvider(
             event.preventDefault();
             event.stopPropagation();
             
+            // Verificar que tenemos el contexto correcto
+            if (!this || typeof this.activeOverlay === 'undefined') {
+                console.warn('RALphLabelEditingProvider: contexto incorrecto, abortando edición');
+                return;
+            }
+            
             // Determine if clicking on internal or external label
             const clickedElement = event.originalEvent.target;
             const isInternalLabel = clickedElement.classList.contains('djs-label') && 
@@ -121,10 +127,10 @@ export default function RALphLabelEditingProvider(
                                   clickedElement.parentElement !== element;
             
             if (isInternalLabel || isExternalLabel) {
-                activateDirectEdit(element, isInternalLabel ? 'internal' : 'external');
+                this.activateDirectEdit(element, isInternalLabel ? 'internal' : 'external');
             } else {
                 // Clicking on the element itself - edit internal label
-                activateDirectEdit(element, 'internal');
+                this.activateDirectEdit(element, 'internal');
             }
         }
     });
@@ -286,7 +292,7 @@ export default function RALphLabelEditingProvider(
     };
 
     // Custom activation for RALPH elements with dual labels
-    function activateDirectEdit(element, labelType) {
+    this.activateDirectEdit = function(element, labelType) {
         // Define elements that should NOT be editable
         const nonEditableElements = [
             // History elements (except instance)
@@ -346,17 +352,17 @@ export default function RALphLabelEditingProvider(
         
         if (labelElement) {
             // Edit directly on the existing label
-            createDirectLabelEditor(element, labelElement, labelType);
+            this.createDirectLabelEditor(element, labelElement, labelType);
             return true;
         } else {
             // Fallback to overlay method
-            createCustomEditor(element, labelType);
+            this.createCustomEditor(element, labelType);
             return true;
         }
     }
 
     // Create direct editor on existing label
-    function createDirectLabelEditor(element, labelElement, labelType) {
+    this.createDirectLabelEditor = function(element, labelElement, labelType) {
         const nonEditableElements = [
             'RALph:history',
             'RALph:historyStart',
@@ -476,7 +482,7 @@ export default function RALphLabelEditingProvider(
         });
         
         // Document click handler
-        document.addEventListener('click', function onDocumentClick(e) {
+        const onDocumentClick = (e) => {
             if (!input.contains(e.target)) {
                 if (processingDocumentClick || processingFinishCall || hasFinished) {
                     return;
@@ -492,7 +498,9 @@ export default function RALphLabelEditingProvider(
                 finishDirectEdit(true, finalValue);
                 document.removeEventListener('click', onDocumentClick);
             }
-        });
+        };
+        
+        document.addEventListener('click', onDocumentClick);
         
         // Blur handler
         input.addEventListener('blur', function(e) {
@@ -616,7 +624,7 @@ export default function RALphLabelEditingProvider(
     }
 
     // Create a custom editor for RALPH elements with dual labels
-    function createCustomEditor(element, labelType) {
+    this.createCustomEditor = function(element, labelType) {
         const nonEditableElements = [
             'RALph:history',
             'RALph:historyStart',
@@ -760,7 +768,7 @@ export default function RALphLabelEditingProvider(
         });
         
         // Document click handler
-        document.addEventListener('click', function onDocumentClick(e) {
+        const onDocumentClick2 = (e) => {
             if (!overlay.contains(e.target)) {
                 if (processingDocumentClick || processingFinishCall || hasFinished) {
             return;
@@ -774,9 +782,11 @@ export default function RALphLabelEditingProvider(
                 const finalValue = currentValue || lastValue || lastHistoryValue || '';
                 
                 finishEditingWithValue(true, finalValue);
-                document.removeEventListener('click', onDocumentClick);
+                document.removeEventListener('click', onDocumentClick2);
             }
-        });
+        };
+        
+        document.addEventListener('click', onDocumentClick2);
         
         // Blur handler
         input.addEventListener('blur', function(e) {
@@ -800,7 +810,7 @@ export default function RALphLabelEditingProvider(
         });
         
         // Finish editing function
-        function finishEditingWithValue(save = true, capturedValue = null) {
+        const finishEditingWithValue = (save = true, capturedValue = null) => {
             if (capturedValue && capturedValue.trim() && !hasFinished && !processingFinishCall) {
                 processingFinishCall = true;
             } else if (!this.activeOverlay || isFinishing || hasFinished || processingFinishCall) {
@@ -830,9 +840,9 @@ export default function RALphLabelEditingProvider(
                 }
             }
             
-            function finishEditing(save = true) {
+            const finishEditing = (save = true) => {
                 return finishEditingWithValue(save, null);
-            }
+            };
             
             isFinishing = true;
             enterPressed = false;

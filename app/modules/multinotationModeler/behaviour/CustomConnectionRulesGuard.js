@@ -138,17 +138,8 @@ export default function CustomConnectionRulesGuard(eventBus) {
   }
 
   function showHUD(event, t, ctx) {
-    var el = ensureHUD();
-    if (!el) return;
-    var x = (event && (event.x || (event.originalEvent && event.originalEvent.clientX))) || 0;
-    var y = (event && (event.y || (event.originalEvent && event.originalEvent.clientY))) || 0;
-    var ctype = t || '';
-    var t2 = ctx && ctx.connectionType;
-    var ht = ctx && ctx.hints && ctx.hints.type;
-    el.textContent = 'type: ' + ctype + ' | connType: ' + (t2 || '') + ' | hints: ' + (ht || '');
-    el.style.left = (x + 12) + 'px';
-    el.style.top = (y + 12) + 'px';
-    el.style.display = 'block';
+    // HUD disabled - no connection info during creation
+    return;
   }
 
   function hideHUD() {

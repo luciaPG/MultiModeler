@@ -91,7 +91,7 @@ class LocalStorageAutoSaveManager {
     // Configurar listener para beforeunload
     this.setupBeforeUnloadListener();
     
-    console.log('✅ LocalStorage AutoSave Manager inicializado');
+    
   }
   
   // === VERIFICACIÓN DE BORRADORES EXISTENTES ===
@@ -100,7 +100,7 @@ class LocalStorageAutoSaveManager {
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY);
       if (!stored) {
-        console.log('ℹ️ No hay borrador guardado');
+        
         return;
       }
       
@@ -228,7 +228,6 @@ class LocalStorageAutoSaveManager {
   
   async restoreDraft() {
     try {
-      console.log('🔄 Restaurando borrador...');
       
       // Cargar estado completo
       const success = await this.forceRestore();
@@ -317,7 +316,7 @@ class LocalStorageAutoSaveManager {
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY);
       if (!stored) {
-        console.log('ℹ️ No hay datos guardados en localStorage');
+        
         return null;
       }
       
@@ -338,7 +337,7 @@ class LocalStorageAutoSaveManager {
         (value.rasci && Array.isArray(value.rasci.roles) && value.rasci.roles.length > 0)
       );
       if (!hasContent) {
-        console.log('ℹ️ Datos presentes pero sin contenido útil, se ignoran');
+        
         return null;
       }
       
@@ -400,7 +399,7 @@ class LocalStorageAutoSaveManager {
       if (success) {
         this.lastSaveTime = now;
         this.showSaveIndicator();
-        console.log('✅ Estado guardado en localStorage exitosamente');
+        
         return true;
       } else {
         console.warn('⚠️ No se pudo guardar estado en localStorage');
@@ -428,21 +427,20 @@ class LocalStorageAutoSaveManager {
   loadState() {
     try {
       // Optimización: Log eliminado para mejorar rendimiento
-      // console.log('📂 Cargando estado desde localStorage...');
+      
       
       const savedState = this.loadFromStorage();
       
       if (savedState && savedState.metadata) {
         this.projectState = { ...this.projectState, ...savedState };
         // Optimización: Log eliminado para mejorar rendimiento
-        // console.log('✅ Estado cargado desde localStorage');
-        
+        // 
         // Aplicar estado cargado
         this.applyLoadedState();
         
         return true;
       } else {
-        console.log('ℹ️ No hay estado guardado en localStorage');
+        
         return false;
       }
       
@@ -495,7 +493,7 @@ class LocalStorageAutoSaveManager {
       const ppiManager = resolve('PPIManagerInstance');
       if (this.projectState.ppi && ppiManager && ppiManager.core) {
         // Los PPIs se restaurarán cuando el modeler esté listo
-        console.log('🔄 PPIs marcados para restauración cuando el modeler esté listo');
+        
       }
       
       // Aplicar estado de RASCI
@@ -505,8 +503,7 @@ class LocalStorageAutoSaveManager {
       }
       
       // Optimización: Log eliminado para mejorar rendimiento
-      // console.log('✅ Estado aplicado correctamente');
-      
+      // 
     } catch (error) {
       console.error('❌ Error aplicando estado cargado:', error);
     }
@@ -773,7 +770,7 @@ class LocalStorageAutoSaveManager {
       }
     }, this.autoSaveFrequency);
     
-    console.log(`🔄 Autoguardado iniciado cada ${this.autoSaveFrequency}ms`);
+    
   }
   
   stopAutoSave() {
@@ -826,7 +823,7 @@ class LocalStorageAutoSaveManager {
       });
       
       // Optimización: Log eliminado para mejorar rendimiento
-      // console.log('🎧 Listeners del modeler configurados');
+      
 
       // Asegurar restauración de PPIs justo después de render completo del BPMN
       try {
@@ -956,7 +953,7 @@ class LocalStorageAutoSaveManager {
       }
       
       // Optimización: Log eliminado para mejorar rendimiento
-      // console.log('🎧 Listeners de PPI configurados');
+      
       
     } catch (error) {
       console.error('❌ Error configurando listeners de PPI:', error);
@@ -984,7 +981,7 @@ class LocalStorageAutoSaveManager {
       // TODO: Implementar observadores para RasciStore
       // Por ahora, nos basamos en el trigger manual
       // Optimización: Log eliminado para mejorar rendimiento
-      // console.log('🎧 Listeners de RASCI configurados (basados en triggers manuales)');
+      
       
     } catch (error) {
       console.error('❌ Error configurando listeners de RASCI:', error);
@@ -1012,7 +1009,7 @@ class LocalStorageAutoSaveManager {
       // TODO: Implementar observadores para PanelManager
       // Por ahora, nos basamos en el trigger manual
       // Optimización: Log eliminado para mejorar rendimiento
-      // console.log('🎧 Listeners de paneles configurados (basados en triggers manuales)');
+      
       
     } catch (error) {
       console.error('❌ Error configurando listeners de paneles:', error);
@@ -1029,7 +1026,7 @@ class LocalStorageAutoSaveManager {
     });
     
     // Optimización: Log eliminado para mejorar rendimiento
-    // console.log('🎧 Listener beforeunload configurado');
+    
   }
   
   // === TRIGGERS CON DEBOUNCE ===
@@ -1119,7 +1116,7 @@ class LocalStorageAutoSaveManager {
       
       // OPTIMIZACIÓN RADICAL: Canvas siempre saludable si tiene métodos básicos
       // Esto evita que se marque como no saludable innecesariamente
-      console.log('✅ Canvas considerado saludable para máximo rendimiento');
+      
       return true;
       
     } catch (error) {
@@ -1131,12 +1128,11 @@ class LocalStorageAutoSaveManager {
   async forceCanvasReset(canvas) {
     try {
       if (!canvas) return false;
-      console.log('🔄 Aplicando reset del canvas...');
       
       // Intentar resetear el viewbox con valores seguros
       try {
         canvas.viewbox({ x: 0, y: 0, width: 1000, height: 1000 });
-        console.log('✅ Viewbox reseteado');
+        
       } catch (viewboxError) {
         console.warn('⚠️ Error reseteando viewbox:', viewboxError);
       }
@@ -1144,7 +1140,7 @@ class LocalStorageAutoSaveManager {
       // Intentar resetear el zoom
       try {
         canvas.zoom(1);
-        console.log('✅ Zoom reseteado');
+        
       } catch (zoomError) {
         console.warn('⚠️ Error reseteando zoom:', zoomError);
       }
@@ -1155,7 +1151,7 @@ class LocalStorageAutoSaveManager {
       // Verificar si el canvas está saludable ahora (más permisivo)
       const isHealthy = this.isCanvasHealthy(canvas);
       if (isHealthy) {
-        console.log('✅ Canvas reseteado exitosamente');
+        
         return true;
       } else {
         // Si aún no está saludable, pero tiene métodos básicos, considerarlo como "reseteado"
@@ -1179,7 +1175,7 @@ class LocalStorageAutoSaveManager {
     try {
       // Protección contra ejecución múltiple
       if (this._restoringBpmn) {
-        console.log('ℹ️ Restauración BPMN ya en progreso, saltando...');
+        
         return true;
       }
       this._restoringBpmn = true;
@@ -1192,7 +1188,6 @@ class LocalStorageAutoSaveManager {
         return false;
       }
       
-      console.log('🔄 Restaurando estado BPMN desde localStorage...');
       
       // Preparar el canvas antes de importar
       try {
@@ -1229,7 +1224,7 @@ class LocalStorageAutoSaveManager {
           const canvas = modeler.get('canvas');
           if (canvas) {
             // Verificación de salud del canvas temporalmente deshabilitada para evitar resets innecesarios
-            console.log('ℹ️ Verificación de salud del canvas deshabilitada para evitar resets');
+            
             /*
             if (!this.isCanvasHealthy(canvas)) {
               console.warn('⚠️ Canvas no saludable, aplicando reset...');
@@ -1251,14 +1246,14 @@ class LocalStorageAutoSaveManager {
                   canvas.zoom(zoom);
                   console.log('✅ Zoom restaurado:', zoom, '(anterior:', currentZoom, ')');
                 } else {
-                  console.log('ℹ️ Zoom ya está en el valor correcto:', currentZoom);
+                  
                 }
               } catch (zoomError) {
                 console.warn('⚠️ Error aplicando zoom:', zoomError);
                 // Intentar aplicar zoom por defecto si hay error
                 try {
                   canvas.zoom(1);
-                  console.log('✅ Zoom aplicado por defecto debido a error');
+                  
                 } catch (defaultZoomError) {
                   console.warn('⚠️ No se pudo aplicar zoom por defecto:', defaultZoomError);
                 }
@@ -1282,16 +1277,16 @@ class LocalStorageAutoSaveManager {
                 
                 if (positionDiff > 1) { // Solo aplicar si hay diferencia significativa
                   canvas.viewbox(position);
-                  console.log('✅ Posición restaurada:', position);
+                  
                 } else {
-                  console.log('ℹ️ Posición ya está correcta:', currentViewbox);
+                  
                 }
               } catch (viewboxError) {
                 console.warn('⚠️ Error aplicando viewbox:', viewboxError);
                 // Intentar aplicar posición por defecto si hay error
                 try {
                   canvas.viewbox({ x: 0, y: 0, width: 1000, height: 1000 });
-                  console.log('✅ Posición aplicada por defecto debido a error');
+                  
                 } catch (defaultViewboxError) {
                   console.warn('⚠️ No se pudo aplicar posición por defecto:', defaultViewboxError);
                 }
@@ -1315,7 +1310,7 @@ class LocalStorageAutoSaveManager {
         }
       }
       
-      console.log('✅ Estado BPMN restaurado desde localStorage');
+      
       // Iniciar cooldown post-restauración para evitar reacciones inmediatas
       this._postRestoreCooldownUntil = Date.now() + this.postRestoreCooldownMs;
       this._restoringBpmn = false;
@@ -1333,20 +1328,19 @@ class LocalStorageAutoSaveManager {
     try {
       // Protección contra ejecución múltiple
       if (this._restoringPPI) {
-        console.log('ℹ️ Restauración PPI ya en progreso, saltando...');
+        
         return true;
       }
       this._restoringPPI = true;
       this.enableAntiFlicker();
       
-      console.log('🚀 INICIANDO RESTAURACIÓN PPI - DEBUG COMPLETO');
+      
       console.log('📊 Project State PPI:', this.projectState.ppi);
       
       const ppiManager = resolve('PPIManagerInstance');
       if (this.projectState.ppi.indicators && ppiManager && ppiManager.core) {
         // Optimización: Reducir logs de debug para mejorar rendimiento
-        // console.log('🔄 Restaurando PPIs desde localStorage...');
-        
+        // 
         // Limpiar PPIs existentes
         ppiManager.core.ppis = [];
         
@@ -1440,7 +1434,7 @@ class LocalStorageAutoSaveManager {
                         el.metadata && el.metadata.isScope && el.metadata.parentId === ppi.elementId
                       );
                       
-                      console.log(`🔍 Buscando Target/Scope para PPI ${ppi.elementId}:`);
+                      
                       console.log(`  - Targets encontrados: ${ppiTargets.length}`);
                       console.log(`  - Scopes encontrados: ${ppiScopes.length}`);
                       if (ppiTargets.length > 0) console.log(`  - Target IDs: ${ppiTargets.map(t => t.id).join(', ')}`);
@@ -1448,11 +1442,11 @@ class LocalStorageAutoSaveManager {
                       
                       if (!ppi.scopeElementId && ppiScopes.length === 1) {
                         ppi.scopeElementId = ppiScopes[0].id;
-                        console.log(`🔍 ID de Scope adoptado desde PPINOT storage: ${ppi.scopeElementId}`);
+                        
                       }
                       if (!ppi.targetElementId && ppiTargets.length === 1) {
                         ppi.targetElementId = ppiTargets[0].id;
-                        console.log(`🔍 ID de Target adoptado desde PPINOT storage: ${ppi.targetElementId}`);
+                        
                       }
                     }
                   }
@@ -1594,7 +1588,6 @@ class LocalStorageAutoSaveManager {
         };
         tryRefresh(0);
         
-        console.log(`✅ ${this.projectState.ppi.indicators.length} PPIs restaurados desde localStorage`);
         
         // Debug final: verificar estado del canvas después de la restauración
         try {
@@ -1617,10 +1610,10 @@ class LocalStorageAutoSaveManager {
             // );
             
             // Optimización: Reducir logs de debug para mejorar rendimiento
-            // console.log('🎯 ESTADO FINAL DEL CANVAS:');
-            // console.log(`  - PPIs: ${ppiElements.length}`);
-            // console.log(`  - Targets: ${targetElements.length}`);
-            // console.log(`  - Scopes: ${scopeElements.length}`);
+            // 
+            
+            
+            
             
             ppiElements.forEach(ppi => {
               const children = allElements.filter(el => el.parent === ppi);
@@ -1678,7 +1671,7 @@ class LocalStorageAutoSaveManager {
       
       // 4) Importar BPMN primero
       if (this.projectState.bpmn && this.projectState.bpmn.xml) {
-        console.log('🔄 Restaurando diagrama BPMN...');
+        
         await this.restoreBpmnState();
         
         // Esperar un poco para que el modeler procese el XML
@@ -1699,13 +1692,13 @@ class LocalStorageAutoSaveManager {
         // Optimización: Reducir espera para mejor rendimiento
         await new Promise(resolve => setTimeout(resolve, 50));
       } else if (this._restoringPPI) {
-        console.log('ℹ️ Restauración PPI ya en progreso, saltando...');
+        
       }
       // Extender cooldown tras restauración completa
       this._postRestoreCooldownUntil = Date.now() + this.postRestoreCooldownMs;
       
       this.markRestored();
-      console.log('✅ Restauración manual completada');
+      
       return true;
       
     } catch (e) {
@@ -1729,7 +1722,7 @@ class LocalStorageAutoSaveManager {
       panels: { activePanels: ['bpmn'], layout: '2v', order: ['bpmn'] },
       metadata: { lastSave: null, version: '1.0.0', projectName: 'Proyecto BPMN' }
     };
-    console.log('✅ Estado guardado limpiado');
+    
   }
   
   getStateInfo() {
@@ -1761,7 +1754,7 @@ class LocalStorageAutoSaveManager {
     if (this.autoSaveInterval) {
       this.startAutoSave(); // Reiniciar con nueva frecuencia
     }
-    console.log(`🔄 Frecuencia de autoguardado actualizada a ${ms}ms`);
+    
   }
 }
 
@@ -1769,12 +1762,13 @@ class LocalStorageAutoSaveManager {
 export { LocalStorageAutoSaveManager };
 
 // Register in ServiceRegistry
-const registry = getServiceRegistry();
-if (registry) {
-  registry.register('LocalStorageAutoSaveManager', LocalStorageAutoSaveManager, { 
-    description: 'Autosave (localStorage)' 
-  });
-  registry.register('localStorageAutoSaveManager', new LocalStorageAutoSaveManager(), { 
-    description: 'Instancia autosave localStorage' 
-  });
-}
+// DESHABILITADO: El nuevo AutosaveManager limpio se registra en su lugar
+// const registry = getServiceRegistry();
+// if (registry) {
+//   registry.register('LocalStorageAutoSaveManager', LocalStorageAutoSaveManager, { 
+//     description: 'Autosave (localStorage)' 
+//   });
+//   registry.register('localStorageAutoSaveManager', new LocalStorageAutoSaveManager(), { 
+//     description: 'Instancia autosave localStorage' 
+//   });
+// }

@@ -26,7 +26,7 @@ class PPINOTCoordinationManager {
 
   init() {
     // Optimización: Log eliminado para mejorar rendimiento
-    // console.log('🎯 Inicializando PPINOT Coordination Manager...');
+    // 
     this.setupModelerWatcher();
     this.setupDataWatcher();
     this.setupRestorationTriggers();
@@ -49,7 +49,7 @@ class PPINOTCoordinationManager {
           
           if (elementRegistry && modeling && canvas) {
             this.restorationState.modelerReady = true;
-            console.log('✅ Modeler completamente funcional detectado');
+            
             this.attemptRestoration();
           } else {
             setTimeout(checkModeler, 500);
@@ -72,7 +72,7 @@ class PPINOTCoordinationManager {
       if (ppinotData.elements.length > 0 && !this.restorationState.dataLoaded) {
         this.restorationState.dataLoaded = true;
         // Optimización: Log eliminado para mejorar rendimiento
-        // console.log(`📊 Datos PPINOT disponibles: ${ppinotData.elements.length} elementos`);
+        
         this.attemptRestoration();
       } else if (ppinotData.elements.length === 0) {
         // Revisar cada 2 segundos si hay datos nuevos
@@ -103,7 +103,7 @@ class PPINOTCoordinationManager {
           if (event.context && event.context.shape && 
               (event.context.shape.type.includes('PPINOT') || 
                event.context.shape.businessObject?.$type?.includes('PPINOT'))) {
-            console.log('🎯 Elemento PPINOT creado, verificando restauración...');
+            
             this.triggerRestoration('element.created');
           }
         });
@@ -119,34 +119,33 @@ class PPINOTCoordinationManager {
 
   setupAutoRestoration() {
         // Optimización: Log eliminado para mejorar rendimiento
-        // console.log('🔄 Configurando auto-restauración...');
-    
+        // 
     // Verificar si hay datos para restaurar al cargar la página
     const checkForData = () => {
       try {
         const ppinotData = ppinotStorageManager.loadPPINOTElements();
         if (ppinotData.elements.length > 0) {
           // Optimización: Reducir logs de debug para mejorar rendimiento
-          // console.log(`📊 Datos PPINOT encontrados: ${ppinotData.elements.length} elementos`);
+          
           
           const targetCount = ppinotData.elements.filter(el => el.metadata?.isTarget).length;
           const scopeCount = ppinotData.elements.filter(el => el.metadata?.isScope).length;
           
           if (targetCount > 0 || scopeCount > 0) {
             // Optimización: Reducir logs de debug para mejorar rendimiento
-            // console.log(`🎯 Elementos Target/Scope encontrados: ${targetCount} Targets, ${scopeCount} Scopes`);
-            // console.log('🔄 Disparando restauración automática...');
+            // 
+            // 
             this.triggerRestoration('page.load');
           } else {
             // Optimización: Reducir logs de debug para mejorar rendimiento
-            // console.log('ℹ️ No hay elementos Target/Scope para restaurar');
+            // 
           }
         } else {
           // Optimización: Reducir logs de debug para mejorar rendimiento
-          // console.log('ℹ️ No hay datos PPINOT para restaurar');
+          // 
         }
       } catch (error) {
-        console.log('❌ Error verificando datos PPINOT:', error.message);
+        
       }
     };
     
@@ -172,7 +171,7 @@ class PPINOTCoordinationManager {
     // Verificar cooldown
     if (now - this.restorationState.lastRestorationAttempt < this.restorationCooldown) {
       // Optimización: Reducir logs de debug para mejorar rendimiento
-      // console.log(`⏳ Restauración en cooldown, ignorando trigger desde ${source}`);
+      
       return;
     }
     
@@ -184,7 +183,7 @@ class PPINOTCoordinationManager {
     
     // Verificar si ya se está restaurando
     if (this.restorationState.isRestoring) {
-      console.log(`🔄 Restauración ya en progreso, ignorando trigger desde ${source}`);
+      
       return;
     }
     
@@ -196,8 +195,7 @@ class PPINOTCoordinationManager {
     
     this.restorationTriggers.add(source);
       // Optimización: Log eliminado para mejorar rendimiento
-      // console.log(`🎯 Trigger de restauración desde: ${source}`);
-    
+      // 
     // Restauración INSTANTÁNEA - sin delay para máxima velocidad
     this.attemptRestoration();
   }
@@ -212,7 +210,7 @@ class PPINOTCoordinationManager {
     
     // Verificar si ya se restauró exitosamente
     if (this.restorationState.hasRestored) {
-      console.log('✅ Elementos PPINOT ya restaurados exitosamente');
+      
       return true;
     }
     
@@ -227,8 +225,8 @@ class PPINOTCoordinationManager {
     this.restorationState.restorationCount++;
     
     // Optimización: Logs eliminados para mejorar rendimiento
-    // console.log(`🔄 Intento de restauración #${this.restorationState.restorationCount}`);
-    // console.log(`🎯 Triggers activos: ${Array.from(this.restorationTriggers).join(', ')}`);
+    // 
+    
     
     try {
       const success = await this.performRestoration();
@@ -236,7 +234,7 @@ class PPINOTCoordinationManager {
       if (success) {
         this.restorationState.hasRestored = true;
         // Optimización: Log eliminado para mejorar rendimiento
-        // console.log('✅ Restauración PPINOT completada exitosamente');
+        // 
         this.clearTriggers();
         return true;
       } else {
@@ -262,8 +260,7 @@ class PPINOTCoordinationManager {
     };
     
         // Optimización: Log eliminado para mejorar rendimiento
-        // console.log('🔍 Condiciones de restauración:', conditions);
-    
+        // 
     return Object.values(conditions).every(condition => condition);
   }
 
@@ -272,22 +269,47 @@ class PPINOTCoordinationManager {
       // Delegar restauración al gestor principal de autosave para evitar duplicidad
       const ppinotData = ppinotStorageManager.loadPPINOTElements();
       if (ppinotData.elements.length === 0) {
-        console.log('ℹ️ No hay elementos PPINOT para restaurar');
+        
         return true;
       }
 
       const registry = getServiceRegistry && getServiceRegistry();
-      const autoSaveMgr = registry?.get('localStorageAutoSaveManager');
-      if (autoSaveMgr && typeof autoSaveMgr.restorePPIState === 'function') {
+      
+      // Intentar primero el viejo LocalStorageAutoSaveManager
+      const legacyAutoSaveMgr = registry?.get('localStorageAutoSaveManager');
+      if (legacyAutoSaveMgr && typeof legacyAutoSaveMgr.restorePPIState === 'function') {
         console.log('🤝 Delegando restauración PPINOT a LocalStorageAutoSaveManager.restorePPIState()');
-        const ok = await autoSaveMgr.restorePPIState();
-        // Mantener sincronización unificada tras la restauración
+        const ok = await legacyAutoSaveMgr.restorePPIState();
         this.syncWithOtherSystems();
         return !!ok;
       }
+      
+      // Fallback: Usar el nuevo AutosaveManager si está disponible
+      const newAutoSaveMgr = registry?.get('AutosaveManager') || registry?.get('cleanAutosaveInstance');
+      if (newAutoSaveMgr) {
+        console.log('🤝 Usando nuevo AutosaveManager para restauración PPINOT');
+        
+        // Ejecutar restauración manual usando PPINOTStorageManager
+        const ppinotStorageManager = registry?.get('PPINOTStorageManager');
+        if (ppinotStorageManager && typeof ppinotStorageManager.loadPPINOTElements === 'function') {
+          const data = ppinotStorageManager.loadPPINOTElements();
+          
+          if (data.elements.length > 0) {
+            console.log(`🔄 Restaurando ${data.elements.length} elementos PPINOT desde storage`);
+            
+            // Llamar al sistema de reparenting del viejo manager
+            const modeler = registry?.get('BpmnModeler');
+            if (modeler) {
+              await this.reparentPPINOTElements(modeler, data.elements, data.relationships);
+            }
+            
+            this.syncWithOtherSystems();
+            return true;
+          }
+        }
+      }
 
-      // Si no existe el autosave manager, no intentar crear elementos aquí para evitar huérfanos
-      console.warn('⚠️ localStorageAutoSaveManager no disponible; omitiendo creación directa para evitar huérfanos');
+      console.warn('⚠️ Ningún AutosaveManager disponible para restauración PPINOT');
       return false;
       
     } catch (error) {
@@ -355,7 +377,7 @@ class PPINOTCoordinationManager {
       // Verificar si ya existe
       const existingElement = elementRegistry.get(elementData.id);
       if (existingElement) {
-        console.log(`ℹ️ ${type} ya existe: ${elementData.id}`);
+        
         return existingElement;
       }
       
@@ -399,7 +421,7 @@ class PPINOTCoordinationManager {
       createdElement.label = createdLabel;
       createdLabel.labelTarget = createdElement;
       
-      console.log(`✅ ${type} creado: ${createdElement.id}`);
+      
       return createdElement;
       
     } catch (error) {
@@ -443,7 +465,6 @@ class PPINOTCoordinationManager {
             }
           }
           
-          console.log(`✅ Relación establecida: ${childElement.id} -> ${parentElement.id}`);
           
         } catch (error) {
           console.error(`❌ Error creando relación ${relationship.childId} -> ${relationship.parentId}:`, error);
@@ -462,7 +483,7 @@ class PPINOTCoordinationManager {
     try {
       ppinotStorageManager.syncWithImportExport();
       ppinotStorageManager.syncWithAutoSave();
-      console.log('🔄 Sincronización con otros sistemas completada');
+      
     } catch (error) {
       console.error('❌ Error sincronizando con otros sistemas:', error);
     }
@@ -485,7 +506,7 @@ class PPINOTCoordinationManager {
       restorationCount: 0
     };
     this.clearTriggers();
-    console.log('🔄 PPINOT Coordination Manager reiniciado');
+    
   }
 
   getStatus() {
@@ -508,6 +529,84 @@ class PPINOTCoordinationManager {
 
   isReady() {
     return this.restorationState.modelerReady && this.restorationState.dataLoaded;
+  }
+
+  // === MÉTODO DE REPARENTING PARA NUEVO AUTOSAVE MANAGER ===
+  
+  async reparentPPINOTElements(modeler, elements, relationships) {
+    try {
+      const elementRegistry = modeler.get('elementRegistry');
+      const modeling = modeler.get('modeling');
+      const elementFactory = modeler.get('elementFactory');
+      
+      if (!elementRegistry || !modeling || !elementFactory) {
+        console.warn('⚠️ Servicios de modeler no disponibles para reparenting');
+        return false;
+      }
+      
+      // Filtrar solo medidas (como en el viejo sistema)
+      const isMeasureType = (t) => {
+        if (!t || typeof t !== 'string') return false;
+        return t.startsWith('PPINOT:') && (
+          t.includes('Measure') || t.includes('Aggregated') || t.includes('Derived') || 
+          t.includes('Time') || t.includes('Count') || t.includes('Data') || t.includes('State')
+        ) && !t.endsWith('Target') && !t.endsWith('Scope') && !t.endsWith('Ppi');
+      };
+      
+      let reparentedCount = 0;
+      
+      // Reparentar medidas existentes (NO crear nuevas)
+      for (const el of elements) {
+        const type = el.type || (el.businessObject && el.businessObject.$type) || '';
+        if (!isMeasureType(type)) continue;
+        
+        const childId = el.id;
+        let parentId = el.parentId || null;
+        if (!parentId) {
+          const rel = relationships.find(r => r.childId === childId);
+          if (rel) parentId = rel.parentId;
+        }
+        if (!parentId) continue;
+        
+        const parentShape = elementRegistry.get(parentId);
+        if (!parentShape) continue;
+        
+        const childShape = elementRegistry.get(childId);
+        if (childShape) {
+          // Reparent si no está bajo el PPI esperado
+          if (childShape.parent !== parentShape) {
+            try {
+              modeling.moveElements([childShape], { x: 0, y: 0 }, parentShape);
+              console.log(`✅ Reparentado: ${childId} → ${parentId}`);
+              reparentedCount++;
+            } catch (error) {
+              console.warn(`⚠️ Error reparentando ${childId}:`, error);
+            }
+          }
+          
+          // Restaurar posición si está disponible
+          if (el.position && (el.position.x !== childShape.x || el.position.y !== childShape.y)) {
+            const delta = { 
+              x: el.position.x - childShape.x, 
+              y: el.position.y - childShape.y 
+            };
+            try {
+              modeling.moveElements([childShape], delta);
+              console.log(`📍 Posición restaurada: ${childId} (${el.position.x}, ${el.position.y})`);
+            } catch (error) {
+              console.warn(`⚠️ Error restaurando posición ${childId}:`, error);
+            }
+          }
+        }
+      }
+      
+      console.log(`✅ Reparenting completado: ${reparentedCount} elementos`);
+      return reparentedCount > 0;
+      
+    } catch (error) {
+      console.error('❌ Error en reparentPPINOTElements:', error);
+      return false;
+    }
   }
 
   // === MÉTODOS DE DEBUG ===
@@ -561,10 +660,6 @@ class PPINOTCoordinationManager {
       const scopePosition = { x: 300, y: 100 };
       const createdScope = modeling.createShape(scopeElement, scopePosition, rootElement);
       
-      console.log('✅ Elementos de prueba creados:', {
-        target: createdTarget.id,
-        scope: createdScope.id
-      });
       
       // Forzar restauración después de crear elementos
       setTimeout(() => {
@@ -581,7 +676,6 @@ class PPINOTCoordinationManager {
 
   debugElements() {
     try {
-      console.log('🔍 Debug de elementos PPINOT...');
       
       const registry = getServiceRegistry && getServiceRegistry();
       const modeler = registry?.get('BpmnModeler');
@@ -618,13 +712,13 @@ class PPINOTCoordinationManager {
          el.businessObject.name.toLowerCase().includes('scope'))
       );
       
-      console.log(`🎯 PPI Elements: ${ppiElements.length}`);
+      
       ppiElements.forEach(el => console.log(`  - ${el.id} (${el.type})`));
       
-      console.log(`🎯 Target Elements: ${targetElements.length}`);
+      
       targetElements.forEach(el => console.log(`  - ${el.id} (${el.type}) - Name: ${el.businessObject?.name || 'N/A'}`));
       
-      console.log(`🎯 Scope Elements: ${scopeElements.length}`);
+      
       scopeElements.forEach(el => console.log(`  - ${el.id} (${el.type}) - Name: ${el.businessObject?.name || 'N/A'}`));
       
       // Verificar datos en localStorage
@@ -672,14 +766,14 @@ if (typeof window !== 'undefined') {
   };
   
     // Optimización: Log eliminado para mejorar rendimiento
-    // console.log('🔧 Funciones de debug PPINOT disponibles: window.debugPPINOT');
+    
 }
 
 // === FUNCIONES DE DEBUG ADICIONALES ===
 
 function debugPPINOTData() {
   const ppinotData = ppinotStorageManager.loadPPINOTElements();
-  console.log('🔍 Datos PPINOT disponibles:');
+  
   console.log(`  - Total elementos: ${ppinotData.elements.length}`);
   console.log(`  - Total relaciones: ${ppinotData.relationships.length}`);
   
@@ -699,14 +793,14 @@ function debugPPINOTData() {
 function debugElementDetection() {
   const modeler = resolve('BpmnModeler');
   if (!modeler) {
-    console.log('❌ Modeler no disponible');
+    
     return;
   }
   
   const elementRegistry = modeler.get('elementRegistry');
   const allElements = elementRegistry.getAll();
   
-  console.log('🔍 Análisis de detección de elementos:');
+  
   console.log(`  - Total elementos en canvas: ${allElements.length}`);
   
   const ppiElements = allElements.filter(el => 
@@ -755,11 +849,10 @@ function forceCreateTargetScope() {
       );
       
       if (ppiElements.length === 0) {
-        console.log('❌ No se encontraron PPIs para asociar Target/Scope');
+        
         return false;
       }
       
-      console.log(`🔍 Encontrados ${ppiElements.length} PPIs`);
       
       let createdCount = 0;
       ppiElements.forEach((ppi, index) => {
@@ -786,7 +879,7 @@ function forceCreateTargetScope() {
         };
         
         const createdTarget = modeling.createShape(targetElement, targetPosition, rootElement);
-        console.log(`✅ Target creado: ${createdTarget.id}`);
+        
         createdCount++;
         
         // Crear Scope
@@ -810,7 +903,7 @@ function forceCreateTargetScope() {
         };
         
         const createdScope = modeling.createShape(scopeElement, scopePosition, rootElement);
-        console.log(`✅ Scope creado: ${createdScope.id}`);
+        
         createdCount++;
       });
       
@@ -825,11 +918,11 @@ function forceCreateTargetScope() {
       
       return true;
     } else {
-      console.log('❌ Modeler no disponible');
+      
       return false;
     }
   } else {
-    console.log('❌ resolve no disponible');
+    
     return false;
   }
 }
