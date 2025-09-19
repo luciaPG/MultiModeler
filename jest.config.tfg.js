@@ -94,7 +94,8 @@ module.exports = {
     '<rootDir>/tests/8.1-unitarias/**/*.test.js',
     '<rootDir>/tests/8.2-integracion/**/*.test.js',
     '<rootDir>/tests/8.3-ui-e2e/**/*.test.js',
-    '<rootDir>/tests/8.4-aceptacion/**/*.test.js'
+    '<rootDir>/tests/8.4-aceptacion/**/*.test.js',
+    '<rootDir>/tests/8.4-non-functional/**/*.test.js'
   ],
 
   // Reportes personalizados
