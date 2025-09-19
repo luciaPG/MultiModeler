@@ -79,7 +79,13 @@ export class AutosaveManager {
         data: projectData
       };
 
-      localStorage.setItem('draft:multinotation', JSON.stringify(draftData));
+      try {
+        localStorage.setItem('draft:multinotation', JSON.stringify(draftData));
+      } catch (storageError) {
+        // Re-lanzar el error para que sea capturado por el catch principal
+        throw new Error(`Storage error: ${storageError.message}`);
+      }
+      
       this.hasChanges = false;
 
       // Compatibilidad con tests que esperan storageManager.save()

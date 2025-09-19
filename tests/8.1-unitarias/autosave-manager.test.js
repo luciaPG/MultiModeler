@@ -301,11 +301,10 @@ describe('8.1 Pruebas Unitarias - AutosaveManager', () => {
     });
 
     test('debe manejar errores del storage', async () => {
-      // El nuevo AutosaveManager usa localStorage directamente, no storageManager.save()
-      // Vamos a hacer que localStorage.setItem falle
-      const originalSetItem = localStorage.setItem;
-      localStorage.setItem = jest.fn().mockImplementation(() => {
-        throw new Error('Storage full');
+      // Estrategia alternativa: hacer que JSON.stringify falle
+      const originalStringify = JSON.stringify;
+      JSON.stringify = jest.fn().mockImplementation(() => {
+        throw new Error('JSON serialization failed');
       });
 
       const autosaveManager = new AutosaveManager({
@@ -322,10 +321,10 @@ describe('8.1 Pruebas Unitarias - AutosaveManager', () => {
       expect(result.error).toBeDefined();
       
       const errorMessage = typeof result.error === 'string' ? result.error : result.error.message;
-      expect(errorMessage).toContain('Storage full');
+      expect(errorMessage).toContain('JSON serialization failed');
       
-      // Restaurar localStorage
-      localStorage.setItem = originalSetItem;
+      // Restaurar JSON.stringify
+      JSON.stringify = originalStringify;
     });
   });
 

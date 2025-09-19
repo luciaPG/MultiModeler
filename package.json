@@ -31,8 +31,6 @@
         "test:multinotation-real": "jest tests/8.1-unitarias/multinotation-core-real.test.js --config jest.config.tfg.js",
         "test:rasci-real": "jest tests/8.1-unitarias/rasci-core-real.test.js --config jest.config.tfg.js",
         "test:unitarias-reales": "jest tests/8.1-unitarias/*-real.test.js --config jest.config.tfg.js",
-        "test:real": "jest --config jest.config.real.js",
-        "test:real-coverage": "jest --config jest.config.real.js --coverage",
         "test:tfg": "jest --config jest.config.tfg.js --coverage",
         "test:sprint1": "jest tests/sprint1",
         "test:report": "node scripts/generate-test-report.js",

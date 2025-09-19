@@ -1,5 +1,19 @@
 /**
- * Configuración de Jest para las pruebas del TFG
+ * Co  // Mapeo de módulos para resolver imports
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/app/$1',
+    '^@modules/(.*)$': '<rootDir>/app/modules/$1',
+    '^@tests/(.*)$': '<rootDir>/tests/$1',
+    // SOLUCIÓN ESM: Mock completo de bpmn-js y dependencias ESM
+    '^bpmn-js/lib/Modeler$': '<rootDir>/tests/__mocks__/bpmn-js.js',
+    '^bpmn-js$': '<rootDir>/tests/__mocks__/bpmn-js.js',
+    '^bpmn-js/lib/util/ModelUtil$': '<rootDir>/tests/__mocks__/bpmn-js-util-ModelUtil.js',
+    '^bpmn-js/(.*)$': '<rootDir>/tests/__mocks__/bpmn-js.js',
+    '^diagram-js/(.*)$': '<rootDir>/tests/__mocks__/bpmn-js.js',
+    '^min-dash$': '<rootDir>/tests/__mocks__/min-dash.js',
+    '^inherits-browser$': '<rootDir>/tests/__mocks__/inherits-browser.js',
+    '^tiny-svg$': '<rootDir>/tests/__mocks__/tiny-svg.js'
+  }, Jest para las pruebas del TFG
  * Estructura basada en el Capítulo 8: Pruebas y Validación
  */
 
@@ -75,29 +89,12 @@ module.exports = {
     }
   },
 
-  // Configuración específica por tipo de prueba
-  projects: [
-    {
-      displayName: '8.1 Pruebas Unitarias',
-      testMatch: ['<rootDir>/tests/8.1-unitarias/**/*.test.js'],
-      coverageDirectory: 'reports/coverage-tfg/unitarias'
-    },
-    {
-      displayName: '8.2 Pruebas de Integración',
-      testMatch: ['<rootDir>/tests/8.2-integracion/**/*.test.js'],
-      coverageDirectory: 'reports/coverage-tfg/integracion'
-    },
-    {
-      displayName: '8.3 Pruebas UI/E2E',
-      testMatch: ['<rootDir>/tests/8.3-ui-e2e/**/*.test.js'],
-      testEnvironment: 'jsdom',
-      coverageDirectory: 'reports/coverage-tfg/ui-e2e'
-    },
-    {
-      displayName: '8.4 Pruebas de Aceptación',
-      testMatch: ['<rootDir>/tests/8.4-aceptacion/**/*.test.js'],
-      coverageDirectory: 'reports/coverage-tfg/aceptacion'
-    }
+  // Configuración unificada - todos los tests del TFG
+  testMatch: [
+    '<rootDir>/tests/8.1-unitarias/**/*.test.js',
+    '<rootDir>/tests/8.2-integracion/**/*.test.js',
+    '<rootDir>/tests/8.3-ui-e2e/**/*.test.js',
+    '<rootDir>/tests/8.4-aceptacion/**/*.test.js'
   ],
 
   // Reportes personalizados

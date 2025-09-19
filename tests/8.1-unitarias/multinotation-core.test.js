@@ -391,11 +391,19 @@ describe('8.1 Pruebas Unitarias - MultiNotation Core', () => {
       await moduleBridge.initialize();
 
       const rasciAdapter = rasciAdapterModule.default;
+      console.log('DEBUG rasciAdapter:', rasciAdapter);
       serviceRegistry.register('RASCIAdapter', rasciAdapter);
       await rasciAdapter.initialize();
 
+      console.log('DEBUG Iniciando initializeRasci...');
       const rasciInitialization = await initializeRasci({ eventBus, adapter: rasciAdapter });
-      const rasciManager = rasciInitialization.manager;
+      console.log('DEBUG rasciInitialization:', rasciInitialization);
+      const rasciManager = rasciInitialization?.manager;
+      console.log('DEBUG rasciManager:', rasciManager);
+
+      // Verificar que rasciManager existe y tiene el método getMatrixData
+      expect(rasciManager).toBeDefined();
+      expect(typeof rasciManager.getMatrixData).toBe('function');
 
       rasciAdapter.registerRASCIManager(rasciManager);
 
