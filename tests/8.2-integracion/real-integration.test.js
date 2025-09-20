@@ -5,19 +5,19 @@
  * del core multinotación y servicios reales para detectar regresiones reales.
  */
 
-import { describe, test, expect, beforeEach, jest } from '@jest/globals';
+const { describe, test, expect, beforeEach, jest } = require('@jest/globals');
 
 // Mock de getBpmnTasks para evitar que el validador elimine tareas automáticamente
 jest.mock('../../app/modules/rasci/core/matrix-manager.js', () => ({
   getBpmnTasks: jest.fn(() => [])
 }));
 
-// Importar componentes reales
-import { getBpmnElementStats } from '../../app/modules/bpmn/validators.js';
-import { RasciMatrixValidator } from '../../app/modules/rasci/validation/matrix-validator.js';
-import { isSupportedType } from '../../app/modules/multinotationModeler/notations/ppinot/config.js';
-import { Ralph as RALPHTypes } from '../../app/modules/multinotationModeler/notations/ralph/Types.js';
-import { getBpmnTasks } from '../../app/modules/rasci/core/matrix-manager.js';
+// Importar componentes reales usando require()
+const { getBpmnElementStats } = require('../../app/modules/bpmn/validators.js');
+const { RasciMatrixValidator } = require('../../app/modules/rasci/validation/matrix-validator.js');
+const { isSupportedType } = require('../../app/modules/multinotationModeler/notations/ppinot/config.js');
+const { Ralph: RALPHTypes } = require('../../app/modules/multinotationModeler/notations/ralph/Types.js');
+const { getBpmnTasks } = require('../../app/modules/rasci/core/matrix-manager.js');
 
 const { createValidMmProject } = require('../utils/test-helpers');
 

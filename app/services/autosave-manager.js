@@ -65,6 +65,7 @@ export class AutosaveManager {
     }
 
     try {
+      console.log('🔄 Iniciando performAutosave...');
       this.isAutosaving = true;
       this.autosaveTimer = null;
 
@@ -162,12 +163,16 @@ export class AutosaveManager {
     
     // Obtener datos RALPH
     await this.capturarDatosRALPH(project);
+    
+    // Obtener datos BPMN (relaciones padre-hijo y elementos RALPH)
+    await this.capturarDatosBPMN(project);
 
     return project;
   }
 
   async capturarElementosPPINOT(project) {
     try {
+      console.log('🔍 Iniciando capturarElementosPPINOT...');
       const serviceRegistry = await import('../modules/ui/core/ServiceRegistry.js');
       const registry = serviceRegistry.getServiceRegistry();
       
@@ -180,27 +185,119 @@ export class AutosaveManager {
           const allCanvasElements = elementRegistry.getAll();
           
           // Buscar PPIs principales
+          // Obtener SOLO elementos PPINOT:Ppi del canvas (no medidas ni targets)
           const ppiShapes = allCanvasElements.filter(el => {
             const type = el.type || (el.businessObject && el.businessObject.$type) || '';
-            return type === 'PPINOT:Ppi';
+            // Solo PPIs principales, excluir medidas, targets, scopes, etc.
+            const isMainPPI = type === 'PPINOT:Ppi';
+            const isNotMeasure = !type.includes('Measure') && !type.includes('Target') && !type.includes('Scope');
+            
+            if (isMainPPI && isNotMeasure) {
+              console.log(`✅ PPI principal detectado: ${el.id} (${type})`);
+            } else if (type.includes('PPINOT') && !isMainPPI) {
+              console.log(`🚫 Elemento PPINOT excluido de lista de PPIs: ${el.id} (${type})`);
+            }
+            
+            return isMainPPI && isNotMeasure;
           });
           
-          console.log(`🔍 AutoSave: ${ppiShapes.length} PPIs principales en canvas`);
+          // También obtener elementos PPINOT de la parte visual (Target, Scope, Measures)
+          const visualPPINOTElements = allCanvasElements.filter(el => {
+            const id = el.id || '';
+            // Buscar elementos que tengan IDs que empiecen con Target_, Scope_, Measure_, etc.
+            // PERO EXCLUIR elementos label (se crean automáticamente)
+            const isPPINOTElement = (id.startsWith('Target_') || 
+                   id.startsWith('Scope_') || 
+                   id.startsWith('Measure_') || 
+                   id.startsWith('AggregatedMeasure_') ||
+                   id.startsWith('BaseMeasure_') ||
+                   id.startsWith('DataMeasure_') ||
+                   id.startsWith('TimeMeasure_')) && !id.includes('_label');
+                   
+            // DEBUG: Mostrar elementos detectados
+            if (isPPINOTElement) {
+              console.log(`🔍 ELEMENTO VISUAL PPINOT DETECTADO: ${id} - Posición: x=${el.x}, y=${el.y}, w=${el.width}, h=${el.height}`);
+            } else if (id.includes('_label') && (id.startsWith('Target_') || id.startsWith('Scope_') || id.startsWith('Measure_') || id.startsWith('AggregatedMeasure_'))) {
+              console.log(`🚫 ELEMENTO LABEL EXCLUIDO: ${id}`);
+            }
+                   
+            return isPPINOTElement;
+          });
+          
+          
+          console.log(`🔍 AutoSave: ${ppiShapes.length} PPIs principales + ${visualPPINOTElements.length} elementos visuales PPINOT`);
+          
           
           const allPPINOTElements = [];
           
-          // Para cada PPI, buscar sus hijos (Target, Scope, Medidas)
+          // Primero agregar todos los elementos visuales PPINOT (Target, Scope, Measures)
+          visualPPINOTElements.forEach(visualEl => {
+            const id = visualEl.id || '';
+            let tipoElemento = 'PPINOT:Element';
+            
+            // Determinar el tipo basado en el ID
+            if (id.startsWith('Target_')) tipoElemento = 'PPINOT:Target';
+            else if (id.startsWith('Scope_')) tipoElemento = 'PPINOT:Scope';
+            else if (id.startsWith('AggregatedMeasure_')) tipoElemento = 'PPINOT:AggregatedMeasure';
+            else if (id.startsWith('BaseMeasure_')) tipoElemento = 'PPINOT:BaseMeasure';
+            else if (id.startsWith('DataMeasure_')) tipoElemento = 'PPINOT:DataMeasure';
+            else if (id.startsWith('TimeMeasure_')) tipoElemento = 'PPINOT:TimeMeasure';
+            else if (id.startsWith('Measure_')) tipoElemento = 'PPINOT:Measure';
+            
+            // Determinar el padre basado en la posición (si está dentro del área del PPI)
+            let padreId = null;
+            ppiShapes.forEach(ppi => {
+              const ppiBounds = {
+                x: ppi.x || 0,
+                y: ppi.y || 0,
+                width: ppi.width || 0,
+                height: ppi.height || 0
+              };
+              const elBounds = {
+                x: visualEl.x || 0,
+                y: visualEl.y || 0
+              };
+              
+              if (elBounds.x >= ppiBounds.x && elBounds.x <= ppiBounds.x + ppiBounds.width &&
+                  elBounds.y >= ppiBounds.y && elBounds.y <= ppiBounds.y + ppiBounds.height) {
+                padreId = ppi.id;
+              }
+            });
+            
+            allPPINOTElements.push({
+              id: id,
+              type: tipoElemento,
+              name: id,
+              position: { 
+                x: visualEl.x || 0, 
+                y: visualEl.y || 0, 
+                width: visualEl.width || 0, 
+                height: visualEl.height || 0 
+              },
+              parent_id: padreId,
+              metadata: { isVisualElement: true }
+            });
+            
+            console.log(`📋 Elemento visual PPINOT procesado: ${id} (${tipoElemento}) - Padre: ${padreId || 'N/A'}`);
+          });
+          
+          // Para cada PPI, solo agregar el PPI principal (no sus hijos)
           ppiShapes.forEach(ppiShape => {
-            // Agregar PPI principal
+            // Solo agregar PPIs principales, no medidas ni targets
             allPPINOTElements.push({
               id: ppiShape.id,
               name: ppiShape.businessObject?.name || ppiShape.id,
               type: ppiShape.type,
               position: { x: ppiShape.x || 0, y: ppiShape.y || 0, width: ppiShape.width || 0, height: ppiShape.height || 0 },
               parent_id: null,
-              metadata: { isPPI: true }
+              metadata: { isMainPPI: true }
             });
             
+            console.log(`📋 PPI principal agregado: ${ppiShape.id}`);
+            
+            // COMENTADO: Los hijos del PPI (Target, Scope, Measures) ya se capturaron en visualPPINOTElements
+            // No los agregamos aquí para evitar duplicados en la lista de PPIs
+            /*
             // Buscar TODOS los hijos del PPI
             const hijosDelPPI = allCanvasElements.filter(el => {
               // ARREGLO: Comparar por ID, no por referencia de objeto
@@ -227,11 +324,54 @@ export class AutosaveManager {
                 }
               });
             });
+            */
           });
           
           if (allPPINOTElements.length > 0) {
-            project.ppinot.ppis = allPPINOTElements;
-            project.welcomeScreenFormat.ppi.indicators = allPPINOTElements;
+            // ELIMINAR DUPLICADOS basados en ID
+            const uniqueElements = [];
+            const seenIds = new Set();
+            
+            allPPINOTElements.forEach(el => {
+              if (!seenIds.has(el.id)) {
+                seenIds.add(el.id);
+                uniqueElements.push(el);
+              } else {
+                console.log(`🗑️ Duplicado eliminado: ${el.id} (${el.type})`);
+              }
+            });
+            
+            project.ppinot.ppis = uniqueElements;
+            project.welcomeScreenFormat.ppi.indicators = uniqueElements;
+            
+            
+            // GUARDAR TAMBIÉN EN LOCALSTORAGE PARA RESTAURACIÓN
+            try {
+              // DEBUG: Mostrar todos los elementos únicos antes de guardar
+              console.log(`📋 ELEMENTOS PPINOT ÚNICOS A GUARDAR (${uniqueElements.length}):`);
+              uniqueElements.forEach((el, index) => {
+                console.log(`  ${index + 1}. ${el.id} (${el.type}) - Padre: ${el.parent_id || 'N/A'} - Posición: ${JSON.stringify(el.position)}`);
+              });
+              
+              localStorage.setItem('ppinotElements', JSON.stringify(uniqueElements));
+              
+              // Extraer relaciones padre-hijo
+              const relationships = uniqueElements
+                .filter(el => el.parent_id)
+                .map(el => ({
+                  childId: el.id,
+                  parentId: el.parent_id,
+                  childName: el.name || el.id,
+                  childType: el.type,
+                  parentName: uniqueElements.find(p => p.id === el.parent_id)?.name || el.parent_id,
+                  parentType: uniqueElements.find(p => p.id === el.parent_id)?.type || 'PPINOT:Ppi'
+                }));
+              
+              localStorage.setItem('ppinotRelationships', JSON.stringify(relationships));
+              console.log(`💾 PPINOT guardado en localStorage: ${uniqueElements.length} elementos, ${relationships.length} relaciones`);
+            } catch (error) {
+              console.warn('Error guardando PPINOT en localStorage:', error);
+            }
             
             // Elementos PPINOT capturados exitosamente
           }
@@ -341,6 +481,41 @@ export class AutosaveManager {
     }
   }
 
+  async capturarDatosBPMN(project) {
+    try {
+      console.log('🔄 Capturando datos BPMN incluyendo relaciones padre-hijo...');
+      
+      // Capturar relaciones padre-hijo desde localStorage
+      const parentChildRelations = localStorage.getItem('bpmnParentChildRelations');
+      if (parentChildRelations) {
+        const relations = JSON.parse(parentChildRelations);
+        if (relations && Object.keys(relations).length > 0) {
+          project.bpmn.relationships = project.bpmn.relationships || {};
+          project.bpmn.relationships.parentChild = relations;
+          project.welcomeScreenFormat.bpmn = project.welcomeScreenFormat.bpmn || {};
+          project.welcomeScreenFormat.bpmn.relationships = { parentChild: relations };
+          console.log('✅ Relaciones padre-hijo capturadas:', Object.keys(relations).length);
+        }
+      }
+      
+      // Capturar elementos RALPH desde localStorage
+      const ralphElements = localStorage.getItem('bpmnRALPHElements');
+      if (ralphElements) {
+        const elements = JSON.parse(ralphElements);
+        if (elements && elements.length > 0) {
+          project.bpmn.elements = project.bpmn.elements || {};
+          project.bpmn.elements.ralph = elements;
+          project.welcomeScreenFormat.bpmn = project.welcomeScreenFormat.bpmn || {};
+          project.welcomeScreenFormat.bpmn.elements = { ralph: elements };
+          console.log('✅ Elementos RALPH capturados:', elements.length);
+        }
+      }
+      
+    } catch (error) {
+      console.warn('Error capturando datos BPMN:', error);
+    }
+  }
+
   async forceRestore() {
     try {
       const data = localStorage.getItem('draft:multinotation');
@@ -422,65 +597,20 @@ export class AutosaveManager {
 
   async restaurarElementosPPINOT(ppis) {
     try {
-      const serviceRegistry = await import('../modules/ui/core/ServiceRegistry.js');
-      const registry = serviceRegistry.getServiceRegistry();
+      console.log(`🔄 Restaurando ${ppis.length} elementos PPINOT usando sistema simple...`);
       
-      // Intentar usar PPINOTStorageManager para restaurar elementos con posiciones
-      const ppinotStorageManager = registry?.get('PPINOTStorageManager');
+      // Usar el sistema simple de restauración
+      const { SimplePPINOTRestorer } = await import('./simple-ppinot-restorer.js');
+      const restorer = new SimplePPINOTRestorer(this.modeler);
       
-      if (ppinotStorageManager && typeof ppinotStorageManager.savePPINOTElements === 'function') {
-        const elements = [];
-        const relationships = [];
-        
-        ppis.forEach(ppi => {
-          const element = {
-            id: ppi.id,
-            name: ppi.name,
-            type: ppi.type,
-            position: ppi.position || { x: 0, y: 0, width: 0, height: 0 },
-            x: ppi.position?.x || 0,
-            y: ppi.position?.y || 0,
-            width: ppi.position?.width || 0,
-            height: ppi.position?.height || 0,
-            businessObject: ppi.businessObject || {
-              name: ppi.name,
-              $type: ppi.type,
-              id: ppi.id
-            },
-            metadata: ppi.metadata || {}
-          };
-          
-          if (ppi.parent_id) {
-            element.parentId = ppi.parent_id;
-            relationships.push({
-              childId: ppi.id,
-              parentId: ppi.parent_id
-            });
-          }
-          
-          elements.push(element);
-        });
-        
-        ppinotStorageManager.savePPINOTElements(elements, relationships);
-        console.log(`✅ PPINOT restaurado: ${elements.length} elementos, ${relationships.length} relaciones`);
-      }
-
-      // Usar PPINOTCoordinationManager para restaurar elementos visuales
-      const coordinationManager = registry?.get('PPINOTCoordinationManager');
-      if (coordinationManager && typeof coordinationManager.triggerRestoration === 'function') {
-        console.log('🔄 Disparando restauración PPINOT via CoordinationManager...');
-        console.log(`   - PPIs a restaurar: ${ppis.length}`);
-        ppis.forEach(ppi => {
-          if (ppi.parent_id) {
-            console.log(`     - ${ppi.type}: ${ppi.id} → padre: ${ppi.parent_id}`);
-          }
-        });
-        coordinationManager.triggerRestoration('autosave.restore');
-      }
-
-      if (this.eventBus) {
-        this.eventBus.publish('ppinot.synchronized', { elements: ppis });
-        this.eventBus.publish('ppinot.changed', { source: 'autosave', ppis: ppis });
+      const success = await restorer.restorePPINOTElements();
+      
+      if (success) {
+        console.log('✅ Restauración PPINOT completada exitosamente');
+        return true;
+      } else {
+        console.warn('⚠️ Restauración PPINOT falló');
+        return false;
       }
     } catch (error) {
       console.warn('Error restaurando elementos PPINOT:', error);

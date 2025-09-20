@@ -716,7 +716,7 @@ export function renderMatrix(panel, rolesArray, autoSaveFn) {
   matrixContainer.innerHTML = '';
   matrixContainer.style.cssText = `
     width: 100%; height: 100%; max-height: calc(100vh - 180px); flex: 1; position: relative;
-    border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; padding: 0; margin: 0; overflow: auto; display: block;
+    border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; padding: 0; margin: 0; overflow: visible; display: block;
   `;
 
   const table = document.createElement('table');

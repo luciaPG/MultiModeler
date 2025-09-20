@@ -970,6 +970,10 @@ class PPICore {
   }
 
   restorePPINOTElements() {
+    // DESHABILITADO: Sistema de restauración PPINOT múltiple
+    console.log('⚠️ PPICore.restorePPINOTElements deshabilitado - usando AutosaveManager');
+    return false;
+    
     try {
       const modeler = (this.adapter && this.adapter.getBpmnModeler && this.adapter.getBpmnModeler()) || (getServiceRegistry && getServiceRegistry().get && getServiceRegistry().get('BpmnModeler'));
       

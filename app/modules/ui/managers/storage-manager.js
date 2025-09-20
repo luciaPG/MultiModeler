@@ -464,6 +464,55 @@ class StorageManager {
     return integrity;
   }
 
+  // === MÉTODO SAVE PARA COMPATIBILIDAD ===
+  
+  // Método save() para compatibilidad con AutosaveManager y tests
+  async save(projectData) {
+    try {
+      console.log('💾 Guardando proyecto usando StorageManager.save()...');
+      
+      // Si projectData tiene estructura de proyecto completo
+      if (projectData && typeof projectData === 'object') {
+        // Guardar datos BPMN si existen
+        if (projectData.bpmnDiagram || projectData.bpmn) {
+          const bpmnData = projectData.bpmnDiagram || projectData.bpmn;
+          localStorage.setItem('bpmnDiagram', bpmnData);
+          localStorage.setItem('bpmnDiagramTimestamp', Date.now().toString());
+        }
+        
+        // Guardar datos PPINOT si existen
+        if (projectData.ppinotElements) {
+          localStorage.setItem('ppinotElements', JSON.stringify(projectData.ppinotElements));
+        }
+        
+        if (projectData.ppinotRelationships) {
+          localStorage.setItem('ppinotRelationships', JSON.stringify(projectData.ppinotRelationships));
+        }
+        
+        // Guardar datos RASCI si existen
+        if (projectData.rasciRoles) {
+          localStorage.setItem('rasciRoles', JSON.stringify(projectData.rasciRoles));
+        }
+        
+        if (projectData.rasciMatrixData) {
+          localStorage.setItem('rasciMatrixData', JSON.stringify(projectData.rasciMatrixData));
+        }
+        
+        // Guardar timestamp de guardado
+        localStorage.setItem('lastSaved', Date.now().toString());
+        
+        console.log('✅ Proyecto guardado exitosamente');
+        return { success: true, message: 'Proyecto guardado' };
+      } else {
+        console.warn('⚠️ projectData inválido o vacío');
+        return { success: false, message: 'Datos de proyecto inválidos' };
+      }
+    } catch (error) {
+      console.error('❌ Error guardando proyecto:', error);
+      return { success: false, message: error.message };
+    }
+  }
+
   // === MÉTODOS DE UTILIDAD ===
   
   // Forzar limpieza completa (incluyendo preferencias)

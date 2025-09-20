@@ -5,22 +5,21 @@
  * usando validadores y servicios reales adaptados para funcionar en tests.
  */
 
-import { describe, test, expect, beforeEach, jest } from '@jest/globals';
+const { describe, test, expect, beforeEach, jest } = require('@jest/globals');
 
-import { extractSequenceFlowsFromXml } from '../../app/modules/bpmn/validators.js';
-import { RasciMatrixValidator } from '../../app/modules/rasci/validation/matrix-validator.js';
-import { isSupportedType } from '../../app/modules/multinotationModeler/notations/ppinot/config.js';
-import { Ralph as RALPHTypes } from '../../app/modules/multinotationModeler/notations/ralph/Types.js';
-
-const { createValidBpmnXml } = require('../utils/test-helpers');
-
-// Mock de getBpmnTasks para evitar que el validador elimine tareas automáticamente
+// Mock de getBpmnTasks ANTES de importar cualquier módulo
 jest.mock('../../app/modules/rasci/core/matrix-manager.js', () => ({
-  getBpmnTasks: jest.fn(() => [])
+  getBpmnTasks: jest.fn(() => [])  // Se configurará dinámicamente en cada test
 }));
 
-// Importar el mock después de configurarlo
-import { getBpmnTasks } from '../../app/modules/rasci/core/matrix-manager.js';
+// Importar componentes después de configurar el mock
+const { extractSequenceFlowsFromXml } = require('../../app/modules/bpmn/validators.js');
+const { RasciMatrixValidator } = require('../../app/modules/rasci/validation/matrix-validator.js');
+const { isSupportedType } = require('../../app/modules/multinotationModeler/notations/ppinot/config.js');
+const { Ralph: RALPHTypes } = require('../../app/modules/multinotationModeler/notations/ralph/Types.js');
+const { getBpmnTasks } = require('../../app/modules/rasci/core/matrix-manager.js');
+
+const { createValidBpmnXml } = require('../utils/test-helpers');
 
 // Función auxiliar para extraer estadísticas de XML directamente
 function getBpmnStatsFromXml(xml) {

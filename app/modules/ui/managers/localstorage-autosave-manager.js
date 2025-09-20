@@ -1325,6 +1325,10 @@ class LocalStorageAutoSaveManager {
   }
   
   async restorePPIState() {
+    // DESHABILITADO: Sistema de restauración PPINOT múltiple
+    console.log('⚠️ LocalStorageAutoSaveManager.restorePPIState deshabilitado - usando AutosaveManager');
+    return;
+    
     try {
       // Protección contra ejecución múltiple
       if (this._restoringPPI) {

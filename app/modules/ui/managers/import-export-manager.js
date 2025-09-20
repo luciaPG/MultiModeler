@@ -1110,6 +1110,10 @@ class ImportExportManager {
   // === RESTAURACIÓN POST-CARGA ===
 
   async restorePPINOTElementsAfterLoad() {
+    // DESHABILITADO: Sistema de restauración PPINOT múltiple
+    console.log('⚠️ Sistema de restauración PPINOT deshabilitado - usando AutosaveManager');
+    return;
+    
     try {
       
       // Obtener el modeler del ServiceRegistry

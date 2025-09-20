@@ -424,9 +424,10 @@ export function initRasciPanel(panel) {
     }, 50);
   };
   
-  if (sr) {
-    sr.registerFunction('reloadRasciMatrix', reloadRasciMatrix);
-  }
+  // COMENTADO PARA EVITAR BUCLE INFINITO - reloadRasciMatrix ya está registrada en matrix-manager.js
+  // if (sr) {
+  //   sr.registerFunction('reloadRasciMatrix', reloadRasciMatrix);
+  // }
 
   // Function for immediate reload
   const forceImmediateReload = () => {

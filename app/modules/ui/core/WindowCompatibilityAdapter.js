@@ -84,16 +84,16 @@ class WindowCompatibilityAdapter {
    */
   migrateRasciFunctions() {
     const rasciFunctions = {
-      'updateMatrixFromDiagram': () => this.serviceRegistry.executeFunction('updateMatrixFromDiagram'),
-      'detectRalphRolesFromCanvas': () => this.serviceRegistry.executeFunction('detectRalphRolesFromCanvas'),
-      'forceDetectRalphRoles': () => this.serviceRegistry.executeFunction('forceDetectRalphRoles'),
-      'reloadRasciMatrix': () => this.serviceRegistry.executeFunction('reloadRasciMatrix'),
-      'manualReloadRasciMatrix': () => this.serviceRegistry.executeFunction('manualReloadRasciMatrix'),
-      'forceDetectNewTasks': () => this.serviceRegistry.executeFunction('forceDetectNewTasks'),
-      'forceDetectAndValidate': () => this.serviceRegistry.executeFunction('forceDetectAndValidate'),
-      'diagnoseRasciState': () => this.serviceRegistry.executeFunction('diagnoseRasciState'),
-      'forceFullSync': () => this.serviceRegistry.executeFunction('forceFullSync'),
-      'repairRasciRalphMapping': () => this.serviceRegistry.executeFunction('repairRasciRalphMapping')
+      'updateMatrixFromDiagram': () => this.serviceRegistry.call('updateMatrixFromDiagram'),
+      'detectRalphRolesFromCanvas': () => this.serviceRegistry.call('detectRalphRolesFromCanvas'),
+      'forceDetectRalphRoles': () => this.serviceRegistry.call('forceDetectRalphRoles'),
+      // EXCLUIDO: 'reloadRasciMatrix' - causa bucle infinito al migrar
+      'manualReloadRasciMatrix': () => this.serviceRegistry.call('manualReloadRasciMatrix'),
+      'forceDetectNewTasks': () => this.serviceRegistry.call('forceDetectNewTasks'),
+      'forceDetectAndValidate': () => this.serviceRegistry.call('forceDetectAndValidate'),
+      'diagnoseRasciState': () => this.serviceRegistry.call('diagnoseRasciState'),
+      'forceFullSync': () => this.serviceRegistry.call('forceFullSync'),
+      'repairRasciRalphMapping': () => this.serviceRegistry.call('repairRasciRalphMapping')
     };
 
     this.migrateFunctions(rasciFunctions);

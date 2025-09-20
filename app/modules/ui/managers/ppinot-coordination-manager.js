@@ -7,24 +7,26 @@ import ppinotStorageManager from './ppinot-storage-manager.js';
 
 class PPINOTCoordinationManager {
   constructor() {
-    this.restorationState = {
-      isInitialized: false,
-      isRestoring: false,
-      hasRestored: false,
-      modelerReady: false,
-      dataLoaded: false,
-      lastRestorationAttempt: 0,
-      restorationCount: 0
-    };
+    // DESHABILITADO COMPLETAMENTE
+    console.log('⚠️ PPINOTCoordinationManager DESHABILITADO - usando SimplePPINOTRestorer');
+    this.disabled = true;
     
-    this.restorationTriggers = new Set();
-    this.maxRestorationAttempts = 3;
-    this.restorationCooldown = 5000; // 5 segundos entre intentos
+    // Interceptar todos los métodos para evitar ejecución
+    const methods = ['init', 'performRestoration', 'triggerRestoration', 'setupModelerWatcher', 'setupDataWatcher', 'setupRestorationTriggers', 'setupAutoRestoration', 'checkRestorationConditions', 'restoreElements', 'createElement'];
+    methods.forEach(method => {
+      this[method] = () => {
+        if (this.disabled) {
+          console.log(`⚠️ PPINOTCoordinationManager.${method} DESHABILITADO`);
+          return Promise.resolve(false);
+        }
+      };
+    });
     
-    this.init();
+    return;
   }
 
   init() {
+    if (this.disabled) return;
     // Optimización: Log eliminado para mejorar rendimiento
     // 
     this.setupModelerWatcher();
@@ -166,6 +168,11 @@ class PPINOTCoordinationManager {
   // === GESTIÓN DE TRIGGERS ===
 
   triggerRestoration(source) {
+    if (this.disabled) {
+      console.log(`⚠️ PPINOTCoordinationManager.triggerRestoration DESHABILITADO - source: ${source}`);
+      return;
+    }
+    
     const now = Date.now();
     
     // Verificar cooldown
@@ -265,6 +272,11 @@ class PPINOTCoordinationManager {
   }
 
   async performRestoration() {
+    if (this.disabled) {
+      console.log('⚠️ PPINOTCoordinationManager.performRestoration deshabilitado - usando SimplePPINOTRestorer');
+      return false;
+    }
+    
     try {
       // Delegar restauración al gestor principal de autosave para evitar duplicidad
       const ppinotData = ppinotStorageManager.loadPPINOTElements();
