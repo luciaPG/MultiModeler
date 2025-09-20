@@ -12,823 +12,7 @@
   <link rel="stylesheet" href="css/welcome-screen.css">
   <link rel="stylesheet" href="css/autosave-modals.css">
   <link rel="stylesheet" href="css/file-name-modal.css">
-  
-  <style>
-    :root {
-      --header-height: 64px;
-      --panel-min-width: 320px;
-      --panel-header-height: 36px;
-      --primary-color: #4361ee;
-      --primary-dark: #3a56d4;
-      --secondary-color: #3f37c9;
-      --dark-bg: #2b2d42;
-      --light-bg: #f8f9fa;
-      --border-color: #e9ecef;
-      --text-dark: #212529;
-      --text-light: #6c757d;
-      --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
-      --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
-      --transition: all 0.3s ease;
-    }
-    
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    
-    html, body {
-      height: 100vh;
-      width: 100vw;
-      min-height: 0;
-      min-width: 0;
-      box-sizing: border-box;
-      overflow: hidden;
-    }
-    body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      color: var(--text-dark);
-      background-color: var(--light-bg);
-    }
-    
-
-    
-    /* Header */
-    .app-header {
-      height: var(--header-height);
-      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-      color: var(--text-dark);
-      display: flex;
-      align-items: center;
-      padding: 0 24px;
-      border-bottom: 1px solid var(--border-color);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      z-index: 1001;
-      position: relative;
-    }
-    
-    .logo {
-      font-weight: 600;
-      font-size: 1.25rem;
-      margin-right: 32px;
-      color: var(--primary-color);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .logo i {
-      font-size: 1.5rem;
-    }
-    
-    /* Información del proyecto */
-    .project-info {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      margin-left: 24px;
-      min-width: 300px;
-    }
-    
-    .project-name-display {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .project-label {
-      font-size: 0.875rem;
-      color: var(--text-light);
-      font-weight: 500;
-    }
-    
-    .project-name {
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text-dark);
-    }
-    
-    .project-status {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .status-indicator {
-      font-size: 0.75rem;
-      color: var(--text-light);
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    
-    .status-indicator.saved {
-      color: #10b981;
-    }
-    
-    .status-indicator.unsaved {
-      color: #f59e0b;
-    }
-    
-    .status-indicator.error {
-      color: #ef4444;
-    }
-    
-    .status-indicator i {
-      font-size: 8px;
-    }
-    
-    .toolbar {
-      display: flex;
-      gap: 8px;
-      flex: 1;
-    }
-    
-    .tool-group {
-      display: flex;
-      gap: 8px;
-      padding: 0 12px;
-      border-right: 1px solid var(--border-color);
-    }
-    
-    .tool-group:last-child {
-      border-right: none;
-      margin-left: auto;
-    }
-    
-    .tool-btn {
-      background: white;
-      color: var(--text-dark);
-      border: 1px solid var(--border-color);
-      padding: 6px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.875rem;
-      font-weight: 500;
-      transition: var(--transition);
-      box-shadow: var(--shadow-sm);
-    }
-    
-    .tool-btn i {
-      font-size: 0.9rem;
-    }
-    
-    .tool-btn:hover {
-      background: #f1f3f5;
-      border-color: #ced4da;
-    }
-    
-    .tool-btn.primary {
-      background: var(--primary-color);
-      color: white;
-      border-color: var(--primary-dark);
-    }
-    
-    .tool-btn.primary:hover {
-      background: var(--primary-dark);
-    }
-    
-    .tool-btn.danger {
-      background: #ef233c;
-      color: white;
-      border-color: #d90429;
-    }
-    
-    .tool-btn.danger:hover {
-      background: #d90429;
-    }
-    
-    /* Indicador de guardado exitoso */
-    .save-success-indicator {
-      display: none;
-      background: #10b981;
-      color: white;
-      border: 1px solid #059669;
-      padding: 6px 12px;
-      border-radius: 6px;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.875rem;
-      font-weight: 500;
-      box-shadow: var(--shadow-sm);
-      animation: slideInRight 0.3s ease-out;
-    }
-    
-    .save-success-indicator.show {
-      display: flex;
-    }
-    
-    .save-success-indicator i {
-      font-size: 0.9rem;
-    }
-    
-    @keyframes slideInRight {
-      from {
-        opacity: 0;
-        transform: translateX(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-    
-    @keyframes fadeOut {
-      from {
-        opacity: 1;
-        transform: translateX(0);
-      }
-      to {
-        opacity: 0;
-        transform: translateX(20px);
-      }
-    }
-    
-    .save-success-indicator.fade-out {
-      animation: fadeOut 0.3s ease-in forwards;
-    }
-    
-    /* Mejoras para barra de herramientas profesional */
-    .toolbar {
-      display: flex;
-      align-items: center;
-      gap: 24px;
-      flex: 1;
-    }
-    
-    .tool-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 0 16px;
-      border-right: 1px solid var(--border-color);
-    }
-    
-    .tool-group:first-child {
-      padding-left: 0;
-    }
-    
-    .tool-group:last-child {
-      border-right: none;
-      margin-left: auto;
-      padding-right: 0;
-    }
-    
-    .tool-group.dev-tools {
-      border-left: 1px solid #fbbf24;
-      background: rgba(251, 191, 36, 0.1);
-      border-radius: 4px;
-      padding: 4px 8px;
-    }
-    
-    .tool-btn {
-      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-      color: var(--text-dark);
-      border: 1px solid var(--border-color);
-      padding: 8px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.875rem;
-      font-weight: 500;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      white-space: nowrap;
-    }
-    
-    .tool-btn:hover {
-      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-      border-color: var(--primary-color);
-      box-shadow: 0 4px 12px rgba(67, 97, 238, 0.15);
-      transform: translateY(-1px);
-    }
-    
-    .tool-btn:active {
-      transform: translateY(0);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    
-    .tool-btn.primary {
-      background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-      color: white;
-      border-color: var(--primary-dark);
-      font-weight: 600;
-      box-shadow: 0 2px 8px rgba(67, 97, 238, 0.3);
-    }
-    
-    .tool-btn.primary:hover {
-      background: linear-gradient(135deg, var(--primary-dark) 0%, #2d47c7 100%);
-      box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
-      transform: translateY(-2px);
-    }
-    
-    .tool-btn i {
-      font-size: 1rem;
-    }
-    
-    .restore-btn {
-      background: #f1f5f9;
-      color: var(--text-dark);
-      border: 1px solid #cbd5e1;
-      padding: 4px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.75rem;
-      font-weight: 500;
-      transition: var(--transition);
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    
-    .restore-btn:hover {
-      background: var(--primary-color);
-      color: white;
-      border-color: var(--primary-dark);
-    }
-
-    /* Panel minimizado */
-    .panel.minimized {
-      display: none;
-    }
-    
-    .panel.maximized {
-      position: fixed !important;
-      top: 64px !important;
-      left: 0 !important;
-      right: 0 !important;
-      bottom: 24px !important;
-      width: 100vw !important;
-      height: calc(100vh - 64px - 24px) !important;
-      z-index: 1000 !important;
-      margin: 0 !important;
-      border-radius: 0 !important;
-    }
-    
-    /* Botones de restaurar en header */
-    .restore-buttons {
-      display: flex;
-      gap: 8px;
-      margin-left: 16px;
-    }
-    
-    .restore-btn {
-      background: var(--primary-color);
-      color: white;
-      border: none;
-      padding: 4px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.75rem;
-      font-weight: 500;
-      transition: var(--transition);
-    }
-    
-    .restore-btn:hover {
-      background: var(--primary-dark);
-    }
-    
-    .restore-btn.hidden {
-      display: none;
-    }
-    
-    /* Área de trabajo principal */
-    .workspace {
-      flex: 1;
-      height: calc(100vh - 64px);
-      max-height: calc(100vh - 64px);
-      min-height: 0;
-      min-width: 0;
-      box-sizing: border-box;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      background: #f1f3f5;
-    }
-    
-    /* Contenedor de paneles */
-    .panel-container {
-      flex: 1;
-      height: calc(100vh - 64px - 8px);
-      max-height: calc(100vh - 64px - 8px);
-      min-height: 0;
-      min-width: 0;
-      box-sizing: border-box;
-      overflow: hidden;
-      display: flex !important;
-      flex-direction: row;
-      position: relative;
-      gap: 8px;
-      padding: 4px;
-      align-items: stretch;
-    }
-    
-    /* Panel individual */
-    .panel {
-      flex: 1;
-      display: flex !important;
-      flex-direction: column;
-      min-width: var(--panel-min-width);
-      max-width: none;
-      height: 100% !important;
-      max-height: 100% !important;
-      background: white;
-      box-shadow: var(--shadow-sm);
-      position: relative;
-      overflow: hidden;
-      border-radius: 8px;
-      margin: 0;
-      transition: transform 0.2s ease;
-    }
-    
-    /* Configuración de un solo panel - forzar ancho completo */
-    .panel-container[data-layout="1"] .panel,
-    .panel-container.single-panel .panel,
-    .layout-1 .panel {
-      min-width: 0 !important;
-      width: 100% !important;
-      max-width: none !important;
-      flex: 1 !important;
-    }
-    
-    /* Sobrescribir reglas específicas del panel-container */
-    #panel-container {
-      height: calc(100vh - 64px - 8px) !important;
-      max-height: calc(100vh - 64px - 8px) !important;
-      min-height: calc(100vh - 64px - 8px) !important;
-      display: flex !important;
-      flex-direction: row !important;
-      align-items: stretch !important;
-      flex: 1 !important;
-      overflow: hidden !important;
-      padding: 4px !important;
-    }
-    
-    #panel-container .panel {
-      height: calc(100vh - 64px - 16px) !important;
-      max-height: calc(100vh - 64px - 16px) !important;
-      flex: 1 !important;
-    }
-    
-    .panel-header {
-      height: var(--panel-header-height);
-      background: white;
-      border-bottom: 1px solid var(--border-color);
-      padding: 0 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      cursor: move;
-      font-size: 0.875rem;
-      font-weight: 500;
-      color: var(--text-dark);
-      user-select: none;
-      position: relative;
-    }
-    
-    .panel-header:hover {
-      background: #f8f9fa;
-    }
-    
-    .panel-header:active {
-      cursor: grabbing;
-    }
-    
-    .panel-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex: 1;
-    }
-    
-    .panel-title i {
-      color: var(--primary-color);
-      font-size: 0.9rem;
-    }
-    
-    .panel-actions {
-      display: flex;
-      gap: 4px;
-    }
-    
-    .panel-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 0.8rem;
-      color: var(--text-light);
-      width: 24px;
-      height: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 4px;
-      transition: var(--transition);
-    }
-    
-    .panel-btn:hover {
-      background: #f1f3f5;
-      color: var(--text-dark);
-    }
-    
-    .panel-content {
-      flex: 1;
-      overflow: auto;
-      position: relative;
-      background: white;
-      display: flex !important;
-      flex-direction: column;
-      height: 100% !important;
-      max-height: 100% !important;
-      min-height: 0;
-    }
-    
-    /* Estilos para el canvas */
-    .bpmn-container,
-    #js-canvas {
-      width: 100% !important;
-      height: 100% !important;
-      max-height: 100% !important;
-      flex: 1 !important;
-      overflow: visible !important;
-      min-height: 0;
-    }
-    
-    /* Para BPMN, el canvas debe ser visible completamente */
-    .panel[data-panel-type="bpmn"] .panel-content {
-      overflow: visible !important;
-    }
-    
-    .panel[data-panel-type="bpmn"] .bpmn-container {
-      overflow: visible !important;
-    }
-    
-    /* Estilos para contenido RASCI */
-    .tab-content {
-      flex: 1 !important;
-      display: flex !important;
-      flex-direction: column;
-      height: 100% !important;
-      max-height: 100% !important;
-      overflow: auto !important;
-      min-height: 0;
-    }
-    
-    .rasci-matrix-container {
-      flex: 1 !important;
-      overflow: auto !important;
-      height: 100% !important;
-      max-height: 100% !important;
-      min-height: 0;
-    }
-    
-    /* Asegurar que un solo panel ocupe todo el espacio */
-    .panel-container .panel:only-child {
-      max-width: none !important;
-      width: 100% !important;
-      flex: 1 !important;
-      min-width: 0 !important;
-    }
-    
-    /* Layout específico para un solo panel */
-    .panel-container.layout-1 .panel {
-      max-width: none !important;
-      width: 100% !important;
-      flex: 1 !important;
-      min-width: 0 !important;
-    }
-    
-    /* Cuando solo hay un panel en el contenedor */
-    #panel-container .panel:only-child {
-      max-width: none !important;
-      width: 100% !important;
-      flex: 1 !important;
-      min-width: 0 !important;
-    }
-    
-    /* Sobrescribir min-width cuando es el único panel */
-    .panel:only-child {
-      min-width: 0 !important;
-    }
-    
-    /* Configuraciones adicionales para panel único */
-    .panel-container[data-panels="1"] .panel,
-    .panel-container.one-panel .panel,
-    #panel-container[data-panels="1"] .panel,
-    .single-panel-item {
-      min-width: 0 !important;
-      width: 100% !important;
-      max-width: none !important;
-      flex: 1 !important;
-    }
-    
-    /* Forzar ancho completo para panel único */
-    .panel-container.single-panel .panel {
-      min-width: 0 !important;
-      width: 100% !important;
-      max-width: none !important;
-      flex: 1 !important;
-    }
-    
-    /* Gutter para Split.js */
-    .gutter {
-      background-color: #f1f3f5;
-      background-repeat: no-repeat;
-      background-position: 50%;
-      position: relative;
-      z-index: 1;
-      transition: background-color 0.2s ease;
-    }
-    
-    .gutter:hover {
-      background-color: #dee2e6;
-    }
-    
-    .gutter.gutter-horizontal {
-      background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
-      cursor: col-resize;
-      height: 100%;
-      margin: 0 -4px;
-      width: 8px;
-    }
-    
-    .gutter.gutter-vertical {
-      background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFAQMAAABo7865AAAABlBMVEVHcEzMzMzyAv2sAAAAAXRSTlMAQObYZgAAABBJREFUeF5jOAMEEAIEEFwAn3kMwcB6I2AAAAAASUVORK5CYII=');
-      cursor: row-resize;
-      width: 100%;
-      margin: -4px 0;
-      height: 8px;
-    }
-    
-    /* Layout selector */
-    .layout-selector {
-      position: absolute;
-      bottom: 16px;
-      right: 16px;
-      z-index: 100;
-      background: white;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 6px;
-      display: flex;
-      gap: 6px;
-      box-shadow: var(--shadow-md);
-    }
-    
-    .layout-btn {
-      width: 36px;
-      height: 36px;
-      background: white;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-light);
-      transition: var(--transition);
-    }
-    
-    .layout-btn:hover {
-      background: #f8f9fa;
-      color: var(--primary-color);
-    }
-    
-    .layout-btn.active {
-      background: var(--primary-color);
-      color: white;
-      border-color: var(--primary-dark);
-    }
-    
-    /* Status bar - ocultar completamente */
-    .status-bar {
-      display: none !important;
-      height: 0px;
-      background: var(--dark-bg);
-      color: white;
-      font-size: 0.75rem;
-      align-items: center;
-      padding: 0 12px;
-      gap: 16px;
-      z-index: 1001;
-      position: relative;
-    }
-    
-    /* Ocultar cualquier elemento que pueda actuar como status bar */
-    .modeler-container .status-bar,
-    #modeler-container .status-bar,
-    [class*="status-bar"],
-    [class*="status"],
-    footer {
-      display: none !important;
-      height: 0 !important;
-    }
-    
-    .status-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    
-    .status-item i {
-      font-size: 0.7rem;
-      color: #adb5bd;
-    }
-    
-    /* Panel de propiedades */
-    .properties-panel {
-      padding: 16px;
-      overflow-y: auto;
-      height: 100%;
-    }
-    
-    .property-group {
-      margin-bottom: 16px;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    
-    .property-group-header {
-      padding: 8px 12px;
-      background: #f8f9fa;
-      font-weight: 500;
-      font-size: 0.875rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    
-    .property-group-content {
-      padding: 12px;
-    }
-    
-    .form-group {
-      margin-bottom: 12px;
-    }
-    
-    .form-label {
-      display: block;
-      margin-bottom: 4px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: var(--text-dark);
-    }
-    
-    .form-control {
-      width: 100%;
-      padding: 6px 8px;
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      font-size: 0.875rem;
-    }
-    
-    /* Tabs */
-    .panel-tabs {
-      display: flex;
-      border-bottom: 1px solid var(--border-color);
-      padding: 0 12px;
-    }
-    
-    .tab {
-      padding: 8px 12px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: var(--text-light);
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: var(--transition);
-    }
-    
-    .tab:hover {
-      color: var(--primary-color);
-    }
-    
-    .tab.active {
-      color: var(--primary-color);
-      border-bottom-color: var(--primary-color);
-    }
-    
-    /* Animaciones */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .panel {
-      animation: fadeIn 0.3s ease-out;
-    }
-  </style>
+  <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
   <!-- Pantalla de bienvenida -->
@@ -860,90 +44,407 @@
   </div>
 
   <!-- Contenedor del modelador -->
-  <div class="modeler-container" id="modeler-container">
-    <!-- Header con herramientas -->
-    <header class="app-header">
+  <div class="modeler-container" id="modeler-container" style="display: none;">
+    <!-- Header principal -->
+    <header class="app-header" id="app-header">
       <div class="logo">
-         <button  class="back-to-welcome-btn" id="back-to-welcome-btn" title="Volver a la pantalla de bienvenida">
-            <i class="fas fa-project-diagram"></i>
-            <span>MultiModeler</span>
-         </button>
+        <button class="back-to-welcome-btn" id="back-to-welcome-btn" title="Volver a la pantalla de bienvenida">
+          <i class="fas fa-project-diagram"></i>
+          <span>MultiModeler</span>
+        </button>
       </div>
       
-      <!-- Nombre del proyecto (solo lectura) -->
-     
+      <!-- Información del proyecto -->
+      <div class="project-info" id="project-info">
+        <div class="project-name-display">
+          <span class="project-label">Proyecto:</span>
+          <input 
+            type="text" 
+            class="project-name-input" 
+            id="project-name-input" 
+            value="Nuevo Diagrama" 
+            placeholder="Nombre del proyecto"
+            maxlength="50"
+          />
+        </div>
+        <div class="project-status">
+          <span class="status-indicator" id="status-indicator">
+            <i class="fas fa-circle"></i>
+            <span id="status-text">Sin cambios</span>
+          </span>
+          <span class="status-indicator" id="size-indicator">
+            <i class="fas fa-weight-hanging"></i>
+            <span id="file-size">0 KB</span>
+          </span>
+        </div>
+      </div>
+      
       <div class="toolbar">
-        <!-- Grupo de acciones principales de archivo -->
-        
-        
-        <!-- Grupo de autoguardado y estado -->
         <div class="tool-group">
-          <div class="autosave-toolbar-toggle" id="autosave-panel">
-            <div class="autosave-toggle-container">
-              <label class="autosave-toggle" for="autosave-checkbox">
-                <input type="checkbox" id="autosave-checkbox" checked>
-                <span class="autosave-slider"></span>
-              </label>
-              <span class="autosave-label">Autoguardado</span>
-            </div>
-            <div class="autosave-timestamp" id="autosave-timestamp">
-              <i class="fas fa-clock"></i>
-              <span id="timestamp-text">--:--</span>
-            </div>
-          </div>
-          
-        </div>
-        
-        <!-- Grupo de herramientas de vista y paneles -->
-        <div class="tool-group">
-          <div class="tool-group">
-          <button class="tool-btn primary" id="new-btn" title="Crear nuevo diagrama">
-            <i class="fas fa-file-plus"></i> Nuevo
+          <button class="tool-btn" id="new-btn" title="Nuevo Diagrama">
+            <i class="fas fa-plus"></i>
+            Nuevo
           </button>
-          <button class="tool-btn" id="open-btn" title="Abrir diagrama existente">
-            <i class="fas fa-folder-open"></i> Abrir
+          <button class="tool-btn" id="open-btn" title="Abrir Diagrama">
+            <i class="fas fa-folder-open"></i>
+            Abrir
           </button>
-          <button class="tool-btn" id="download-project-btn" title="Descargar proyecto completo">
-            <i class="fas fa-download"></i> Descargar
+          <button class="tool-btn" id="save-btn" title="Guardar Diagrama">
+            <i class="fas fa-save"></i>
+            Guardar
           </button>
-        </div>
-          <button class="tool-btn header-panel-btn" id="panel-selector-btn" title="Gestionar paneles">
-            <i class="fas fa-th-large"></i> Paneles
+          <button class="tool-btn panel-btn-new" id="panel-selector-btn" title="Gestionar paneles">
+            <i class="fas fa-th-large"></i>
+            <span class="panel-btn-text">Paneles</span>
           </button>
         </div>
         
-     
-        
+        <!-- Input oculto para abrir archivos -->
+        <input type="file" id="file-input" accept=".bpmn,.json,.xml" style="display: none;">
+
+        <!-- Indicador de guardado exitoso -->
+        <div class="save-success-indicator" id="save-success-indicator">
+          <i class="fas fa-check"></i>
+          <span>Guardado exitoso</span>
+        </div>
+      </div>
+      
+      <!-- Botones para restaurar paneles minimizados -->
+      <div class="restore-buttons" id="restore-buttons">
       </div>
     </header>
-    
-    <!-- Área de trabajo con paneles -->
-    <div class="workspace">
-      <div class="panel-container" id="panel-container">
-        <!-- Los paneles se cargarán dinámicamente aquí -->
-      </div>
+
+    <!-- Área de trabajo -->
+    <div class="workspace" id="workspace">
+      <!-- Contenedor de paneles -->
+      <div class="panel-container" id="panel-container" data-layout="3"></div>
     </div>
   </div>
-  
-  <input type="file" id="file-input" accept=".bpmn,.xml,.cbpmn,.mmproject" style="display:none" />
-  
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
-  <script src="bundle.js"></script>
 
+  <!-- Scripts principales -->
   <script>
-    // Mostrar herramientas de desarrollo solo en modo desarrollo
-    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-      document.addEventListener('DOMContentLoaded', () => {
-        const devTools = document.querySelector('.dev-tools');
-        if (devTools) {
-          devTools.style.display = 'flex';
-        }
-      });
-    }
-    
-    // Application initialization is now handled in app.js
-  </script>
+    // Constantes globales necesarias para la aplicación
+    window.APP_CONFIG = {
+      debug: true,
+      autosaveInterval: 30000, // 30 segundos
+      maxUndoSteps: 50,
+      defaultLayout: 3
+    };
 
+    // Variable global para el nombre del proyecto
+    window.currentProjectName = 'Nuevo Diagrama';
+
+    // Variables de control
+    let isOpenButtonClicked = false;
+
+    // Funciones auxiliares del app.js original
+    function getServiceRegistry() {
+      // Importar desde el módulo
+      if (typeof window.serviceRegistry !== 'undefined') {
+        return window.serviceRegistry;
+      }
+      // Intentar obtener del bundle
+      try {
+        if (typeof window.getServiceRegistry === 'function') {
+          return window.getServiceRegistry();
+        }
+      } catch (e) {
+        console.log('ServiceRegistry no disponible aún');
+      }
+      return null;
+    }
+
+    function showErrorMessage(message) {
+      console.error(message);
+      alert(message);
+    }
+
+    // Handler para nuevo diagrama (copiado del app.js original)
+    async function newDiagramHandler() {
+      try {
+        console.log('[DEBUG] Botón Nuevo Diagrama clickeado');
+        
+        // Ocultar botón de continuar si estaba visible y resetear localStorage
+        try {
+          const continueBtn = document.getElementById('continue-diagram-btn');
+          if (continueBtn) continueBtn.style.display = 'none';
+          
+          const registry = getServiceRegistry();
+          const manager = registry ? registry.get('localStorageAutoSaveManager') : null;
+          if (manager) {
+            console.log('🔄 Reseteando localStorage para nuevo diagrama...');
+            if (typeof manager.clearProjectState === 'function') {
+              manager.clearProjectState();
+            }
+            if (typeof manager.markRestored === 'function') manager.markRestored();
+            if (typeof manager.dismissDraftNotification === 'function') manager.dismissDraftNotification();
+          }
+        } catch (_) { /* no-op */ }
+
+        // Preparar UI
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const modelerContainer = document.getElementById('modeler-container');
+        if (welcomeScreen) welcomeScreen.style.display = 'none';
+        if (modelerContainer) modelerContainer.style.display = 'block';
+
+        // Resetear nombre del proyecto
+        window.currentProjectName = 'Nuevo Diagrama';
+        const projectNameInput = document.getElementById('project-name-input');
+        if (projectNameInput) {
+          projectNameInput.value = 'Nuevo Diagrama';
+        }
+
+        // Llamar a initModeler si está disponible
+        if (typeof window.initModeler === 'function') {
+          await window.initModeler();
+        } else {
+          console.log('initModeler no disponible, esperando inicialización...');
+        }
+      } catch (e) {
+        showErrorMessage('Error al iniciar nuevo diagrama: ' + e.message);
+      }
+    }
+
+    // Handler para descargar proyecto (usa nombre del input + .mmproject)
+    async function downloadProjectHandler() {
+      try {
+        console.log('[DEBUG] === INICIO DESCARGA PROYECTO ===');
+        
+        // Obtener el nombre del proyecto del input
+        const projectNameInput = document.getElementById('project-name-input');
+        const projectName = projectNameInput ? projectNameInput.value.trim() : '';
+        const finalProjectName = projectName || 'Nuevo Diagrama';
+        
+        console.log('[DEBUG] Valor del input:', projectNameInput ? projectNameInput.value : 'INPUT NO ENCONTRADO');
+        console.log('[DEBUG] Nombre final del proyecto:', finalProjectName);
+        
+        // Actualizar variable global
+        window.currentProjectName = finalProjectName;
+        
+        const registry = getServiceRegistry();
+        console.log('[DEBUG] Registry obtenido:', registry ? 'SÍ' : 'NO');
+        
+        const importManager = registry ? registry.get('ImportExportManager') : null;
+        console.log('[DEBUG] ImportManager obtenido:', importManager ? 'SÍ' : 'NO');
+        
+        if (importManager) {
+          // Verificar si existe el método
+          console.log('[DEBUG] setProjectName disponible:', typeof importManager.setProjectName === 'function' ? 'SÍ' : 'NO');
+          
+          // Establecer el nombre personalizado JUSTO ANTES de exportar
+          if (typeof importManager.setProjectName === 'function') {
+            console.log('[DEBUG] Llamando setProjectName con:', finalProjectName);
+            importManager.setProjectName(finalProjectName);
+            
+            // Verificar que se estableció correctamente
+            console.log('[DEBUG] customProjectName después de set:', importManager.customProjectName);
+          }
+          
+          console.log('[DEBUG] Iniciando exportProject...');
+          await importManager.exportProject();
+          console.log('[DEBUG] Export completado');
+        } else {
+          throw new Error('No se pudo acceder al gestor de exportación');
+        }
+        
+        console.log('[DEBUG] === FIN DESCARGA PROYECTO ===');
+      } catch (e) {
+        console.error('[ERROR] Error al descargar proyecto:', e);
+        showErrorMessage('Error al descargar proyecto: ' + e.message);
+      }
+    }
+
+    // Handler para abrir diagrama (copiado del app.js original)
+    async function openDiagramHandler() {
+      console.log('[DEBUG] Botón Abrir Diagrama clickeado');
+      if (isOpenButtonClicked) {
+        console.log('[DEBUG] Evitando doble clic en Abrir');
+        return;
+      }
+      isOpenButtonClicked = true;
+      
+      try {
+        console.log('[DEBUG] Abriendo archivo...');
+        
+        // Usar la función openFile del app.js
+        if (typeof window.openFile === 'function') {
+          const fileData = await window.openFile();
+          console.log('[DEBUG] Archivo abierto:', fileData.type, fileData.content ? fileData.content.substring(0, 50) + '...' : 'sin contenido');
+          
+          const welcomeScreen = document.getElementById('welcome-screen');
+          const modelerContainer = document.getElementById('modeler-container');
+          if (welcomeScreen) welcomeScreen.style.display = 'none';
+          if (modelerContainer) modelerContainer.style.display = 'block';
+          
+          if (fileData.type === 'project') {
+            // Es un archivo de proyecto completo
+            console.log('[DEBUG] Importando proyecto completo...');
+            const registry = getServiceRegistry();
+            const importManager = registry ? registry.get('ImportExportManager') : null;
+            if (importManager) {
+              await importManager.importAllProjectData(fileData.data);
+              console.log('[DEBUG] Proyecto completo importado correctamente.');
+            } else {
+              throw new Error('No se pudo acceder al gestor de importación');
+            }
+          } else if (fileData.type === 'bpmn') {
+            // Es un archivo XML BPMN
+            console.log('[DEBUG] Importando diagrama BPMN...');
+            if (window.modeler && typeof window.modeler.importXML === 'function') {
+              await window.modeler.importXML(fileData.content);
+              const modelerManager = window.modelerManager;
+              if (modelerManager && typeof modelerManager.setModeler === 'function') {
+                modelerManager.setModeler(window.modeler);
+              }
+            }
+          }
+        } else {
+          // Fallback usando input file
+          const fileInput = document.getElementById('file-input');
+          if (fileInput) {
+            fileInput.click();
+          } else {
+            throw new Error('No se pudo abrir el selector de archivos');
+          }
+        }
+      } catch (e) {
+        console.error('[ERROR] Error al abrir diagrama:', e);
+        showErrorMessage('Error al abrir diagrama: ' + e.message);
+      } finally {
+        isOpenButtonClicked = false;
+      }
+    }
+
+    // Funcionalidad de botones
+    document.addEventListener('DOMContentLoaded', function() {
+      // Input del nombre del proyecto
+      const projectNameInput = document.getElementById('project-name-input');
+      if (projectNameInput) {
+        // Actualizar variable global al escribir
+        projectNameInput.addEventListener('input', function() {
+          window.currentProjectName = this.value || 'Nuevo Diagrama';
+        });
+        
+        // Solo guardar el nombre al pulsar Enter (NO descargar)
+        projectNameInput.addEventListener('keydown', function(event) {
+          if (event.key === 'Enter') {
+            event.preventDefault(); // Prevenir comportamiento por defecto
+            this.blur(); // Quitar foco del input
+            
+            // Solo actualizar nombre del proyecto
+            window.currentProjectName = this.value || 'Nuevo Diagrama';
+            console.log('Nombre del proyecto actualizado:', window.currentProjectName);
+            
+            // Opcional: mostrar feedback visual
+            const originalBorder = this.style.border;
+            this.style.border = '2px solid #22c55e';
+            setTimeout(() => {
+              this.style.border = originalBorder;
+            }, 500);
+          }
+        });
+        
+        // Guardar al perder foco (blur)
+        projectNameInput.addEventListener('blur', function() {
+          window.currentProjectName = this.value || 'Nuevo Diagrama';
+        });
+      }
+
+      // Botón Nuevo Diagrama
+      const newBtn = document.getElementById('new-btn');
+      if (newBtn && !newBtn.hasAttribute('data-listener-added')) {
+        newBtn.addEventListener('click', newDiagramHandler);
+        newBtn.setAttribute('data-listener-added', 'true');
+      }
+
+      // Botón Abrir
+      const openBtn = document.getElementById('open-btn');
+      if (openBtn && !openBtn.hasAttribute('data-listener-added')) {
+        openBtn.addEventListener('click', openDiagramHandler);
+        openBtn.setAttribute('data-listener-added', 'true');
+      }
+
+      // Botón Guardar/Descargar - Usa la función original del app.js
+      const saveBtn = document.getElementById('save-btn');
+      if (saveBtn && !saveBtn.hasAttribute('data-listener-added')) {
+        saveBtn.addEventListener('click', function() {
+          // La función downloadProjectHandler del app.js ya está modificada
+          // para usar el nombre del input
+          if (typeof window.downloadProjectHandler === 'function') {
+            window.downloadProjectHandler();
+          } else {
+            console.error('downloadProjectHandler no disponible');
+          }
+        });
+        saveBtn.setAttribute('data-listener-added', 'true');
+      }
+
+      // Funcionalidad del botón de volver a bienvenida
+      const backToWelcomeBtn = document.getElementById('back-to-welcome-btn');
+      if (backToWelcomeBtn && !backToWelcomeBtn.hasAttribute('data-listener-added')) {
+        backToWelcomeBtn.addEventListener('click', function() {
+          const welcomeScreen = document.getElementById('welcome-screen');
+          const modelerContainer = document.getElementById('modeler-container');
+          
+          if (welcomeScreen && modelerContainer) {
+            welcomeScreen.style.display = 'flex';
+            modelerContainer.style.display = 'none';
+          }
+        });
+        backToWelcomeBtn.setAttribute('data-listener-added', 'true');
+      }
+
+      // Manejador para el input file (fallback)
+      const fileInput = document.getElementById('file-input');
+      if (fileInput && !fileInput.hasAttribute('data-listener-added')) {
+        fileInput.addEventListener('change', async function(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+          
+          try {
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+              const content = e.target.result;
+              
+              // Simular el objeto fileData como lo espera el sistema original
+              const fileData = {
+                type: file.name.endsWith('.mmproject') ? 'project' : 'bpmn',
+                content: content,
+                data: file.name.endsWith('.mmproject') ? JSON.parse(content) : null
+              };
+              
+              // Usar el mismo flujo que openDiagramHandler
+              const welcomeScreen = document.getElementById('welcome-screen');
+              const modelerContainer = document.getElementById('modeler-container');
+              if (welcomeScreen) welcomeScreen.style.display = 'none';
+              if (modelerContainer) modelerContainer.style.display = 'block';
+              
+              if (fileData.type === 'project') {
+                const registry = getServiceRegistry();
+                const importManager = registry ? registry.get('ImportExportManager') : null;
+                if (importManager) {
+                  await importManager.importAllProjectData(fileData.data);
+                }
+              } else if (fileData.type === 'bpmn') {
+                if (window.modeler && typeof window.modeler.importXML === 'function') {
+                  await window.modeler.importXML(fileData.content);
+                }
+              }
+            };
+            reader.readAsText(file);
+          } catch (error) {
+            console.error('Error al procesar archivo:', error);
+            showErrorMessage('Error al procesar archivo: ' + error.message);
+          }
+          
+          event.target.value = '';
+        });
+        fileInput.setAttribute('data-listener-added', 'true');
+      }
+    });
+  </script>
+  
+  <!-- Bundle compilado por webpack -->
+  <script src="bundle.js"></script>
 </body>
 </html>

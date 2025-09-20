@@ -19,6 +19,7 @@ class ImportExportManager {
     this.version = '1.0.0';
     this.fileExtension = '.mmproject';
     this.mimeType = 'application/json';
+    this.customProjectName = null; // Para nombre personalizado
     this.init();
   }
 
@@ -79,6 +80,9 @@ class ImportExportManager {
 
   async exportProject() {
     try {
+      console.log('[DEBUG] exportProject iniciado');
+      console.log('[DEBUG] customProjectName actual:', this.customProjectName);
+      
       const projectData = await this.collectAllProjectData();
       
       if (!projectData) {
@@ -87,6 +91,8 @@ class ImportExportManager {
       }
 
       const fileName = this.generateFileName();
+      console.log('[DEBUG] Nombre de archivo generado:', fileName);
+      
       this.downloadFile(projectData, fileName);
       
       this.showMessage('Proyecto exportado correctamente', 'success');
@@ -1737,9 +1743,47 @@ class ImportExportManager {
   }
 
   generateFileName() {
+    console.log('[DEBUG] === GENERANDO NOMBRE DE ARCHIVO ===');
+    console.log('[DEBUG] customProjectName:', this.customProjectName);
+    console.log('[DEBUG] customProjectName tipo:', typeof this.customProjectName);
+    console.log('[DEBUG] customProjectName trim:', this.customProjectName ? this.customProjectName.trim() : 'N/A');
+    
+    // Si hay un nombre personalizado, usarlo
+    if (this.customProjectName && this.customProjectName.trim()) {
+      const originalName = this.customProjectName.trim();
+      const cleanName = originalName
+        .replace(/[^a-zA-Z0-9\-_\s]/g, '') // Eliminar caracteres especiales
+        .replace(/\s+/g, '-') // Reemplazar espacios con guiones
+        .toLowerCase(); // Convertir a minúsculas para consistencia
+      
+      const finalFileName = `${cleanName}${this.fileExtension}`;
+      console.log('[DEBUG] Nombre original:', originalName);
+      console.log('[DEBUG] Nombre limpio:', cleanName);
+      console.log('[DEBUG] Nombre final del archivo:', finalFileName);
+      console.log('[DEBUG] === USANDO NOMBRE PERSONALIZADO ===');
+      return finalFileName;
+    }
+    
+    // Fallback al nombre original con timestamp
     const now = new Date();
     const timestamp = now.toISOString().slice(0, 19).replace(/:/g, '-');
-    return `multimodeler-project-${timestamp}${this.fileExtension}`;
+    const defaultName = `multimodeler-project-${timestamp}${this.fileExtension}`;
+    console.log('[DEBUG] Usando nombre por defecto:', defaultName);
+    console.log('[DEBUG] === USANDO NOMBRE POR DEFECTO ===');
+    return defaultName;
+  }
+
+  // Método para establecer nombre personalizado del proyecto
+  setProjectName(name) {
+    console.log('[DEBUG] === ESTABLECIENDO NOMBRE DEL PROYECTO ===');
+    console.log('[DEBUG] Nombre recibido:', name);
+    console.log('[DEBUG] Tipo:', typeof name);
+    console.log('[DEBUG] Valor anterior customProjectName:', this.customProjectName);
+    
+    this.customProjectName = name;
+    
+    console.log('[DEBUG] Valor nuevo customProjectName:', this.customProjectName);
+    console.log('[DEBUG] === NOMBRE ESTABLECIDO ===');
   }
 
   downloadFile(data, fileName) {

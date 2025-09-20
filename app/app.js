@@ -284,6 +284,8 @@ async function initializeApp() {
       console.log('🔄 Contenedor vacío, reinicializando...');
       appInitialized = false;
       modeler = null;
+      // Actualizar referencia global
+      window.modeler = null;
       app = null;
       // Limpiar pantalla de carga existente
       const existingLoader = document.getElementById('app-loading-screen');
@@ -348,6 +350,9 @@ async function initializeApp() {
         RALph: RALphModdle
       }
     });
+    
+    // Actualizar referencia global
+    window.modeler = modeler;
     
     // Verificar que el modeler se creó correctamente
     if (!modeler) {
@@ -581,13 +586,6 @@ function setupUIEvents() {
 
     // Botón de nuevo diagrama
     $('#new-diagram-btn').on('click', function() {
-      console.log('[DEBUG] Botón Nuevo Diagrama clickeado');
-      console.log('[DEBUG] Elementos DOM:', {
-        welcomeScreen: welcomeScreen,
-        modelerContainer: modelerContainer,
-        modeler: modeler
-      });
-
       try {
         // Ocultar botón de continuar si estaba visible y resetear localStorage para nuevo diagrama
         try {
@@ -606,20 +604,15 @@ function setupUIEvents() {
         } catch (_) { /* no-op */ }
 
         // Preparar UI
-        console.log('[DEBUG] Ocultando welcome screen y mostrando modeler container');
         welcomeScreen.hide();
         modelerContainer.show();
 
         // Crear nuevo modelo
-        console.log('[DEBUG] Iniciando creación del modelo...');
         initModeler().then(() => {
-          console.log('[DEBUG] Modelo creado correctamente');
         }).catch(err => {
-          console.error('[ERROR] Error creando el modelo:', err);
           showErrorMessage('Error al crear nuevo modelo: ' + err.message);
         });
       } catch (e) {
-        console.error('[ERROR] Error al procesar click en Nuevo Diagrama:', e);
         showErrorMessage('Error al iniciar nuevo diagrama: ' + e.message);
       }
     });
@@ -641,23 +634,17 @@ function setupUIEvents() {
         modelerContainer.show();
         // Asegurar inicialización base solo si realmente no está inicializada
         if (!appInitialized) {
-          console.log('🔄 Inicializando aplicación para continuar diagrama...');
           await initializeApp();
-        } else {
-          console.log('✅ Aplicación ya inicializada, continuando con restauración...');
-        }
-        // Restaurar desde el autosave manager
+        } 
+   
         const registry = getServiceRegistry();
         const manager = registry ? registry.get('localStorageAutoSaveManager') : null;
         if (manager && typeof manager.forceRestore === 'function') {
-          // Suspender autoguardado durante restauración para evitar errores
+      
           if (typeof manager.suspendAutoSave === 'function') manager.suspendAutoSave();
           const restored = await manager.forceRestore();
-          // forceRestore ya incluye la restauración de BPMN, no es necesario llamarla de nuevo
-          if (restored) {
-            // Marcar como restaurado para suprimir futuros avisos
+             if (restored) {
             try { if (typeof manager.markRestored === 'function') manager.markRestored(); } catch (_) { /* no-op */ }
-            // Aplicar configuración de paneles guardada
             try {
               const panelManager = resolve('PanelManagerInstance');
               if (panelManager && typeof panelManager.applyConfiguration === 'function') {
@@ -666,10 +653,7 @@ function setupUIEvents() {
             } catch (e) {
               console.warn('[WARN] No se pudo aplicar la configuración de paneles guardada:', e);
             }
-            // 2) Restaurar PPIs cuando el panel ya existe - DESHABILITADO
-            // forceRestore ya incluye la restauración de PPIs, no es necesario llamarla de nuevo
-            console.log('ℹ️ Restauración PPI manejada por forceRestore');
-          }
+           }
           if (!restored) {
             console.warn('[WARN] No se pudo restaurar el borrador, creando nuevo diagrama');
             await initModeler();
@@ -680,18 +664,13 @@ function setupUIEvents() {
           console.warn('[WARN] Autosave manager no disponible, creando nuevo diagrama');
           await initModeler();
         }
-        // Ajustes de interfaz tras restaurar
+
         setTimeout(() => {
-          // Evitar forzar eventos de resize para no provocar reflows perceptibles
-          // El zoom/posición se restauran desde LocalStorageAutoSaveManager cuando procede
-        }, 500);
+             }, 500);
       } catch (e) {
-        console.error('[ERROR] Error al continuar borrador:', e);
         showErrorMessage('Error al cargar borrador: ' + e.message);
       }
     });
-
-    // ...otros eventos de UI...
   });
 }
 
@@ -700,10 +679,23 @@ async function downloadProjectHandler() {
   try {
     console.log('[DEBUG] Botón Descargar Proyecto clickeado');
     
+    // NUEVO: Obtener nombre del input del proyecto
+    const projectNameInput = document.getElementById('project-name-input');
+    const projectName = projectNameInput ? projectNameInput.value.trim() : '';
+    const finalProjectName = projectName || 'Nuevo Diagrama';
+    
+    console.log('[DEBUG] Valor del input del proyecto:', finalProjectName);
+    
     const importManager = getServiceRegistry && getServiceRegistry().get('ImportExportManager');
     if (importManager) {
+      // NUEVO: Establecer el nombre personalizado antes de exportar
+      if (typeof importManager.setProjectName === 'function') {
+        console.log('[DEBUG] Estableciendo nombre personalizado:', finalProjectName);
+        importManager.setProjectName(finalProjectName);
+      }
+      
       await importManager.exportProject();
-      console.log('[DEBUG] Proyecto descargado correctamente.');
+      console.log('[DEBUG] Proyecto descargado correctamente con nombre:', finalProjectName);
     } else {
       throw new Error('No se pudo acceder al gestor de exportación');
     }
@@ -1028,3 +1020,14 @@ if (typeof $ !== 'undefined' && typeof document !== 'undefined') {
     initializeApp();
   });
 }
+
+// Exponer funciones necesarias globalmente para los botones del header
+window.openFile = openFile;
+window.initModeler = initModeler;
+window.downloadProjectHandler = downloadProjectHandler;
+window.openDiagramHandler = openDiagramHandler;
+window.getServiceRegistry = getServiceRegistry;
+
+// Exponer variables necesarias globalmente
+window.modeler = modeler;
+window.modelerManager = modelerManager;
