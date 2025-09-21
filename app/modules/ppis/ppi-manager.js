@@ -1437,27 +1437,21 @@ class PPIManager {
   
   restorePPINOTElements() {
     try {
-      // Usar el sistema de coordinación unificado
-      const registry = getServiceRegistry && getServiceRegistry();
-      const coordinationManager = registry?.get('PPINOTCoordinationManager');
+      // Sistema de coordinación eliminado - usar ImportExportManager
+      console.log('ℹ️ Sistema de coordinación simplificado');
       
-      if (coordinationManager) {
-        console.log('🎯 Delegando restauración PPINOT al sistema de coordinación...');
-        coordinationManager.triggerRestoration('ppi.manager.request');
-      } else {
-        // Fallback al método anterior
-        const modeler = this.getBpmnModeler();
+      // Fallback al método anterior
+      const modeler = this.getBpmnModeler();
         
-        if (!modeler) {
-          setTimeout(() => this.restorePPINOTElements(), 1000);
-          return;
-        }
+      if (!modeler) {
+        setTimeout(() => this.restorePPINOTElements(), 1000);
+        return;
+      }
 
-        // Restaurar elementos (esto ya incluye cargar relaciones desde XML)
-        const restored = this.core.restorePPINOTElements();
-        if (restored) {
-          // Elementos PPINOT restaurados exitosamente
-        }
+      // Restaurar elementos (esto ya incluye cargar relaciones desde XML)
+      const restored = this.core.restorePPINOTElements();
+      if (restored) {
+        // Elementos PPINOT restaurados exitosamente
       }
     } catch (error) {
       console.error('❌ Error restaurando elementos PPINOT:', error);

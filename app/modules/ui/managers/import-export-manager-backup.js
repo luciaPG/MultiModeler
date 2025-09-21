@@ -634,14 +634,38 @@ class ImportExportManager {
 
       // 2. Restaurar elementos PPINOT por separado (estilo CBPMN mejorado)
       if (bpmnData.ppinotElements && bpmnData.ppinotElements.length > 0) {
-        console.log(`📊 Restaurando ${bpmnData.ppinotElements.length} elementos PPINOT por separado...`);
-        await this.restorePPINOTElements(modeler, bpmnData.ppinotElements);
+        const elementRegistry = modeler.get('elementRegistry');
+        
+        // Filtrar solo elementos que NO existen en el canvas
+        const elementsToCreate = bpmnData.ppinotElements.filter(elementData => {
+          const existingElement = elementRegistry.get(elementData.id);
+          return !existingElement; // Solo crear si NO existe
+        });
+        
+        if (elementsToCreate.length > 0) {
+          console.log(`📊 Restaurando ${elementsToCreate.length} elementos PPINOT faltantes...`);
+          await this.restorePPINOTElements(modeler, elementsToCreate);
+        } else {
+          console.log(`✅ Todos los elementos PPINOT ya están presentes en el XML`);
+        }
       }
       
-      // 3. Restaurar elementos RALPH por separado
+      // 3. Restaurar SOLO elementos RALPH que NO están en el XML
       if (bpmnData.ralphElements && bpmnData.ralphElements.length > 0) {
-        console.log(`📊 Restaurando ${bpmnData.ralphElements.length} elementos RALPH por separado...`);
-        await this.restoreRALPHElements(modeler, bpmnData.ralphElements);
+        const elementRegistry = modeler.get('elementRegistry');
+        
+        // Filtrar solo elementos que NO existen en el canvas
+        const ralphToCreate = bpmnData.ralphElements.filter(elementData => {
+          const existingElement = elementRegistry.get(elementData.id);
+          return !existingElement; // Solo crear si NO existe
+        });
+        
+        if (ralphToCreate.length > 0) {
+          console.log(`📊 Restaurando ${ralphToCreate.length} elementos RALPH faltantes...`);
+          await this.restoreRALPHElements(modeler, ralphToCreate);
+        } else {
+          console.log(`✅ Todos los elementos RALPH ya están presentes en el XML`);
+        }
       }
 
       // 3. Restaurar estado del canvas (zoom, pan)

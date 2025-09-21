@@ -3,7 +3,6 @@
 
 import { getEventBus } from '../../ui/core/event-bus.js';
 import { bootUI } from '../../ui/core/boot.js';
-import { StorageManager } from '../../ui/managers/storage-manager.js';
 import { initBpmnModeler } from '../../ui/core/boot.js';
 import { getServiceRegistry } from '../../ui/core/ServiceRegistry.js';
 
@@ -19,7 +18,6 @@ export class MultiNotationModelerCore {
   constructor(options = {}) {
     // Set up core services
     this.eventBus = options.eventBus || getEventBus();
-    this.store = options.store || new StorageManager(options.storage || {});
     this.panelManager = options.panelManager;
     
     // Initialize state

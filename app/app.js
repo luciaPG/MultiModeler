@@ -9,14 +9,13 @@ import { initializeApplication, MultiNotationModeler } from './modules/index.js'
 import { PanelLoader } from './modules/ui/components/panel-loader.js';
 import modelerManager from './modules/ui/managers/modeler-manager.js';
 import './modules/ui/managers/panel-manager.js';
-import './modules/ui/managers/cookie-autosave-manager.js';
 import './services/autosave-manager.js';
-import './modules/ui/managers/ppinot-storage-manager.js';
-import './modules/ui/managers/ppinot-coordination-manager.js';
 import './modules/ui/managers/import-export-manager.js';
+import { LocalStorageCleaner } from './modules/ui/utils/localStorage-cleaner.js';
 import { initializeCommunicationSystem } from './modules/ui/core/CommunicationSystem.js';
 import { getServiceRegistry } from './modules/ui/core/ServiceRegistry.js';
 import { resolve } from './services/global-access.js';
+import { getEventBus } from './modules/ui/core/event-bus.js';
 import { cleanGhostTasksOnStartup, startGhostTaskCleaner } from './modules/rasci/core/matrix-manager.js';
 
 // Import required JSON files for moddle extensions
@@ -41,6 +40,9 @@ cleanGhostTasksOnStartup();
 
 // Start periodic ghost task cleaner
 startGhostTaskCleaner();
+
+// LIMPIEZA TOTAL DE LOCALSTORAGE - mantener solo autosave
+LocalStorageCleaner.cleanEverythingExceptAutosave();
 
 // Import CSS
 import 'bpmn-js/dist/assets/diagram-js.css';
@@ -425,27 +427,51 @@ async function initializeApp() {
     if (app && app.multinotationModeler && modeler && modeler.get && modeler.get('moddle')) {
       // Añadir extensiones de moddle si están disponibles
       if (app.multinotationModeler.ppinot) {
-        const moddle = modeler.get('moddle');
-        if (moddle && typeof moddle.registerPackage === 'function') {
-          moddle.registerPackage({ ppinot: app.multinotationModeler.ppinot });
-        } else {
-          console.warn('⚠️ moddle.registerPackage no disponible; omitiendo registro PPINOT');
-        }
+        // Registro directo en ServiceRegistry (patrón moderno)
         const sr = getServiceRegistry();
         if (sr) {
           sr.register('PPINOTModdle', app.multinotationModeler.ppinot);
+          console.log('✅ PPINOT moddle registrado en ServiceRegistry');
+        }
+        
+        // Intentar registro en moddle si está disponible
+        try {
+          const moddle = modeler.get('moddle');
+          if (moddle && moddle.registry && typeof moddle.registry.registerPackage === 'function') {
+            moddle.registry.registerPackage('ppinot', app.multinotationModeler.ppinot);
+            console.log('✅ PPINOT registrado en moddle.registry');
+          } else if (moddle && typeof moddle.registerPackage === 'function') {
+            moddle.registerPackage('ppinot', app.multinotationModeler.ppinot);
+            console.log('✅ PPINOT registrado en moddle');
+          } else {
+            console.log('ℹ️ Moddle no soporta registerPackage - usando solo ServiceRegistry');
+          }
+        } catch (moddleError) {
+          console.debug('Registro moddle PPINOT falló (normal):', moddleError.message);
         }
       }
       if (app.multinotationModeler.ralph) {
-        const moddle = modeler.get('moddle');
-        if (moddle && typeof moddle.registerPackage === 'function') {
-          moddle.registerPackage({ ralph: app.multinotationModeler.ralph });
-        } else {
-          console.warn('⚠️ moddle.registerPackage no disponible; omitiendo registro RALPH');
-        }
+        // Registro directo en ServiceRegistry (patrón moderno)
         const sr = getServiceRegistry();
         if (sr) {
           sr.register('RALphModdle', app.multinotationModeler.ralph);
+          console.log('✅ RALPH moddle registrado en ServiceRegistry');
+        }
+        
+        // Intentar registro en moddle si está disponible
+        try {
+          const moddle = modeler.get('moddle');
+          if (moddle && moddle.registry && typeof moddle.registry.registerPackage === 'function') {
+            moddle.registry.registerPackage('ralph', app.multinotationModeler.ralph);
+            console.log('✅ RALPH registrado en moddle.registry');
+          } else if (moddle && typeof moddle.registerPackage === 'function') {
+            moddle.registerPackage('ralph', app.multinotationModeler.ralph);
+            console.log('✅ RALPH registrado en moddle');
+          } else {
+            console.log('ℹ️ Moddle no soporta registerPackage - usando solo ServiceRegistry');
+          }
+        } catch (moddleError) {
+          console.debug('Registro moddle RALPH falló (normal):', moddleError.message);
         }
       }
     } else {
@@ -496,7 +522,6 @@ async function initializeApp() {
     // INICIALIZAR AUTOSAVE MANAGER CON DEPENDENCIAS REALES
     try {
       const registry = getServiceRegistry();
-      const { getEventBus } = await import('./modules/ui/core/event-bus.js');
       const eventBus = getEventBus();
       
       // Crear instancia del AutosaveManager con dependencias reales
@@ -509,7 +534,7 @@ async function initializeApp() {
           interval: 5000 // 5 segundos
         });
         
-        // Reemplazar el placeholder con la instancia real
+        // Registrar la instancia de autosave
         registry.register('localStorageAutoSaveManager', autosaveInstance, { 
           description: 'Instancia autosave con dependencias reales' 
         });
@@ -674,6 +699,120 @@ function setupUIEvents() {
   });
 }
 
+// Función para mostrar opciones de descarga
+function showDownloadOptions() {
+  return new Promise((resolve) => {
+    const modal = `
+      <div id="download-options-modal" style="
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 100%; 
+        background: rgba(0,0,0,0.5); 
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        z-index: 10000;
+      ">
+        <div style="
+          background: white; 
+          padding: 30px; 
+          border-radius: 10px; 
+          max-width: 500px; 
+          box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        ">
+          <h3 style="margin-top: 0; color: #333;">Opciones de Descarga</h3>
+          <p style="color: #666; margin-bottom: 20px;">Selecciona el formato de descarga:</p>
+          
+          <div style="margin-bottom: 15px;">
+            <button id="download-complete" style="
+              width: 100%; 
+              padding: 12px; 
+              margin-bottom: 10px; 
+              border: 2px solid #007bff; 
+              background: #007bff; 
+              color: white; 
+              border-radius: 5px; 
+              cursor: pointer;
+              font-size: 14px;
+            ">
+              📦 Proyecto Completo (.mmproject)
+              <br><small style="opacity: 0.8;">Archivo único con todo (recomendado)</small>
+            </button>
+          </div>
+          
+          <div style="margin-bottom: 15px;">
+            <button id="download-dual" style="
+              width: 100%; 
+              padding: 12px; 
+              margin-bottom: 10px; 
+              border: 2px solid #28a745; 
+              background: #28a745; 
+              color: white; 
+              border-radius: 5px; 
+              cursor: pointer;
+              font-size: 14px;
+            ">
+              📂 BPMN + CBPMN (estilo ppinot-visual)
+              <br><small style="opacity: 0.8;">Dos archivos separados para compatibilidad</small>
+            </button>
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <button id="download-bpmn" style="
+              width: 100%; 
+              padding: 12px; 
+              margin-bottom: 10px; 
+              border: 2px solid #ffc107; 
+              background: #ffc107; 
+              color: #333; 
+              border-radius: 5px; 
+              cursor: pointer;
+              font-size: 14px;
+            ">
+              📄 Solo BPMN (.bpmn)
+              <br><small style="opacity: 0.8;">Solo diagrama BPMN con RASCI</small>
+            </button>
+          </div>
+          
+          <button id="download-cancel" style="
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #ccc; 
+            background: #f8f9fa; 
+            border-radius: 5px; 
+            cursor: pointer;
+          ">Cancelar</button>
+        </div>
+      </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modal);
+    
+    // Event listeners
+    document.getElementById('download-complete').onclick = () => {
+      document.getElementById('download-options-modal').remove();
+      resolve('complete');
+    };
+    
+    document.getElementById('download-dual').onclick = () => {
+      document.getElementById('download-options-modal').remove();
+      resolve('dual');
+    };
+    
+    document.getElementById('download-bpmn').onclick = () => {
+      document.getElementById('download-options-modal').remove();
+      resolve('bpmn');
+    };
+    
+    document.getElementById('download-cancel').onclick = () => {
+      document.getElementById('download-options-modal').remove();
+      resolve(null);
+    };
+  });
+}
+
 // Handler para descargar proyecto
 async function downloadProjectHandler() {
   try {
@@ -686,6 +825,15 @@ async function downloadProjectHandler() {
     
     console.log('[DEBUG] Valor del input del proyecto:', finalProjectName);
     
+    // NUEVO: Mostrar opciones de descarga
+    const downloadOption = await showDownloadOptions();
+    if (!downloadOption) {
+      console.log('[DEBUG] Descarga cancelada por el usuario');
+      return;
+    }
+    
+    console.log('[DEBUG] Opción seleccionada:', downloadOption);
+    
     const importManager = getServiceRegistry && getServiceRegistry().get('ImportExportManager');
     if (importManager) {
       // NUEVO: Establecer el nombre personalizado antes de exportar
@@ -694,8 +842,19 @@ async function downloadProjectHandler() {
         importManager.setProjectName(finalProjectName);
       }
       
-      await importManager.exportProject();
-      console.log('[DEBUG] Proyecto descargado correctamente con nombre:', finalProjectName);
+      // Ejecutar exportación según opción seleccionada
+      if (downloadOption === 'complete') {
+        await importManager.exportProject();
+        console.log('[DEBUG] Proyecto completo descargado');
+      } else if (downloadOption === 'dual') {
+        await importManager.exportDualFormat();
+        console.log('[DEBUG] Archivos BPMN + CBPMN descargados');
+      } else if (downloadOption === 'bpmn') {
+        await importManager.exportBpmnOnly();
+        console.log('[DEBUG] Solo BPMN descargado');
+      }
+      
+      console.log('[DEBUG] Descarga completada con nombre:', finalProjectName);
     } else {
       throw new Error('No se pudo acceder al gestor de exportación');
     }
@@ -734,10 +893,64 @@ async function openDiagramHandler() {
     } else if (fileData.type === 'bpmn') {
       // Es un archivo XML BPMN
       console.log('[DEBUG] Importando diagrama BPMN...');
+      
+      // CRÍTICO: Asegurar que el modeler esté completamente inicializado
+      if (!isModelerInitialized) {
+        console.log('[DEBUG] Inicializando modeler antes de importar BPMN...');
+        await initModeler();
+      }
+      
+      // Verificar que el modeler tenga canvas y rootElement
+      const canvas = modeler.get('canvas');
+      if (!canvas || !canvas.getRootElement()) {
+        console.log('[DEBUG] Canvas no tiene rootElement, inicializando...');
+        // Crear diagrama básico primero
+        const basicXml = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" 
+                 xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                 xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" 
+                 xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                 id="Definitions_1">
+  <bpmn:process id="Process_1" isExecutable="false">
+    <bpmn:startEvent id="StartEvent_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_1" bpmnElement="StartEvent_1">
+        <dc:Bounds x="152" y="82" width="36" height="36" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>`;
+        await modeler.importXML(basicXml);
+      }
+      
+      // Ahora importar el archivo BPMN real
       await modeler.importXML(fileData.content);
       modelerManager.setModeler(modeler);
       isModelerInitialized = true;
       console.log('[DEBUG] Diagrama BPMN abierto correctamente.');
+    } else if (fileData.type === 'cbpmn') {
+      // Es un archivo CBPMN (elementos PPINOT de ppinot-visual)
+      console.log('[DEBUG] Importando archivo CBPMN...');
+      
+      // CRÍTICO: Asegurar que el modeler esté inicializado
+      if (!isModelerInitialized) {
+        console.log('[DEBUG] Inicializando modeler antes de importar CBPMN...');
+        await initModeler();
+      }
+      
+      const importManager = resolve('ImportExportManager');
+      if (importManager) {
+        await importManager.importCbpmnFile(fileData.data);
+        console.log('[DEBUG] Archivo CBPMN importado correctamente.');
+        
+        // Marcar modeler como inicializado
+        modelerManager.setModeler(modeler);
+        isModelerInitialized = true;
+      } else {
+        throw new Error('No se pudo acceder al gestor de importación');
+      }
     }
 
     // Ajustes de interfaz tras cargar
@@ -983,8 +1196,20 @@ async function openFile() {
         data: null,
         content: contents
       };
+    } else if (fileExtension === 'cbpmn') {
+      // Es un archivo CBPMN (elementos PPINOT de ppinot-visual)
+      try {
+        const cbpmnData = JSON.parse(contents);
+        return {
+          type: 'cbpmn',
+          data: cbpmnData,
+          content: contents
+        };
+      } catch (error) {
+        throw new Error('El archivo CBPMN no es válido: ' + error.message);
+      }
     } else {
-      throw new Error('Tipo de archivo no soportado. Use archivos .mmproject, .bpmn o .xml');
+      throw new Error('Tipo de archivo no soportado. Use archivos .mmproject, .bpmn, .xml o .cbpmn');
     }
   } catch (error) {
     // Si el error es porque el usuario canceló la operación, no mostramos error

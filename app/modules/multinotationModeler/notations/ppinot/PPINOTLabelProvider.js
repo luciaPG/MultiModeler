@@ -325,8 +325,25 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
         if (!element.businessObject) {
           element.businessObject = {};
         }
+        
+        // SOLO establecer name si NO existe Y no hay contenido previo guardado
         if (!element.businessObject.name || element.businessObject.name.trim() === '') {
-          element.businessObject.name = element.id || element.type.replace('PPINOT:', '');
+          // Verificar si hay contenido original guardado en localStorage
+          const savedElements = JSON.parse(localStorage.getItem('PPINOT_elements') || '[]');
+          const savedElement = savedElements.find(saved => saved.id === element.id);
+          
+          if (savedElement && savedElement.originalName && savedElement.originalName !== element.id) {
+            // Restaurar nombre original guardado
+            element.businessObject.name = savedElement.originalName;
+            console.log(`🔧 Restaurando nombre original para ${element.id}: "${savedElement.originalName}"`);
+          } else {
+            // Solo usar ID como fallback si no hay contenido original
+            const fallbackName = element.id || element.type.replace('PPINOT:', '');
+            element.businessObject.name = fallbackName;
+            console.log(`⚠️ Usando nombre fallback para ${element.id}: "${fallbackName}"`);
+          }
+        } else {
+          console.log(`✅ Nombre existente preservado para ${element.id}: "${element.businessObject.name}"`);
         }
       }
       

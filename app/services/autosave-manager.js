@@ -244,30 +244,56 @@ export class AutosaveManager {
             else if (id.startsWith('TimeMeasure_')) tipoElemento = 'PPINOT:TimeMeasure';
             else if (id.startsWith('Measure_')) tipoElemento = 'PPINOT:Measure';
             
-            // Determinar el padre basado en la posición (si está dentro del área del PPI)
+            // Determinar el padre basado en las relaciones reales establecidas por BPMN.js
             let padreId = null;
-            ppiShapes.forEach(ppi => {
-              const ppiBounds = {
-                x: ppi.x || 0,
-                y: ppi.y || 0,
-                width: ppi.width || 0,
-                height: ppi.height || 0
-              };
-              const elBounds = {
-                x: visualEl.x || 0,
-                y: visualEl.y || 0
-              };
+            
+            // MÉTODO 1: Verificar relación parent directa
+            if (visualEl.parent && visualEl.parent.id) {
+              padreId = visualEl.parent.id;
+              console.log(`🔗 Padre encontrado por relación directa: ${visualEl.id} -> ${padreId}`);
+            }
+            // MÉTODO 2: Verificar businessObject.$parent
+            else if (visualEl.businessObject && visualEl.businessObject.$parent && visualEl.businessObject.$parent.id) {
+              padreId = visualEl.businessObject.$parent.id;
+              console.log(`🔗 Padre encontrado por businessObject.$parent: ${visualEl.id} -> ${padreId}`);
+            }
+            // MÉTODO 3: Fallback - buscar PPI más cercano (solo si no hay relación directa)
+            else {
+              let closestPPI = null;
+              let closestDistance = Infinity;
               
-              if (elBounds.x >= ppiBounds.x && elBounds.x <= ppiBounds.x + ppiBounds.width &&
-                  elBounds.y >= ppiBounds.y && elBounds.y <= ppiBounds.y + ppiBounds.height) {
-                padreId = ppi.id;
+              ppiShapes.forEach(ppi => {
+                const ppiPos = { x: ppi.x || 0, y: ppi.y || 0 };
+                const elPos = { x: visualEl.x || 0, y: visualEl.y || 0 };
+                
+                const distance = Math.sqrt(
+                  Math.pow(elPos.x - ppiPos.x, 2) + 
+                  Math.pow(elPos.y - ppiPos.y, 2)
+                );
+                
+                if (distance < closestDistance) {
+                  closestDistance = distance;
+                  closestPPI = ppi.id;
+                }
+              });
+              
+              if (closestPPI && closestDistance < 500) { // Dentro de 500px
+                padreId = closestPPI;
+                console.log(`🔗 Padre encontrado por proximidad: ${visualEl.id} -> ${padreId} (distancia: ${Math.round(closestDistance)}px)`);
               }
-            });
+            }
+            
+            // Obtener el nombre original del elemento
+            const originalName = visualEl.businessObject?.name || 
+                                visualEl.businessObject?.body || 
+                                (visualEl.labels && visualEl.labels[0] && visualEl.labels[0].businessObject?.body) ||
+                                id;
             
             allPPINOTElements.push({
               id: id,
               type: tipoElemento,
-              name: id,
+              name: originalName,
+              originalName: originalName, // Guardar nombre original por separado
               position: { 
                 x: visualEl.x || 0, 
                 y: visualEl.y || 0, 
@@ -353,22 +379,10 @@ export class AutosaveManager {
                 console.log(`  ${index + 1}. ${el.id} (${el.type}) - Padre: ${el.parent_id || 'N/A'} - Posición: ${JSON.stringify(el.position)}`);
               });
               
-              localStorage.setItem('ppinotElements', JSON.stringify(uniqueElements));
-              
-              // Extraer relaciones padre-hijo
-              const relationships = uniqueElements
-                .filter(el => el.parent_id)
-                .map(el => ({
-                  childId: el.id,
-                  parentId: el.parent_id,
-                  childName: el.name || el.id,
-                  childType: el.type,
-                  parentName: uniqueElements.find(p => p.id === el.parent_id)?.name || el.parent_id,
-                  parentType: uniqueElements.find(p => p.id === el.parent_id)?.type || 'PPINOT:Ppi'
-                }));
-              
-              localStorage.setItem('ppinotRelationships', JSON.stringify(relationships));
-              console.log(`💾 PPINOT guardado en localStorage: ${uniqueElements.length} elementos, ${relationships.length} relaciones`);
+              // ELIMINADO: No guardar en localStorage separado - ya está en draft:multinotation
+              // localStorage.setItem('ppinotElements', JSON.stringify(uniqueElements));
+              // localStorage.setItem('ppinotRelationships', JSON.stringify(relationships));
+              console.log(`💾 PPINOT guardado en draft: ${uniqueElements.length} elementos`);
             } catch (error) {
               console.warn('Error guardando PPINOT en localStorage:', error);
             }
@@ -485,31 +499,11 @@ export class AutosaveManager {
     try {
       console.log('🔄 Capturando datos BPMN incluyendo relaciones padre-hijo...');
       
-      // Capturar relaciones padre-hijo desde localStorage
-      const parentChildRelations = localStorage.getItem('bpmnParentChildRelations');
-      if (parentChildRelations) {
-        const relations = JSON.parse(parentChildRelations);
-        if (relations && Object.keys(relations).length > 0) {
-          project.bpmn.relationships = project.bpmn.relationships || {};
-          project.bpmn.relationships.parentChild = relations;
-          project.welcomeScreenFormat.bpmn = project.welcomeScreenFormat.bpmn || {};
-          project.welcomeScreenFormat.bpmn.relationships = { parentChild: relations };
-          console.log('✅ Relaciones padre-hijo capturadas:', Object.keys(relations).length);
-        }
-      }
+      // ELIMINADO: No leer relaciones de localStorage separado - usar solo draft
+      console.log('ℹ️ Relaciones padre-hijo gestionadas por ImportExportManager');
       
-      // Capturar elementos RALPH desde localStorage
-      const ralphElements = localStorage.getItem('bpmnRALPHElements');
-      if (ralphElements) {
-        const elements = JSON.parse(ralphElements);
-        if (elements && elements.length > 0) {
-          project.bpmn.elements = project.bpmn.elements || {};
-          project.bpmn.elements.ralph = elements;
-          project.welcomeScreenFormat.bpmn = project.welcomeScreenFormat.bpmn || {};
-          project.welcomeScreenFormat.bpmn.elements = { ralph: elements };
-          console.log('✅ Elementos RALPH capturados:', elements.length);
-        }
-      }
+      // ELIMINADO: No capturar elementos RALPH de localStorage separado
+      console.log('ℹ️ Elementos RALPH gestionados por ImportExportManager');
       
     } catch (error) {
       console.warn('Error capturando datos BPMN:', error);
