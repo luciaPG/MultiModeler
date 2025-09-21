@@ -323,6 +323,21 @@
         // Actualizar variable global al escribir
         projectNameInput.addEventListener('input', function() {
           window.currentProjectName = this.value || 'Nuevo Diagrama';
+          
+          // Guardar en localStorage inmediatamente
+          localStorage.setItem('projectName', this.value || 'Nuevo Diagrama');
+          
+          // Actualizar ImportExportManager si está disponible
+          try {
+            const registry = getServiceRegistry();
+            const importManager = registry ? registry.get('ImportExportManager') : null;
+            if (importManager && typeof importManager.setProjectName === 'function') {
+              importManager.setProjectName(this.value || 'Nuevo Diagrama');
+              console.log('✅ Nombre del proyecto actualizado en ImportExportManager:', this.value);
+            }
+          } catch (e) {
+            console.warn('⚠️ No se pudo actualizar ImportExportManager:', e.message);
+          }
         });
         
         // Solo guardar el nombre al pulsar Enter (NO descargar)
@@ -334,6 +349,21 @@
             // Solo actualizar nombre del proyecto
             window.currentProjectName = this.value || 'Nuevo Diagrama';
             console.log('Nombre del proyecto actualizado:', window.currentProjectName);
+            
+            // Guardar en localStorage
+            localStorage.setItem('projectName', this.value || 'Nuevo Diagrama');
+            
+            // Actualizar ImportExportManager
+            try {
+              const registry = getServiceRegistry();
+              const importManager = registry ? registry.get('ImportExportManager') : null;
+              if (importManager && typeof importManager.setProjectName === 'function') {
+                importManager.setProjectName(this.value || 'Nuevo Diagrama');
+                console.log('✅ Nombre del proyecto guardado en ImportExportManager:', this.value);
+              }
+            } catch (e) {
+              console.warn('⚠️ No se pudo actualizar ImportExportManager:', e.message);
+            }
             
             // Opcional: mostrar feedback visual
             const originalBorder = this.style.border;

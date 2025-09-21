@@ -722,8 +722,45 @@ export class LocalStorageManager {
       if (ppiModal && ppiModal.style.display !== 'none') {
         const form = ppiModal.querySelector('form');
         if (form) {
-          const formDataObj = new FormData(form);
-          formData.ppiFormSettings = Object.fromEntries(formDataObj.entries());
+          // Capturar todos los campos del formulario PPI
+          const ppiFormData = {};
+          
+          // Campos básicos
+          const titleInput = form.querySelector('[name="title"]');
+          if (titleInput) ppiFormData.title = titleInput.value;
+          
+          const descInput = form.querySelector('[name="description"]');
+          if (descInput) ppiFormData.description = descInput.value;
+          
+          const processInput = form.querySelector('[name="process"]');
+          if (processInput) ppiFormData.process = processInput.value;
+          
+          // Campos de medición
+          const measureTypeSelect = form.querySelector('[name="measureType"]');
+          if (measureTypeSelect) ppiFormData.measureType = measureTypeSelect.value;
+          
+          const targetInput = form.querySelector('[name="target"]');
+          if (targetInput) ppiFormData.target = targetInput.value;
+          
+          const scopeInput = form.querySelector('[name="scope"]');
+          if (scopeInput) ppiFormData.scope = scopeInput.value;
+          
+          // Campos de responsabilidades
+          const responsibleInput = form.querySelector('[name="responsible"]');
+          if (responsibleInput) ppiFormData.responsible = responsibleInput.value;
+          
+          const informedInput = form.querySelector('[name="informed"]');
+          if (informedInput) ppiFormData.informed = informedInput.value;
+          
+          const commentsInput = form.querySelector('[name="comments"]');
+          if (commentsInput) ppiFormData.comments = commentsInput.value;
+          
+          // Capturar ID de la PPI que se está editando
+          const ppiIdElement = form.querySelector('.ppi-id-value');
+          if (ppiIdElement) ppiFormData.editingPPIId = ppiIdElement.textContent;
+          
+          formData.ppiFormSettings = ppiFormData;
+          console.log('📝 Datos del formulario PPI capturados:', Object.keys(ppiFormData).length, 'campos');
         }
       }
       
@@ -1663,10 +1700,66 @@ export class LocalStorageManager {
         });
       }
       
+      // Restaurar datos del formulario PPI si existen
+      if (formData.ppiFormSettings && Object.keys(formData.ppiFormSettings).length > 0) {
+        // Guardar los datos del formulario PPI en localStorage para restaurar más tarde
+        localStorage.setItem('savedPPIFormData', JSON.stringify(formData.ppiFormSettings));
+        console.log('📝 Datos del formulario PPI guardados para restauración:', Object.keys(formData.ppiFormSettings).length, 'campos');
+        
+        // Si hay un modal PPI abierto, restaurar inmediatamente
+        const ppiModal = document.getElementById('ppi-modal');
+        if (ppiModal && ppiModal.style.display !== 'none') {
+          this.restorePPIFormData(formData.ppiFormSettings);
+        }
+      }
+      
+      // También actualizar el nombre del proyecto en ImportExportManager
+      if (formData.projectSettings && formData.projectSettings.name) {
+        try {
+          const registry = resolve('ServiceRegistry');
+          const importManager = registry ? registry.get('ImportExportManager') : null;
+          if (importManager && typeof importManager.setProjectName === 'function') {
+            importManager.setProjectName(formData.projectSettings.name);
+            console.log('✅ Nombre del proyecto actualizado en ImportExportManager:', formData.projectSettings.name);
+          }
+        } catch (e) {
+          console.warn('⚠️ No se pudo actualizar ImportExportManager:', e.message);
+        }
+      }
+      
       console.log('✅ Datos de formulario restaurados correctamente');
       
     } catch (error) {
       console.warn('Error restaurando datos de formulario:', error);
+    }
+  }
+  
+  /**
+   * Restaura los datos del formulario PPI en el modal
+   */
+  restorePPIFormData(ppiFormData) {
+    try {
+      const ppiModal = document.getElementById('ppi-modal');
+      if (!ppiModal) return;
+      
+      const form = ppiModal.querySelector('form');
+      if (!form) return;
+      
+      // Restaurar cada campo del formulario
+      Object.entries(ppiFormData).forEach(([fieldName, value]) => {
+        if (fieldName === 'editingPPIId') return; // Skip meta fields
+        
+        const input = form.querySelector(`[name="${fieldName}"]`);
+        if (input && value !== undefined && value !== null) {
+          input.value = value;
+          console.log(`📝 Campo PPI restaurado: ${fieldName} = ${value}`);
+        }
+      });
+      
+      console.log('✅ Formulario PPI restaurado con', Object.keys(ppiFormData).length, 'campos');
+      
+    } catch (error) {
+      console.warn('Error restaurando formulario PPI:', error);
     }
   }
 }

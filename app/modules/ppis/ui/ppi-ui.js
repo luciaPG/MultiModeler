@@ -976,6 +976,8 @@ class PPIUI {
 
     // Configurar funcionalidad de pestañas para modales de edición y visualización
     if (isEdit) {
+      // NUEVO: Restaurar datos del formulario PPI guardados si existen
+      this.restoreSavedPPIFormData();
       this.setupTabNavigation();
       this.setupFormValidation();
       this.setupTargetScopeValidation(ppi);
@@ -3670,6 +3672,47 @@ class PPIUI {
    */
   setSyncDisabled(message = 'Sincronización deshabilitada') {
     this.updateSyncStatus('disabled', message);
+  }
+  
+  /**
+   * Restaura los datos del formulario PPI guardados en localStorage
+   */
+  restoreSavedPPIFormData() {
+    try {
+      const savedData = localStorage.getItem('savedPPIFormData');
+      if (!savedData) return;
+      
+      const ppiFormData = JSON.parse(savedData);
+      
+      // Restaurar después de un pequeño delay para asegurar que el DOM esté listo
+      setTimeout(() => {
+        const modal = document.getElementById('ppi-modal');
+        if (!modal) return;
+        
+        const form = modal.querySelector('form');
+        if (!form) return;
+        
+        // Restaurar cada campo
+        Object.entries(ppiFormData).forEach(([fieldName, value]) => {
+          if (fieldName === 'editingPPIId') return; // Skip meta fields
+          
+          const input = form.querySelector(`[name="${fieldName}"]`);
+          if (input && value !== undefined && value !== null && value !== '') {
+            input.value = value;
+            console.log(`📝 Campo PPI restaurado: ${fieldName} = ${value}`);
+          }
+        });
+        
+        console.log('✅ Formulario PPI restaurado desde localStorage');
+        
+        // Limpiar datos guardados después de restaurar
+        localStorage.removeItem('savedPPIFormData');
+        
+      }, 100);
+      
+    } catch (error) {
+      console.warn('Error restaurando formulario PPI desde localStorage:', error);
+    }
   }
 }
 

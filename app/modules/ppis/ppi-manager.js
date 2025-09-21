@@ -1189,6 +1189,9 @@ class PPIManager {
         // Sync changes back to canvas elements (Target/Scope)
         this.syncPPIChangesToCanvas(ppiId, processedData);
         
+        // Guardar automáticamente en localStorage y proyecto
+        this.triggerAutoSave();
+        
         document.getElementById('ppi-modal').remove();
         this.ui.showSuccessMessage('PPI actualizado exitosamente');
         this.ui.refreshPPIList();
@@ -1199,6 +1202,10 @@ class PPIManager {
       // Create new PPI
       const ppi = this.core.createPPI(processedData);
       this.core.addPPI(ppi);
+      
+      // Guardar automáticamente en localStorage y proyecto
+      this.triggerAutoSave();
+      
       document.getElementById('ppi-modal').remove();
       // Silenciar feedback de creación
       this.ui.refreshPPIList();
@@ -1306,6 +1313,22 @@ class PPIManager {
       
     } catch (error) {
       console.error('💥 [syncPPIChangesToCanvas] Error:', error);
+    }
+  }
+  
+  /**
+   * Activa el guardado automático para sincronizar cambios
+   */
+  triggerAutoSave() {
+    try {
+      // Usar LocalStorageManager para guardar inmediatamente
+      const storageManager = resolve('LocalStorageManager');
+      if (storageManager && typeof storageManager.saveProject === 'function') {
+        storageManager.saveProject();
+        console.log('✅ Autoguardado activado después de cambios en PPI');
+      }
+    } catch (error) {
+      console.warn('⚠️ Error en autoguardado:', error);
     }
   }
 
