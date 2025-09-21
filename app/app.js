@@ -10,6 +10,7 @@ import { PanelLoader } from './modules/ui/components/panel-loader.js';
 import modelerManager from './modules/ui/managers/modeler-manager.js';
 import './modules/ui/managers/panel-manager.js';
 import './services/autosave-manager.js';
+import './services/local-storage-integration.js';
 import './modules/ui/managers/import-export/ImportExportManager.js';
 import { initializeCommunicationSystem } from './modules/ui/core/CommunicationSystem.js';
 import { getServiceRegistry } from './modules/ui/core/ServiceRegistry.js';
@@ -75,6 +76,7 @@ const loadingState = {
     ralphModule: false,
     rasciModule: false,
     localStorageManager: false,
+    localStorageIntegration: false,
     cookieManager: false,
     panelManager: false
   },
@@ -517,39 +519,32 @@ async function initializeApp() {
     
     console.log('✅ Aplicación VisualPPINOT inicializada correctamente.');
     
-    // INICIALIZAR AUTOSAVE MANAGER CON DEPENDENCIAS REALES
+    // INICIALIZAR NUEVO SISTEMA DE LOCALSTORAGE
     try {
-      const registry = getServiceRegistry();
-      const eventBus = getEventBus();
+      console.log('🔄 Inicializando nuevo sistema de LocalStorage...');
       
-      // Crear instancia del AutosaveManager con dependencias reales
-      const createAutosaveManager = registry.get('createAutosaveManager');
-      if (createAutosaveManager && modeler && eventBus) {
-        const autosaveInstance = createAutosaveManager({
-          modeler: modeler,
-          eventBus: eventBus,
-          enabled: true,
-          interval: 5000 // 5 segundos
-        });
+      const registry = getServiceRegistry();
+      
+      // El LocalStorageIntegration ya se inicializa automáticamente al importar
+      // Solo necesitamos verificar que esté disponible y marcar como listo
+      const localStorageIntegration = registry.get('LocalStorageIntegration');
+      if (localStorageIntegration) {
+        // Intentar migrar datos del sistema anterior si es necesario
+        await localStorageIntegration.migrateFromOldSystem();
         
-        // Registrar la instancia de autosave
-        registry.register('localStorageAutoSaveManager', autosaveInstance, { 
-          description: 'Instancia autosave con dependencias reales' 
-        });
-        
-        console.log('✅ AutosaveManager inicializado con dependencias reales');
+        loadingState.modules.localStorageIntegration = true;
+        console.log('✅ Sistema de LocalStorage inicializado correctamente');
       } else {
-        console.warn('⚠️ No se pudo inicializar AutosaveManager: dependencias faltantes');
+        console.warn('⚠️ LocalStorageIntegration no disponible');
+        loadingState.modules.localStorageIntegration = true; // Marcar como listo para no bloquear
       }
     } catch (error) {
-      console.warn('⚠️ Error inicializando AutosaveManager:', error);
+      console.warn('⚠️ Error inicializando sistema de LocalStorage:', error);
+      loadingState.modules.localStorageIntegration = true; // Marcar como listo para no bloquear
     }
     
-    // Inicializar sistema de autoguardado si está habilitado
-    if (autoSaveEnabled && !autoSaveInterval) {
-      // Iniciar autoguardado (se implementará más tarde)
-      console.log('Auto-guardado activado pero no implementado');
-    }
+    // DESACTIVADO: Sistema de autoguardado legacy reemplazado por LocalStorageManager
+    console.log('ℹ️ Sistema de autoguardado legacy desactivado - usando nuevo LocalStorageManager');
     
   } catch (error) {
     console.error('Error inicializando la aplicación:', error);
@@ -578,13 +573,33 @@ function setupUIElements() {
   setupUIEvents();
 }
 
-// Configurar eventos de UI
-function setupUIEvents() {
-  $(function() {
-    // Detectar borrador en localStorage para mostrar botón de continuar
-    try {
+// Función para verificar si debe mostrarse el botón de continuar diagrama
+function checkContinueDiagramButton() {
+  try {
+    const registry = getServiceRegistry();
+    const localStorageIntegration = registry ? registry.get('LocalStorageIntegration') : null;
+    
+    let shouldShow = false;
+    
+    console.log('🔍 Registry disponible:', !!registry);
+    console.log('🔍 LocalStorageIntegration encontrado:', !!localStorageIntegration);
+    
+    if (localStorageIntegration && typeof localStorageIntegration.hasSavedData === 'function') {
+      // Usar el nuevo sistema
+      shouldShow = localStorageIntegration.hasSavedData();
+      console.log('🔍 Verificando datos guardados (nuevo sistema):', shouldShow);
+      
+      // Si hay datos, obtener información adicional para debugging
+      if (shouldShow) {
+        const storageInfo = localStorageIntegration.getStorageInfo();
+        console.log('📊 Información de almacenamiento:', storageInfo);
+      }
+    } else {
+      // Fallback al sistema anterior para compatibilidad
+      console.log('⚠️ LocalStorageIntegration no disponible, usando sistema anterior');
+      console.log('🔍 LocalStorageIntegration type:', typeof localStorageIntegration);
+      console.log('🔍 hasSavedData method:', localStorageIntegration ? typeof localStorageIntegration.hasSavedData : 'N/A');
       const stored = localStorage.getItem('draft:multinotation');
-      let shouldShow = false;
       if (stored) {
         const parsed = JSON.parse(stored);
         const savedAt = parsed && parsed.savedAt;
@@ -596,15 +611,45 @@ function setupUIEvents() {
           (value.rasci && Array.isArray(value.rasci.roles) && value.rasci.roles.length > 0)
         );
         shouldShow = Boolean(notExpired && hasContent);
+        console.log('🔍 Verificando datos guardados (sistema anterior):', shouldShow);
       }
-      if (shouldShow) {
-        $('#continue-diagram-btn').show();
-      } else {
-        $('#continue-diagram-btn').hide();
-      }
-    } catch (e) {
-      console.warn('[WARN] No se pudo determinar si hay borrador en localStorage:', e);
+    }
+    
+    if (shouldShow) {
+      $('#continue-diagram-btn').show();
+      console.log('✅ Botón "Continuar diagrama" mostrado');
+    } else {
       $('#continue-diagram-btn').hide();
+      console.log('ℹ️ Botón "Continuar diagrama" ocultado - no hay datos guardados');
+    }
+  } catch (e) {
+    console.warn('[WARN] No se pudo determinar si hay borrador en localStorage:', e);
+    $('#continue-diagram-btn').hide();
+  }
+}
+
+// La función checkContinueDiagramButton se maneja a través del EventBus
+
+// Configurar eventos de UI
+function setupUIEvents() {
+  $(function() {
+    // Verificar botón de continuar después de un breve delay para asegurar inicialización
+    setTimeout(() => {
+      checkContinueDiagramButton();
+    }, 1000);
+
+    // Escuchar eventos del LocalStorageManager para actualizar el botón
+    const eventBus = getEventBus();
+    if (eventBus) {
+      eventBus.subscribe('localStorage.save.success', () => {
+        console.log('🔄 Datos guardados, verificando botón de continuar...');
+        setTimeout(checkContinueDiagramButton, 500);
+      });
+      
+      eventBus.subscribe('localStorage.clear.success', () => {
+        console.log('🔄 Datos eliminados, verificando botón de continuar...');
+        setTimeout(checkContinueDiagramButton, 500);
+      });
     }
 
     // Botón de nuevo diagrama
@@ -614,12 +659,12 @@ function setupUIEvents() {
         try {
           $('#continue-diagram-btn').hide();
           const registry = getServiceRegistry();
-          const manager = registry ? registry.get('localStorageAutoSaveManager') : null;
+          const manager = registry ? registry.get('LocalStorageIntegration') : null;
           if (manager) {
             // RESETEAR localStorage para nuevo diagrama
             console.log('🔄 Reseteando localStorage para nuevo diagrama...');
-            if (typeof manager.clearProjectState === 'function') {
-              manager.clearProjectState();
+            if (typeof manager.clearSavedData === 'function') {
+              manager.clearSavedData();
             }
             if (typeof manager.markRestored === 'function') manager.markRestored();
             if (typeof manager.dismissDraftNotification === 'function') manager.dismissDraftNotification();
@@ -661,11 +706,11 @@ function setupUIEvents() {
         } 
    
         const registry = getServiceRegistry();
-        const manager = registry ? registry.get('localStorageAutoSaveManager') : null;
-        if (manager && typeof manager.forceRestore === 'function') {
-      
-          if (typeof manager.suspendAutoSave === 'function') manager.suspendAutoSave();
-          const restored = await manager.forceRestore();
+        const manager = registry ? registry.get('LocalStorageIntegration') : null;
+        if (manager && typeof manager.loadProject === 'function') {
+          // DESACTIVADO: suspendAutoSave ya no existe en el nuevo sistema
+          console.log('ℹ️ Cargando proyecto usando nuevo LocalStorageManager...');
+          const restored = await manager.loadProject();
              if (restored) {
             try { if (typeof manager.markRestored === 'function') manager.markRestored(); } catch (_) { /* no-op */ }
             try {
@@ -682,7 +727,7 @@ function setupUIEvents() {
             await initModeler();
           }
           // Reanudar autoguardado
-          if (typeof manager.resumeAutoSave === 'function') manager.resumeAutoSave();
+          // DESACTIVADO: resumeAutoSave ya no existe en el nuevo sistema
         } else {
           console.warn('[WARN] Autosave manager no disponible, creando nuevo diagrama');
           await initModeler();
@@ -954,7 +999,7 @@ async function openDiagramHandler() {
     // Ajustes de interfaz tras cargar
     setTimeout(() => {
       // Evitar forzar eventos de resize para no provocar reflows perceptibles
-      // El zoom/posición se restauran desde LocalStorageAutoSaveManager cuando procede
+      // El zoom/posición se restauran desde LocalStorageIntegration cuando procede
     }, 500);
 
   } catch (e) {
@@ -978,7 +1023,7 @@ function setupEventHandlers() {
     // No disparar notificaciones durante cooldown post-restauración para evitar recarga de paneles
     try {
       const sr = getServiceRegistry && getServiceRegistry();
-      const lsMgr = sr && (sr.get('localStorageAutoSaveManager') || sr.get('LocalStorageAutoSaveManager'));
+      const lsMgr = sr && sr.get('LocalStorageIntegration');
       const inCooldown = lsMgr && lsMgr._postRestoreCooldownUntil && Date.now() < lsMgr._postRestoreCooldownUntil;
       if (inCooldown) return;
     } catch (_) { /* no-op */ }

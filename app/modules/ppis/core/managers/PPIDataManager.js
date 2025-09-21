@@ -8,10 +8,14 @@
  * - Estadísticas y exportación
  */
 
+// Importar el LocalStorageManager
+import LocalStorageManager from '../../../../services/local-storage-manager.js';
+
 export class PPIDataManager {
   constructor() {
     this.ppis = [];
     this.filteredPPIs = [];
+    this.isSaving = false; // Control de concurrencia para evitar múltiples guardados
     
     this.measureTypes = {
       time: { name: 'Medida de Tiempo', icon: 'fas fa-clock' },
@@ -51,25 +55,26 @@ export class PPIDataManager {
 
   // ==================== OPERACIONES CRUD ====================
 
-  addPPI(ppi) {
+  async addPPI(ppi) {
     if (ppi.elementId) {
       const existingIndex = this.ppis.findIndex(p => p.elementId === ppi.elementId);
       if (existingIndex !== -1) {
         this.ppis[existingIndex] = { ...this.ppis[existingIndex], ...ppi, updatedAt: new Date().toISOString() };
+        await this.savePPIs();
         return this.ppis[existingIndex];
       }
     }
     this.ppis.push(ppi);
-    this.savePPIs();
+    await this.savePPIs();
     return ppi;
   }
 
-  updatePPI(ppiId, updatedData, __source = null) {
+  async updatePPI(ppiId, updatedData) {
     const index = this.ppis.findIndex(p => p.id === ppiId);
     if (index !== -1) {
       // Limpiar datos undefined/null
       const cleanData = Object.fromEntries(
-        Object.entries(updatedData).filter(([_, value]) => value !== undefined && value !== null)
+        Object.entries(updatedData).filter(([, value]) => value !== undefined && value !== null)
       );
       
       this.ppis[index] = {
@@ -78,17 +83,17 @@ export class PPIDataManager {
         updatedAt: new Date().toISOString()
       };
       
-      this.savePPIs();
+      await this.savePPIs();
       return this.ppis[index];
     }
     return null;
   }
 
-  deletePPI(ppiId) {
+  async deletePPI(ppiId) {
     const index = this.ppis.findIndex(p => p.id === ppiId);
     if (index !== -1) {
       const deletedPPI = this.ppis.splice(index, 1)[0];
-      this.savePPIs();
+      await this.savePPIs();
       return deletedPPI;
     }
     return null;
@@ -151,15 +156,67 @@ export class PPIDataManager {
 
   // ==================== PERSISTENCIA ====================
 
-  savePPIs() {
-    // ELIMINADO: No guardar en localStorage - usar solo autosave
-    console.log('ℹ️ savePPIs deshabilitado - usar solo autosave');
+  async savePPIs() {
+    // Control de concurrencia para evitar múltiples guardados simultáneos
+    if (this.isSaving) {
+      console.log('⏳ Ya hay un guardado en progreso, omitiendo...');
+      return { success: true, reason: 'Already saving' };
+    }
+
+    this.isSaving = true;
+    
+    try {
+      console.log('💾 Guardando PPIs usando nuevo LocalStorageManager...');
+      
+      // Usar el nuevo LocalStorageManager para guardar todo el estado del proyecto
+      const storageManager = LocalStorageManager;
+      
+      const result = await storageManager.saveProject();
+      
+      if (result.success) {
+        console.log('✅ PPIs guardados exitosamente');
+      } else {
+        console.warn('⚠️ Error guardando PPIs:', result.error || result.reason);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('❌ Error en savePPIs:', error);
+      return { success: false, error: error.message };
+    } finally {
+      this.isSaving = false;
+    }
   }
 
-  loadPPIs() {
-    // ELIMINADO: No cargar de localStorage - usar solo autosave  
-    console.log('ℹ️ loadPPIs deshabilitado - usar solo autosave');
-    this.ppis = [];
+  async loadPPIs() {
+    try {
+      console.log('📂 Cargando PPIs usando nuevo LocalStorageManager...');
+      
+      // Usar el nuevo LocalStorageManager para cargar todo el estado del proyecto
+      const storageManager = LocalStorageManager;
+      
+      const result = await storageManager.loadProject();
+      
+      if (result.success) {
+        // Actualizar la lista local de PPIs con los datos cargados
+        if (result.data && result.data.ppi && result.data.ppi.indicators) {
+          this.ppis = result.data.ppi.indicators;
+          console.log(`✅ ${this.ppis.length} PPIs cargados desde localStorage`);
+        } else {
+          this.ppis = [];
+          console.log('ℹ️ No hay PPIs guardados, inicializando lista vacía');
+        }
+      } else {
+        console.warn('⚠️ Error cargando PPIs:', result.error || result.reason);
+        this.ppis = [];
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('❌ Error en loadPPIs:', error);
+      this.ppis = [];
+      return { success: false, error: error.message };
+    }
   }
 
   // ==================== EXPORTACIÓN ====================

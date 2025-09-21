@@ -10,7 +10,7 @@ export class AutosaveManager {
     this.storageManager = options.storageManager; // Para compatibilidad con tests
     this.eventBus = options.eventBus;
     this.interval = options.interval || 5000;
-    this.enabled = options.enabled !== false;
+    this.enabled = false; // DESACTIVADO COMPLETAMENTE
     
     this.hasChanges = false;
     this.isAutosaving = false;
@@ -42,10 +42,8 @@ export class AutosaveManager {
   markAsChanged() {
     this.hasChanges = true;
     
-    // Solo programar autoguardado si está habilitado y no suspendido
-    if (this.enabled && !this.suspended && !this.autosaveTimer) {
-      this.scheduleAutosave();
-    }
+    // DESACTIVADO: No programar autoguardado
+    console.log('ℹ️ Autosave desactivado - cambios marcados pero no guardados');
   }
 
   scheduleAutosave() {
@@ -59,10 +57,9 @@ export class AutosaveManager {
   }
 
   async performAutosave() {
-    if (this.isAutosaving || !this.hasChanges || this.suspended) {
-      const reason = this.isAutosaving ? 'Already saving' : this.suspended ? 'Suspended' : 'no changes';
-      return { success: false, reason: reason };
-    }
+    // DESACTIVADO COMPLETAMENTE
+    console.log('ℹ️ Autosave desactivado - operación no ejecutada');
+    return { success: false, reason: 'Autosave disabled' };
 
     try {
       console.log('🔄 Iniciando performAutosave...');
