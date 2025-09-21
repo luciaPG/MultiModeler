@@ -31,7 +31,23 @@ export class DataCapture {
   }
 
   extractPPIs(ppiManager) {
-    return (ppiManager && ppiManager.core && ppiManager.core.getAllPPIs) ? ppiManager.core.getAllPPIs() : [];
+    if (!ppiManager || !ppiManager.core) {
+      return [];
+    }
+    
+    // Obtener PPIs visibles (excluye medidas agregadas)
+    const allPPIs = ppiManager.core.getVisiblePPIs ? ppiManager.core.getVisiblePPIs() : 
+                   (ppiManager.core.getAllPPIs ? ppiManager.core.getAllPPIs() : []);
+    
+    // Filtrar solo PPIs que estén realmente en el canvas
+    const canvasPPIs = allPPIs.filter(ppi => {
+      // Un PPI está en el canvas si tiene elementId (vinculado a elemento BPMN)
+      return ppi.elementId && ppi.elementId.trim() !== '';
+    });
+    
+    console.log(`🔍 PPIs filtrados: ${allPPIs.length} total → ${canvasPPIs.length} en canvas`);
+    
+    return canvasPPIs;
   }
 
   /**

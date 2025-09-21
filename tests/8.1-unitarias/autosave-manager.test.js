@@ -87,7 +87,8 @@ describe('8.1 Pruebas Unitarias - AutosaveManager', () => {
       const autosaveManager = new AutosaveManager({
         modeler: mockModeler,
         storageManager: mockStorageManager,
-        eventBus: mockEventBus
+        eventBus: mockEventBus,
+        enabled: true // Habilitar autosave para el test
       });
 
       expect(autosaveManager.modeler).toBe(mockModeler);
@@ -184,7 +185,7 @@ describe('8.1 Pruebas Unitarias - AutosaveManager', () => {
         storageManager: mockStorageManager,
         eventBus: mockEventBus,
         interval: 1000,
-        enabled: false
+        enabled: true
       });
 
       // Marcar como cambiado y ejecutar autoguardado manual
@@ -222,7 +223,7 @@ describe('8.1 Pruebas Unitarias - AutosaveManager', () => {
         modeler: mockModeler,
         storageManager: mockStorageManager,
         eventBus: mockEventBus,
-        enabled: false
+        enabled: true
       });
 
       autosaveManager.markAsChanged();
@@ -241,7 +242,7 @@ describe('8.1 Pruebas Unitarias - AutosaveManager', () => {
         modeler: mockModeler,
         storageManager: mockStorageManager,
         eventBus: mockEventBus,
-        enabled: false
+        enabled: true
       });
 
       expect(autosaveManager.hasChanges).toBe(false);
@@ -249,7 +250,7 @@ describe('8.1 Pruebas Unitarias - AutosaveManager', () => {
       const result = await autosaveManager.performAutosave();
 
       expect(result.success).toBe(false);
-      expect(result.reason).toContain('no changes');
+      expect(result.reason).toContain('No changes');
       expect(mockModeler.saveXML).not.toHaveBeenCalled();
     });
 
@@ -258,7 +259,7 @@ describe('8.1 Pruebas Unitarias - AutosaveManager', () => {
         modeler: mockModeler,
         storageManager: mockStorageManager,
         eventBus: mockEventBus,
-        enabled: false
+        enabled: true
       });
 
       autosaveManager.markAsChanged();
@@ -281,7 +282,7 @@ describe('8.1 Pruebas Unitarias - AutosaveManager', () => {
         modeler: mockModeler,
         storageManager: mockStorageManager,
         eventBus: mockEventBus,
-        enabled: false
+        enabled: true
       });
 
       autosaveManager.markAsChanged();
@@ -311,7 +312,7 @@ describe('8.1 Pruebas Unitarias - AutosaveManager', () => {
         modeler: mockModeler,
         storageManager: mockStorageManager,
         eventBus: mockEventBus,
-        enabled: false
+        enabled: true
       });
 
       autosaveManager.markAsChanged();
@@ -351,7 +352,7 @@ describe('8.1 Pruebas Unitarias - AutosaveManager', () => {
         modeler: mockModeler,
         storageManager: mockStorageManager,
         eventBus: mockEventBus,
-        enabled: false
+        enabled: true
       });
 
       autosaveManager.markAsChanged();
@@ -387,7 +388,7 @@ describe('8.1 Pruebas Unitarias - AutosaveManager', () => {
         modeler: mockModeler,
         storageManager: mockStorageManager,
         eventBus: mockEventBus,
-        enabled: false
+        enabled: true
       });
 
       autosaveManager.markAsChanged();

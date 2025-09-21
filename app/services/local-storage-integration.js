@@ -92,7 +92,13 @@ class LocalStorageIntegration {
    * Guarda el proyecto completo
    */
   async saveProject() {
-    return await this.storageManager.saveProject();
+    try {
+      console.log('💾 Guardando proyecto...');
+      return await this.storageManager.saveProject();
+    } catch (error) {
+      console.log(`❌ Error guardando proyecto: ${error.message}`);
+      throw error;
+    }
   }
 
   /**
@@ -184,9 +190,9 @@ class LocalStorageIntegration {
       const migratedData = await this.convertOldDataToNewFormat(oldData);
       
       // Guardar datos migrados
-      const saveResult = await this.storageManager.saveToLocalStorage(migratedData);
+      const saveResult = await this.storageManager.saveProject();
       
-      if (saveResult) {
+      if (saveResult && saveResult.success) {
         console.log('✅ Migración completada exitosamente');
         return { success: true, migrated: true, data: migratedData };
       } else {

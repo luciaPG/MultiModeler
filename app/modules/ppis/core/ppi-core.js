@@ -83,6 +83,10 @@ class PPICore {
   getAllPPIs() {
     return this.dataManager.getAllPPIs();
   }
+  
+  getVisiblePPIs() {
+    return this.dataManager.getVisiblePPIs();
+  }
 
   getPPIsForElement(elementId) {
     return this.dataManager.getPPIsForElement(elementId);

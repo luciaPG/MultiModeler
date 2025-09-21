@@ -19,6 +19,7 @@ export class MultiNotationModelerCore {
     // Set up core services
     this.eventBus = options.eventBus || getEventBus();
     this.panelManager = options.panelManager;
+    this.store = options.store; // Storage manager para persistencia
     
     // Initialize state
     this.activeModeler = null;
@@ -291,6 +292,31 @@ export class MultiNotationModelerCore {
   }
   
   /**
+   * Get RASCI data
+   * @returns {Promise<Object>} RASCI data
+   */
+  async getRasciData() {
+    try {
+      // Intentar obtener datos RASCI del ServiceRegistry
+      const registry = getServiceRegistry();
+      const rasciStore = registry?.get('RasciStore');
+      
+      if (rasciStore) {
+        return {
+          roles: rasciStore.getRoles ? rasciStore.getRoles() : [],
+          matrix: rasciStore.getMatrix ? rasciStore.getMatrix() : {}
+        };
+      }
+      
+      // Fallback: datos vacíos
+      return { roles: [], matrix: {} };
+    } catch (error) {
+      console.warn('[Core] Error getting RASCI data:', error);
+      return { roles: [], matrix: {} };
+    }
+  }
+  
+  /**
    * Save the current model state
    * @param {Object} options - Save options
    * @returns {Promise<Object>} Result object
@@ -305,10 +331,16 @@ export class MultiNotationModelerCore {
         bpmn: xml,
         ppinot: this.auxiliaryNotations.ppinot ? this.auxiliaryNotations.ppinot.elements : [],
         ralph: this.auxiliaryNotations.ralph ? this.auxiliaryNotations.ralph.roles : [],
-        rasci: await this.getRasciData()
+        rasci: await this.getRasciData() || { roles: [], matrix: {} }
       };
       
       // Save using storage manager
+      if (!this.store) {
+        console.warn('[Core] No storage manager configured, using localStorage fallback');
+        localStorage.setItem('multiNotationModel', JSON.stringify(completeModel));
+        return { success: true, path: 'localStorage' };
+      }
+      
       const result = await this.store.save('multiNotationModel', completeModel, options);
       
       if (result.success) {
@@ -331,6 +363,18 @@ export class MultiNotationModelerCore {
   async loadModel(options = {}) {
     try {
       // Load model from storage manager
+      if (!this.store) {
+        console.warn('[Core] No storage manager configured, using localStorage fallback');
+        const data = localStorage.getItem('multiNotationModel');
+        if (data) {
+          const model = JSON.parse(data);
+          this.eventBus.publish('model.loaded', { data: model });
+          return { success: true, data: model };
+        } else {
+          return { success: false, error: 'No model found in localStorage' };
+        }
+      }
+      
       const result = await this.store.load('multiNotationModel', options);
       
       if (!result.success) {

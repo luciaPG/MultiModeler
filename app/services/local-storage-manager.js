@@ -182,7 +182,8 @@ export class LocalStorageManager {
       ppi: await this.capturePPIData(),
       rasci: await this.captureRasciData(),
       ralph: await this.captureRalphData(),
-      metadata: await this.captureMetadata()
+      metadata: await this.captureMetadata(),
+      formData: await this.captureFormData() // NUEVO: Capturar datos del formulario
     };
 
     console.log('📊 Datos del proyecto capturados:', {
@@ -546,22 +547,6 @@ export class LocalStorageManager {
   }
   
 
-  async capturePPIData() {
-    try {
-      const ppiManager = resolve('PPIManagerInstance');
-      const indicators = (ppiManager && ppiManager.core && ppiManager.core.getAllPPIs) ? ppiManager.core.getAllPPIs() : [];
-      
-      console.log(`✅ ${indicators.length} PPIs capturados`);
-      
-      return {
-        indicators,
-        captureDate: new Date().toISOString()
-      };
-    } catch (error) {
-      console.warn('Error capturando PPIs:', error);
-      return { indicators: [], captureDate: new Date().toISOString() };
-    }
-  }
 
   async captureRasciData() {
     try {
@@ -613,6 +598,33 @@ export class LocalStorageManager {
     }
     
     return data;
+  }
+  
+  async capturePPIData() {
+    try {
+      const ppiManager = resolve('PPIManagerInstance');
+      
+      if (!ppiManager || !ppiManager.core) {
+        console.log('⚠️ PPIManager no disponible');
+        return { indicators: [], captureDate: new Date().toISOString() };
+      }
+      
+      // Usar getVisiblePPIs() que excluye agregadas y solo incluye las del canvas
+      const visiblePPIs = ppiManager.core.getVisiblePPIs ? 
+                          ppiManager.core.getVisiblePPIs() : 
+                          (ppiManager.core.getAllPPIs ? ppiManager.core.getAllPPIs() : []);
+      
+      console.log(`✅ ${visiblePPIs.length} PPIs capturados (solo canvas, sin agregadas)`);
+      
+      return {
+        indicators: visiblePPIs,
+        captureDate: new Date().toISOString()
+      };
+      
+    } catch (error) {
+      console.warn('Error capturando PPIs:', error);
+      return { indicators: [], captureDate: new Date().toISOString() };
+    }
   }
 
   async captureMetadata() {
@@ -674,6 +686,59 @@ export class LocalStorageManager {
       return null;
     }
   }
+  
+  /**
+   * Captura datos de formularios de la aplicación
+   */
+  async captureFormData() {
+    const formData = {
+      timestamp: new Date().toISOString(),
+      projectSettings: {},
+      ppiFormSettings: {},
+      rasciFormSettings: {},
+      userPreferences: {}
+    };
+    
+    try {
+      // Capturar configuraciones de proyecto
+      const projectName = localStorage.getItem('projectName') || document.title || 'Untitled Project';
+      formData.projectSettings = {
+        name: projectName,
+        description: localStorage.getItem('projectDescription') || '',
+        author: localStorage.getItem('projectAuthor') || '',
+        version: localStorage.getItem('projectVersion') || '1.0.0'
+      };
+      
+      // Capturar preferencias de usuario
+      formData.userPreferences = {
+        theme: localStorage.getItem('theme') || 'default',
+        language: localStorage.getItem('language') || 'es',
+        panelLayout: localStorage.getItem('panelLayout') || '2v',
+        autoSave: localStorage.getItem('autoSaveEnabled') !== 'false'
+      };
+      
+      // Capturar estado de formularios PPI si hay modal abierto
+      const ppiModal = document.getElementById('ppi-modal');
+      if (ppiModal && ppiModal.style.display !== 'none') {
+        const form = ppiModal.querySelector('form');
+        if (form) {
+          const formDataObj = new FormData(form);
+          formData.ppiFormSettings = Object.fromEntries(formDataObj.entries());
+        }
+      }
+      
+      console.log('📋 Datos de formulario capturados:', {
+        project: formData.projectSettings.name,
+        preferences: Object.keys(formData.userPreferences).length,
+        ppiForm: Object.keys(formData.ppiFormSettings).length
+      });
+      
+    } catch (error) {
+      console.warn('Error capturando datos de formulario:', error);
+    }
+    
+    return formData;
+  }
 
   // ==================== RESTAURACIÓN DE DATOS ====================
 
@@ -686,7 +751,8 @@ export class LocalStorageManager {
       { key: 'rasci', method: 'restoreRasciData' },
       { key: 'ralph', method: 'restoreRalphData' },
       { key: 'ppi', method: 'restorePPIData' },
-      { key: 'metadata', method: 'restoreMetadata' }
+      { key: 'metadata', method: 'restoreMetadata' },
+      { key: 'formData', method: 'restoreFormData' }
     ];
 
     for (const { key, method } of restoreOrder) {
@@ -1563,6 +1629,44 @@ export class LocalStorageManager {
       }
     } catch (error) {
       console.warn('⚠️ Error inicializando AutoSaveManager:', error.message);
+    }
+  }
+  
+  /**
+   * Restaura datos de formularios de la aplicación
+   */
+  async restoreFormData(formData) {
+    try {
+      console.log('📋 Restaurando datos de formulario...');
+      
+      if (formData.projectSettings) {
+        // Restaurar configuraciones de proyecto
+        if (formData.projectSettings.name) {
+          localStorage.setItem('projectName', formData.projectSettings.name);
+          document.title = formData.projectSettings.name;
+        }
+        if (formData.projectSettings.description) {
+          localStorage.setItem('projectDescription', formData.projectSettings.description);
+        }
+        if (formData.projectSettings.author) {
+          localStorage.setItem('projectAuthor', formData.projectSettings.author);
+        }
+        if (formData.projectSettings.version) {
+          localStorage.setItem('projectVersion', formData.projectSettings.version);
+        }
+      }
+      
+      if (formData.userPreferences) {
+        // Restaurar preferencias de usuario
+        Object.entries(formData.userPreferences).forEach(([key, value]) => {
+          localStorage.setItem(key, value);
+        });
+      }
+      
+      console.log('✅ Datos de formulario restaurados correctamente');
+      
+    } catch (error) {
+      console.warn('Error restaurando datos de formulario:', error);
     }
   }
 }

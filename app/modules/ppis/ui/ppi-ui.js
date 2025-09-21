@@ -532,8 +532,20 @@ class PPIUI {
       return;
     }
 
-    // Use filtered PPIs if available, otherwise use all PPIs, and dedupe by id/elementId
-    const sourcePPIs = this.core.filteredPPIs && this.core.filteredPPIs.length > 0 ? this.core.filteredPPIs : this.core.ppis;
+    // Priorizar filteredPPIs si existe, luego getVisiblePPIs(), luego ppis como último recurso
+    let sourcePPIs;
+    if (this.core.filteredPPIs && this.core.filteredPPIs.length >= 0) {
+      sourcePPIs = this.core.filteredPPIs;
+      console.log(`🔍 [PPI-UI] Usando filteredPPIs: ${sourcePPIs.length} PPIs`);
+    } else if (this.core.getVisiblePPIs) {
+      sourcePPIs = this.core.getVisiblePPIs();
+      console.log(`🔍 [PPI-UI] Usando getVisiblePPIs(): ${sourcePPIs.length} PPIs`);
+    } else {
+      sourcePPIs = this.core.ppis || [];
+      console.log(`🔍 [PPI-UI] Usando ppis directas: ${sourcePPIs.length} PPIs`);
+    }
+    
+    console.log(`🔍 [PPI-UI] PPIs a mostrar: ${sourcePPIs.length} (filtradas de ${this.core.ppis ? this.core.ppis.length : 0} totales)`);
     const uniqueById = new Map();
     const uniqueByElement = new Set();
     for (const p of sourcePPIs) {

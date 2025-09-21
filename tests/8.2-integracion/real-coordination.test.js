@@ -168,11 +168,27 @@ describe('8.2 Coordinación Real Entre Módulos', () => {
       
       try {
         const coreModule = await import('../../app/modules/multinotationModeler/core/MultiNotationModelerCore.js');
-        const storageModule = await import('../../app/modules/ui/managers/storage-manager.js');
+        const realStorageManager = (await import('../../app/services/local-storage-manager.js')).default;
         
-        const realStorageManager = new storageModule.StorageManager({
-          storageKey: 'real-integration-test'
-        });
+        // Crear adapter para que LocalStorageManager sea compatible con Core
+        const storageAdapter = {
+          save: async (key, data, options) => {
+            try {
+              const result = await realStorageManager.saveProject();
+              return result && result.success ? { success: true, path: key } : { success: false, error: 'Save failed' };
+            } catch (error) {
+              return { success: false, error: error.message };
+            }
+          },
+          load: async (key, options) => {
+            try {
+              const result = await realStorageManager.loadProject();
+              return result && result.success ? { success: true, value: result.data } : { success: false, error: 'Load failed' };
+            } catch (error) {
+              return { success: false, error: error.message };
+            }
+          }
+        };
 
         const mockBpmnModeler = {
           get: jest.fn((service) => {
@@ -187,11 +203,10 @@ describe('8.2 Coordinación Real Entre Módulos', () => {
           importXML: jest.fn().mockResolvedValue({ warnings: [] })
         };
 
-        const storeAdapter = realServiceRegistry.get('StorageAdapter');
         const realCore = new coreModule.MultiNotationModelerCore({
           eventBus: realEventBus,
           bpmnModeler: mockBpmnModeler,
-          store: storeAdapter || realStorageManager
+          store: storageAdapter
         });
 
         await realCore.initialize();
@@ -502,11 +517,27 @@ describe('8.2 Coordinación Real Entre Módulos', () => {
       try {
         // Configurar stack real
         const coreModule = await import('../../app/modules/multinotationModeler/core/MultiNotationModelerCore.js');
-        const storageModule = await import('../../app/modules/ui/managers/storage-manager.js');
+        const realStorageManager = (await import('../../app/services/local-storage-manager.js')).default;
         
-        const realStorageManager = new storageModule.StorageManager({
-          storageKey: 'real-pipeline-test'
-        });
+        // Crear adapter para que LocalStorageManager sea compatible con Core
+        const storageAdapter = {
+          save: async (key, data, options) => {
+            try {
+              const result = await realStorageManager.saveProject();
+              return result && result.success ? { success: true, path: key } : { success: false, error: 'Save failed' };
+            } catch (error) {
+              return { success: false, error: error.message };
+            }
+          },
+          load: async (key, options) => {
+            try {
+              const result = await realStorageManager.loadProject();
+              return result && result.success ? { success: true, value: result.data } : { success: false, error: 'Load failed' };
+            } catch (error) {
+              return { success: false, error: error.message };
+            }
+          }
+        };
 
         const mockBpmnModeler = {
           get: jest.fn((service) => {
@@ -525,11 +556,10 @@ describe('8.2 Coordinación Real Entre Módulos', () => {
         realServiceRegistry.register('BpmnModeler', mockBpmnModeler);
         realServiceRegistry.register('StorageManager', realStorageManager);
 
-        const storeAdapter = realServiceRegistry.get('StorageAdapter');
         const realCore = new coreModule.MultiNotationModelerCore({
           eventBus: realEventBus,
           bpmnModeler: mockBpmnModeler,
-          store: storeAdapter || realStorageManager
+          store: storageAdapter
         });
 
         await realCore.initialize();
