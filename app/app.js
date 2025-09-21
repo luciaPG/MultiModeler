@@ -10,8 +10,7 @@ import { PanelLoader } from './modules/ui/components/panel-loader.js';
 import modelerManager from './modules/ui/managers/modeler-manager.js';
 import './modules/ui/managers/panel-manager.js';
 import './services/autosave-manager.js';
-import './modules/ui/managers/import-export-manager.js';
-import { LocalStorageCleaner } from './modules/ui/utils/localStorage-cleaner.js';
+import './modules/ui/managers/import-export/ImportExportManager.js';
 import { initializeCommunicationSystem } from './modules/ui/core/CommunicationSystem.js';
 import { getServiceRegistry } from './modules/ui/core/ServiceRegistry.js';
 import { resolve } from './services/global-access.js';
@@ -41,8 +40,7 @@ cleanGhostTasksOnStartup();
 // Start periodic ghost task cleaner
 startGhostTaskCleaner();
 
-// LIMPIEZA TOTAL DE LOCALSTORAGE - mantener solo autosave
-LocalStorageCleaner.cleanEverythingExceptAutosave();
+// LocalStorage is now managed by individual components as needed
 
 // Import CSS
 import 'bpmn-js/dist/assets/diagram-js.css';
