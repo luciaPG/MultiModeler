@@ -28,7 +28,12 @@ class LocalStorageIntegration {
     const registry = getServiceRegistry();
     if (registry) {
       registry.register('LocalStorageIntegration', this);
+      registry.register('LocalStorageManager', this.storageManager);
       console.log('✅ LocalStorageIntegration registrado en ServiceRegistry');
+      console.log('✅ LocalStorageManager registrado');
+      
+      // Inicializar AutoSaveManager
+      this.storageManager.initializeAutoSaveManager();
     }
     
     // Exponer métodos de conveniencia en window para debugging
@@ -41,6 +46,44 @@ class LocalStorageIntegration {
   exposeDebugAPI() {
     // API de debug disponible a través del ServiceRegistry
     console.log('🔧 LocalStorageIntegration registrado en ServiceRegistry');
+    
+    // Exponer métodos de debug en window para fácil acceso desde consola
+    if (typeof window !== 'undefined') {
+      window.debugLocalStorage = {
+        // Información general
+        getInfo: () => this.storageManager.getStorageInfo(),
+        checkRelationships: () => this.storageManager.debugCheckRelationships(),
+        
+        // Restauración manual
+        restoreRelationships: () => this.storageManager.debugRestoreRelationships(),
+        
+        // Métodos de conveniencia
+        save: () => this.saveProject(),
+        load: () => this.loadProject(),
+        clear: () => this.clearSavedData(),
+        
+        // Verificar estado
+        hasData: () => this.hasSavedData(),
+        isRestored: () => this.isRestored(),
+        
+        // Help
+        help: () => {
+          console.log('🔧 LocalStorage Debug API disponible:');
+          console.log('  debugLocalStorage.getInfo() - Información del almacenamiento');
+          console.log('  debugLocalStorage.checkRelationships() - Verificar relaciones guardadas');
+          console.log('  debugLocalStorage.restoreRelationships() - Restaurar relaciones manualmente');
+          console.log('  debugLocalStorage.save() - Guardar proyecto');
+          console.log('  debugLocalStorage.load() - Cargar proyecto');
+          console.log('  debugLocalStorage.clear() - Limpiar datos guardados');
+          console.log('  debugLocalStorage.hasData() - Verificar si hay datos');
+          console.log('  debugLocalStorage.isRestored() - Verificar si se restauró');
+          console.log('  debugLocalStorage.help() - Mostrar esta ayuda');
+        }
+      };
+      
+      console.log('🔧 API de debug expuesta en window.debugLocalStorage');
+      console.log('💡 Usa debugLocalStorage.help() para ver todos los métodos disponibles');
+    }
   }
 
   // ==================== MÉTODOS DE CONVENIENCIA ====================

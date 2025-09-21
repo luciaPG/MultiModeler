@@ -99,6 +99,15 @@ export class LocalStorageManager {
       this.isLoading = true;
       console.log('📂 Iniciando carga del proyecto...');
 
+      // CRITICAL: Deshabilitar autoguardado durante la restauración
+      console.log('🔒 Deshabilitando autoguardado durante la restauración...');
+      this.setAutoSaveEnabled(false);
+
+      // CRITICAL: Esperar a que la aplicación esté completamente inicializada
+      console.log('⏳ Esperando a que la aplicación se inicialice completamente...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log('✅ Aplicación inicializada, procediendo con la carga...');
+
       const projectData = await this.loadFromLocalStorage();
       
       if (!projectData) {
@@ -122,6 +131,10 @@ export class LocalStorageManager {
       return { success: false, error: error.message };
     } finally {
       this.isLoading = false;
+      
+      // CRITICAL: Reactivar autoguardado después de la restauración
+      console.log('🔓 Reactivando autoguardado después de la restauración...');
+      this.setAutoSaveEnabled(true);
     }
   }
 
@@ -200,72 +213,27 @@ export class LocalStorageManager {
     }
 
     try {
-      const result = await modeler.saveXML({ format: true });
-      const xmlContent = result.xml;
-      console.log('✅ BPMN XML capturado');
+      // COPIAR EXACTAMENTE del BpmnExporter
+      const data = this.initializeBpmnData();
       
-      // CRITICAL: Verificar si elementos PPINOT están en el XML (igual que BpmnExporter)
-      const elementRegistry = modeler.get('elementRegistry');
-      const allElements = elementRegistry.getAll();
-      const ppinotElements = allElements.filter(el => 
-        el.type && (el.type.includes('PPINOT:') || el.type.includes('ppinot:'))
-      );
+      await this.captureXMLDiagram(modeler, data);
+      await this.capturePPINOTElements(modeler, data);
+      await this.captureRALPHElements(modeler, data);
+      this.captureCanvasState(modeler, data);
       
-      console.log(`🔍 XML verification: ${ppinotElements.length} PPINOT elements in canvas`);
+      console.log(`🔍 DEBUG - Relaciones capturadas:`, { count: data.relationships.length, relationships: data.relationships });
       
-      const missingFromXml = ppinotElements.filter(el => 
-        !xmlContent.includes(`id="${el.id}"`)
-      );
-      
-      let ppinotElementsData = [];
-      if (missingFromXml.length > 0) {
-        console.log(`📋 Saving ${missingFromXml.length} PPINOT elements separately...`);
-        ppinotElementsData = this.serializePPINOTElements(ppinotElements);
-        console.log(`✅ ${ppinotElementsData.length} PPINOT elements saved separately`);
-      }
-      
-      // Crear estructura de datos igual que ImportExportManager
-      const bpmnData = {
-        diagram: xmlContent,
-        relationships: [],
-        ppinotElements: ppinotElementsData
-      };
-      
-      // Capturar relaciones padre-hijo con múltiples métodos
-      try {
-        // Método 1: Usar RelationshipCapture
-        const relationshipCapture = new RelationshipCapture(this.config);
-        const capturedRelationships = relationshipCapture.captureParentChildRelationships(modeler);
-        
-        console.log(`🔍 RelationshipCapture encontró ${capturedRelationships.length} relaciones`);
-        
-        // Método 2: Captura directa de elementos PPINOT
-        const directRelationships = this.capturePPINOTRelationshipsDirect(modeler);
-        console.log(`🔍 Captura directa encontró ${directRelationships.length} relaciones PPINOT`);
-        
-        // Combinar ambas fuentes de relaciones
-        const allRelationships = [...capturedRelationships, ...directRelationships];
-        
-        // Eliminar duplicados basándose en childId
-        const uniqueRelationships = allRelationships.filter((rel, index, self) => 
-          index === self.findIndex(r => r.childId === rel.childId)
-        );
-        
-        bpmnData.relationships = uniqueRelationships;
-        console.log(`✅ ${bpmnData.relationships.length} relaciones padre-hijo capturadas (${capturedRelationships.length} + ${directRelationships.length} - duplicados)`);
-        
-      } catch (error) {
-        console.warn('Error capturando relaciones:', error);
-        // Continuar sin relaciones si hay error
-      }
-      
-      return bpmnData;
+      return data;
       
     } catch (error) {
       console.warn('Error capturando BPMN:', error);
       return null;
     }
   }
+
+  /**
+   * Captura etiquetas de elementos PPINOT
+   */
 
   /**
    * Captura relaciones PPINOT directamente del canvas
@@ -407,18 +375,176 @@ export class LocalStorageManager {
     
     return relationships;
   }
-  
-  /**
-   * Calcula la distancia entre dos elementos
-   */
-  calculateDistance(element1, element2) {
-    const x1 = element1.x || 0;
-    const y1 = element1.y || 0;
-    const x2 = element2.x || 0;
-    const y2 = element2.y || 0;
-    
-    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+
+  // COPIAR EXACTAMENTE del BpmnExporter
+  initializeBpmnData() {
+    return {
+      diagram: null,
+      relationships: [],
+      elements: {},
+      canvas: null,
+      ppinotElements: [],
+      ralphElements: []
+    };
   }
+
+  async captureXMLDiagram(modeler, data) {
+    const result = await modeler.saveXML({ format: true });
+    data.diagram = result.xml;
+    console.log('✅ XML diagram captured');
+    
+    // Use RelationshipCapture imported at the top
+    const relationshipCapture = new RelationshipCapture(this.config);
+    
+    // Capture parent-child relationships
+    data.relationships = relationshipCapture.captureParentChildRelationships(modeler);
+    console.log(`✅ ${data.relationships.length} parent-child relationships captured`);
+  }
+
+  async capturePPINOTElements(modeler, data) {
+    const elementRegistry = modeler.get('elementRegistry');
+    const allElements = elementRegistry.getAll();
+    const ppinotElements = allElements.filter(el => 
+      el.type && (el.type.includes('PPINOT:') || el.type.includes('ppinot:'))
+    );
+    
+    console.log(`🔍 XML verification: ${ppinotElements.length} PPINOT elements in canvas`);
+    
+    const missingFromXml = ppinotElements.filter(el => 
+      !data.diagram.includes(`id="${el.id}"`)
+    );
+    
+    // CRITICAL: Only capture separately if missing from XML (like BpmnExporter)
+    if (missingFromXml.length > 0) {
+      console.log(`📋 Saving ${missingFromXml.length} PPINOT elements separately...`);
+      data.ppinotElements = this.serializePPINOTElements(missingFromXml);
+      console.log(`✅ ${data.ppinotElements.length} PPINOT elements saved separately`);
+    } else {
+      console.log(`✅ All PPINOT elements are in XML, no separate capture needed`);
+      data.ppinotElements = [];
+    }
+    
+    // Capture PPINOT data from modeler if available
+    if (modeler.getJson && typeof modeler.getJson === 'function') {
+      const ppinotData = modeler.getJson();
+      data.ppinotElements = ppinotData.definitions || [];
+      data.ppinotDiagram = ppinotData.diagram || [];
+      data.ppinotIdMap = ppinotData.idMap || {};
+      console.log(`✅ ${data.ppinotElements.length} PPINOT elements from modeler`);
+    }
+  }
+
+  async captureRALPHElements(modeler, data) {
+    const elementRegistry = modeler.get('elementRegistry');
+    const allElements = elementRegistry.getAll();
+    const ralphElements = allElements.filter(el => 
+      el.type && (el.type.includes('RALph:') || el.type.includes('ralph:'))
+    );
+    
+    // CRITICAL: Only capture separately if missing from XML (like BpmnExporter)
+    const missingFromXml = ralphElements.filter(el => 
+      !data.diagram.includes(`id="${el.id}"`)
+    );
+    
+    if (missingFromXml.length > 0) {
+      console.log(`📋 Saving ${missingFromXml.length} RALPH elements separately...`);
+      data.ralphElements = this.serializeRALPHElements(missingFromXml);
+      console.log(`✅ ${data.ralphElements.length} RALPH elements saved separately`);
+    } else {
+      data.ralphElements = [];
+      console.log('✅ All RALPH elements are in XML, no separate capture needed');
+    }
+  }
+
+  captureCanvasState(modeler, data) {
+    const canvas = modeler.get('canvas');
+    if (canvas) {
+      data.canvas = {
+        zoom: canvas.zoom(),
+        viewbox: canvas.viewbox()
+      };
+      console.log('✅ Canvas state captured');
+    }
+  }
+
+  serializePPINOTElements(elements) {
+    return elements.map(el => ({
+      type: el.type,
+      id: el.id,
+      width: el.width || 100,
+      height: el.height || 80,
+      x: el.x || 0,
+      y: el.y || 0,
+      text: el.businessObject && el.businessObject.name || null,
+      parent: el.parent && el.parent.id || null
+    }));
+  }
+
+  serializeRALPHElements(elements) {
+    return elements.map(el => ({
+      type: el.type,
+      id: el.id,
+      width: el.width || 50,
+      height: el.height || 50,
+      x: el.x || 0,
+      y: el.y || 0,
+      text: el.businessObject && el.businessObject.name || null,
+      parent: el.parent && el.parent.id || null
+    }));
+  }
+
+  async waitForModelerReady() {
+    // MEJORADO: Esperar más tiempo y verificar más servicios
+    const modeler = resolve('BpmnModeler');
+    if (!modeler) {
+      console.log('⚠️ Modeler not available, waiting...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return this.waitForModelerReady(); // Retry
+    }
+    
+    return new Promise((resolve) => {
+      let attempts = 0;
+      const maxAttempts = 100; // 10 segundos máximo
+      
+      const check = () => {
+        attempts++;
+        try {
+          // Verificar que todos los servicios críticos estén disponibles
+          const canvas = modeler.get('canvas');
+          const elementRegistry = modeler.get('elementRegistry');
+          const modeling = modeler.get('modeling');
+          const elementFactory = modeler.get('elementFactory');
+          const moddle = modeler.get('moddle');
+          
+          // Verificar que el canvas esté realmente montado
+          const canvasContainer = canvas && canvas.getContainer();
+          const isCanvasMounted = canvasContainer && document.contains(canvasContainer);
+          
+          if (canvas && elementRegistry && modeling && elementFactory && moddle && isCanvasMounted) {
+            console.log(`✅ Modeler ready after ${attempts} attempts (canvas mounted: ${isCanvasMounted})`);
+            resolve();
+          } else {
+            if (attempts >= maxAttempts) {
+              console.warn(`⚠️ Modeler not ready after ${maxAttempts} attempts, proceeding anyway`);
+              console.warn(`  - canvas: ${!!canvas}, elementRegistry: ${!!elementRegistry}, modeling: ${!!modeling}, elementFactory: ${!!elementFactory}, moddle: ${!!moddle}, mounted: ${isCanvasMounted}`);
+              resolve();
+            } else {
+              setTimeout(check, 100);
+            }
+          }
+        } catch (error) {
+          if (attempts >= maxAttempts) {
+            console.warn(`⚠️ Modeler error after ${maxAttempts} attempts, proceeding anyway:`, error.message);
+            resolve();
+          } else {
+            setTimeout(check, 100);
+          }
+        }
+      };
+      check();
+    });
+  }
+  
 
   async capturePPIData() {
     try {
@@ -628,6 +754,38 @@ export class LocalStorageManager {
       console.log(`🔍 Elements WITH BPMNShape: ${presentShapes.join(', ')}`);
       console.log(`❌ Elements WITHOUT BPMNShape: ${missingShapes.join(', ')}`);
       
+      await this.waitForModelerReady();
+      
+      // NEW: Verify moddle extensions before import (like BpmnImporter)
+      const moddle = modeler.get('moddle');
+      console.log('🔍 DEBUG moddle before import:');
+      console.log('  - Moddle available?', !!moddle);
+      if (moddle) {
+        console.log('  - Registry available?', !!moddle.registry);
+        const packages = moddle.registry && moddle.registry.packages || {};
+        console.log('  - Registered packages:', Object.keys(packages));
+        
+        // CRITICAL: Search extensions by index (not by name)
+        const ppinotPackage = Object.values(packages).find(pkg => 
+          pkg.name === 'PPINOTModdle' || pkg.prefix === 'PPINOT' || pkg.prefix === 'ppinot'
+        );
+        const ralphPackage = Object.values(packages).find(pkg => 
+          pkg.name === 'RALph' || pkg.prefix === 'RALph' || pkg.prefix === 'ralph'
+        );
+        
+        console.log('  - PPINOT package found?', !!ppinotPackage);
+        console.log('  - RALPH package found?', !!ralphPackage);
+        
+        // VERIFICATION: Extensions are already registered
+        if (ppinotPackage && ralphPackage) {
+          console.log('✅ PPINOT and RALPH extensions are correctly registered');
+        } else {
+          console.warn('⚠️ Missing extensions - this could cause import problems');
+          if (!ppinotPackage) console.warn('  - Missing PPINOT');
+          if (!ralphPackage) console.warn('  - Missing RALPH');
+        }
+      }
+      
       // Si faltan elementos, añadir BPMNShapes al XML (igual que ImportExportManager)
       let correctedXml = xmlContent;
       if (missingShapes.length > 0 && bpmnData.relationships) {
@@ -639,11 +797,16 @@ export class LocalStorageManager {
       await modeler.importXML(correctedXml);
       console.log('✅ BPMN restaurado en el canvas');
       
+      // CRITICAL: Esperar a que el XML se estabilice completamente
+      await new Promise(resolve => setTimeout(resolve, 200));
+      console.log('✅ XML estabilizado');
+      
       // CRITICAL: Restaurar elementos PPINOT por separado (igual que BpmnImporter)
       if (bpmnData.ppinotElements && bpmnData.ppinotElements.length > 0) {
         console.log(`📊 Restaurando ${bpmnData.ppinotElements.length} PPINOT elements por separado...`);
         await this.restorePPINOTElements(modeler, bpmnData.ppinotElements);
       }
+      
       
       // DEBUG: Verificar qué elementos están disponibles después de la importación
       const elementRegistry = modeler.get('elementRegistry');
@@ -666,20 +829,23 @@ export class LocalStorageManager {
           // Usar RelationshipRestore
           const relationshipRestore = new RelationshipRestore(this.config);
           
-          // Usar el método correcto que espera a que los elementos estén listos
+          // CRITICAL: Esperar a que termine la restauración de relaciones
           console.log('🔄 Iniciando restauración de relaciones con espera inteligente...');
-          relationshipRestore.waitForPPINOTElementsAndRestore(modeler, bpmnData.relationships);
+          const restoredCount = await relationshipRestore.waitForPPINOTElementsAndRestore(modeler, bpmnData.relationships);
+          
+          if (restoredCount > 0) {
+            console.log(`✅ ${restoredCount}/${bpmnData.relationships.length} relaciones padre-hijo restauradas exitosamente`);
+          } else {
+            console.warn('⚠️ No se pudieron restaurar las relaciones padre-hijo');
+          }
           
         } catch (error) {
           console.warn('Error restaurando relaciones:', error);
           // Continuar sin restaurar relaciones si hay error
         }
-      } else {
-        console.log('ℹ️ No hay relaciones padre-hijo para restaurar');
-        if (bpmnData.relationships) {
-          console.log('🔍 DEBUG - Estructura de bpmnData.relationships:', bpmnData.relationships);
-        }
       }
+      
+      // Las etiquetas se restauran automáticamente con el XML como en import/export
       
     } catch (error) {
       console.error('Error restaurando BPMN:', error);
@@ -744,6 +910,7 @@ export class LocalStorageManager {
   /**
    * Restores PPINOT elements separately (copied from BpmnImporter)
    */
+
   async restorePPINOTElements(modeler, ppinotElements) {
     console.log('🔧 Restoring PPINOT elements from separate data...');
     
@@ -814,21 +981,70 @@ export class LocalStorageManager {
     console.log(`🎉 ${createdCount}/${ppinotElements.length} PPINOT elements restored`);
   }
 
-  /**
-   * Serializes PPINOT elements for separate storage (copied from BpmnExporter)
-   */
-  serializePPINOTElements(elements) {
-    return elements.map(el => ({
-      type: el.type,
-      id: el.id,
-      width: el.width || 100,
-      height: el.height || 80,
-      x: el.x || 0,
-      y: el.y || 0,
-      text: el.businessObject && el.businessObject.name || null,
-      parent: el.parent && el.parent.id || null
-    }));
+  async restoreRALPHElements(modeler, ralphElements) {
+    // COPIAR EXACTAMENTE del BpmnImporter
+    console.log('🔧 Restoring RALPH elements from separate data...');
+    
+    const elementFactory = modeler.get('elementFactory');
+    const canvas = modeler.get('canvas');
+    const modeling = modeler.get('modeling');
+    
+    if (!elementFactory || !canvas || !modeling) {
+      throw new Error('Modeler services not available');
+    }
+
+    let createdCount = 0;
+    const createdElements = [];
+
+    for (const elementData of ralphElements) {
+      try {
+        // Check if element already exists
+        const elementRegistry = modeler.get('elementRegistry');
+        const existingElement = elementRegistry.get(elementData.id);
+        if (existingElement) {
+          console.log(`✅ Element already exists, skipping: ${elementData.id} (${elementData.type})`);
+          createdElements.push(existingElement);
+          continue;
+        }
+
+        // Determine parent
+        let parentElement = canvas.getRootElement();
+        if (elementData.parent) {
+          const foundParent = createdElements.find(el => el.id === elementData.parent);
+          if (foundParent) {
+            parentElement = foundParent;
+          }
+        }
+
+        // Create simple and effective element
+        const element = elementFactory.create('shape', {
+          type: elementData.type,
+          id: elementData.id,
+          width: elementData.width,
+          height: elementData.height
+        });
+
+        // Create in canvas with exact position
+        const createdElement = modeling.createShape(
+          element,
+          { x: elementData.x, y: elementData.y },
+          parentElement
+        );
+        
+        if (createdElement) {
+          createdElements.push(createdElement);
+          createdCount++;
+          console.log(`✅ RALPH element created: ${elementData.id} at (${elementData.x}, ${elementData.y})`);
+        }
+        
+      } catch (error) {
+        console.warn(`⚠️ Error restoring ${elementData.id}:`, error.message);
+      }
+    }
+
+    console.log(`🎉 ${createdCount}/${ralphElements.length} RALPH elements restored`);
   }
+
 
   async restorePPIData(ppiData) {
     if (!ppiData || !ppiData.indicators) return;
@@ -1206,6 +1422,147 @@ export class LocalStorageManager {
       };
     } catch (error) {
       return { hasData: false, error: error.message };
+    }
+  }
+
+  /**
+   * Método de debug para restaurar relaciones manualmente
+   */
+  async debugRestoreRelationships() {
+    try {
+      console.log('🔧 DEBUG: Iniciando restauración manual de relaciones...');
+      
+      const projectData = await this.loadFromLocalStorage();
+      if (!projectData || !projectData.bpmn || !projectData.bpmn.relationships) {
+        console.log('❌ No hay relaciones guardadas para restaurar');
+        return { success: false, reason: 'No relationships found' };
+      }
+
+      const modeler = resolve('BpmnModeler');
+      if (!modeler) {
+        console.log('❌ Modeler no disponible');
+        return { success: false, reason: 'Modeler not available' };
+      }
+
+      const relationshipRestore = new RelationshipRestore(this.config);
+      const restoredCount = await relationshipRestore.fallbackRestore(modeler, projectData.bpmn.relationships);
+      
+      console.log(`🎉 DEBUG: ${restoredCount} relaciones restauradas manualmente`);
+      return { success: true, restoredCount };
+      
+    } catch (error) {
+      console.error('❌ Error en restauración manual:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Método de debug para verificar el estado de las relaciones
+   */
+  debugCheckRelationships() {
+    try {
+      const projectData = JSON.parse(localStorage.getItem(this.config.storageKey));
+      if (!projectData || !projectData.data || !projectData.data.bpmn) {
+        console.log('❌ No hay datos BPMN guardados');
+        return;
+      }
+
+      const relationships = projectData.data.bpmn.relationships || [];
+      console.log(`🔍 DEBUG: Estado de las relaciones guardadas:`);
+      console.log(`  📊 Total relaciones: ${relationships.length}`);
+      
+      if (relationships.length > 0) {
+        console.log('  📋 Relaciones guardadas:');
+        relationships.forEach((rel, index) => {
+          console.log(`    ${index + 1}. ${rel.childName || rel.childId} → ${rel.parentName || rel.parentId}`);
+          console.log(`       Posición: (${(rel.position && rel.position.childX) || 'N/A'}, ${(rel.position && rel.position.childY) || 'N/A'})`);
+          console.log(`       Timestamp: ${rel.timestamp ? new Date(rel.timestamp).toLocaleString() : 'N/A'}`);
+        });
+      }
+
+      // Verificar elementos actuales en el canvas
+      const modeler = resolve('BpmnModeler');
+      if (modeler) {
+        const elementRegistry = modeler.get('elementRegistry');
+        const allElements = elementRegistry.getAll();
+        const ppinotElements = allElements.filter(el => 
+          el.type && (el.type.includes('PPINOT:') || el.type.includes('ppinot:'))
+        );
+        
+        console.log(`  🎯 Elementos PPINOT actuales en canvas: ${ppinotElements.length}`);
+        ppinotElements.forEach(el => {
+          const parentId = el.parent ? el.parent.id : 'none';
+          console.log(`    - ${el.id} (${el.type}) → Padre: ${parentId}`);
+        });
+      }
+      
+    } catch (error) {
+      console.error('❌ Error verificando relaciones:', error);
+    }
+  }
+
+  /**
+   * Habilita/deshabilita el autoguardado para evitar conflictos durante la restauración
+   */
+  setAutoSaveEnabled(enabled) {
+    try {
+      const registry = resolve('ServiceRegistry');
+      if (registry) {
+        const autosave = registry.get('localStorageAutoSaveManager');
+        if (autosave && typeof autosave.setEnabled === 'function') {
+          autosave.setEnabled(enabled);
+          console.log(`🔧 Autoguardado ${enabled ? 'habilitado' : 'deshabilitado'}`);
+        } else {
+          console.log(`⚠️ AutoSaveManager no disponible para ${enabled ? 'habilitar' : 'deshabilitar'} autoguardado`);
+        }
+      } else {
+        console.log(`⚠️ ServiceRegistry no disponible para ${enabled ? 'habilitar' : 'deshabilitar'} autoguardado`);
+      }
+    } catch (error) {
+      console.warn('⚠️ Error configurando autoguardado:', error.message);
+    }
+  }
+
+  /**
+   * Inicializa el localStorageAutoSaveManager en el ServiceRegistry
+   */
+  initializeAutoSaveManager() {
+    try {
+      const registry = resolve('ServiceRegistry');
+      if (registry) {
+        // Crear una implementación simple que delegue al LocalStorageManager
+        const autoSaveManager = {
+          enabled: true,
+          setEnabled: (enabled) => {
+            this.autoSaveEnabled = enabled;
+            console.log(`🔧 AutoSaveManager ${enabled ? 'habilitado' : 'deshabilitado'}`);
+          },
+          forceSave: async () => {
+            if (!this.autoSaveEnabled) {
+              console.log('🔒 AutoSaveManager deshabilitado - guardado omitido');
+              return { success: false, reason: 'AutoSave disabled' };
+            }
+            console.log('💾 AutoSaveManager ejecutando forceSave...');
+            return await this.saveProject();
+          },
+          forceRestore: async () => {
+            console.log('🔄 AutoSaveManager ejecutando forceRestore...');
+            return await this.loadProject();
+          },
+          clearProjectState: () => {
+            console.log('🧹 AutoSaveManager limpiando estado del proyecto...');
+            localStorage.removeItem('multinotation_project_data');
+            localStorage.removeItem('draft:multinotation');
+          }
+        };
+
+        registry.register('localStorageAutoSaveManager', autoSaveManager, {
+          description: 'AutoSaveManager que delega al LocalStorageManager'
+        });
+        console.log('✅ localStorageAutoSaveManager inicializado');
+      }
+    } catch (error) {
+      console.warn('⚠️ Error inicializando AutoSaveManager:', error.message);
     }
   }
 }

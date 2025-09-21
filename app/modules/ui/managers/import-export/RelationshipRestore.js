@@ -292,43 +292,75 @@ export class RelationshipRestore {
       const modeling = modeler.get('modeling');
       
       if (!elementRegistry || !modeling) {
+        console.warn('⚠️ ElementRegistry or Modeling not available');
         return 0;
-    }
+      }
 
-    let restoredCount = 0;
+      let restoredCount = 0;
+      let alreadyCorrectCount = 0;
+      let notFoundCount = 0;
 
-    for (const rel of relationships) {
-      try {
-        const childElement = elementRegistry.get(rel.childId);
-        const parentElement = elementRegistry.get(rel.parentId);
+      console.log(`🔄 Attempting to restore ${relationships.length} relationships...`);
 
-          if (childElement && parentElement) {
-            // Verify if already correctly related
-        if (childElement.parent && childElement.parent.id === rel.parentId) {
-              restoredCount++;
-          continue;
-        }
+      for (const rel of relationships) {
+        try {
+          const childElement = elementRegistry.get(rel.childId);
+          const parentElement = elementRegistry.get(rel.parentId);
 
-            // Restore relationship
-        modeling.moveElements([childElement], { x: 0, y: 0 }, parentElement);
-            
-            // Restore businessObject.$parent
-            if (childElement.businessObject && parentElement.businessObject) {
-              childElement.businessObject.$parent = parentElement.businessObject;
-            }
-            
-        restoredCount++;
-            console.log(`✅ Restored: ${rel.childName || rel.childId} → ${rel.parentName || rel.parentId}`);
-            
+          if (!childElement) {
+            console.warn(`❌ Child element not found: ${rel.childId}`);
+            notFoundCount++;
+            continue;
           }
+
+          if (!parentElement) {
+            console.warn(`❌ Parent element not found: ${rel.parentId}`);
+            notFoundCount++;
+            continue;
+          }
+
+          // Verify if already correctly related
+          const currentParentId = childElement.parent ? childElement.parent.id : null;
+          if (currentParentId === rel.parentId) {
+            console.log(`✅ Already correct: ${rel.childName || rel.childId} → ${rel.parentName || rel.parentId}`);
+            alreadyCorrectCount++;
+            restoredCount++; // Count as restored
+            continue;
+          }
+
+          // Calculate relative position if available
+          let offset = { x: 0, y: 0 };
+          if (rel.position && rel.position.childX !== undefined && rel.position.parentX !== undefined) {
+            const relativeX = rel.position.childX - rel.position.parentX;
+            const relativeY = rel.position.childY - rel.position.parentY;
+            offset = { x: relativeX, y: relativeY };
+          }
+
+          // Restore relationship using moveElements
+          modeling.moveElements([childElement], offset, parentElement);
+          
+          // Restore businessObject.$parent
+          if (childElement.businessObject && parentElement.businessObject) {
+            childElement.businessObject.$parent = parentElement.businessObject;
+          }
+          
+          restoredCount++;
+          console.log(`✅ Restored: ${rel.childName || rel.childId} → ${rel.parentName || rel.parentId} (offset: ${offset.x}, ${offset.y})`);
+          
         } catch (error) {
-          console.debug(`Relationship ${rel.childId} → ${rel.parentId} failed:`, error.message);
+          console.warn(`⚠️ Error restoring relationship ${rel.childId} → ${rel.parentId}:`, error.message);
         }
       }
       
+      console.log(`📊 Restoration summary:`);
+      console.log(`  ✅ Restored: ${restoredCount}`);
+      console.log(`  ✅ Already correct: ${alreadyCorrectCount}`);
+      console.log(`  ❌ Not found: ${notFoundCount}`);
+      console.log(`  📈 Total success: ${restoredCount}/${relationships.length}`);
+      
       return restoredCount;
       
-      } catch (error) {
+    } catch (error) {
       console.error('❌ Error in tryRestoreRelationships:', error);
       return 0;
     }
@@ -342,71 +374,144 @@ export class RelationshipRestore {
     
     if (!elementRegistry || !modeling) {
       console.error('❌ Modeler services not available');
-      return;
+      return Promise.resolve(0);
     }
 
-    // Extract unique IDs of elements we need
+    // Extract unique IDs of elements we need (EXCLUDING LABELS)
     const requiredElementIds = new Set();
     relationships.forEach(rel => {
-      requiredElementIds.add(rel.childId);
-      requiredElementIds.add(rel.parentId);
+      // Only add non-label elements to required list
+      if (!rel.childId.includes('_label')) {
+        requiredElementIds.add(rel.childId);
+      }
+      if (!rel.parentId.includes('_label')) {
+        requiredElementIds.add(rel.parentId);
+      }
     });
 
-    console.log(`🔍 Required elements: ${Array.from(requiredElementIds).join(', ')}`);
+    console.log(`🔍 Required elements (excluding labels): ${Array.from(requiredElementIds).join(', ')}`);
 
     let attempts = 0;
     const maxAttempts = 60; // 30 seconds maximum
     const checkInterval = this.config.checkInterval; // Every 500ms
 
-    const checkElements = () => {
-      attempts++;
-      
-      const availableElements = [];
-      const missingElements = [];
-      
-      requiredElementIds.forEach(id => {
-        const element = elementRegistry.get(id);
-        if (element) {
-          availableElements.push(id);
-    } else {
-          missingElements.push(id);
-        }
-      });
-
-      console.log(`🔍 Attempt ${attempts}/${maxAttempts}:`);
-      console.log(`  ✅ Available: ${availableElements.length}/${requiredElementIds.size}`);
-      console.log(`  ❌ Missing: ${missingElements.join(', ')}`);
-
-      // If all are available, restore immediately
-      if (missingElements.length === 0) {
-        console.log('🎉 All PPINOT elements are ready! Restoring...');
+    return new Promise((resolve) => {
+      const checkElements = async () => {
+        attempts++;
         
-        setTimeout(async () => {
+        const availableElements = [];
+        const missingElements = [];
+        
+        requiredElementIds.forEach(id => {
+          const element = elementRegistry.get(id);
+          if (element) {
+            availableElements.push(id);
+          } else {
+            missingElements.push(id);
+          }
+        });
+
+        console.log(`🔍 Attempt ${attempts}/${maxAttempts}:`);
+        console.log(`  ✅ Available: ${availableElements.length}/${requiredElementIds.size}`);
+        console.log(`  ❌ Missing: ${missingElements.join(', ')}`);
+
+        // If all are available, restore immediately
+        if (missingElements.length === 0) {
+          console.log('🎉 All PPINOT elements are ready! Restoring...');
+          
+          // Wait a bit for elements to be fully ready
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
           const restoredCount = await this.tryRestoreRelationships(modeler, relationships);
           console.log(`🎉 SUCCESS: ${restoredCount}/${relationships.length} relationships restored`);
           
           if (restoredCount < relationships.length) {
             console.log('🔄 Some elements failed, retrying in 1s...');
-            setTimeout(async () => {
-              const retry = await this.tryRestoreRelationships(modeler, relationships);
-              console.log(`🔄 Retry: ${retry}/${relationships.length} relationships`);
-            }, 1000);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            const retry = await this.tryRestoreRelationships(modeler, relationships);
+            console.log(`🔄 Retry: ${retry}/${relationships.length} relationships`);
+            resolve(Math.max(restoredCount, retry));
+          } else {
+            resolve(restoredCount);
           }
-        }, 100);
+          
+          return;
+        }
+
+        // If elements are still missing, continue waiting
+        if (attempts < maxAttempts) {
+          setTimeout(checkElements, checkInterval);
+        } else {
+          console.error(`❌ Timeout: Some elements never appeared: ${missingElements.join(', ')}`);
+          console.error('💡 Use: window.forceRestoreRelations(projectData)');
+          resolve(0);
+        }
+      };
+
+      // Start verification
+      checkElements();
+    });
+  }
+
+  /**
+   * Fallback method for manual relationship restoration
+   * Can be called from browser console for debugging
+   */
+  async fallbackRestore(modeler, relationships) {
+    console.log('🚀 FALLBACK: Manual relationship restoration...');
+    
+    if (!modeler) {
+      console.error('❌ Modeler not available');
+      return 0;
+    }
+
+    if (!relationships || relationships.length === 0) {
+      console.log('❌ No relationships to restore');
+      return 0;
+    }
+
+    const elementRegistry = modeler.get('elementRegistry');
+    const modeling = modeler.get('modeling');
+    
+    if (!elementRegistry || !modeling) {
+      console.error('❌ Modeler services not available');
+      return 0;
+    }
+
+    console.log(`🔄 FALLBACK: Attempting to restore ${relationships.length} relationships...`);
+    
+    let restoredCount = 0;
+    
+    for (const rel of relationships) {
+      try {
+        const childElement = elementRegistry.get(rel.childId);
+        const parentElement = elementRegistry.get(rel.parentId);
         
-        return;
+        console.log(`🔍 Checking: ${rel.childId} → ${rel.parentId}`);
+        console.log(`  Child found: ${!!childElement}`);
+        console.log(`  Parent found: ${!!parentElement}`);
+        
+        if (childElement && parentElement) {
+          // Force move to parent
+          modeling.moveElements([childElement], { x: 0, y: 0 }, parentElement);
+          
+          // Force businessObject relationship
+          if (childElement.businessObject && parentElement.businessObject) {
+            childElement.businessObject.$parent = parentElement.businessObject;
+          }
+          
+          restoredCount++;
+          console.log(`✅ FALLBACK restored: ${rel.childName || rel.childId} → ${rel.parentName || rel.parentId}`);
+        } else {
+          console.warn(`❌ FALLBACK failed: Elements not found`);
+        }
+        
+      } catch (error) {
+        console.error(`❌ FALLBACK error for ${rel.childId} → ${rel.parentId}:`, error);
       }
-
-      // If elements are still missing, continue waiting
-      if (attempts < maxAttempts) {
-        setTimeout(checkElements, checkInterval);
-      } else {
-        console.error(`❌ Timeout: Some elements never appeared: ${missingElements.join(', ')}`);
-        console.error('💡 Use: window.forceRestoreRelations(projectData)');
-      }
-    };
-
-    // Start verification
-    checkElements();
+    }
+    
+    console.log(`🎉 FALLBACK completed: ${restoredCount}/${relationships.length} relationships`);
+    return restoredCount;
   }
 }
