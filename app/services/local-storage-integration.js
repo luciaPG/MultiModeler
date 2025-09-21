@@ -14,6 +14,8 @@ class LocalStorageIntegration {
   constructor() {
     this.storageManager = LocalStorageManager;
     this.initialized = false;
+    this.restored = false;
+    this._postRestoreCooldownUntil = null;
     this.init();
   }
 
@@ -54,7 +56,15 @@ class LocalStorageIntegration {
    * Carga el proyecto completo
    */
   async loadProject() {
-    return await this.storageManager.loadProject();
+    const result = await this.storageManager.loadProject();
+    
+    // Si la carga fue exitosa, configurar cooldown para evitar guardados inmediatos
+    if (result && result.success) {
+      this._postRestoreCooldownUntil = Date.now() + 2000; // 2 segundos de cooldown
+      console.log('⏰ Cooldown configurado después de restauración');
+    }
+    
+    return result;
   }
 
   /**
@@ -76,6 +86,31 @@ class LocalStorageIntegration {
    */
   getStorageInfo() {
     return this.storageManager.getStorageInfo();
+  }
+
+  /**
+   * Marca que los datos han sido restaurados
+   */
+  markRestored() {
+    this.restored = true;
+    this._postRestoreCooldownUntil = null; // Limpiar cooldown
+    console.log('✅ Estado marcado como restaurado');
+  }
+
+  /**
+   * Verifica si los datos han sido restaurados
+   */
+  isRestored() {
+    return this.restored || false;
+  }
+
+  /**
+   * Limpia el estado de restauración y cooldown (para nuevo diagrama)
+   */
+  resetRestoreState() {
+    this.restored = false;
+    this._postRestoreCooldownUntil = null;
+    console.log('🔄 Estado de restauración limpiado');
   }
 
   // ==================== MÉTODOS DE MIGRACIÓN ====================

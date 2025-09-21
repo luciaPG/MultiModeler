@@ -10,7 +10,6 @@
  */
 
 import { PPIDataManager } from './managers/PPIDataManager.js';
-import { PPIElementManager } from './managers/PPIElementManager.js';
 import { PPICanvasManager } from './managers/PPICanvasManager.js';
 import { PPIXMLManager } from './managers/PPIXMLManager.js';
 import { PPIUtils } from './utils/PPIUtils.js';
@@ -22,14 +21,10 @@ class PPICore {
     
     // Inicializar managers especializados
     this.dataManager = new PPIDataManager();
-    this.elementManager = new PPIElementManager();
     this.canvasManager = new PPICanvasManager();
     this.xmlManager = new PPIXMLManager();
     
     console.log('✅ PPICore refactorizado inicializado con managers especializados');
-    
-    // Cargar elementos PPINOT al inicializar
-    this.elementManager.loadPPINOTElements();
   }
 
   // ==================== API PÚBLICA - GESTIÓN DE PPIS ====================
@@ -46,7 +41,7 @@ class PPICore {
     const result = this.dataManager.addPPI(ppi);
     
     // Coordinar con otros managers si es necesario
-    this.elementManager.debouncedSavePPINOTElements();
+    // Nota: elementManager eliminado, la persistencia se maneja por LocalStorageManager
     
     return result;
   }
@@ -60,7 +55,7 @@ class PPICore {
         this.syncFormToCanvas(result, updatedData);
       }
       
-      this.elementManager.debouncedSavePPINOTElements();
+      // Nota: elementManager eliminado, la persistencia se maneja por LocalStorageManager
     }
     
     return result;
@@ -75,7 +70,7 @@ class PPICore {
         this.canvasManager.deletePPIFromCanvas(ppiId, deletedPPI);
       }
       
-      this.elementManager.debouncedSavePPINOTElements();
+      // Nota: elementManager eliminado, la persistencia se maneja por LocalStorageManager
     }
     
     return deletedPPI;
@@ -96,11 +91,14 @@ class PPICore {
   // ==================== API PÚBLICA - ELEMENTOS PPINOT ====================
   
   savePPINOTElements() {
-    this.elementManager.savePPINOTElements();
+    // Nota: elementManager eliminado, la persistencia se maneja por LocalStorageManager
+    console.log('ℹ️ savePPINOTElements - delegando al LocalStorageManager');
   }
 
   loadPPINOTElements() {
-    return this.elementManager.loadPPINOTElements();
+    // Nota: elementManager eliminado, la persistencia se maneja por LocalStorageManager
+    console.log('ℹ️ loadPPINOTElements - delegando al LocalStorageManager');
+    return false;
   }
 
   restorePPINOTElements() {
@@ -109,8 +107,10 @@ class PPICore {
     return false;
   }
 
-  restoreParentChildRelationship(childId, parentId, childData = null) {
-    return this.elementManager.restoreParentChildRelationship(childId, parentId, childData);
+  restoreParentChildRelationship(childId, parentId, /* eslint-disable-line no-unused-vars */ _ = null) {
+    // Nota: elementManager eliminado, la restauración se maneja por LocalStorageManager
+    console.log('ℹ️ restoreParentChildRelationship - delegando al LocalStorageManager');
+    return false;
   }
 
   // ==================== API PÚBLICA - CANVAS ====================
@@ -158,15 +158,19 @@ class PPICore {
   // ==================== API PÚBLICA - CONFIGURACIÓN ====================
 
   enableAutoSave() {
-    this.elementManager.enableAutoSave();
+    // Nota: elementManager eliminado, el autosave se maneja por LocalStorageManager
+    console.log('ℹ️ enableAutoSave - delegando al LocalStorageManager');
   }
 
   disableAutoSave() {
-    this.elementManager.disableAutoSave();
+    // Nota: elementManager eliminado, el autosave se maneja por LocalStorageManager
+    console.log('ℹ️ disableAutoSave - delegando al LocalStorageManager');
   }
 
   isAutoSaveEnabled() {
-    return this.elementManager.isAutoSaveEnabled();
+    // Nota: elementManager eliminado, el autosave se maneja por LocalStorageManager
+    console.log('ℹ️ isAutoSaveEnabled - delegando al LocalStorageManager');
+    return false;
   }
 
   // ==================== API PÚBLICA - UTILIDADES ====================
@@ -175,8 +179,10 @@ class PPICore {
     return PPIUtils.detectMeasureType(elementId, elementType);
   }
 
-  extractChildElementInfo(childElementId) {
-    return this.elementManager.extractChildElementInfo(childElementId);
+  extractChildElementInfo(/* eslint-disable-line no-unused-vars */ _) {
+    // Nota: elementManager eliminado, esta funcionalidad se maneja por LocalStorageManager
+    console.log('ℹ️ extractChildElementInfo - delegando al LocalStorageManager');
+    return null;
   }
 
   exportPPIsToFile() {
@@ -206,11 +212,15 @@ class PPICore {
 
   // Métodos adicionales para compatibilidad con UI
   debouncedSavePPINOTElements() {
-    return this.elementManager.debouncedSavePPINOTElements();
+    // Nota: elementManager eliminado, la persistencia se maneja por LocalStorageManager
+    console.log('ℹ️ debouncedSavePPINOTElements - delegando al LocalStorageManager');
+    return false;
   }
 
   forceSavePPINOTElements() {
-    return this.elementManager.forceSavePPINOTElements();
+    // Nota: elementManager eliminado, la persistencia se maneja por LocalStorageManager
+    console.log('ℹ️ forceSavePPINOTElements - delegando al LocalStorageManager');
+    return false;
   }
 
   updatePPIsWithRestoredChildren(restoredChildren) {
@@ -222,7 +232,9 @@ class PPICore {
   }
 
   cleanupOldData() {
-    return this.elementManager.cleanupOldData();
+    // Nota: elementManager eliminado, la limpieza se maneja por LocalStorageManager
+    console.log('ℹ️ cleanupOldData - delegando al LocalStorageManager');
+    return false;
   }
 
   // ==================== MÉTODOS DE COORDINACIÓN INTERNA ====================
@@ -297,8 +309,22 @@ class PPICore {
     return this.dataManager.ppis;
   }
 
+  set ppis(value) {
+    // Redirigir la asignación al dataManager
+    if (this.dataManager && this.dataManager.ppis !== undefined) {
+      this.dataManager.ppis = value;
+    }
+  }
+
   get filteredPPIs() {
     return this.dataManager.filteredPPIs;
+  }
+
+  set filteredPPIs(value) {
+    // Redirigir la asignación al dataManager
+    if (this.dataManager && this.dataManager.filteredPPIs !== undefined) {
+      this.dataManager.filteredPPIs = value;
+    }
   }
 
   get measureTypes() {

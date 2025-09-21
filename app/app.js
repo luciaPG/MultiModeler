@@ -666,7 +666,10 @@ function setupUIEvents() {
             if (typeof manager.clearSavedData === 'function') {
               manager.clearSavedData();
             }
-            if (typeof manager.markRestored === 'function') manager.markRestored();
+            // Limpiar estado de restauración para nuevo diagrama
+            if (typeof manager.resetRestoreState === 'function') {
+              manager.resetRestoreState();
+            }
             if (typeof manager.dismissDraftNotification === 'function') manager.dismissDraftNotification();
           }
         } catch (_) { /* no-op */ }

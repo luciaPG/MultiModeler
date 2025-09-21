@@ -8,6 +8,8 @@
 import { resolve } from './global-access.js';
 import { getServiceRegistry } from '../modules/ui/core/ServiceRegistry.js';
 import { RasciStore } from '../modules/rasci/store.js';
+import { RelationshipCapture } from '../modules/ui/managers/import-export/RelationshipCapture.js';
+import { RelationshipRestore } from '../modules/ui/managers/import-export/RelationshipRestore.js';
 
 export class LocalStorageManager {
   constructor(options = {}) {
@@ -61,6 +63,7 @@ export class LocalStorageManager {
     try {
       this.isSaving = true;
       console.log('💾 Iniciando guardado del proyecto...');
+      console.log('🔍 DEBUG - Iniciando proceso de guardado completo...');
 
       const projectData = await this.captureCompleteProject();
       const success = await this.saveToLocalStorage(projectData);
@@ -171,16 +174,25 @@ export class LocalStorageManager {
 
     console.log('📊 Datos del proyecto capturados:', {
       bpmn: projectData.bpmn ? 'XML capturado' : 'No disponible',
-      ppi: projectData.ppi?.indicators?.length || 0,
-      rasci: `${projectData.rasci?.roles?.length || 0} roles, ${Object.keys(projectData.rasci?.matrix || {}).length} tareas`,
-      ralph: projectData.ralph?.elements?.length || 0,
+      ppi: (projectData.ppi && projectData.ppi.indicators) ? projectData.ppi.indicators.length : 0,
+      rasci: `${(projectData.rasci && projectData.rasci.roles) ? projectData.rasci.roles.length : 0} roles, ${Object.keys((projectData.rasci && projectData.rasci.matrix) || {}).length} tareas`,
+      ralph: (projectData.ralph && projectData.ralph.elements) ? projectData.ralph.elements.length : 0,
       metadata: projectData.metadata ? 'Capturado' : 'No disponible'
     });
+
+    // DEBUG: Mostrar estructura de relaciones si existen
+    if (projectData.bpmn && projectData.bpmn.relationships) {
+      console.log('🔍 DEBUG - Relaciones capturadas:', {
+        count: projectData.bpmn.relationships.length,
+        relationships: projectData.bpmn.relationships
+      });
+    }
 
     return projectData;
   }
 
   async captureBpmnData() {
+    console.log('🔍 DEBUG - Iniciando captura de datos BPMN...');
     const modeler = resolve('BpmnModeler');
     if (!modeler) {
       console.warn('⚠️ Modeler no disponible para capturar BPMN');
@@ -189,22 +201,58 @@ export class LocalStorageManager {
 
     try {
       const result = await modeler.saveXML({ format: true });
+      const xmlContent = result.xml;
       console.log('✅ BPMN XML capturado');
+      
+      // CRITICAL: Verificar si elementos PPINOT están en el XML (igual que BpmnExporter)
+      const elementRegistry = modeler.get('elementRegistry');
+      const allElements = elementRegistry.getAll();
+      const ppinotElements = allElements.filter(el => 
+        el.type && (el.type.includes('PPINOT:') || el.type.includes('ppinot:'))
+      );
+      
+      console.log(`🔍 XML verification: ${ppinotElements.length} PPINOT elements in canvas`);
+      
+      const missingFromXml = ppinotElements.filter(el => 
+        !xmlContent.includes(`id="${el.id}"`)
+      );
+      
+      let ppinotElementsData = [];
+      if (missingFromXml.length > 0) {
+        console.log(`📋 Saving ${missingFromXml.length} PPINOT elements separately...`);
+        ppinotElementsData = this.serializePPINOTElements(ppinotElements);
+        console.log(`✅ ${ppinotElementsData.length} PPINOT elements saved separately`);
+      }
       
       // Crear estructura de datos igual que ImportExportManager
       const bpmnData = {
-        diagram: result.xml,
-        relationships: []
+        diagram: xmlContent,
+        relationships: [],
+        ppinotElements: ppinotElementsData
       };
       
-      // Capturar relaciones padre-hijo igual que ImportExportManager
+      // Capturar relaciones padre-hijo con múltiples métodos
       try {
-        const { RelationshipCapture } = await import('../modules/ui/managers/import-export/RelationshipCapture.js');
+        // Método 1: Usar RelationshipCapture
         const relationshipCapture = new RelationshipCapture(this.config);
+        const capturedRelationships = relationshipCapture.captureParentChildRelationships(modeler);
         
-        // Capturar relaciones padre-hijo
-        bpmnData.relationships = relationshipCapture.captureParentChildRelationships(modeler);
-        console.log(`✅ ${bpmnData.relationships.length} relaciones padre-hijo capturadas`);
+        console.log(`🔍 RelationshipCapture encontró ${capturedRelationships.length} relaciones`);
+        
+        // Método 2: Captura directa de elementos PPINOT
+        const directRelationships = this.capturePPINOTRelationshipsDirect(modeler);
+        console.log(`🔍 Captura directa encontró ${directRelationships.length} relaciones PPINOT`);
+        
+        // Combinar ambas fuentes de relaciones
+        const allRelationships = [...capturedRelationships, ...directRelationships];
+        
+        // Eliminar duplicados basándose en childId
+        const uniqueRelationships = allRelationships.filter((rel, index, self) => 
+          index === self.findIndex(r => r.childId === rel.childId)
+        );
+        
+        bpmnData.relationships = uniqueRelationships;
+        console.log(`✅ ${bpmnData.relationships.length} relaciones padre-hijo capturadas (${capturedRelationships.length} + ${directRelationships.length} - duplicados)`);
         
       } catch (error) {
         console.warn('Error capturando relaciones:', error);
@@ -219,10 +267,163 @@ export class LocalStorageManager {
     }
   }
 
+  /**
+   * Captura relaciones PPINOT directamente del canvas
+   */
+  capturePPINOTRelationshipsDirect(modeler) {
+    const relationships = [];
+    
+    try {
+      const elementRegistry = modeler.get('elementRegistry');
+      const allElements = elementRegistry.getAll();
+      
+      console.log(`🔍 DEBUG - Analizando ${allElements.length} elementos para relaciones PPINOT...`);
+      
+      // DEBUG: Mostrar todos los elementos con sus tipos
+      console.log('🔍 DEBUG - Todos los elementos encontrados:', allElements.map(el => ({
+        id: el.id,
+        type: el.type,
+        boType: (el.businessObject && el.businessObject.$type) || '',
+        name: (el.businessObject && el.businessObject.name) || '',
+        x: el.x,
+        y: el.y
+      })));
+      
+      // Buscar elementos PPINOT
+      const ppiElements = allElements.filter(el => {
+        const type = el.type || '';
+        const boType = (el.businessObject && el.businessObject.$type) || '';
+        const isPPINOT = type.includes('PPINOT:') || boType.includes('PPINOT:');
+        
+        if (isPPINOT) {
+          console.log(`🔍 DEBUG - Elemento PPINOT encontrado: ${el.id} (${type || boType})`);
+        }
+        
+        return isPPINOT;
+      });
+      
+      console.log(`🔍 DEBUG - Encontrados ${ppiElements.length} elementos PPINOT:`, ppiElements.map(el => ({
+        id: el.id,
+        type: el.type,
+        boType: (el.businessObject && el.businessObject.$type) || '',
+        name: (el.businessObject && el.businessObject.name) || ''
+      })));
+      
+      // Para cada elemento PPINOT, buscar sus hijos
+      for (const ppiElement of ppiElements) {
+        const ppiId = ppiElement.id;
+        const ppiType = ppiElement.type || (ppiElement.businessObject && ppiElement.businessObject.$type) || '';
+        const ppiName = ppiElement.businessObject && ppiElement.businessObject.name || ppiId;
+        
+        console.log(`🔍 DEBUG - Procesando elemento PPINOT: ${ppiId} (${ppiType})`);
+        
+        // Buscar elementos que podrían ser hijos de este PPI
+        const potentialChildren = allElements.filter(child => {
+          if (child.id === ppiId) return false; // No es hijo de sí mismo
+          
+          const childType = child.type || '';
+          const childBoType = (child.businessObject && child.businessObject.$type) || '';
+          
+          // Verificar si es un elemento PPINOT hijo (Target, AggregatedMeasure, etc.)
+          const isPPINOTChild = childType.includes('PPINOT:') || childBoType.includes('PPINOT:');
+          const isNotPPI = !childType.includes('PPINOT:Ppi') && !childBoType.includes('PPINOT:Ppi');
+          
+          const isPotentialChild = isPPINOTChild && isNotPPI;
+          
+          if (isPotentialChild) {
+            console.log(`🔍 DEBUG - Hijo potencial encontrado: ${child.id} (${childType || childBoType})`);
+          }
+          
+          return isPotentialChild;
+        });
+        
+        console.log(`🔍 DEBUG - Elemento ${ppiId} (${ppiType}) tiene ${potentialChildren.length} posibles hijos`);
+        
+        if (potentialChildren.length === 0) {
+          console.log(`🔍 DEBUG - Todos los elementos disponibles para buscar hijos:`, allElements.map(el => ({
+            id: el.id,
+            type: el.type,
+            boType: (el.businessObject && el.businessObject.$type) || ''
+          })));
+        }
+        
+        // Para cada hijo potencial, verificar proximidad y crear relación
+        for (const child of potentialChildren) {
+          const childId = child.id;
+          const childType = child.type || (child.businessObject && child.businessObject.$type) || '';
+          const childName = child.businessObject && child.businessObject.name || childId;
+          
+          // Verificar proximidad visual
+          const distance = this.calculateDistance(ppiElement, child);
+          console.log(`🔍 DEBUG - Distancia entre ${ppiId} y ${childId}: ${distance} (máximo: ${this.config.maxDistance})`);
+          
+          if (distance <= this.config.maxDistance) {
+            // Guardar posiciones absolutas para calcular relativas en restauración
+            const position = {
+              childX: child.x || 0,
+              childY: child.y || 0,
+              parentX: ppiElement.x || 0,
+              parentY: ppiElement.y || 0,
+              width: child.width || 0,
+              height: child.height || 0
+            };
+            
+        console.log(`🔍 DEBUG - Posiciones capturadas:`);
+        console.log(`  Padre (${ppiId}): (${position.parentX}, ${position.parentY})`);
+        console.log(`  Hijo (${childId}): (${position.childX}, ${position.childY})`);
+        console.log(`  Relación encontrada y guardada!`);
+            
+            const relationship = {
+              childId: childId,
+              parentId: ppiId,
+              childName: childName,
+              parentName: ppiName,
+              childType: childType,
+              parentType: ppiType,
+              position: position,
+              timestamp: Date.now(),
+              source: 'direct_ppinot_capture'
+            };
+            
+            relationships.push(relationship);
+            console.log(`✅ DEBUG - Relación creada: ${childName} -> ${ppiName} (distancia: ${distance})`);
+          } else {
+            console.log(`❌ DEBUG - Relación rechazada por distancia: ${childName} -> ${ppiName} (${distance} > ${this.config.maxDistance})`);
+          }
+        }
+      }
+      
+      console.log(`✅ DEBUG - Captura directa completada: ${relationships.length} relaciones PPINOT encontradas`);
+      console.log('🔍 DEBUG - Relaciones encontradas:', relationships);
+      
+    } catch (error) {
+      console.warn('Error en captura directa de relaciones PPINOT:', error);
+    }
+    
+    console.log(`🔍 DEBUG - Captura PPINOT completada: ${relationships.length} relaciones encontradas`);
+    if (relationships.length > 0) {
+      console.log(`🔍 DEBUG - Primeras 2 relaciones:`, relationships.slice(0, 2));
+    }
+    
+    return relationships;
+  }
+  
+  /**
+   * Calcula la distancia entre dos elementos
+   */
+  calculateDistance(element1, element2) {
+    const x1 = element1.x || 0;
+    const y1 = element1.y || 0;
+    const x2 = element2.x || 0;
+    const y2 = element2.y || 0;
+    
+    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+  }
+
   async capturePPIData() {
     try {
       const ppiManager = resolve('PPIManagerInstance');
-      const indicators = ppiManager?.core?.getAllPPIs ? ppiManager.core.getAllPPIs() : [];
+      const indicators = (ppiManager && ppiManager.core && ppiManager.core.getAllPPIs) ? ppiManager.core.getAllPPIs() : [];
       
       console.log(`✅ ${indicators.length} PPIs capturados`);
       
@@ -290,19 +491,53 @@ export class LocalStorageManager {
 
   async captureMetadata() {
     try {
-      // Capturar nombre del diagrama desde el ServiceRegistry
-      const registry = resolve('ServiceRegistry');
       let currentFileName = 'mi_diagrama.bpmn'; // Default
       
-      if (registry && registry.get) {
-        // Intentar obtener el nombre del diagrama desde algún servicio
-        const appService = registry.get('AppService');
-        if (appService && appService.currentFileName) {
-          currentFileName = appService.currentFileName;
+      // Fuente 1: Verificar localStorage por nombre guardado previamente
+      const savedName = localStorage.getItem('current_diagram_name');
+      if (savedName && savedName.trim() && savedName !== 'mi_diagrama.bpmn') {
+        currentFileName = savedName;
+        console.log(`📝 Nombre capturado desde localStorage: ${currentFileName}`);
+      }
+      
+      // Fuente 2: Verificar título del DOM
+      const titleElement = document.querySelector('title');
+      if (titleElement && titleElement.textContent && titleElement.textContent !== 'MultiModeler') {
+        const titleText = titleElement.textContent.trim();
+        if (titleText.includes('.bpmn') && titleText !== currentFileName) {
+          currentFileName = titleText;
+          console.log(`📝 Nombre capturado desde título DOM: ${currentFileName}`);
         }
       }
       
-      console.log(`✅ Metadata capturada - Nombre: ${currentFileName}`);
+      // Fuente 3: Buscar en inputs del DOM
+      const nameInputs = document.querySelectorAll('input[type="text"]');
+      for (const input of nameInputs) {
+        if (input.value && input.value.trim() && input.value.includes('.bpmn') && input.value !== currentFileName) {
+          currentFileName = input.value.trim();
+          console.log(`📝 Nombre capturado desde input DOM: ${currentFileName}`);
+          break;
+        }
+      }
+      
+      // Fuente 4: AppService (último recurso)
+      try {
+        const registry = resolve('ServiceRegistry');
+        if (registry && registry.get) {
+          const appService = registry.get('AppService');
+          if (appService && appService.currentFileName && appService.currentFileName !== currentFileName) {
+            currentFileName = appService.currentFileName;
+            console.log(`📝 Nombre capturado desde AppService: ${currentFileName}`);
+          }
+        }
+      } catch (error) {
+        console.debug('Error accediendo a AppService:', error);
+      }
+      
+      // Guardar el nombre actual en localStorage
+      localStorage.setItem('current_diagram_name', currentFileName);
+      
+      console.log(`✅ Metadata capturada - Nombre final: ${currentFileName}`);
       
       return {
         diagramName: currentFileName,
@@ -322,9 +557,9 @@ export class LocalStorageManager {
   async restoreCompleteProject(projectData) {
     const restoreOrder = [
       { key: 'bpmn', method: 'restoreBpmnData' },
-      { key: 'ppi', method: 'restorePPIData' },
       { key: 'rasci', method: 'restoreRasciData' },
       { key: 'ralph', method: 'restoreRalphData' },
+      { key: 'ppi', method: 'restorePPIData' },
       { key: 'metadata', method: 'restoreMetadata' }
     ];
 
@@ -333,6 +568,12 @@ export class LocalStorageManager {
         try {
           await this[method](projectData[key]);
           console.log(`✅ ${key} restaurado correctamente`);
+          
+          // Pequeño delay entre restauraciones para evitar conflictos
+          if (key === 'bpmn') {
+            console.log('⏳ Esperando a que el BPMN se estabilice...');
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
         } catch (error) {
           console.warn(`⚠️ Error restaurando ${key}:`, error);
         }
@@ -344,6 +585,7 @@ export class LocalStorageManager {
 
   async restoreBpmnData(bpmnData) {
     if (!bpmnData) return;
+    console.log('🔍 DEBUG - Iniciando restauración de datos BPMN...');
 
     const modeler = resolve('BpmnModeler');
     if (!modeler) {
@@ -353,26 +595,89 @@ export class LocalStorageManager {
     try {
       // Restaurar XML del BPMN
       const xmlContent = bpmnData.diagram || bpmnData.xml || bpmnData;
-      await modeler.importXML(xmlContent);
+      
+      // CRITICAL: Verificar si elementos tienen BPMNShape (igual que ImportExportManager)
+      let missingShapes = [];
+      let presentShapes = [];
+      
+      console.log('🔍 DEBUG - Verificando XML antes de importar...');
+      
+      // Buscar elementos PPINOT en <bpmn:process>
+      const processMatch = xmlContent.match(/<bpmn:process[^>]*>(.*?)<\/bpmn:process>/s);
+      if (processMatch) {
+        const processContent = processMatch[1];
+        const ppinotElements = processContent.match(/<PPINOT:[^>]+id="([^"]+)"/g) || [];
+        
+        console.log(`🔍 PPINOT elements en <bpmn:process>: ${ppinotElements.length}`);
+        
+        ppinotElements.forEach(match => {
+          const idMatch = match.match(/id="([^"]+)"/);
+          if (idMatch) {
+            const elementId = idMatch[1];
+            const hasShape = xmlContent.includes(`${elementId}_di`);
+            
+            if (hasShape) {
+              presentShapes.push(elementId);
+            } else {
+              missingShapes.push(elementId);
+            }
+          }
+        });
+      }
+      
+      console.log(`🔍 Elements WITH BPMNShape: ${presentShapes.join(', ')}`);
+      console.log(`❌ Elements WITHOUT BPMNShape: ${missingShapes.join(', ')}`);
+      
+      // Si faltan elementos, añadir BPMNShapes al XML (igual que ImportExportManager)
+      let correctedXml = xmlContent;
+      if (missingShapes.length > 0 && bpmnData.relationships) {
+        console.log(`🔧 FIXING XML: Missing ${missingShapes.length} elements with BPMNShape`);
+        correctedXml = this.addMissingBPMNShapes(xmlContent, bpmnData.relationships);
+      }
+      
+      // Importar XML (corregido si era necesario)
+      await modeler.importXML(correctedXml);
       console.log('✅ BPMN restaurado en el canvas');
+      
+      // CRITICAL: Restaurar elementos PPINOT por separado (igual que BpmnImporter)
+      if (bpmnData.ppinotElements && bpmnData.ppinotElements.length > 0) {
+        console.log(`📊 Restaurando ${bpmnData.ppinotElements.length} PPINOT elements por separado...`);
+        await this.restorePPINOTElements(modeler, bpmnData.ppinotElements);
+      }
+      
+      // DEBUG: Verificar qué elementos están disponibles después de la importación
+      const elementRegistry = modeler.get('elementRegistry');
+      const allElements = elementRegistry.getAll();
+      console.log('🔍 DEBUG - Elementos disponibles después de importar XML:');
+      allElements.forEach(el => {
+        if (el.id.includes('Target_') || el.id.includes('AggregatedMeasure_') || el.id.includes('Ppi_')) {
+          console.log(`  - ${el.id} (${el.type})`);
+        }
+      });
       
       // Restaurar relaciones padre-hijo igual que ImportExportManager
       if (bpmnData.relationships && Array.isArray(bpmnData.relationships) && bpmnData.relationships.length > 0) {
         console.log(`🔄 Restaurando ${bpmnData.relationships.length} relaciones padre-hijo...`);
         
+        // DEBUG: Mostrar relaciones que se van a restaurar
+        console.log('🔍 DEBUG - Relaciones a restaurar:', bpmnData.relationships);
+        
         try {
-          // Importar RelationshipRestore dinámicamente
-          const { RelationshipRestore } = await import('../modules/ui/managers/import-export/RelationshipRestore.js');
+          // Usar RelationshipRestore
           const relationshipRestore = new RelationshipRestore(this.config);
           
-          // Esperar un poco para que los elementos estén listos, igual que ImportExportManager
-          setTimeout(() => {
-            relationshipRestore.restoreRelationshipsSimple(modeler, bpmnData.relationships);
-          }, 1000); // Wait 1 second for elements to be ready
+          // Usar el método correcto que espera a que los elementos estén listos
+          console.log('🔄 Iniciando restauración de relaciones con espera inteligente...');
+          relationshipRestore.waitForPPINOTElementsAndRestore(modeler, bpmnData.relationships);
           
         } catch (error) {
           console.warn('Error restaurando relaciones:', error);
           // Continuar sin restaurar relaciones si hay error
+        }
+      } else {
+        console.log('ℹ️ No hay relaciones padre-hijo para restaurar');
+        if (bpmnData.relationships) {
+          console.log('🔍 DEBUG - Estructura de bpmnData.relationships:', bpmnData.relationships);
         }
       }
       
@@ -380,6 +685,149 @@ export class LocalStorageManager {
       console.error('Error restaurando BPMN:', error);
       throw error;
     }
+  }
+
+  /**
+   * Adds missing BPMNShapes to XML (copied from BpmnImporter)
+   */
+  addMissingBPMNShapes(xmlContent, relationships) {
+    console.log('🔧 Adding missing BPMNShapes to XML...');
+    
+    let modifiedXml = xmlContent;
+    let addedCount = 0;
+    
+    // Search BPMNPlane section to add shapes
+    const planeMatch = modifiedXml.match(/(<bpmndi:BPMNPlane[^>]*>)(.*?)(<\/bpmndi:BPMNPlane>)/s);
+    if (!planeMatch) {
+      console.warn('⚠️ BPMNPlane not found in XML');
+      return xmlContent;
+    }
+    
+    const planeStart = planeMatch[1];
+    const planeContent = planeMatch[2];
+    const planeEnd = planeMatch[3];
+    
+    let newShapes = '';
+    
+    // For each relationship, verify if child element has BPMNShape
+    for (const rel of relationships) {
+      const hasShape = xmlContent.includes(`${rel.childId}_di`);
+      
+      if (!hasShape && rel.position) {
+        console.log(`🔧 Adding BPMNShape for: ${rel.childId}`);
+        
+        // Create BPMNShape based on element type
+        const shapeXml = `
+      <bpmndi:BPMNShape id="${rel.childId}_di" bpmnElement="${rel.childId}">
+        <dc:Bounds x="${rel.position.childX}" y="${rel.position.childY}" width="${rel.position.width}" height="${rel.position.height}" />
+      </bpmndi:BPMNShape>`;
+        
+        newShapes += shapeXml;
+        addedCount++;
+      }
+    }
+    
+    if (addedCount > 0) {
+      // Insert new shapes in BPMNPlane
+      const newPlaneContent = planeContent + newShapes;
+      modifiedXml = modifiedXml.replace(
+        planeMatch[0], 
+        planeStart + newPlaneContent + planeEnd
+      );
+      
+      console.log(`✅ ${addedCount} BPMNShapes added to XML`);
+    }
+    
+    return modifiedXml;
+  }
+
+  /**
+   * Restores PPINOT elements separately (copied from BpmnImporter)
+   */
+  async restorePPINOTElements(modeler, ppinotElements) {
+    console.log('🔧 Restoring PPINOT elements from separate data...');
+    
+    const elementFactory = modeler.get('elementFactory');
+    const canvas = modeler.get('canvas');
+    const modeling = modeler.get('modeling');
+    
+    if (!elementFactory || !canvas || !modeling) {
+      throw new Error('Modeler services not available');
+    }
+
+    let createdCount = 0;
+    const createdElements = [];
+
+    // Create elements in order: first PPIs, then children
+    const sortedElements = [...ppinotElements].sort((a, b) => {
+      if (a.type === 'PPINOT:Ppi' && b.type !== 'PPINOT:Ppi') return -1;
+      if (b.type === 'PPINOT:Ppi' && a.type !== 'PPINOT:Ppi') return 1;
+      return 0;
+    });
+
+    for (const elementData of sortedElements) {
+      try {
+        // Check if element already exists
+        const elementRegistry = modeler.get('elementRegistry');
+        const existingElement = elementRegistry.get(elementData.id);
+        if (existingElement) {
+          console.log(`✅ Element already exists, skipping: ${elementData.id} (${elementData.type})`);
+          createdElements.push(existingElement);
+          continue;
+        }
+
+        // Determine parent
+        let parentElement = canvas.getRootElement();
+        if (elementData.parent) {
+          const foundParent = createdElements.find(el => el.id === elementData.parent);
+          if (foundParent) {
+            parentElement = foundParent;
+          }
+        }
+
+        // Create simple and effective element
+        const element = elementFactory.create('shape', {
+          type: elementData.type,
+          id: elementData.id,
+          width: elementData.width,
+          height: elementData.height
+        });
+
+        // Create in canvas with exact position
+        const createdElement = modeling.createShape(
+          element,
+          { x: elementData.x, y: elementData.y },
+          parentElement
+        );
+        
+        if (createdElement) {
+          createdElements.push(createdElement);
+          createdCount++;
+          console.log(`✅ PPINOT element created: ${elementData.id} at (${elementData.x}, ${elementData.y})`);
+        }
+        
+      } catch (error) {
+        console.warn(`⚠️ Error restoring ${elementData.id}:`, error.message);
+      }
+    }
+
+    console.log(`🎉 ${createdCount}/${ppinotElements.length} PPINOT elements restored`);
+  }
+
+  /**
+   * Serializes PPINOT elements for separate storage (copied from BpmnExporter)
+   */
+  serializePPINOTElements(elements) {
+    return elements.map(el => ({
+      type: el.type,
+      id: el.id,
+      width: el.width || 100,
+      height: el.height || 80,
+      x: el.x || 0,
+      y: el.y || 0,
+      text: el.businessObject && el.businessObject.name || null,
+      parent: el.parent && el.parent.id || null
+    }));
   }
 
   async restorePPIData(ppiData) {
@@ -542,6 +990,24 @@ export class LocalStorageManager {
 
       const parsed = JSON.parse(data);
       
+      // DEBUG: Mostrar estructura de datos cargados
+      console.log('🔍 DEBUG - Estructura completa de datos cargados desde localStorage:', {
+        version: parsed.version,
+        timestamp: parsed.timestamp,
+        savedAt: parsed.savedAt,
+        data: parsed.data ? {
+          bpmn: parsed.data.bpmn ? {
+            hasDiagram: !!parsed.data.bpmn.diagram,
+            hasRelationships: !!parsed.data.bpmn.relationships,
+            relationshipsCount: (parsed.data.bpmn.relationships && parsed.data.bpmn.relationships.length) || 0,
+            relationshipsPreview: (parsed.data.bpmn.relationships && parsed.data.bpmn.relationships.slice(0, 2)) || [] // Mostrar solo las primeras 2
+          } : 'No disponible',
+          ppi: parsed.data.ppi ? {
+            indicatorsCount: (parsed.data.ppi.indicators && parsed.data.ppi.indicators.length) || 0
+          } : 'No disponible'
+        } : 'No data property'
+      });
+      
       // Verificar TTL (opcional - 24 horas)
       const now = Date.now();
       const saved = parsed.savedAt || new Date(parsed.timestamp).getTime();
@@ -637,7 +1103,7 @@ export class LocalStorageManager {
   /**
    * Método de compatibilidad para el PPIDataManager
    */
-  savePPIs(ppis) {
+  savePPIs() {
     console.log('ℹ️ savePPIs llamado - usando nuevo LocalStorageManager');
     // El PPIDataManager puede llamar a este método, pero ahora usamos saveProject()
     // para guardar todo el estado del proyecto
@@ -658,16 +1124,63 @@ export class LocalStorageManager {
     if (!metadata || !metadata.diagramName) return;
 
     try {
-      // Restaurar nombre del diagrama
+      const diagramName = metadata.diagramName;
+      
+      // Restaurar nombre del diagrama en múltiples ubicaciones
       const registry = resolve('ServiceRegistry');
       if (registry && registry.get) {
+        // Fuente 1: AppService
         const appService = registry.get('AppService');
-        if (appService && appService.setCurrentFileName) {
-          appService.setCurrentFileName(metadata.diagramName);
+        if (appService) {
+          if (appService.setCurrentFileName) {
+            appService.setCurrentFileName(diagramName);
+            console.log(`📝 Nombre restaurado en AppService: ${diagramName}`);
+          } else if (appService.currentFileName !== undefined) {
+            appService.currentFileName = diagramName;
+            console.log(`📝 Nombre asignado directamente a AppService: ${diagramName}`);
+          }
         }
       }
       
-      console.log(`✅ Metadata restaurada - Nombre: ${metadata.diagramName}`);
+      // Fuente 2: Actualizar título del DOM
+      const titleElement = document.querySelector('title');
+      if (titleElement) {
+        titleElement.textContent = diagramName;
+        console.log(`📝 Título DOM actualizado: ${diagramName}`);
+      }
+      
+      // Fuente 3: Guardar en localStorage para persistencia
+      localStorage.setItem('current_diagram_name', diagramName);
+      console.log(`📝 Nombre guardado en localStorage: ${diagramName}`);
+      
+      // Fuente 4: Actualizar cualquier input de nombre de archivo visible
+      const nameSelectors = [
+        '#fileName', 
+        '.file-name-input', 
+        'input[name="fileName"]',
+        'input[name*="name"]',
+        'input[id*="name"]',
+        'input[class*="name"]',
+        'input[placeholder*="nombre"]',
+        'input[placeholder*="archivo"]'
+      ];
+      
+      let updatedInputs = 0;
+      for (const selector of nameSelectors) {
+        const inputs = document.querySelectorAll(selector);
+        inputs.forEach(input => {
+          if (input && input.type === 'text') {
+            input.value = diagramName;
+            updatedInputs++;
+          }
+        });
+      }
+      
+      if (updatedInputs > 0) {
+        console.log(`📝 ${updatedInputs} inputs de nombre actualizados: ${diagramName}`);
+      }
+      
+      console.log(`✅ Metadata restaurada completamente - Nombre: ${diagramName}`);
     } catch (error) {
       console.warn('Error restaurando metadata:', error);
     }

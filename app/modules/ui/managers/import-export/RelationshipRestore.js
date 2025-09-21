@@ -15,6 +15,7 @@ export class RelationshipRestore {
   async restoreParentChildRelationships(modeler, relationships) {
     try {
       console.log(`🔄 Restoring ${relationships.length} parent-child relationships to canvas...`);
+      console.log(`🔍 DEBUG - Relaciones recibidas:`, relationships);
       
       const elementRegistry = modeler.get('elementRegistry');
       const modeling = modeler.get('modeling');
@@ -48,7 +49,29 @@ export class RelationshipRestore {
           }
           
           // CRITICAL: Use moveElements to keep elements united (official BPMN.js pattern)
-          modeling.moveElements([childElement], { x: 0, y: 0 }, parentElement);
+          // Calcular posición relativa en el momento de la restauración
+          let offset = { x: 0, y: 0 };
+          
+          if (rel.position && rel.position.childX !== undefined && rel.position.parentX !== undefined) {
+            // Calcular la posición relativa original
+            const originalRelativeX = rel.position.childX - rel.position.parentX;
+            const originalRelativeY = rel.position.childY - rel.position.parentY;
+            
+            offset = { x: originalRelativeX, y: originalRelativeY };
+            
+            console.log(`🔍 DEBUG - Restauración de relación:`);
+            console.log(`  Hijo original: (${rel.position.childX}, ${rel.position.childY})`);
+            console.log(`  Padre original: (${rel.position.parentX}, ${rel.position.parentY})`);
+            console.log(`  Relativa original: (${originalRelativeX}, ${originalRelativeY})`);
+            console.log(`  Padre actual: (${parentElement.x}, ${parentElement.y})`);
+            console.log(`  Usando offset: (${offset.x}, ${offset.y})`);
+          } else {
+            console.log(`⚠️ No hay posiciones guardadas para ${rel.childId}, usando posición por defecto`);
+          }
+          
+          modeling.moveElements([childElement], offset, parentElement);
+          
+          console.log(`✅ Hijo ${rel.childId} movido a posición relativa (${offset.x}, ${offset.y}) del padre`);
           
           // CRITICAL: Restore businessObject.$parent (ppinot-visual pattern)
           if (childElement.businessObject && parentElement.businessObject) {
@@ -59,7 +82,9 @@ export class RelationshipRestore {
           // Also move label if exists (ralph pattern)
           if (childElement.label) {
             try {
-              modeling.moveElements([childElement.label], { x: 0, y: 0 }, parentElement);
+              // El label debe estar cerca del hijo, con un pequeño offset
+              const labelOffset = { x: offset.x - 10, y: offset.y - 10 };
+              modeling.moveElements([childElement.label], labelOffset, parentElement);
             } catch (labelError) {
               console.debug('Label move failed (normal):', labelError.message);
             }

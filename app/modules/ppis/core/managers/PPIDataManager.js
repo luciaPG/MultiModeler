@@ -16,6 +16,7 @@ export class PPIDataManager {
     this.ppis = [];
     this.filteredPPIs = [];
     this.isSaving = false; // Control de concurrencia para evitar múltiples guardados
+    this.isLoading = false; // Control de concurrencia para evitar múltiples cargas
     
     this.measureTypes = {
       time: { name: 'Medida de Tiempo', icon: 'fas fa-clock' },
@@ -189,6 +190,14 @@ export class PPIDataManager {
   }
 
   async loadPPIs() {
+    // Control de concurrencia para evitar múltiples cargas simultáneos
+    if (this.isLoading) {
+      console.log('⏳ Ya hay una carga en progreso, omitiendo...');
+      return { success: true, reason: 'Already loading' };
+    }
+
+    this.isLoading = true;
+    
     try {
       console.log('📂 Cargando PPIs usando nuevo LocalStorageManager...');
       
@@ -216,6 +225,8 @@ export class PPIDataManager {
       console.error('❌ Error en loadPPIs:', error);
       this.ppis = [];
       return { success: false, error: error.message };
+    } finally {
+      this.isLoading = false;
     }
   }
 
