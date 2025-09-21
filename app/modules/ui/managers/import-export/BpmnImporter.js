@@ -220,6 +220,15 @@ export class BpmnImporter {
 
     for (const elementData of sortedElements) {
       try {
+        // Check if element already exists
+        const elementRegistry = modeler.get('elementRegistry');
+        const existingElement = elementRegistry.get(elementData.id);
+        if (existingElement) {
+          console.log(`✅ Element already exists, skipping: ${elementData.id} (${elementData.type})`);
+          createdElements.push(existingElement);
+          continue;
+        }
+
         // Determine parent
         let parentElement = canvas.getRootElement();
         if (elementData.parent) {
@@ -272,6 +281,15 @@ export class BpmnImporter {
 
     for (const elementData of ralphElements) {
       try {
+        // Check if element already exists
+        const elementRegistry = modeler.get('elementRegistry');
+        const existingElement = elementRegistry.get(elementData.id);
+        if (existingElement) {
+          console.log(`✅ RALPH element already exists, skipping: ${elementData.id} (${elementData.type})`);
+          createdCount++;
+          continue;
+        }
+
         console.log(`🔧 Restoring: ${elementData.id} (${elementData.type})`);
         console.log(`  📍 Position: x=${elementData.x}, y=${elementData.y}`);
         
