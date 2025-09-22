@@ -35,12 +35,9 @@ module.exports = {
     },
     resolve: {
         alias: {
-            // Add aliases for the PPINOT and RALPH moddle files
             '@ppinot-moddle': path.resolve(__dirname, 'app/modules/multinotationModeler/notations/ppinot/PPINOTModdle.json'),
             '@ralph-moddle': path.resolve(__dirname, 'app/modules/multinotationModeler/notations/ralph/RALphModdle.json'),
-            // Add alias for the MultiNotationModeler directory
             '@multi-notation': path.resolve(__dirname, 'app/modules/multinotationModeler'),
-            // Add aliases for other directories to simplify imports
             '@app': path.resolve(__dirname, 'app'),
             '@modelers': path.resolve(__dirname, 'app/modelers'),
             '@core': path.resolve(__dirname, 'app/core'),
@@ -87,10 +84,17 @@ module.exports = {
         })
     ],
     devServer: {
-        static: {
-            directory: path.join(__dirname, 'public')
-        },
-        port: 9002,
+        static: [
+            {
+                directory: path.join(__dirname, 'public'),
+                publicPath: '/'
+            },
+            {
+                directory: path.join(__dirname, 'reports'),
+                publicPath: '/reports'
+            }
+        ],
+        port: 9000,
         hot: true,
         open: true,
         historyApiFallback: true,

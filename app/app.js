@@ -33,6 +33,8 @@ import { initModeler as initModelerCore } from './core/modeler.js';
 import { openFile as openFileCore } from './core/files.js';
 import { cleanGhostTasksOnStartup, startGhostTaskCleaner } from './modules/rasci/core/matrix-manager.js';
 import { registerProjectInfoService } from './services/project-info.js';
+import StorageManager from './modules/ui/managers/storage-manager.js';
+import rasciAdapter from './modules/rasci/RASCIAdapter.js';
 
 // Import required JSON files for moddle extensions
 import PPINOTModdle from './modules/multinotationModeler/notations/ppinot/PPINOTModdle.json';
@@ -48,6 +50,21 @@ const registerModules = () => {
     registry.register('MultiNotationModeler', MultiNotationModeler);
     registry.register('PPINOTModdle', PPINOTModdle);
     registry.register('RALphModdle', RALphModdle);
+
+    // Registrar StorageManager real para tests y runtime
+    try {
+      const storageManager = new StorageManager({ namespace: 'multinotation' });
+      registry.register('StorageManager', storageManager, { description: 'StorageManager real' });
+    } catch (e) {
+      console.warn('No se pudo registrar StorageManager:', e && e.message);
+    }
+
+    // Registrar RASCIAdapter para exponer getMatrixData/getRoles y demás
+    try {
+      registry.register('RASCIAdapter', rasciAdapter, { description: 'Adaptador RASCI real' });
+    } catch (e) {
+      console.warn('No se pudo registrar RASCIAdapter:', e && e.message);
+    }
   }
 };
 

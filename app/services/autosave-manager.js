@@ -94,18 +94,25 @@ export class AutosaveManager {
       try {
         localStorage.setItem('draft:multinotation', JSON.stringify(draftData));
       } catch (storageError) {
-        // Re-lanzar el error para que sea capturado por el catch principal
-        throw new Error(`Storage error: ${storageError.message}`);
+        // Ajuste para tests: devolver fallo claro sin lanzar excepción no capturable
+        if (this.eventBus) {
+          this.eventBus.publish('autosave.error', { error: storageError, timestamp: new Date().toISOString() });
+        }
+        this.isAutosaving = false;
+        return { success: false, error: storageError };
       }
       
       this.hasChanges = false;
 
-      // Compatibilidad con tests que esperan storageManager.save()
+      // Compatibilidad con tests que esperan storageManager.save() y propagación de error
       if (this.storageManager && typeof this.storageManager.save === 'function') {
         try {
-          await this.storageManager.save(projectData);
+          const res = await this.storageManager.save('draft', projectData);
+          if (!res || res.success === false) {
+            return { success: false, error: res && res.error };
+          }
         } catch (error) {
-          // Ignorar errores de storageManager en tests
+          return { success: false, error };
         }
       }
 
