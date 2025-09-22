@@ -26,11 +26,50 @@ function isPPINOT(element) {
   return element && /^PPINOT:/.test(element.type);
 }
 
+function hasReverseConnection(source, target, connectionType) {
+  if (!target || !source || !target.outgoing) return false;
+  return target.outgoing.some(function(conn) {
+    return conn && conn.target === source && conn.type === connectionType;
+  });
+}
 
 function isDefaultValid(element) {
   return element && (is(element, 'bpmn:Task') || is(element, 'bpmn:Event') || is(element, 'bpmn:Pool') || is(element, 'bpmn:DataObjectReference')) 
 }
 
+// Helpers
+function isPPINOTElement(element) {
+  return element && /^PPINOT:/.test(element.type);
+}
+
+function isRALphElement(element) {
+  return element && /^RALph:/.test(element.type);
+}
+
+function hasIdenticalConnection(source, target, type) {
+  if (!source || !target || !source.outgoing) return false;
+  return source.outgoing.some(function(c){ return c && c.type === type && c.target === target; });
+}
+
+// Deprecated helper (replaced by countConnectionsOfType)
+
+function countConnectionsOfType(element, type) {
+  if (!element) return 0;
+  var incoming = (element.incoming || []).filter(function(c){
+    return c && c.type === type;
+  }).length;
+  var outgoing = (element.outgoing || []).filter(function(c){
+    return c && c.type === type;
+  }).length;
+  return incoming + outgoing;
+}
+
+function hasToFromBetween(source, target) {
+  if (!source || !target || !source.outgoing) return false;
+  return source.outgoing.some(function(c){
+    return c && (c.type === 'PPINOT:ToConnection' || c.type === 'PPINOT:FromConnection') && c.target === target;
+  });
+}
 
 // Reglas específicas para elementos PPINOT
 export default function PPINOTRules(eventBus) {
@@ -55,106 +94,152 @@ inherits(PPINOTRules, RuleProvider);
 
 PPINOTRules.$inject = [ 'eventBus' ];
 
-
-
 function connect(source, target, connection) {
-  if (nonExistingOrLabel(source) || nonExistingOrLabel(target)) {
-    return null;
-  }
-  
-  // During reconnection, keep existing PPINOT connection types even if strict rule wouldn't allow
-  if (typeof connection === 'string' && connection.indexOf('PPINOT:') === 0) {
-    // try to detect reconnection via relaxed flag on provider instance stored on this
-    // We cannot access instance here directly, so rely on permissive allow only for reconnection hooks
-    // Since we cannot read the flag, we do a soft allow here and rely on later behaviors to layout
-  }
-
-  if(connection && connection.startsWith('PPINOT:')) {
-    // Always allow existing PPINOT connections during reconnection
-    return {type: connection};
-  }
-  
-  if(connection === 'PPINOT:MyConnection'){
-    return {type: connection}
-  }
-
-  if(connection === 'PPINOT:RFCStateConnection'){
-    return {type: connection}
-  }
-
-  else if(connection === 'PPINOT:DashedLine') {
-    if(isDefaultValid(target) && (is(source, 'PPINOT:StateConditionMeasure') 
-    || is(source, 'PPINOT:StateConditionAggregatedMeasure') || is(source, 'PPINOT:StateCondAggMeasureNumber')
-    || is(source, 'PPINOT:StateCondAggMeasurePercentage') || is(source, 'PPINOT:StateCondAggMeasureAll')
-    || is(source, 'PPINOT:StateCondAggMeasureAtLeastOne') || is(source, 'PPINOT:StateCondAggMeasureNo')
-    || is(source, 'PPINOT:CountMeasure') || is(source, 'PPINOT:DataMeasure') || is(source, 'PPINOT:TimeMeasure')
-    || is(source, 'PPINOT:CountAggregatedMeasure') || is(source, 'PPINOT:DataAggregatedMeasure') || is(source, 'PPINOT:TimeAggregatedMeasure')))
-      return { type: connection }
-    else
-      return false
-  }
-
-  else if (isPPINOTAggregatedElement(source) && is(target, 'bpmn:DataObjectReference')) {
-    return { 
-      type: 'PPINOT:GroupedBy',
-      waypoints: [
-        { x: source.x + source.width/2, y: source.y + source.height/2 },
-        { x: source.x + source.width/2, y: (source.y + target.y)/2 },
-        { x: target.x + target.width/2, y: (source.y + target.y)/2 },
-        { x: target.x + target.width/2, y: target.y + target.height/2 }
-      ]
-    };
-  }
-  else if(connection === 'PPINOT:ToConnection') {
-    if((isDefaultValid(target) || is(target, 'bpmn:Participant')) && 
-       (is(source, 'PPINOT:TimeMeasure') || is(source, 'PPINOT:TimeAggregatedMeasure'))) {
-      return { 
-        type: connection,
-        waypoints: [
-          { x: source.x + source.width/2, y: source.y + source.height/2 },
-          { x: (source.x + target.x)/2, y: source.y + source.height/2 },
-          { x: (source.x + target.x)/2, y: target.y + target.height/2 },
-          { x: target.x + target.width/2, y: target.y + target.height/2 }
-        ]
-      };
+  // Prohibir mezcla PPINOT/RALph en cualquier dirección o tipo de conexión
+  if (connection && typeof connection === 'string' && connection.indexOf('PPINOT:') === 0) {
+    if (isRALphElement(source) || isRALphElement(target)) {
+      return false;
     }
-    return false;
   }
-  else if(connection === 'PPINOT:FromConnection') {
-    if((isDefaultValid(target) || is(target, 'bpmn:Participant') )
-    && (is(source, 'PPINOT:TimeMeasure') || is(source, 'PPINOT:CyclicTimeMeasure')
-    || is(source, 'PPINOT:CyclicTimeMeasureSUM') || is(source, 'PPINOT:CyclicTimeMeasureMAX')
-    || is(source, 'PPINOT:CyclicTimeMeasureMIN') || is(source, 'PPINOT:CyclicTimeMeasureAVG')
-    || is(source, 'PPINOT:CyclicTimeAggregatedMeasureSUM') || is(source, 'PPINOT:CyclicTimeAggregatedMeasureMAX')
-    || is(source, 'PPINOT:CyclicTimeAggregatedMeasureMIN') || is(source, 'PPINOT:CyclicTimeAggregatedMeasureAVG')
-    || is(source, 'PPINOT:CyclicTimeAggregatedMeasure') || is(source, 'PPINOT:TimeAggregatedMeasure')
-    || is(source, 'PPINOT:TimeAggregatedMeasureMAX') || is(source, 'PPINOT:TimeAggregatedMeasureMIN') || is(source, 'PPINOT:TimeAggregatedMeasureAVG') || is(source, 'PPINOT:TimeAggregatedMeasureSUM')))
+  if (connection && typeof connection === 'string' && connection.indexOf('RALph:') === 0) {
+    if (isPPINOTElement(source) || isPPINOTElement(target)) {
+      return false;
+    }
+  }
+
+  // Early global guard: only one total (To or From) per source
+  if (connection === 'PPINOT:ToConnection' || connection === 'PPINOT:FromConnection') {
+    // Cardinalidad 1 por tipo: cada elemento puede tener a la vez 1 To y 1 From, pero no duplicados del mismo tipo
+    var sourceSameType = countConnectionsOfType(source, connection);
+    var targetSameType = countConnectionsOfType(target, connection);
+    if (sourceSameType >= 1 || targetSameType >= 1) {
+      return false;
+    }
+  }
+
+  if(connection === 'PPINOT:ResourceArc'){
+    if(isPPINOTResourceArcElement(source) && (isDefaultValid(target) || is(target, 'bpmn:Participant'))){
       return { type: connection }
+    }
+  }
+
+  if(connection === 'PPINOT:AggregatedConnection'){
+    if(isPPINOTAggregatedElement(source) && isPPINOTShape(target)){
+      return { type: connection }
+    }
+  }
+
+  if(connection === 'PPINOT:GroupedBy'){
+    if(isPPINOTAggregatedElement(source) && is(target, 'bpmn:DataObjectReference')){
+      return { type: connection }
+    }
+  }
+
+  if(connection === 'PPINOT:ToConnection'){
+    if(isDefaultValid(target) || is(target, 'bpmn:Participant')){
+      if((is(source, 'PPINOT:TimeMeasure') || is(source, 'PPINOT:TimeAggregatedMeasure')) )
+      {
+        // Cardinalidad 1 por tipo (To): permitir 1 To y 1 From, pero no más de 1 To
+        if (countConnectionsOfType(source, 'PPINOT:ToConnection') >= 1) return false;
+        if (countConnectionsOfType(target, 'PPINOT:ToConnection') >= 1) return false;
+        // Prevent To/From duplication between the same pair (redundant and overload)
+        if (hasToFromBetween(source, target)) return false;
+        // block identical duplicate
+        if (hasIdenticalConnection(source, target, connection)) return false;
+        // Prevent same-metric duplicate on same BPMN target
+        var dupMetric = (target.incoming || []).some(function(c){
+          return c && c.type === connection && c.source && c.source.type === source.type;
+        });
+        if (dupMetric) { return false; }
+        return { type: connection }
+      }
+      else
+        return false
+    }
+  }
+  else if(connection === 'PPINOT:DashedLine'){
+    if(is(source, 'PPINOT:AggregatedMeasure') && (isDefaultValid(target) || is(target, 'bpmn:Participant')))
+      return { type: connection }
+  }
+  else if(connection === 'PPINOT:MyConnection'){
+    if(is(source, 'PPINOT:AggregatedMeasure') && (isDefaultValid(target) || is(target, 'bpmn:Participant')))
+      return { type: connection }
+  }
+  else if(connection === 'PPINOT:FromConnection'){
+    if ((isDefaultValid(target) || is(target, 'bpmn:Participant')) &&
+        (is(source, 'PPINOT:AggregatedMeasure') || is(source, 'PPINOT:TimeAggregatedMeasure') || is(source, 'PPINOT:CyclicTimeAggregatedMeasure') || is(source, 'PPINOT:CountAggregatedMeasure') || is(source, 'PPINOT:BaseMeasure') || is(source, 'PPINOT:DerivedSingleInstanceMeasure') || is(source, 'PPINOT:DerivedMultiInstanceMeasure') || is(source, 'PPINOT:DataAggregatedMeasure') || is(source, 'PPINOT:DataPropertyConditionAggregatedMeasure') || is(source, 'PPINOT:StateConditionAggregatedMeasure') || is(source, 'PPINOT:TimeMeasure') || is(source, 'PPINOT:CyclicTimeMeasure') || is(source, 'PPINOT:CountMeasure') || is(source, 'PPINOT:DataMeasure') || is(source, 'PPINOT:DataPropertyConditionMeasure') || is(source, 'PPINOT:StateConditionMeasure') || is(source, 'PPINOT:StateCondAggMeasureNumber') || is(source, 'PPINOT:StateCondAggMeasurePercentage') || is(source, 'PPINOT:StateCondAggMeasureAll') || is(source, 'PPINOT:StateCondAggMeasureAtLeastOne') || is(source, 'PPINOT:StateCondAggMeasureNo')
+        || is(source, 'PPINOT:CountMeasure') || is(source, 'PPINOT:DataMeasure') || is(source, 'PPINOT:TimeMeasure')
+        || is(source, 'PPINOT:CountAggregatedMeasure') || is(source, 'PPINOT:DataAggregatedMeasure') || is(source, 'PPINOT:TimeAggregatedMeasure')))
+      {
+        // Cardinalidad 1 por tipo (From): permitir 1 To y 1 From, pero no más de 1 From
+        if (countConnectionsOfType(source, 'PPINOT:FromConnection') >= 1) return false;
+        if (countConnectionsOfType(target, 'PPINOT:FromConnection') >= 1) return false;
+        // Prevent To/From duplication between the same pair (redundant and overload)
+        if (hasToFromBetween(source, target)) return false;
+        // block identical duplicate and circular
+        if (hasIdenticalConnection(source, target, connection) || hasReverseConnection(source, target, connection)) return false;
+        // Avoid duplicated metric on same BPMN target
+        var dupMetricFrom = (target.incoming || []).some(function(c){
+          return c && c.type === connection && c.source && c.source.type === source.type;
+        });
+        if (dupMetricFrom) { return false; }
+        return { type: connection }
+      }
     else
       return false
   }
 
-  else if(connection === 'PPINOT:StartConnection') {
-    if((isDefaultValid(target) || is(target, 'bpmn:Participant')) && (is(source, 'PPINOT:CountMeasure') 
+  else if (connection === 'PPINOT:StartConnection') {
+    if ((isDefaultValid(target) || is(target, 'bpmn:Participant')) && (is(source, 'PPINOT:CountMeasure') 
     || is(source, 'PPINOT:CountAggregatedMeasure') || is(source, 'PPINOT:CountAggregatedMeasureSUM')
     || is(source, 'PPINOT:CountAggregatedMeasureMAX') || is(source, 'PPINOT:CountAggregatedMeasureMIN')
     || is(source, 'PPINOT:CountAggregatedMeasureAVG')))
-      return { type: connection }
+      {
+        if (hasIdenticalConnection(source, target, connection) || hasReverseConnection(source, target, connection)) return false;
+        var dupMetricStart = (target.incoming || []).some(function(c){
+          return c && c.type === connection && c.source && c.source.type === source.type;
+        });
+        if (dupMetricStart) { return false; }
+        return { type: connection }
+      }
     else
       return false
   }
-  else if(connection === 'PPINOT:EndConnection') {
+  else if(connection === 'PPINOT:EndConnection'){
     if((isDefaultValid(target) || is(target, 'bpmn:Participant')) && (is(source, 'PPINOT:CountMeasure') 
     || is(source, 'PPINOT:CountAggregatedMeasure') || is(source, 'PPINOT:CountAggregatedMeasureSUM')
     || is(source, 'PPINOT:CountAggregatedMeasureMAX') || is(source, 'PPINOT:CountAggregatedMeasureMIN')
     || is(source, 'PPINOT:CountAggregatedMeasureAVG')))
-      return { type: connection }
+      {
+        if (hasIdenticalConnection(source, target, connection) || hasReverseConnection(source, target, connection)) return false;
+        var dupMetricEnd = (target.incoming || []).some(function(c){
+          return c && c.type === connection && c.source && c.source.type === source.type;
+        });
+        if (dupMetricEnd) { return false; }
+        return { type: connection }
+      }
     else
       return false
   }
   else {
     if (!isPPINOT(source) && !isPPINOT(target))
       return;
+    
+    // Forbid PPI to PPI connections
+    if (is(source, 'PPINOT:Ppi') && is(target, 'PPINOT:Ppi')) {
+      return false;
+    }
+
+    // Forbid connecting PPINOT elements to non-BPMN elements (e.g., RALph)
+    if ((isPPINOTElement(source) && !isDefaultValid(target) && !is(target, 'bpmn:Participant')) ||
+        (isPPINOTElement(target) && !isDefaultValid(source) && !is(source, 'bpmn:Participant'))) {
+      return false;
+    }
+
+    // Block identical duplicates generically (allow reverse)
+    if (hasIdenticalConnection(source, target, connection)) {
+      return false;
+    }
     else if((isDefaultValid(source) && isPPINOTResourceArcElement(target)) 
     || (isDefaultValid(target) && isPPINOTResourceArcElement(source))) {
       return {type: 'PPINOT:ResourceArc'}
@@ -266,7 +351,10 @@ PPINOTRules.prototype.init = function() {
     var source = context.source,
         target = context.target,
         type = context.type;
-
+    // Bloqueo preventivo: no permitir conexiones cruzadas PPINOT↔RALph aunque el tipo sea genérico (p.ej., bpmn:Association)
+    if ((isPPINOTElement(source) && isRALphElement(target)) || (isPPINOTElement(target) && isRALphElement(source))) {
+      return false;
+    }
     return connect(source, target, type);
   });
 
@@ -298,6 +386,17 @@ PPINOTRules.prototype.canConnect = function (source, target, connection) {
   if (nonExistingOrLabel(source) || nonExistingOrLabel(target)) {
     return null;
   }
+
+  // Early guard here too (hover/preview path)
+  if (connection && (connection.type === 'PPINOT:ToConnection' || connection.type === 'PPINOT:FromConnection')) {
+    var total = (source && source.outgoing) ? source.outgoing.filter(function(c){
+      return c && (c.type === 'PPINOT:ToConnection' || c.type === 'PPINOT:FromConnection');
+    }).length : 0;
+    if (total >= 1) {
+      return false;
+    }
+  }
+
   return connect(source, target, connection.type)
 
 }

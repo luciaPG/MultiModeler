@@ -110,7 +110,7 @@ export function getBpmnTasks() {
       if (name && !tasks.includes(name)) {
         const isAutoTask = name.startsWith('Aprobar ');
         if (isAutoTask) {
-          console.log(`🤖 Excluyendo tarea automática de matriz RASCI: ${name}`);
+          
         } else {
           tasks.push(name);
         }
@@ -124,10 +124,9 @@ export function getBpmnTasks() {
 
 // Función para limpiar tareas automáticas de la matriz existente
 export function cleanAutoTasksFromMatrix() {
-  console.log('🧹 Limpiando tareas automáticas de la matriz RASCI...');
   
   if (!rasciManager.rasciMatrixData) {
-    console.log('📋 No hay matriz para limpiar');
+    
     return 0;
   }
   
@@ -138,7 +137,7 @@ export function cleanAutoTasksFromMatrix() {
 
    
   
-  console.log(`🔍 Encontradas ${autoTasks.length} tareas automáticas/fantasma en matriz existente:`);
+  
   autoTasks.forEach(task => {
     console.log(`  🗑️ Eliminando: ${task}`);
     delete rasciManager.rasciMatrixData[task];
@@ -157,7 +156,7 @@ export function cleanAutoTasksFromMatrix() {
       autoSaveRasciState();
     }
     
-    console.log(`✅ Eliminadas ${autoTasks.length} tareas automáticas de la matriz`);
+    
   }
   
   return autoTasks.length;
@@ -166,12 +165,11 @@ export function cleanAutoTasksFromMatrix() {
 // Función para limpiar tareas fantasma al inicio
 export function cleanGhostTasksOnStartup() {
   // Optimización: Log eliminado para mejorar rendimiento
-  // console.log('🧹 Limpieza inicial de tareas fantasma...');
-  
+  // 
   // Obtener datos de la matriz desde localStorage
   const matrixData = RasciStore.getMatrix();
   if (!matrixData || Object.keys(matrixData).length === 0) {
-    console.log('📋 No hay matriz para limpiar en startup');
+    
     return;
   }
   
@@ -179,7 +177,7 @@ export function cleanGhostTasksOnStartup() {
   const ghostTasks = allTasks.filter(taskId => taskId.startsWith('root_'));
   
   if (ghostTasks.length > 0) {
-    console.log(`🔍 Encontradas ${ghostTasks.length} tareas fantasma en startup:`);
+    
     ghostTasks.forEach(task => {
       console.log(`  🗑️ Eliminando tarea fantasma: ${task}`);
       delete matrixData[task];
@@ -187,25 +185,24 @@ export function cleanGhostTasksOnStartup() {
     
     // Guardar la matriz limpia
     RasciStore.setMatrix(matrixData);
-    console.log(`✅ ${ghostTasks.length} tareas fantasma eliminadas en startup`);
+    
   } else {
     // Optimización: Log eliminado para mejorar rendimiento
-    // console.log('✅ No hay tareas fantasma que limpiar en startup');
+    // 
   }
 }
 
 // Función para limpiar tareas fantasma periódicamente
 export function startGhostTaskCleaner() {
   // Optimización: Log eliminado para mejorar rendimiento
-  // console.log('🧹 Iniciando limpiador periódico de tareas fantasma...');
-  
+  // 
   setInterval(() => {
     if (rasciManager.rasciMatrixData) {
       const allTasks = Object.keys(rasciManager.rasciMatrixData);
       const ghostTasks = allTasks.filter(taskId => taskId.startsWith('root_'));
       
       if (ghostTasks.length > 0) {
-        console.log(`🧹 Limpiador periódico: eliminando ${ghostTasks.length} tareas fantasma`);
+        
         ghostTasks.forEach(task => {
           delete rasciManager.rasciMatrixData[task];
           console.log(`  🗑️ Eliminada: ${task}`);
@@ -222,22 +219,21 @@ export function startGhostTaskCleaner() {
 
 // Función para mapeo directo usando sistema RALph visual
 export async function executeVisualRalphMapping() {
-  console.log('🎯 === EJECUTANDO MAPEO RALph VISUAL ===');
   
   try {
     const modeler = rasciManager.getBpmnModeler();
     if (!modeler) {
-      console.log('❌ No hay modeler BPMN disponible');
+      
       return false;
     }
 
     const matrixData = rasciManager.rasciMatrixData;
     if (!matrixData || Object.keys(matrixData).length === 0) {
-      console.log('❌ No hay datos de matriz para mapear');
+      
       return false;
     }
 
-    console.log('📊 Estado actual de la matriz antes del mapeo:');
+    
     Object.keys(matrixData).forEach(taskName => {
       const assignments = matrixData[taskName];
       const assignmentText = Object.keys(assignments)
@@ -252,27 +248,23 @@ export async function executeVisualRalphMapping() {
     if (sr && typeof sr.getFunction === 'function') {
       const executeRasciToRalphMapping = sr.getFunction('executeRasciToRalphMapping');
       if (typeof executeRasciToRalphMapping === 'function') {
-        console.log('🔄 Forzando limpieza y mapeo completo...');
         
         try {
           // LIMPIAR datos cacheados que pueden estar interfiriendo
           localStorage.removeItem('previousRasciMatrixData');
-          console.log('🧹 Limpiando datos cacheados...');
           
           // VERIFICAR que rasciManager.rasciMatrixData tiene los datos correctos
-          console.log('🔍 Verificando rasciManager.rasciMatrixData:', rasciManager.rasciMatrixData);
           
           // DEBUG: Verificar que la función está disponible
-          console.log('🔍 DEBUG - Tipo de executeRasciToRalphMapping:', typeof executeRasciToRalphMapping);
-          console.log('🔍 DEBUG - rasciManager disponible:', !!rasciManager);
+          
+          
           console.log('🔍 DEBUG - getBpmnModeler disponible:', !!rasciManager.getBpmnModeler());
-          console.log('🔍 DEBUG - rasciMatrixData disponible:', !!rasciManager.rasciMatrixData);
+          
           console.log('🔍 DEBUG - Keys en rasciMatrixData:', Object.keys(rasciManager.rasciMatrixData || {}));
           
           // IMPORTANTE: Forzar true para que limpie todo y reaplique desde matriz actual
           console.log('🚀 LLAMANDO a executeRasciToRalphMapping(true)...');
           const result = executeRasciToRalphMapping(true); // Forzar ejecución
-          console.log('🔍 RESULTADO de executeRasciToRalphMapping:', result);
           
           // Si el resultado es undefined, usar fallback inmediatamente
           if (result === undefined) {
@@ -282,11 +274,10 @@ export async function executeVisualRalphMapping() {
               if (typeof executeSimpleRasciMapping === 'function') {
                 console.log('🚀 Ejecutando executeSimpleRasciMapping como fallback...');
                 const fallbackResult = executeSimpleRasciMapping(modeler, rasciManager.rasciMatrixData);
-                console.log('✅ Resultado del fallback:', fallbackResult);
                 
                 // Continuar con el canvas refresh
                 try {
-                  console.log('🔄 Forzando refresh del canvas tras fallback...');
+                  
                   const canvas = modeler.get('canvas');
                   if (canvas) {
                     const currentZoom = canvas.zoom();
@@ -296,7 +287,7 @@ export async function executeVisualRalphMapping() {
                     if (allElements.length > 0) {
                       canvas.zoom('fit-viewport');
                     }
-                    console.log('✅ Canvas refresh tras fallback ejecutado exitosamente');
+                    
                   }
                 } catch (refreshError) {
                   console.log('⚠️ Error en canvas refresh tras fallback (no crítico):', refreshError);
@@ -314,11 +305,10 @@ export async function executeVisualRalphMapping() {
             await result;
           }
           
-          console.log('✅ Mapeo RALph visual ejecutado - Datos de matriz aplicados');
           
           // CRÍTICO: Forzar refresh del canvas para que se vean los cambios
           try {
-            console.log('🔄 Forzando refresh del canvas para visualizar cambios...');
+            
             const canvas = modeler.get('canvas');
             if (canvas) {
               // Forzar un zoom para trigger el redraw
@@ -332,7 +322,7 @@ export async function executeVisualRalphMapping() {
                 canvas.zoom('fit-viewport');
               }
               
-              console.log('✅ Canvas refresh ejecutado exitosamente');
+              
             }
           } catch (refreshError) {
             console.log('⚠️ Error en canvas refresh (no crítico):', refreshError);
@@ -341,14 +331,13 @@ export async function executeVisualRalphMapping() {
           return true;
         } catch (error) {
           console.error('❌ Error en mapeo RALph visual:', error);
-          console.log('🔄 FALLBACK: Intentando mapeo directo con executeSimpleRasciMapping...');
           
           // Fallback directo usando la función importada
           try {
             if (typeof executeSimpleRasciMapping === 'function') {
               console.log('🚀 Ejecutando executeSimpleRasciMapping como fallback...');
               const result = executeSimpleRasciMapping(modeler, rasciManager.rasciMatrixData);
-              console.log('✅ Resultado del fallback:', result);
+              
               return true;
             }
           } catch (fallbackError) {
@@ -362,11 +351,11 @@ export async function executeVisualRalphMapping() {
         
         // Fallback directo
         try {
-          console.log('🔄 FALLBACK: Usando executeSimpleRasciMapping directamente...');
+          
           if (typeof executeSimpleRasciMapping === 'function') {
             console.log('🚀 Ejecutando executeSimpleRasciMapping como fallback...');
             const result = executeSimpleRasciMapping(modeler, rasciManager.rasciMatrixData);
-            console.log('✅ Resultado del fallback:', result);
+            
             return true;
           }
         } catch (fallbackError) {
@@ -378,11 +367,11 @@ export async function executeVisualRalphMapping() {
       
       // Fallback directo cuando no hay service registry
       try {
-        console.log('🔄 FALLBACK: Service registry no disponible, usando executeSimpleRasciMapping...');
+        
         if (typeof executeSimpleRasciMapping === 'function') {
           console.log('🚀 Ejecutando executeSimpleRasciMapping como fallback...');
           const result = executeSimpleRasciMapping(modeler, rasciManager.rasciMatrixData);
-          console.log('✅ Resultado del fallback:', result);
+          
           return true;
         }
       } catch (fallbackError) {
@@ -401,12 +390,11 @@ export async function executeVisualRalphMapping() {
 
 // Función para mapeo directo de matriz a canvas (respaldo)
 export async function executeDirectMatrixToCanvasMapping() {
-  console.log('🎯 === EJECUTANDO MAPEO DIRECTO MATRIZ → CANVAS ===');
   
   // PRIMERO: Intentar mapeo RALph visual (funcional)
   const visualMappingSuccess = await executeVisualRalphMapping();
   if (visualMappingSuccess) {
-    console.log('✅ Mapeo visual RALph ejecutado exitosamente');
+    
     return true;
   }
   
@@ -415,17 +403,17 @@ export async function executeDirectMatrixToCanvasMapping() {
   try {
     const modeler = rasciManager.getBpmnModeler();
     if (!modeler) {
-      console.log('❌ No hay modeler BPMN disponible');
+      
       return false;
     }
     
     const matrixData = rasciManager.rasciMatrixData;
     if (!matrixData || Object.keys(matrixData).length === 0) {
-      console.log('❌ No hay datos de matriz para mapear');
+      
       return false;
     }
     
-    console.log('🔄 Aplicando asignaciones RASCI al canvas...');
+    
     const elementRegistry = modeler.get('elementRegistry');
     let mappedElements = 0;
     
@@ -443,7 +431,6 @@ export async function executeDirectMatrixToCanvasMapping() {
       });
       
       if (element) {
-        console.log(`🎯 Mapeando tarea: ${taskName}`);
         
         // Crear string de asignaciones RASCI
         const assignments = [];
@@ -477,11 +464,11 @@ export async function executeDirectMatrixToCanvasMapping() {
             rasciDoc.text = `RASCI: ${assignmentText}`;
             businessObject.documentation.push(rasciDoc);
             
-            console.log(`  ✅ Aplicado: ${assignmentText}`);
+            
             mappedElements++;
             
           } catch (error) {
-            console.log(`  ❌ Error aplicando asignaciones a ${taskName}:`, error);
+            
           }
         }
       } else {
@@ -489,11 +476,10 @@ export async function executeDirectMatrixToCanvasMapping() {
       }
     });
     
-    console.log(`✅ Mapeo directo completado: ${mappedElements} elementos mapeados`);
     
     // CRÍTICO: Forzar refresh del canvas para que se vean los cambios
     try {
-      console.log('🔄 Forzando refresh del canvas tras mapeo directo...');
+      
       const canvas = modeler.get('canvas');
       if (canvas) {
         // Forzar un zoom para trigger el redraw
@@ -507,7 +493,7 @@ export async function executeDirectMatrixToCanvasMapping() {
           canvas.zoom('fit-viewport');
         }
         
-        console.log('✅ Canvas refresh tras mapeo directo ejecutado exitosamente');
+        
       }
     } catch (refreshError) {
       console.log('⚠️ Error en canvas refresh tras mapeo directo (no crítico):', refreshError);
@@ -696,7 +682,7 @@ export function renderMatrix(panel, rolesArray, autoSaveFn) {
     (!rasciManager.rasciRoles || rasciManager.rasciRoles.length === 0);
 
   if (shouldClear) {
-    console.log('🧹 Limpiando matriz RASCI - no hay datos guardados');
+    
     rasciManager.rasciMatrixData = {};
     const currentTasks = rasciManager.getBpmnModeler() ? getBpmnTasks() : [];
     currentTasks.forEach(task => {
@@ -712,7 +698,7 @@ export function renderMatrix(panel, rolesArray, autoSaveFn) {
 
   // Preservar roles guardados si existen
   if (rasciManager.rasciRoles && rasciManager.rasciRoles.length > 0) {
-    console.log('📋 Restaurando roles guardados:', rasciManager.rasciRoles);
+    
     roles = rasciManager.rasciRoles;
   } else {
     rasciManager.rasciRoles = roles;
@@ -730,7 +716,7 @@ export function renderMatrix(panel, rolesArray, autoSaveFn) {
   matrixContainer.innerHTML = '';
   matrixContainer.style.cssText = `
     width: 100%; height: 100%; max-height: calc(100vh - 180px); flex: 1; position: relative;
-    border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; padding: 0; margin: 0; overflow: auto; display: block;
+    border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; padding: 0; margin: 0; overflow: visible; display: block;
   `;
 
   const table = document.createElement('table');
@@ -865,7 +851,7 @@ export function renderMatrix(panel, rolesArray, autoSaveFn) {
   const allTasks = Object.keys(rasciManager.rasciMatrixData);
   const ghostTasks = allTasks.filter(taskId => taskId.startsWith('root_'));
   if (ghostTasks.length > 0) {
-    console.log(`🧹 Eliminando ${ghostTasks.length} tareas fantasma durante renderizado:`);
+    
     ghostTasks.forEach(task => {
       console.log(`  🗑️ Eliminando: ${task}`);
       delete rasciManager.rasciMatrixData[task];
@@ -1153,17 +1139,16 @@ export function deleteRole(roleIndex, panel) {
   
   // 1. ELIMINAR EL ROL DEL ARRAY
   roles.splice(roleIndex, 1);
-  console.log(`✅ Rol eliminado del array. Roles restantes:`, roles);
   
   // 2. ELIMINAR TODAS LAS RESPONSABILIDADES DE ESTE ROL EN LA MATRIZ
   if (rasciManager.rasciMatrixData) {
     Object.keys(rasciManager.rasciMatrixData).forEach(taskName => {
       if (rasciManager.rasciMatrixData[taskName] && rasciManager.rasciMatrixData[taskName][roleToDelete]) {
-        console.log(`🧹 Eliminando responsabilidad "${rasciManager.rasciMatrixData[taskName][roleToDelete]}" del rol "${roleToDelete}" en tarea "${taskName}"`);
+        
         delete rasciManager.rasciMatrixData[taskName][roleToDelete];
       }
     });
-    console.log('✅ Responsabilidades del rol eliminadas de la matriz');
+    
   }
   
   // 3. ACTUALIZAR RASCI ROLES EN EL MANAGER
@@ -1171,7 +1156,7 @@ export function deleteRole(roleIndex, panel) {
     const roleManagerIndex = rasciManager.rasciRoles.indexOf(roleToDelete);
     if (roleManagerIndex !== -1) {
       rasciManager.rasciRoles.splice(roleManagerIndex, 1);
-      console.log('✅ Rol eliminado del rasciManager.rasciRoles');
+      
     }
   }
   
@@ -1179,17 +1164,16 @@ export function deleteRole(roleIndex, panel) {
   try {
     if (typeof autoSaveRasciState === 'function') {
       autoSaveRasciState();
-      console.log('✅ Estado guardado con autoSaveRasciState');
+      
     }
     
     setTimeout(() => {
       rasciManager.forceSaveRasciState();
-      console.log('✅ Estado forzado con forceSaveRasciState');
+      
     }, 10);
     
     // Guardar roles en localStorage directamente también
     RasciStore.saveRoles(roles);
-    console.log('✅ Roles guardados en RasciStore');
     
   } catch (error) {
     console.error('❌ Error guardando estado tras eliminación de rol:', error);
@@ -1197,21 +1181,20 @@ export function deleteRole(roleIndex, panel) {
   
   // 5. RE-RENDERIZAR LA MATRIZ
   renderMatrix(panel, roles, autoSaveRasciState);
-  console.log('✅ Matriz re-renderizada');
   
   // 6. VALIDAR MATRIZ TRAS EL CAMBIO
   setTimeout(() => {
     const validator = getValidator();
     if (validator && typeof validator.forceValidation === 'function') {
       validator.forceValidation();
-      console.log('✅ Validación forzada tras eliminación de rol');
+      
     }
   }, 800);
   
   // 7. TRIGGER CALLBACK PARA ACTUALIZAR CANVAS SI AUTO-MAPEO ESTÁ ACTIVADO
   if (onRasciMatrixUpdatedFunction && typeof onRasciMatrixUpdatedFunction === 'function') {
     setTimeout(() => {
-      console.log('🔄 Triggering callback tras eliminación de rol...');
+      
       onRasciMatrixUpdatedFunction();
     }, 100);
   }
@@ -1234,7 +1217,7 @@ export function updateMatrixFromDiagram() {
     const allTasks = Object.keys(rasciManager.rasciMatrixData);
     const ghostTasks = allTasks.filter(taskId => taskId.startsWith('root_'));
     if (ghostTasks.length > 0) {
-      console.log(`🧹 Limpieza adicional: eliminando ${ghostTasks.length} tareas fantasma`);
+      
       ghostTasks.forEach(task => {
         delete rasciManager.rasciMatrixData[task];
         console.log(`  🗑️ Eliminada: ${task}`);
@@ -1460,13 +1443,13 @@ setupServiceRegistry();
 export function setOnRasciMatrixUpdatedCallback(callback) {
   onRasciMatrixUpdatedFunction = callback;
   // Optimización: Log eliminado para mejorar rendimiento
-  // console.log('✅ Callback de matriz RASCI configurado:', typeof callback);
+  // 
 }
 
 // Función para configurar el callback manualmente
 export function configureMatrixCallback() {
   // Optimización: Log eliminado para mejorar rendimiento
-  // console.log('🔧 Configurando callback de matriz RASCI...');
+  
   
   // Configurar el callback directamente
   setOnRasciMatrixUpdatedCallback(onRasciMatrixUpdated);
@@ -1475,7 +1458,7 @@ export function configureMatrixCallback() {
   if (typeof window !== 'undefined') {
     window.onRasciMatrixUpdatedFunction = onRasciMatrixUpdated;
     // Optimización: Log eliminado para mejorar rendimiento
-  // console.log('✅ Callback expuesto globalmente');
+  // 
   }
   
   return true;
@@ -1508,7 +1491,6 @@ export function initializeAutoMappingSwitch() {
 
 // Función para validar reglas críticas de RASCI
 export function validateRasciCriticalRules() {
-  console.log('🔍 Validando reglas críticas de RASCI...');
   
   const matrixData = rasciManager.getRasciMatrixData();
   const errors = [];
@@ -1526,7 +1508,7 @@ export function validateRasciCriticalRules() {
   const tasks = allTasks.filter(taskId => {
     const isAutoTask = taskId.startsWith('Aprobar ');
     if (isAutoTask) {
-      console.log(`🤖 Excluyendo tarea automática de validación: ${taskId}`);
+      
     }
     return !isAutoTask;
   });
@@ -1535,14 +1517,14 @@ export function validateRasciCriticalRules() {
   
   // Si no hay tareas de proceso, no es un error - puede ser que solo haya tareas automáticas
   if (tasks.length === 0) {
-    console.log('ℹ️ No hay tareas de proceso para validar - solo tareas automáticas');
+    
     return { isValid: true, errors: [], warnings: [] };
   }
   
   // Limpiar tareas automáticas de la matriz si existen
   const autoTasks = allTasks.filter(taskId => taskId.startsWith('Aprobar '));
   if (autoTasks.length > 0) {
-    console.log(`🧹 Limpiando ${autoTasks.length} tareas automáticas de la matriz...`);
+    
     autoTasks.forEach(taskId => {
       delete matrixData[taskId];
       console.log(`🗑️ Eliminada tarea automática: ${taskId}`);
@@ -1584,12 +1566,12 @@ export function validateRasciCriticalRules() {
   const isValid = errors.length === 0;
   
   if (isValid && warnings.length === 0) {
-    console.log('✅ Todas las reglas críticas de RASCI se cumplen');
+    
   } else if (isValid && warnings.length > 0) {
     console.log(`⚠️ Validación exitosa con ${warnings.length} advertencias`);
     warnings.forEach(warning => console.log(`  ⚠️ ${warning}`));
   } else {
-    console.log(`❌ Errores críticos encontrados: ${errors.length}, Advertencias: ${warnings.length}`);
+    
     errors.forEach(error => console.log(`  ❌ ${error}`));
     warnings.forEach(warning => console.log(`  ⚠️ ${warning}`));
   }
@@ -1607,7 +1589,6 @@ export function validateRasciCriticalRules() {
 
 // Función mejorada para el toggle con validación de reglas críticas
 export function validateAndToggleAutoMapping() {
-  console.log('🔄 === VALIDANDO Y ACTIVANDO TOGGLE AUTO MAPPING ===');
   
   const autoMappingSwitch = document.getElementById('auto-mapping-switch');
   const manualBtn = document.getElementById('manual-mapping-btn');
@@ -1618,7 +1599,6 @@ export function validateAndToggleAutoMapping() {
   }
   
   const isBeingActivated = autoMappingSwitch.checked;
-  console.log(`🎯 Usuario intentando ${isBeingActivated ? 'ACTIVAR' : 'DESACTIVAR'} el toggle`);
   
   // SIEMPRE validar reglas críticas (tanto para activar como desactivar)
   const validation = validateRasciCriticalRules();
@@ -1645,7 +1625,7 @@ export function validateAndToggleAutoMapping() {
     // NO MOSTRAR MODAL - solo logs en consola
     if (isBeingActivated) {
       console.log('🚫 Usuario intentó activar toggle con errores');
-      console.log('📋 Errores encontrados:');
+      
       validation.errors.forEach(error => console.log(`  ❌ ${error}`));
       console.log('💡 Corrige los errores en la matriz RASCI para poder activar el mapeo automático');
     } else {
@@ -1655,16 +1635,15 @@ export function validateAndToggleAutoMapping() {
     return false;
   } else {
     // NO HAY ERRORES - PERMITIR TOGGLE NORMAL
-    console.log('✅ Sin errores - Permitiendo toggle normal');
+    
     autoMappingSwitch.disabled = false; // HABILITAR EL TOGGLE
     
     // Solo permitir activación si el usuario la está solicitando
     if (isBeingActivated) {
-      console.log('✅ Validación exitosa - Permitiendo activación del toggle');
+      
       autoMappingSwitch.checked = true;
       
       // Cuando se activa el toggle, ejecutar sincronización completa INMEDIATAMENTE
-      console.log('🔄 Toggle activado - Ejecutando sincronización BIDIRECCIONAL completa...');
       
       // Ejecutar sincronización inmediatamente usando setTimeout para evitar problemas de sincronización
       setTimeout(async () => {
@@ -1698,7 +1677,7 @@ export function validateAndToggleAutoMapping() {
             const success = await executeCompleteMatrixMapping();
             
             if (success) {
-              console.log('✅ Estado actual aplicado al canvas exitosamente');
+              
             } else {
               console.log('⚠️ Mapeo completo falló, intentando mapeo directo...');
               await executeDirectMatrixToCanvasMapping();
@@ -1706,7 +1685,7 @@ export function validateAndToggleAutoMapping() {
           } catch (error) {
             console.error('❌ Error aplicando estado actual:', error);
             // Fallback: usar mapeo directo
-            console.log('🔄 Usando mapeo directo como fallback...');
+            
             await executeDirectMatrixToCanvasMapping();
           }
         } else {
@@ -1715,11 +1694,11 @@ export function validateAndToggleAutoMapping() {
           await executeCompleteMatrixMapping();
         }
         
-        console.log('✅ Sincronización BIDIRECCIONAL completa finalizada');
+        
       }, 100);
     } else {
       // Si no está siendo activado, mantener el estado actual
-      console.log('ℹ️ Toggle no está siendo activado - Manteniendo estado actual');
+      
     }
     
     // Restaurar botón manual normal
@@ -1737,7 +1716,7 @@ export function validateAndToggleAutoMapping() {
   const isEnabled = autoMappingSwitch.checked;
   console.log(`🎛️ Estado final del toggle: ${isEnabled ? 'ACTIVADO' : 'DESACTIVADO'}`);
   
-  console.log('🔄 === FIN TOGGLE AUTO MAPPING ===');
+  
   return isEnabled;
 }
 
@@ -1753,11 +1732,9 @@ export function onRasciMatrixUpdated() {
   const isAutoMappingEnabled = autoMappingSwitch ? autoMappingSwitch.checked : false;
   
   console.log(`🎛️ Estado del auto-mapeo: ${isAutoMappingEnabled ? 'ACTIVADO' : 'DESACTIVADO'}`);
-  console.log(`✅ Reglas válidas: ${hardRulesValid}`);
   
   if (isAutoMappingEnabled) {
     // Si el auto-mapeo está activado, usar el flujo completo
-    console.log('🔄 Auto-mapeo activado - Aplicando cambios mediante sistema automático...');
     
     if (!hardRulesValid) {
       pendingMappingDueToErrors = true;
@@ -1777,18 +1754,18 @@ export function onRasciMatrixUpdated() {
       return;
     }
     
-    console.log('✅ Matriz válida - activa el toggle para aplicar cambios al canvas');
+    
     return;
   }
   
   // Si no hay errores y auto-mapeo activado, ejecutar mapeo completo
   if (isAutoMappingEnabled && hardRulesValid) {
-    console.log('🔄 Ejecutando mapeo completo para auto-mapeo...');
+    
     setTimeout(async () => {
       try {
         const success = await executeCompleteMatrixMapping();
         if (success) {
-          console.log('✅ Mapeo automático ejecutado correctamente');
+          
           hasHardRuleErrorsPrev = false;
           pendingMappingDueToErrors = false;
           updateGlobalBufferState();
@@ -1802,7 +1779,6 @@ export function onRasciMatrixUpdated() {
 
 // Función SOLO para validación manual (sin afectar toggle)
 export function validateRasciMatrixSilently() {
-  console.log('🔍 Validación silenciosa de matriz RASCI...');
   
   const validation = validateRasciCriticalRules();
   
@@ -1823,7 +1799,6 @@ export function validateRasciMatrixSilently() {
 
 // Función para actualizar la UI basada en el estado de errores
 export function updateUIForErrorState() {
-  console.log('🔄 Actualizando UI basada en estado de errores...');
   
   const validation = validateRasciCriticalRules();
   const autoMappingSwitch = document.getElementById('auto-mapping-switch');
@@ -1848,7 +1823,6 @@ export function updateUIForErrorState() {
     }
   } else {
     // NO HAY ERRORES - PERMITIR TOGGLE NORMAL
-    console.log('✅ Sin errores - Permitiendo toggle normal');
     
     if (autoMappingSwitch) {
       autoMappingSwitch.disabled = false; // HABILITAR EL TOGGLE
@@ -1872,7 +1846,6 @@ export function updateUIForErrorState() {
 
 // Función para forzar toggle a desactivado cuando hay errores
 export function forceToggleDisabledOnErrors() {
-  console.log('🔍 Verificando errores para forzar toggle a desactivado...');
   
   const validation = validateRasciCriticalRules();
   const autoMappingSwitch = document.getElementById('auto-mapping-switch');
@@ -1896,7 +1869,6 @@ export function forceToggleDisabledOnErrors() {
 
 // Función para validar reglas duras en tiempo real
 export function validateHardRulesInRealTime() {
-  console.log('🔍 Validando reglas duras en tiempo real...');
   
   const validation = validateRasciCriticalRules();
   
@@ -1930,7 +1902,6 @@ export function validateHardRulesInRealTime() {
     return false; // Reglas duras no cumplidas
   }
   
-  console.log('✅ Reglas duras cumplidas - Mapeo disponible');
   
   // HABILITAR toggle si no hay errores
   const autoMappingSwitch = document.getElementById('auto-mapping-switch');
@@ -1956,9 +1927,7 @@ export function validateHardRulesInRealTime() {
   
   // Si veníamos de errores o hay cambios pendientes, aplicar estado bufferizado y mapear
   if (hasHardRuleErrorsPrev || pendingMappingDueToErrors) {
-    console.log('🔄 Aplicando estado bufferizado tras corregir errores...');
-    console.log('🔍 DEBUG - hasHardRuleErrorsPrev:', hasHardRuleErrorsPrev);
-    console.log('🔍 DEBUG - pendingMappingDueToErrors:', pendingMappingDueToErrors);
+    
     console.log('🔍 DEBUG - bufferedMatrixState keys:', bufferedMatrixState ? Object.keys(bufferedMatrixState).length : 'null');
     
     // Usar la función específica para aplicar estado bufferizado
@@ -1970,10 +1939,9 @@ export function validateHardRulesInRealTime() {
 
 // Función para forzar aplicación de estado bufferizado
 export async function forceApplyBufferedState() {
-  console.log('🔄 === FORZANDO APLICACIÓN DE ESTADO BUFFERIZADO ===');
   
   if (!bufferedMatrixState || Object.keys(bufferedMatrixState).length === 0) {
-    console.log('❌ No hay estado bufferizado para aplicar');
+    
     return false;
   }
   
@@ -1991,7 +1959,7 @@ export async function forceApplyBufferedState() {
     renderMatrix(panel, currentRoles, null);
   }
   
-  console.log('✅ Estado bufferizado aplicado');
+  
   console.log('🔍 DEBUG - Estado después:', Object.keys(rasciManager.rasciMatrixData || {}).length, 'tareas');
   
   // Resetear flags
@@ -2003,7 +1971,7 @@ export async function forceApplyBufferedState() {
   updateGlobalBufferState();
   
   // Ejecutar mapeo
-  console.log('🔄 Ejecutando mapeo después de aplicar estado bufferizado...');
+  
   return executeCompleteMatrixMapping();
 }
 
@@ -2013,12 +1981,12 @@ export async function executeCompleteMatrixMapping() {
   
   // 1. Verificar que tenemos datos
   if (!rasciManager.rasciMatrixData || Object.keys(rasciManager.rasciMatrixData).length === 0) {
-    console.log('❌ No hay datos de matriz para mapear');
+    
     return false;
   }
   
   if (!rasciManager.getBpmnModeler()) {
-    console.log('❌ No hay modeler BPMN disponible');
+    
     return false;
   }
   
@@ -2036,21 +2004,20 @@ export async function executeCompleteMatrixMapping() {
       const currentRoles = rasciManager.rasciRoles || [];
       renderMatrix(panel, currentRoles, null);
     }
-    console.log('✅ Estado bufferizado aplicado');
+    
     console.log('🔍 DEBUG - Estado después de aplicar buffer:', Object.keys(rasciManager.rasciMatrixData || {}).length, 'tareas');
   } else {
-    console.log('🔍 DEBUG - No hay estado bufferizado para aplicar');
+    
   }
   
   // 3. Ejecutar mapeo completo de toda la matriz
   try {
-    console.log('🔄 Ejecutando mapeo directo para garantizar limpieza de asignaciones previas...');
     
     // SIEMPRE usar mapeo directo para garantizar que se limpien las asignaciones previas
     const directMappingSuccess = await executeDirectMatrixToCanvasMapping();
     
     if (directMappingSuccess) {
-      console.log('✅ Mapeo directo ejecutado exitosamente - Asignaciones previas limpiadas');
+      
       // Resetear flags y buffer
       hasHardRuleErrorsPrev = false;
       pendingMappingDueToErrors = false;
@@ -2061,7 +2028,6 @@ export async function executeCompleteMatrixMapping() {
       console.log('🎉 Mapeo completo de toda la matriz ejecutado - TODOS los elementos mapeados al canvas');
       return true;
     } else {
-      console.log('❌ El mapeo directo falló, intentando mapeo vía service registry como respaldo...');
       
       // Respaldo: usar service registry
       const sr = getServiceRegistry();
@@ -2070,7 +2036,6 @@ export async function executeCompleteMatrixMapping() {
       if (sr && typeof sr.getFunction === 'function') {
         const executeRasciToRalphMapping = sr.getFunction('executeRasciToRalphMapping');
         if (typeof executeRasciToRalphMapping === 'function') {
-          console.log('🔄 Ejecutando mapeo vía service registry como respaldo...');
           
           try {
             const result = executeRasciToRalphMapping(true); // Forzar ejecución
@@ -2081,7 +2046,7 @@ export async function executeCompleteMatrixMapping() {
             }
             
             mappingExecuted = true;
-            console.log('✅ Mapeo vía service registry ejecutado como respaldo');
+            
           } catch (error) {
             console.error('❌ Error en mapeo vía service registry:', error);
           }
@@ -2099,7 +2064,7 @@ export async function executeCompleteMatrixMapping() {
         console.log('🎉 Mapeo ejecutado vía respaldo - elementos mapeados al canvas');
         return true;
       } else {
-        console.log('❌ No se pudo ejecutar el mapeo completo por ningún método');
+        
         return false;
       }
     }
@@ -2112,13 +2077,12 @@ export async function executeCompleteMatrixMapping() {
 
 // Función para forzar mapeo completo de todos los cambios (mantenida para compatibilidad)
 export function forceCompleteMapping() {
-  console.log('🔄 === REDIRIGIENDO A MAPEO COMPLETO DE MATRIZ ===');
+  
   return executeCompleteMatrixMapping();
 }
 
 // Función para aplicar estado bufferizado y sincronizar canvas
 export function applyBufferedStateAndSync() {
-  console.log('🔄 === APLICANDO ESTADO BUFFERIZADO Y SINCRONIZANDO CANVAS ===');
   
   // Usar la función de mapeo completo
   return forceCompleteMapping();
@@ -2126,7 +2090,6 @@ export function applyBufferedStateAndSync() {
 
 // Función para forzar sincronización completa del canvas
 export function forceCompleteCanvasSync() {
-  console.log('🔄 === FORZANDO SINCRONIZACIÓN COMPLETA DEL CANVAS ===');
   
   // Usar la función que aplica estado bufferizado
   return applyBufferedStateAndSync();
@@ -2137,23 +2100,21 @@ export async function executeManualMapping() {
   console.log('🔧 === EJECUTANDO MAPEO MANUAL ===');
   
   // 1. Primero sincronizar matriz desde diagrama para capturar cambios recientes
-  console.log('🔄 1. Sincronizando diagrama → matriz...');
+  
   updateMatrixFromDiagram();
   
   // 2. Luego ejecutar mapeo completo de matriz → canvas
-  console.log('🔄 2. Ejecutando mapeo matriz → canvas...');
   
   try {
     // Usar la función de mapeo completo que ya tenemos
     const success = await executeCompleteMatrixMapping();
     
     if (success) {
-      console.log('✅ Mapeo manual ejecutado exitosamente');
       
       // Mostrar mensaje temporal de éxito
       showTemporaryMessage('✅ Mapeo manual ejecutado correctamente', 'success');
     } else {
-      console.log('❌ Error en mapeo manual');
+      
       showTemporaryMessage('❌ Error ejecutando mapeo manual', 'error');
     }
     
@@ -2168,7 +2129,7 @@ export async function executeManualMapping() {
 // Función para mapeo manual con validación (DESHABILITADA)
 export function executeManualRasciMapping() {
   console.log('🔧 === MAPEO MANUAL DESHABILITADO ===');
-  console.log('ℹ️ El mapeo manual ha sido deshabilitado. Usa el toggle automático para mapear.');
+  
   return false;
 }
 
@@ -2221,7 +2182,7 @@ export function showManualMappingWithErrorsModal(errors) {
         const executeRasciToRalphMapping = sr.getFunction('executeRasciToRalphMapping');
         if (typeof executeRasciToRalphMapping === 'function') {
           executeRasciToRalphMapping();
-          console.log('✅ Mapeo manual forzado ejecutado');
+          
         }
       }
     } catch (error) {
@@ -2251,7 +2212,6 @@ export function showManualMappingWithErrorsModal(errors) {
 
 // Función simple para validar solo (sin auto-corrección)
 export function activarSistemaCompleto() {
-  console.log('🔍 Validando matriz RASCI...');
   
   // Solo validar sin hacer correcciones automáticas
   const sr = getServiceRegistry();
@@ -2260,14 +2220,14 @@ export function activarSistemaCompleto() {
     if (typeof validateRasciRules === 'function') {
       const validation = validateRasciRules();
       if (!validation.isValid) {
-        console.log('❌ Se encontraron errores en la matriz RASCI:');
+        
         validation.errors.forEach(error => console.log(`  - ${error}`));
         return { success: false, errors: validation.errors };
       }
     }
   }
   
-  console.log('✅ Validación completada - Matrix RASCI válida');
+  
   return { success: true, errors: [] };
 }
 
@@ -2391,7 +2351,7 @@ export function testBufferMappingIssue() {
   console.log('🧪 === PROBANDO PROBLEMA DEL BUFFER ===');
 
   // 1. Verificar estado actual
-  console.log('1️⃣ Estado actual:');
+  
   console.log('  - hasHardRuleErrorsPrev:', hasHardRuleErrorsPrev);
   console.log('  - pendingMappingDueToErrors:', pendingMappingDueToErrors);
   console.log('  - bufferedMatrixState:', bufferedMatrixState ? Object.keys(bufferedMatrixState).length + ' tareas' : 'null');
@@ -2405,7 +2365,7 @@ export function testBufferMappingIssue() {
   // 3. Simular corrección de errores
   if (validation.isValid && (hasHardRuleErrorsPrev || pendingMappingDueToErrors)) {
     console.log('3️⃣ Simulando corrección de errores...');
-    console.log('🔄 Llamando a validateHardRulesInRealTime...');
+    
     validateHardRulesInRealTime();
   } else if (validation.isValid && !hasHardRuleErrorsPrev && !pendingMappingDueToErrors) {
     console.log('3️⃣ No hay errores ni estado bufferizado - sistema normal');
@@ -2446,9 +2406,9 @@ export function testCallbackConfiguration() {
   try {
     if (typeof onRasciMatrixUpdatedFunction === 'function') {
       onRasciMatrixUpdatedFunction();
-      console.log('✅ Callback ejecutado exitosamente');
+      
     } else {
-      console.log('❌ Callback no disponible');
+      
     }
   } catch (error) {
     console.error('❌ Error ejecutando callback:', error);
@@ -2462,12 +2422,11 @@ export function testCallbackConfiguration() {
 }
 
 export function debugCanvasElements() {
-  console.log('🔍 === DIAGNÓSTICO DE ELEMENTOS DEL CANVAS ===');
   
   try {
     const modeler = rasciManager.getBpmnModeler();
     if (!modeler) {
-      console.log('❌ No hay modeler disponible');
+      
       return;
     }
     
@@ -2525,31 +2484,28 @@ export function debugCanvasElements() {
 }
 
 export function debugApprovalTaskCreation() {
-  console.log('🔍 === DIAGNÓSTICO DE CREACIÓN DE TAREAS DE APROBACIÓN ===');
   
   try {
     const modeler = rasciManager.getBpmnModeler();
     if (!modeler) {
-      console.log('❌ No hay modeler disponible');
+      
       return;
     }
     
     const elementRegistry = modeler.get('elementRegistry');
     if (!elementRegistry) {
-      console.log('❌ Element Registry no disponible');
+      
       return;
     }
     
     // Verificar si hay tareas BPMN que deberían tener tareas de aprobación
     if (rasciManager.rasciMatrixData) {
-      console.log('1️⃣ Verificando tareas que deberían tener aprobación:');
       
       Object.keys(rasciManager.rasciMatrixData).forEach(taskName => {
         const taskRoles = rasciManager.rasciMatrixData[taskName];
         const hasApproval = Object.values(taskRoles).includes('A');
         
         if (hasApproval) {
-          console.log(`   📋 Tarea: ${taskName}`);
           
           // Buscar la tarea BPMN (por ID, no por nombre)
           const bpmnTask = elementRegistry.find(el => 
@@ -2559,7 +2515,6 @@ export function debugApprovalTaskCreation() {
           );
           
           if (bpmnTask) {
-            console.log(`   ✅ Tarea BPMN encontrada: ${bpmnTask.id}`);
             
             // Buscar tarea de aprobación esperada
             const expectedApprovalName = `Aprobar ${taskName}`;
@@ -2570,9 +2525,8 @@ export function debugApprovalTaskCreation() {
             );
             
             if (approvalTask) {
-              console.log(`   ✅ Tarea de aprobación encontrada: ${approvalTask.id}`);
+              
             } else {
-              console.log(`   ❌ Tarea de aprobación NO encontrada: ${expectedApprovalName}`);
               
               // Verificar si hay conexiones salientes de la tarea BPMN
               const outgoingConnections = elementRegistry.filter(conn => 
@@ -2588,7 +2542,7 @@ export function debugApprovalTaskCreation() {
               });
             }
           } else {
-            console.log(`   ❌ Tarea BPMN NO encontrada para: ${taskName}`);
+            
           }
         }
       });
@@ -2603,15 +2557,12 @@ export function debugApprovalTaskCreation() {
 
 // Función para sincronizar matriz con canvas actual
 export function syncMatrixWithCanvas() {
-  console.log('🔄 === SINCRONIZANDO MATRIZ CON CANVAS ACTUAL ===');
   
   // 1. Obtener tareas actuales del canvas
   const currentCanvasTasks = getBpmnTasks();
-  console.log('📋 Tareas actuales en canvas:', currentCanvasTasks);
   
   // 2. Obtener tareas actuales en la matriz
   const currentMatrixTasks = rasciManager.rasciMatrixData ? Object.keys(rasciManager.rasciMatrixData) : [];
-  console.log('📋 Tareas actuales en matriz:', currentMatrixTasks);
   
   // 3. Identificar tareas que están en la matriz pero no en el canvas
   const orphanedTasks = currentMatrixTasks.filter(taskId => !currentCanvasTasks.includes(taskId));
@@ -2623,7 +2574,7 @@ export function syncMatrixWithCanvas() {
   
   // 5. Eliminar tareas huérfanas de la matriz
   if (orphanedTasks.length > 0) {
-    console.log(`🧹 Eliminando ${orphanedTasks.length} tareas huérfanas...`);
+    
     orphanedTasks.forEach(taskId => {
       delete rasciManager.rasciMatrixData[taskId];
       console.log(`🗑️ Eliminada tarea huérfana: ${taskId}`);
@@ -2649,14 +2600,13 @@ export function syncMatrixWithCanvas() {
   if (panel) {
     const currentRoles = rasciManager.rasciRoles || [];
     renderMatrix(panel, currentRoles, null);
-    console.log('✅ Matriz re-renderizada');
+    
   }
   
   // 8. Limpiar buffer
   bufferedMatrixState = null;
   pendingMappingDueToErrors = false;
   hasHardRuleErrorsPrev = false;
-  console.log('✅ Buffer limpiado');
   
   console.log('🎉 Sincronización completada');
   
@@ -2671,13 +2621,11 @@ export function syncMatrixWithCanvas() {
 
 // Función para limpiar completamente la memoria y resetear estado
 export function clearMemoryAndReset() {
-  console.log('🧹 === LIMPIANDO MEMORIA Y RESETEANDO ESTADO ===');
   
   // 1. Limpiar buffer
   bufferedMatrixState = null;
   pendingMappingDueToErrors = false;
   hasHardRuleErrorsPrev = false;
-  console.log('✅ Buffer limpiado');
   
   // 2. Limpiar tareas automáticas de la matriz
   if (rasciManager.rasciMatrixData) {
@@ -2685,7 +2633,7 @@ export function clearMemoryAndReset() {
     const autoTasks = allTasks.filter(taskId => taskId.startsWith('Aprobar '));
     
     if (autoTasks.length > 0) {
-      console.log(`🧹 Eliminando ${autoTasks.length} tareas automáticas de la memoria...`);
+      
       autoTasks.forEach(taskId => {
         delete rasciManager.rasciMatrixData[taskId];
         console.log(`🗑️ Eliminada: ${taskId}`);
@@ -2712,7 +2660,7 @@ export function clearMemoryAndReset() {
   if (autoMappingSwitch) {
     autoMappingSwitch.checked = false;
     autoMappingSwitch.disabled = false;
-    console.log('✅ Toggle reseteado');
+    
   }
   
   // 5. Resetear botón manual
@@ -2723,7 +2671,7 @@ export function clearMemoryAndReset() {
     manualBtn.style.color = '';
     manualBtn.style.border = '';
     manualBtn.innerHTML = '<i class="fas fa-magic"></i> Ejecutar Mapeo Manual';
-    console.log('✅ Botón manual reseteado');
+    
   }
   
   // 6. Re-renderizar matriz
@@ -2731,7 +2679,7 @@ export function clearMemoryAndReset() {
   if (panel) {
     const currentRoles = rasciManager.rasciRoles || [];
     renderMatrix(panel, currentRoles, null);
-    console.log('✅ Matriz re-renderizada');
+    
   }
   
   console.log('🎉 Limpieza completa finalizada');
@@ -2752,7 +2700,7 @@ export function testBufferState() {
   console.log('🚫 Errores previos:', hasHardRuleErrorsPrev);
   
   if (bufferedMatrixState) {
-    console.log('📋 Tareas en buffer:');
+    
     Object.keys(bufferedMatrixState).forEach(task => {
       const roles = Object.keys(bufferedMatrixState[task]);
       const assignments = roles.map(role => `${role}:${bufferedMatrixState[task][role] || '?'}`).join(', ');
@@ -2773,7 +2721,7 @@ export function testServiceRegistry() {
   
   const sr = getServiceRegistry();
   if (!sr) {
-    console.log('❌ Service Registry no disponible');
+    
     return;
   }
   
@@ -2782,21 +2730,20 @@ export function testServiceRegistry() {
   console.log('  - Servicios:', stats.services);
   console.log('  - Funciones:', stats.functions);
   
-  console.log('🔍 Funciones disponibles:');
+  
   stats.functionNames.forEach(name => {
     console.log(`  - ${name}`);
   });
   
   // Verificar específicamente executeRasciToRalphMapping
   const hasExecuteFunction = sr.has('executeRasciToRalphMapping') || stats.functionNames.includes('executeRasciToRalphMapping');
-  console.log('🎯 executeRasciToRalphMapping registrada:', hasExecuteFunction);
   
   if (hasExecuteFunction) {
     try {
       const fn = sr.getFunction('executeRasciToRalphMapping');
-      console.log('✅ Función encontrada:', typeof fn);
+      
     } catch (error) {
-      console.log('❌ Error obteniendo función:', error.message);
+      
     }
   }
   
@@ -2809,7 +2756,6 @@ export function testServiceRegistry() {
 
 // Función de diagnóstico específica para sincronización
 export function diagnoseCanvasMatrixSync() {
-  console.log('🔍 === DIAGNÓSTICO DE SINCRONIZACIÓN CANVAS-MATRIZ ===');
   
   // 1. Obtener tareas del canvas
   const canvasTasks = getBpmnTasks();
@@ -2853,7 +2799,6 @@ export function diagnoseCanvasMatrixSync() {
 
 // Función de diagnóstico completa
 export function diagnosticComplete() {
-  console.log('🔍 === DIAGNÓSTICO COMPLETO ===');
   
   // 1. Verificar service registry
   const sr = getServiceRegistry();
@@ -2932,7 +2877,7 @@ export function testAutoTaskFiltering() {
   
   const matrixData = rasciManager.getRasciMatrixData();
   if (!matrixData || !matrixData.assignments) {
-    console.log('❌ No hay datos de matriz disponibles');
+    
     return;
   }
   
@@ -2946,11 +2891,11 @@ export function testAutoTaskFiltering() {
   console.log(`✅ Tareas de proceso (validadas): ${validTasks.length}`);
   validTasks.forEach(task => console.log(`  - ${task}`));
   
-  console.log('\n🔍 Ejecutando validación...');
+  
   const result = validateRasciCriticalRules();
   
-  console.log('📋 Resultado de validación:');
-  console.log(`  ✅ Válido: ${result.isValid}`);
+  
+  
   console.log(`  ❌ Errores críticos: ${(result.errors && result.errors.length) || 0}`);
   console.log(`  ⚠️ Advertencias: ${(result.warnings && result.warnings.length) || 0}`);
   
@@ -2973,35 +2918,34 @@ export function testToggleActivationSync() {
   
   const autoMappingSwitch = document.getElementById('auto-mapping-switch');
   if (!autoMappingSwitch) {
-    console.log('❌ No se encontró el switch de auto-mapping');
+    
     return;
   }
   
-  console.log('🔍 Estado inicial del toggle:', autoMappingSwitch.checked ? 'ACTIVADO' : 'DESACTIVADO');
   
   // Simular validación de estado actual
-  console.log('📋 Datos actuales de matriz:');
+  
   const matrixData = rasciManager.getRasciMatrixData();
   if (matrixData) {
     const tasks = Object.keys(matrixData);
     console.log(`  📊 Tareas en matriz: ${tasks.length}`);
     tasks.forEach(task => console.log(`    - ${task}`));
   } else {
-    console.log('  ❌ No hay datos de matriz');
+    
   }
   
   // Probar activación del toggle
-  console.log('\n🎯 Intentando activar toggle...');
+  
   validateAndToggleAutoMapping();
   
-  console.log('\n✅ Prueba completada. Revisa los logs anteriores para ver el proceso de sincronización.');
+  
 }
 
 // Función de prueba para verificar el mapeo manual
 export function testManualMapping() {
   console.log('🧪 === PROBANDO MAPEO MANUAL ===');
   
-  console.log('🔍 Estado actual:');
+  
   const autoMappingSwitch = document.getElementById('auto-mapping-switch');
   const manualBtn = document.getElementById('manual-mapping-btn');
   
@@ -3015,21 +2959,21 @@ export function testManualMapping() {
     console.log(`  📊 Tareas en matriz: ${tasks.length}`);
     tasks.forEach(task => console.log(`    - ${task}`));
   } else {
-    console.log('  ❌ No hay datos de matriz');
+    
   }
   
   // Ejecutar mapeo manual
   console.log('\n🚀 Ejecutando mapeo manual...');
   executeManualMapping();
   
-  console.log('\n✅ Prueba de mapeo manual completada.');
+  
 }
 
 // Función de prueba completa para verificar todo el sistema
 export function testCompleteMappingSystem() {
   console.log('🧪 === PRUEBA COMPLETA DEL SISTEMA DE MAPEO ===');
   
-  console.log('🔍 1. Estado actual del sistema:');
+  
   const autoMappingSwitch = document.getElementById('auto-mapping-switch');
   const manualBtn = document.getElementById('manual-mapping-btn');
   
@@ -3048,13 +2992,13 @@ export function testCompleteMappingSystem() {
       assignedRoles.forEach(role => console.log(`      ${role}: ${assignments[role]}`));
     });
   } else {
-    console.log('  ❌ No hay datos de matriz');
+    
   }
   
   console.log('\n🚀 2. Probando mapeo directo...');
   executeDirectMatrixToCanvasMapping();
   
-  console.log('\n✅ Prueba completa del sistema finalizada.');
+  
   console.log('💡 Para probar manualmente:');
   console.log('   - executeManualMapping() - Ejecutar mapeo manual');
   console.log('   - validateAndToggleAutoMapping() - Activar/desactivar toggle');
@@ -3067,17 +3011,16 @@ export function testMatrixUpdateBehavior() {
   
   const autoMappingSwitch = document.getElementById('auto-mapping-switch');
   if (!autoMappingSwitch) {
-    console.log('❌ No se encontró el switch de auto-mapping');
+    
     return;
   }
   
-  console.log(`🎛️ Estado actual del toggle: ${autoMappingSwitch.checked ? 'ACTIVADO' : 'DESACTIVADO'}`);
   
   // Simular actualización de matriz
   console.log('📝 Simulando actualización de matriz...');
   onRasciMatrixUpdated();
   
-  console.log('✅ Prueba completada - Revisar logs para ver comportamiento');
+  
   console.log(`🎛️ Estado final del toggle: ${autoMappingSwitch.checked ? 'ACTIVADO' : 'DESACTIVADO'}`);
 }
 
@@ -3108,23 +3051,21 @@ export function testRasciValidationWithErrors() {
   const originalData = rasciManager.rasciMatrixData;
   rasciManager.rasciMatrixData = testMatrixData;
   
-  console.log('📋 Datos de prueba cargados con errores intencionados');
-  console.log('🔍 Intentando activar toggle con errores...');
+  
   
   // Probar la validación
   const validation = validateRasciCriticalRules();
   
   if (!validation.isValid) {
-    console.log('✅ PRUEBA EXITOSA: El sistema detectó correctamente los errores');
-    console.log('❌ Errores encontrados:');
+    
+    
     validation.errors.forEach(error => console.log(`  - ${error}`));
   } else {
-    console.log('❌ PRUEBA FALLÓ: El sistema NO detectó los errores');
+    
   }
   
   // Restaurar datos originales
   rasciManager.rasciMatrixData = originalData;
-  console.log('🔄 Datos originales restaurados');
   
   return validation;
 }
@@ -3153,22 +3094,20 @@ export function testRasciValidationWithoutErrors() {
   const originalData = rasciManager.rasciMatrixData;
   rasciManager.rasciMatrixData = testMatrixData;
   
-  console.log('📋 Datos de prueba cargados SIN errores');
-  console.log('🔍 Probando validación con matriz correcta...');
+  
   
   // Probar la validación
   const validation = validateRasciCriticalRules();
   
   if (validation.isValid) {
-    console.log('✅ PRUEBA EXITOSA: El sistema validó correctamente la matriz');
+    
   } else {
-    console.log('❌ PRUEBA FALLÓ: El sistema encontró errores donde no debería');
+    
     validation.errors.forEach(error => console.log(`  - ${error}`));
   }
   
   // Restaurar datos originales
   rasciManager.rasciMatrixData = originalData;
-  console.log('🔄 Datos originales restaurados');
   
   return validation;
 }

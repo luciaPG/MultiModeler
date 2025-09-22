@@ -242,8 +242,51 @@ export function initRasciPanel(panel) {
   ensureActiveTabVisibility();
   setupVisibilityObserver();
 
+  // CRÍTICO: Configurar suscripciones a eventos para actualización automática de UI
+  if (eventBus && eventBus.subscribe) {
+    console.log('🔗 Configurando suscripciones a eventos RASCI para actualización automática...');
+    
+    // Suscribirse a eventos de actualización de matriz
+    eventBus.subscribe('rasci.matrix.updated', (event) => {
+      console.log('📡 Evento recibido: rasci.matrix.updated', event);
+      const currentRoles = rasciAdapterInstance && rasciAdapterInstance.getRoles ? rasciAdapterInstance.getRoles() : roles;
+      renderMatrix(panel, currentRoles, autoSaveRasciState);
+      console.log('✅ Matriz UI actualizada por evento rasci.matrix.updated');
+    });
+    
+    // Suscribirse a eventos de actualización de roles
+    eventBus.subscribe('rasci.roles.updated', (event) => {
+      console.log('📡 Evento recibido: rasci.roles.updated', event);
+      if (event.roles && Array.isArray(event.roles)) {
+        roles = event.roles;
+        renderMatrix(panel, roles, autoSaveRasciState);
+        console.log('✅ Matriz UI actualizada por evento rasci.roles.updated');
+      }
+    });
+    
+    // Suscribirse a eventos de restauración
+    eventBus.subscribe('rasci.restored', (event) => {
+      console.log('📡 Evento recibido: rasci.restored', event);
+      if (event.roles) roles = event.roles;
+      const currentRoles = rasciAdapterInstance && rasciAdapterInstance.getRoles ? rasciAdapterInstance.getRoles() : roles;
+      renderMatrix(panel, currentRoles, autoSaveRasciState);
+      console.log('✅ Matriz UI actualizada por evento rasci.restored');
+    });
+    
+    // Suscribirse a eventos de actualización desde diagrama
+    eventBus.subscribe('rasci.matrix.update.fromDiagram', (event) => {
+      console.log('📡 Evento recibido: rasci.matrix.update.fromDiagram', event);
+      if (event.forceUpdate || event.source === 'autosave.restore') {
+        const currentRoles = rasciAdapterInstance && rasciAdapterInstance.getRoles ? rasciAdapterInstance.getRoles() : roles;
+        renderMatrix(panel, currentRoles, autoSaveRasciState);
+        console.log('✅ Matriz UI actualizada por evento rasci.matrix.update.fromDiagram');
+      }
+    });
+    
+    console.log('✅ Suscripciones a eventos RASCI configuradas');
+  }
+
   // Renderizar matriz inicial con roles cargados
-      // Renderizar matriz inicial
   renderMatrix(panel, rasciAdapterInstance && typeof rasciAdapterInstance.getRoles === 'function' ? rasciAdapterInstance.getRoles() : roles, autoSaveRasciState);
 
   // Sincronizar nombres de roles desde RASCI hacia canvas al cargar
@@ -381,9 +424,10 @@ export function initRasciPanel(panel) {
     }, 50);
   };
   
-  if (sr) {
-    sr.registerFunction('reloadRasciMatrix', reloadRasciMatrix);
-  }
+  // COMENTADO PARA EVITAR BUCLE INFINITO - reloadRasciMatrix ya está registrada en matrix-manager.js
+  // if (sr) {
+  //   sr.registerFunction('reloadRasciMatrix', reloadRasciMatrix);
+  // }
 
   // Function for immediate reload
   const forceImmediateReload = () => {

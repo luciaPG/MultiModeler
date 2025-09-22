@@ -10,7 +10,22 @@
         "dev:hybrid": "webpack-dev-server --open --env target=hybrid",
         "lint": "eslint .",
         "start": "run-s dev",
-        "start:hybrid": "run-s dev:hybrid"
+        "start:hybrid": "run-s dev:hybrid",
+        "tests": "jest --config jest.config.tfg.js",
+        "test:watch": "jest --watch --config jest.config.tfg.js",
+        "test:coverage": "echo 'Coverage disabled'",
+        "test:coverage-html": "echo 'Coverage disabled'",
+        "test:unitarias": "jest tests/8.1-unitarias --config jest.config.tfg.js",
+        "test:integracion": "jest tests/8.2-integracion --config jest.config.tfg.js",
+        "test:nfr": "jest tests/8.4-non-functional --config jest.config.tfg.js",
+        "test:nfr-performance": "jest tests/8.4-non-functional/performance-real.test.js --config jest.config.tfg.js",
+        "test:nfr-usability": "jest tests/8.4-non-functional/usability-real.test.js --config jest.config.tfg.js",
+        "test:nfr-compatibility": "jest tests/8.4-non-functional/compatibility-real.test.js --config jest.config.tfg.js",
+        "test:nfr-all": "jest tests/8.4-non-functional/real-app-nfr.test.js --config jest.config.tfg.js",
+        "test:report": "node scripts/generate-test-report.js",
+        "test:all": "npm run test:tfg && npm run test:report",
+        "clean:reports": "node scripts/clean-reports.js",
+        "report:final": "node scripts/generate-final-tfg-report.js"
     },
     "repository": {
         "type": "git",
@@ -35,15 +50,25 @@
     "license": "MIT",
     "devDependencies": {
         "@babel/core": "^7.26.7",
-        "@babel/preset-env": "^7.26.7",
+        "@babel/preset-env": "^7.28.3",
+        "@testing-library/jest-dom": "^6.8.0",
+        "babel-jest": "^30.1.2",
         "babel-loader": "^9.2.1",
+        "canvas": "^3.2.0",
         "copy-webpack-plugin": "^11.0.0",
         "css-loader": "^7.1.2",
         "eslint": "^6.5.1",
         "eslint-plugin-bpmn-io": "^0.10.0",
+        "identity-obj-proxy": "^3.0.0",
         "ids": "latest",
+        "jest": "^30.1.3",
+        "jest-environment-jsdom": "^30.1.2",
+        "jest-html-reporter": "^4.3.0",
+        "jest-junit": "^16.0.0",
+        "jsdom": "^27.0.0",
         "json-loader": "^0.5.7",
         "npm-run-all": "^4.1.5",
+        "path-intersection": "^3.1.0",
         "raw-loader": "^4.0.2",
         "style-loader": "^4.0.0",
         "webpack": "^5.88.0",
@@ -60,5 +85,4 @@
         "ppinot-visual": "file:",
         "tiny-svg": "latest"
     }
-    
 }

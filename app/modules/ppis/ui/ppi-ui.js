@@ -48,7 +48,7 @@ class PPIUI {
   // === CARD GENERATION ===
   
   createPPIElement(ppi) {
-    console.log(`🔄 [createPPIElement] Creando elemento para PPI ${ppi.id}`);
+    
     const div = document.createElement('div');
     div.setAttribute('data-ppi-id', ppi.id);
     
@@ -197,14 +197,13 @@ class PPIUI {
       </div>
     `;
     
-    console.log(`✅ [createPPIElement] Elemento creado exitosamente para PPI ${ppi.id}`);
+    
     return div;
   }
 
   // Función para actualizar un elemento PPI existente sin recrearlo
   updatePPIElement(element, ppi) {
-    console.log(`🔄 [updatePPIElement] Actualizando tarjeta PPI ${ppi.id}`);
-    console.log(`🔄 [updatePPIElement] Target: ${ppi.target}, Scope: ${ppi.scope}`);
+    
     
     // Prevent flickering during update
     element.classList.add('updating');
@@ -252,7 +251,7 @@ class PPIUI {
     const targetElement = element.querySelector('.target-value');
     if (targetElement) {
       const targetText = ppi.target || 'No definido';
-      console.log(`🔄 [updatePPIElement] Actualizando target: "${targetText}"`);
+      
       targetElement.textContent = this.core.truncateText(targetText, 35);
       targetElement.setAttribute('title', targetText);
       
@@ -265,14 +264,14 @@ class PPIUI {
         targetElement.style.color = '#6c757d'; // Gris para indicar que no tiene valor
       }
     } else {
-      console.log(`❌ [updatePPIElement] Elemento .target-value no encontrado en la tarjeta`);
+      
     }
     
     // Actualizar scope - MEJORADO
     const scopeElement = element.querySelector('.scope-value');
     if (scopeElement) {
       const scopeText = ppi.scope || 'Sin scope';
-      console.log(`🔄 [updatePPIElement] Actualizando scope: "${scopeText}"`);
+      
       scopeElement.textContent = this.core.truncateText(scopeText, 35);
       scopeElement.setAttribute('title', scopeText);
       
@@ -285,7 +284,7 @@ class PPIUI {
         scopeElement.style.color = '#6c757d'; // Gris para indicar que no tiene valor
       }
     } else {
-      console.log(`❌ [updatePPIElement] Elemento .scope-value no encontrado en la tarjeta`);
+      
     }
     
     // Actualizar responsible
@@ -533,8 +532,20 @@ class PPIUI {
       return;
     }
 
-    // Use filtered PPIs if available, otherwise use all PPIs, and dedupe by id/elementId
-    const sourcePPIs = this.core.filteredPPIs && this.core.filteredPPIs.length > 0 ? this.core.filteredPPIs : this.core.ppis;
+    // Priorizar filteredPPIs si existe, luego getVisiblePPIs(), luego ppis como último recurso
+    let sourcePPIs;
+    if (this.core.filteredPPIs && this.core.filteredPPIs.length >= 0) {
+      sourcePPIs = this.core.filteredPPIs;
+      console.log(`🔍 [PPI-UI] Usando filteredPPIs: ${sourcePPIs.length} PPIs`);
+    } else if (this.core.getVisiblePPIs) {
+      sourcePPIs = this.core.getVisiblePPIs();
+      console.log(`🔍 [PPI-UI] Usando getVisiblePPIs(): ${sourcePPIs.length} PPIs`);
+    } else {
+      sourcePPIs = this.core.ppis || [];
+      console.log(`🔍 [PPI-UI] Usando ppis directas: ${sourcePPIs.length} PPIs`);
+    }
+    
+    console.log(`🔍 [PPI-UI] PPIs a mostrar: ${sourcePPIs.length} (filtradas de ${this.core.ppis ? this.core.ppis.length : 0} totales)`);
     const uniqueById = new Map();
     const uniqueByElement = new Set();
     for (const p of sourcePPIs) {
@@ -543,7 +554,8 @@ class PPIUI {
       uniqueById.set(p.id, p);
       if (p.elementId) uniqueByElement.add(p.elementId);
     }
-    const ppisToShow = Array.from(uniqueById.values());
+    // Mostrar SOLO PPIs principales
+    const ppisToShow = Array.from(uniqueById.values()).filter(p => p && p.type === 'PPINOT:Ppi');
 
 
     // MEJORADO: Deduplicar tarjetas existentes por data-ppi-id (mantener la primera)
@@ -620,7 +632,7 @@ class PPIUI {
           return;
         }
         // MEJORADO: Crear nuevo elemento solo si realmente es nuevo
-        console.log(`🔄 [_refreshPPIListImpl] Creando nueva tarjeta PPI ${ppi.id}`);
+        
         const newElement = this.createPPIElement(ppi);
         const currentData = JSON.stringify({
           title: ppi.title,
@@ -965,6 +977,8 @@ class PPIUI {
 
     // Configurar funcionalidad de pestañas para modales de edición y visualización
     if (isEdit) {
+      // NUEVO: Restaurar datos del formulario PPI guardados si existen
+      this.restoreSavedPPIFormData();
       this.setupTabNavigation();
       this.setupFormValidation();
       this.setupTargetScopeValidation(ppi);
@@ -1484,7 +1498,7 @@ class PPIUI {
     
     // Configurar listener para actualizar diagrama cuando se cambie
     targetInput._syncHandler = () => {
-      console.log(`🔄 [SYNC] Target cambiado a: ${targetInput.value}`);
+      
       this.updateDiagramElement(ppi, 'PPINOT:Target', targetInput.value);
       // También actualizar el PPI en el core
       if (this.core && typeof this.core.updatePPI === 'function') {
@@ -1511,7 +1525,7 @@ class PPIUI {
     
     // Configurar listener para actualizar diagrama cuando se cambie
     scopeInput._syncHandler = () => {
-      console.log(`🔄 [SYNC] Scope cambiado a: ${scopeInput.value}`);
+      
       this.updateDiagramElement(ppi, 'PPINOT:Scope', scopeInput.value);
       // También actualizar el PPI en el core
       if (this.core && typeof this.core.updatePPI === 'function') {
@@ -1537,7 +1551,7 @@ class PPIUI {
     
     // Configurar listener para actualizar diagrama cuando se cambie
     titleInput._syncHandler = () => {
-      console.log(`🔄 [SYNC] Título cambiado a: ${titleInput.value}`);
+      
       this.updateDiagramElement(ppi, 'PPINOT:PPINOT', titleInput.value);
       // También actualizar el PPI en el core
       if (this.core && typeof this.core.updatePPI === 'function') {
@@ -1550,13 +1564,13 @@ class PPIUI {
     
     // Mostrar información sobre elementos vinculados si existen
     if (hasLinkedTarget) {
-      console.log('🎯 [setupTargetScopeValidation] Target vinculado encontrado');
+      
     } else {
       console.log('⚠️ [setupTargetScopeValidation] No hay Target vinculado, pero el campo es editable');
     }
     
     if (hasLinkedScope) {
-      console.log('🔍 [setupTargetScopeValidation] Scope vinculado encontrado');
+      
     } else {
       console.log('⚠️ [setupTargetScopeValidation] No hay Scope vinculado, pero el campo es editable');
     }
@@ -1571,23 +1585,20 @@ class PPIUI {
     try {
       const elementRegistry = modeler.get('elementRegistry');
       
-      console.log(`🔍 [hasLinkedElement] Buscando ${elementType} para PPI ${ppi.id}`);
-      console.log(`🔍 [hasLinkedElement] ppi.elementId: ${ppi.elementId}, ppi.title: ${ppi.title}`);
+      
       
       // Buscar elementos vinculados del tipo especificado
       const linkedElements = elementRegistry.filter(element => {
         if (element.type !== elementType) return false;
         
-        console.log(`🔍 [hasLinkedElement] Elemento encontrado: ${element.id}, tipo: ${element.type}`);
         
         // Verificar si está vinculado a este PPI
         const parentElement = element.parent;
         if (!parentElement) {
-          console.log(`🔍 [hasLinkedElement] Elemento ${element.id} no tiene padre`);
+          
           return false;
         }
         
-        console.log(`🔍 [hasLinkedElement] Padre del elemento: ${parentElement.id}, nombre: ${parentElement.businessObject ? parentElement.businessObject.name : 'N/A'}`);
         
         // Verificar si el padre es el PPI actual - MEJORADO
         let isLinked = false;
@@ -1595,13 +1606,13 @@ class PPIUI {
         // Verificar por ID del elemento padre
         if (parentElement.id === ppi.elementId) {
           isLinked = true;
-          console.log(`🔍 [hasLinkedElement] Vinculado por ID del padre: ${parentElement.id}`);
+          
         }
         
         // Verificar por nombre del businessObject del padre
         if (parentElement.businessObject && parentElement.businessObject.name === ppi.title) {
           isLinked = true;
-          console.log(`🔍 [hasLinkedElement] Vinculado por nombre del padre: ${parentElement.businessObject.name}`);
+          
         }
         
         // Verificar si el elemento padre es un PPINOT y coincide con el PPI
@@ -1609,20 +1620,20 @@ class PPIUI {
             parentElement.businessObject && 
             parentElement.businessObject.name === ppi.title) {
           isLinked = true;
-          console.log(`🔍 [hasLinkedElement] Vinculado por elemento PPINOT padre: ${parentElement.businessObject.name}`);
+          
         }
         
         // Verificar si el elemento padre tiene el mismo ID que el PPI
         if (parentElement.id === ppi.id) {
           isLinked = true;
-          console.log(`🔍 [hasLinkedElement] Vinculado por ID del PPI: ${ppi.id}`);
+          
         }
         
-        console.log(`🔍 [hasLinkedElement] ¿Está vinculado? ${isLinked}`);
+        
         return isLinked;
       });
       
-      console.log(`🔍 [hasLinkedElement] Elementos vinculados encontrados: ${linkedElements.length}`);
+      
       return linkedElements.length > 0;
     } catch (error) {
       console.error('[hasLinkedElement] Error:', error);
@@ -1646,8 +1657,7 @@ class PPIUI {
       const modeling = modeler.get('modeling');
       const eventBus = modeler.get('eventBus');
       
-      console.log(`🔄 [updateDiagramElement] Actualizando ${elementType} para PPI ${ppi.id} con valor: ${newValue}`);
-      console.log(`🔄 [updateDiagramElement] ppi.elementId: ${ppi.elementId}, ppi.title: ${ppi.title}`);
+      
       
       // MEJORADO: Buscar el elemento vinculado del tipo especificado
       let linkedElement = null;
@@ -1656,7 +1666,6 @@ class PPIUI {
       if (ppi.elementId) {
         const parentElement = elementRegistry.get(ppi.elementId);
         if (parentElement) {
-          console.log(`🔄 [updateDiagramElement] Elemento padre encontrado: ${parentElement.id}, tipo: ${parentElement.type}`);
           
           // Buscar elementos hijos del tipo especificado
           const childElements = elementRegistry.filter(element => {
@@ -1665,7 +1674,7 @@ class PPIUI {
           
           if (childElements.length > 0) {
             linkedElement = childElements[0];
-            console.log(`🔄 [updateDiagramElement] Elemento hijo encontrado: ${linkedElement.id}, tipo: ${linkedElement.type}`);
+            
           }
         }
       }
@@ -1681,23 +1690,21 @@ class PPIUI {
         
         if (elementsWithName.length > 0) {
           linkedElement = elementsWithName[0];
-          console.log(`🔄 [updateDiagramElement] Elemento encontrado por nombre del PPI: ${linkedElement.id}`);
+          
         }
       }
       
       // Si aún no se encontró, buscar cualquier elemento del tipo especificado
       if (!linkedElement) {
         const allElementsOfType = elementRegistry.filter(element => element.type === elementType);
-        console.log(`🔄 [updateDiagramElement] Elementos del tipo ${elementType} encontrados:`, allElementsOfType.length);
         
         if (allElementsOfType.length > 0) {
           linkedElement = allElementsOfType[0];
-          console.log(`🔄 [updateDiagramElement] Usando primer elemento del tipo: ${linkedElement.id}`);
+          
         }
       }
       
       if (linkedElement) {
-        console.log(`🔄 [updateDiagramElement] Actualizando elemento: ${linkedElement.id} con valor: ${newValue}`);
         
         // Actualizar la etiqueta del elemento en el diagrama
         modeling.updateProperties(linkedElement, { name: newValue });
@@ -1711,7 +1718,6 @@ class PPIUI {
         eventBus.fire('element.changed', { element: linkedElement });
         eventBus.fire('shape.changed', { element: linkedElement });
         
-        console.log(`✅ [updateDiagramElement] Elemento actualizado exitosamente: ${linkedElement.id}`);
         
         // MEJORADO: Actualizar también el PPI en el core
         if (this.core && this.core.updatePPI) {
@@ -1722,7 +1728,7 @@ class PPIUI {
           
           if (Object.keys(updateData).length > 0) {
             this.core.updatePPI(ppi.id, updateData);
-            console.log(`✅ [updateDiagramElement] PPI actualizado en core:`, updateData);
+            
           }
         }
       } else {
@@ -1737,14 +1743,13 @@ class PPIUI {
   
   // MEJORADO: Sincronizar cambios del formulario con el diagrama automáticamente
   setupFormToDiagramSync(ppi) {
-    console.log(`🔄 [setupFormToDiagramSync] Configurando sincronización formulario-diagrama para PPI ${ppi.id}`);
     
     // Sincronizar título
     const titleInput = document.getElementById('edit-title');
     if (titleInput) {
       titleInput.addEventListener('input', (e) => {
         const newValue = e.target.value;
-        console.log(`🔄 [SYNC] Título cambiado a: ${newValue}`);
+        
         this.updateDiagramElement(ppi, 'PPINOT:PPINOT', newValue);
         
         // Actualizar también el PPI en el core
@@ -1762,7 +1767,7 @@ class PPIUI {
     if (targetInput) {
       targetInput.addEventListener('input', (e) => {
         const newValue = e.target.value;
-        console.log(`🔄 [SYNC] Target cambiado a: ${newValue}`);
+        
         this.updateDiagramElement(ppi, 'PPINOT:Target', newValue);
         
         // Actualizar también el PPI en el core
@@ -1780,7 +1785,7 @@ class PPIUI {
     if (scopeInput) {
       scopeInput.addEventListener('input', (e) => {
         const newValue = e.target.value;
-        console.log(`🔄 [SYNC] Scope cambiado a: ${newValue}`);
+        
         this.updateDiagramElement(ppi, 'PPINOT:Scope', newValue);
         
         // Actualizar también el PPI en el core
@@ -1801,15 +1806,14 @@ class PPIUI {
     
     try {
       const elementRegistry = modeler.get('elementRegistry');
-      console.log('🔍 [DEBUG] Listando todos los elementos del diagrama:');
       
       elementRegistry.forEach(element => {
         if (element.type && element.type.includes('PPINOT')) {
-          console.log(`🔍 [DEBUG] Elemento PPINOT: ${element.id}, tipo: ${element.type}, nombre: ${element.businessObject ? element.businessObject.name : 'N/A'}`);
+          
           if (element.parent) {
-            console.log(`🔍 [DEBUG]   - Padre: ${element.parent.id}, tipo: ${element.parent.type}, nombre: ${element.parent.businessObject ? element.parent.businessObject.name : 'N/A'}`);
+            
           } else {
-            console.log(`🔍 [DEBUG]   - Sin padre`);
+            
           }
         }
       });
@@ -1926,7 +1930,6 @@ class PPIUI {
   
   // Actualizar campos del modal basándose en elementos vinculados en el diagrama
   updateModalFieldsFromLinkedElements(ppi) {
-    console.log(`🔄 [updateModalFieldsFromLinkedElements] Actualizando campos del modal para PPI ${ppi.id}`);
     
     const modeler = (this.adapter && this.adapter.getBpmnModeler()) || (getServiceRegistry() && getServiceRegistry().get('BpmnModeler'));
     if (!modeler) return;
@@ -1969,10 +1972,10 @@ class PPIUI {
         return isLinked;
       });
       
-      console.log(`🔄 [updateModalFieldsFromLinkedElements] Elementos Target encontrados: ${targetElements.length}`);
+      
       if (targetElements.length > 0) {
         const targetElement = targetElements[0];
-        console.log(`🔄 [updateModalFieldsFromLinkedElements] Target encontrado: ${targetElement.id}, valor: ${targetElement.businessObject ? targetElement.businessObject.name : 'N/A'}`);
+        
         const targetInput = document.getElementById('edit-target');
         if (targetInput && targetElement.businessObject && targetElement.businessObject.name) {
           targetInput.value = targetElement.businessObject.name;
@@ -2019,10 +2022,10 @@ class PPIUI {
         return isLinked;
       });
       
-      console.log(`🔄 [updateModalFieldsFromLinkedElements] Elementos Scope encontrados: ${scopeElements.length}`);
+      
       if (scopeElements.length > 0) {
         const scopeElement = scopeElements[0];
-        console.log(`🔄 [updateModalFieldsFromLinkedElements] Scope encontrado: ${scopeElement.id}, valor: ${scopeElement.businessObject ? scopeElement.businessObject.name : 'N/A'}`);
+        
         const scopeInput = document.getElementById('edit-scope');
         if (scopeInput && scopeElement.businessObject && scopeElement.businessObject.name) {
           scopeInput.value = scopeElement.businessObject.name;
@@ -2069,10 +2072,10 @@ class PPIUI {
         return isLinked;
       });
       
-      console.log(`🔄 [updateModalFieldsFromLinkedElements] Elementos Title encontrados: ${titleElements.length}`);
+      
       if (titleElements.length > 0) {
         const titleElement = titleElements[0];
-        console.log(`🔄 [updateModalFieldsFromLinkedElements] Title encontrado: ${titleElement.id}, valor: ${titleElement.businessObject ? titleElement.businessObject.name : 'N/A'}`);
+        
         const titleInput = document.getElementById('edit-title');
         if (titleInput && titleElement.businessObject && titleElement.businessObject.name) {
           titleInput.value = titleElement.businessObject.name;
@@ -3238,31 +3241,25 @@ class PPIUI {
 
   // NUEVO: Forzar actualización de una card específica
   forceUpdatePPICard(ppiId) {
-    console.log(`🔄 [forceUpdatePPICard] Forzando actualización de tarjeta PPI ${ppiId}`);
     
     const container = document.getElementById('ppi-list');
     if (!container) {
-      console.log(`❌ [forceUpdatePPICard] Contenedor ppi-list no encontrado`);
+      
       return;
     }
     
     const ppiElement = container.querySelector(`[data-ppi-id="${ppiId}"]`);
     if (!ppiElement) {
-      console.log(`❌ [forceUpdatePPICard] Elemento de tarjeta PPI ${ppiId} no encontrado`);
+      
       return;
     }
     
     const ppi = this.core.ppis.find(p => p.id === ppiId);
     if (!ppi) {
-      console.log(`❌ [forceUpdatePPICard] PPI ${ppiId} no encontrado en el core`);
+      
       return;
     }
     
-    console.log(`✅ [forceUpdatePPICard] Actualizando tarjeta PPI ${ppiId} con datos:`, {
-      target: ppi.target,
-      scope: ppi.scope,
-      title: ppi.title
-    });
     
     // MEJORADO: Actualizar también desde el diagrama si es necesario
     this.updatePPIFromDiagram(ppi);
@@ -3333,7 +3330,7 @@ class PPIUI {
       if (hasChanges && this.core && this.core.updatePPI) {
         updateData.updatedAt = new Date().toISOString();
         this.core.updatePPI(ppi.id, updateData);
-        console.log(`✅ [updatePPIFromDiagram] PPI actualizado desde diagrama:`, updateData);
+        
       }
     } catch (error) {
       console.error(`[updatePPIFromDiagram] Error actualizando PPI desde diagrama:`, error);
@@ -3562,14 +3559,14 @@ class PPIUI {
    */
   clearPPISelection() {
     // Optimización: Log eliminado para mejorar rendimiento
-    // console.log(`🔴 [PPI-UI] Limpiando selección de PPIs`);
+    
     
     const container = document.getElementById('ppi-list');
     if (!container) return;
     
     const selectedCards = container.querySelectorAll('.ppi-card.selected');
     // Optimización: Log eliminado para mejorar rendimiento
-    // console.log(`🔴 [PPI-UI] Encontradas ${selectedCards.length} tarjetas seleccionadas`);
+    
     
     selectedCards.forEach(card => {
       card.classList.remove('selected');
@@ -3677,6 +3674,47 @@ class PPIUI {
   setSyncDisabled(message = 'Sincronización deshabilitada') {
     this.updateSyncStatus('disabled', message);
   }
+  
+  /**
+   * Restaura los datos del formulario PPI guardados en localStorage
+   */
+  restoreSavedPPIFormData() {
+    try {
+      const savedData = localStorage.getItem('savedPPIFormData');
+      if (!savedData) return;
+      
+      const ppiFormData = JSON.parse(savedData);
+      
+      // Restaurar después de un pequeño delay para asegurar que el DOM esté listo
+      setTimeout(() => {
+        const modal = document.getElementById('ppi-modal');
+        if (!modal) return;
+        
+        const form = modal.querySelector('form');
+        if (!form) return;
+        
+        // Restaurar cada campo
+        Object.entries(ppiFormData).forEach(([fieldName, value]) => {
+          if (fieldName === 'editingPPIId') return; // Skip meta fields
+          
+          const input = form.querySelector(`[name="${fieldName}"]`);
+          if (input && value !== undefined && value !== null && value !== '') {
+            input.value = value;
+            console.log(`📝 Campo PPI restaurado: ${fieldName} = ${value}`);
+          }
+        });
+        
+        console.log('✅ Formulario PPI restaurado desde localStorage');
+        
+        // Limpiar datos guardados después de restaurar
+        localStorage.removeItem('savedPPIFormData');
+        
+      }, 100);
+      
+    } catch (error) {
+      console.warn('Error restaurando formulario PPI desde localStorage:', error);
+    }
+  }
 }
 
 // Register in ServiceRegistry
@@ -3686,9 +3724,9 @@ if (registry) {
     description: 'UI de PPIs' 
   });
   // Optimización: Log eliminado para mejorar rendimiento
-  // console.log('✅ PPIUI registrado en ServiceRegistry');
+  // 
 } else {
-  console.log('ℹ️ ServiceRegistry no disponible para PPIUI');
+  
 }
 
 

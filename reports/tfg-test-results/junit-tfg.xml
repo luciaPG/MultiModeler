@@ -1,0 +1,779 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="359" failures="0" errors="0" time="47.184">
+  <testsuite name="Usabilidad Real de la Aplicación" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:47:42" time="9.91" tests="8">
+    <testcase classname="Usabilidad Real de la Aplicación Accesibilidad Real debe cumplir estándares WCAG AA" name="Usabilidad Real de la Aplicación Accesibilidad Real debe cumplir estándares WCAG AA" time="0.025">
+    </testcase>
+    <testcase classname="Usabilidad Real de la Aplicación Accesibilidad Real debe ser navegable completamente por teclado" name="Usabilidad Real de la Aplicación Accesibilidad Real debe ser navegable completamente por teclado" time="0.05">
+    </testcase>
+    <testcase classname="Usabilidad Real de la Aplicación Accesibilidad Real debe tener textos alternativos y labels apropiados" name="Usabilidad Real de la Aplicación Accesibilidad Real debe tener textos alternativos y labels apropiados" time="0.004">
+    </testcase>
+    <testcase classname="Usabilidad Real de la Aplicación Experiencia de Usuario Real debe proporcionar feedback inmediato en todas las acciones" name="Usabilidad Real de la Aplicación Experiencia de Usuario Real debe proporcionar feedback inmediato en todas las acciones" time="0.534">
+    </testcase>
+    <testcase classname="Usabilidad Real de la Aplicación Experiencia de Usuario Real debe mantener estado y contexto durante flujos de trabajo" name="Usabilidad Real de la Aplicación Experiencia de Usuario Real debe mantener estado y contexto durante flujos de trabajo" time="0.627">
+    </testcase>
+    <testcase classname="Usabilidad Real de la Aplicación Experiencia de Usuario Real debe ser intuitivo para nuevos usuarios" name="Usabilidad Real de la Aplicación Experiencia de Usuario Real debe ser intuitivo para nuevos usuarios" time="6.052">
+    </testcase>
+    <testcase classname="Usabilidad Real de la Aplicación Experiencia de Usuario Real debe manejar errores de manera amigable" name="Usabilidad Real de la Aplicación Experiencia de Usuario Real debe manejar errores de manera amigable" time="0.007">
+    </testcase>
+    <testcase classname="Usabilidad Real de la Aplicación Responsividad y Adaptabilidad debe adaptarse a diferentes tamaños de pantalla" name="Usabilidad Real de la Aplicación Responsividad y Adaptabilidad debe adaptarse a diferentes tamaños de pantalla" time="0.006">
+    </testcase>
+  </testsuite>
+  <testsuite name="Rendimiento Real de la Aplicación" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:47:42" time="10.145" tests="6">
+    <testcase classname="Rendimiento Real de la Aplicación debe medir Core Web Vitals reales" name="Rendimiento Real de la Aplicación debe medir Core Web Vitals reales" time="1.033">
+    </testcase>
+    <testcase classname="Rendimiento Real de la Aplicación debe medir el rendimiento de carga de diagramas grandes" name="Rendimiento Real de la Aplicación debe medir el rendimiento de carga de diagramas grandes" time="0.027">
+    </testcase>
+    <testcase classname="Rendimiento Real de la Aplicación debe mantener uso de memoria estable" name="Rendimiento Real de la Aplicación debe mantener uso de memoria estable" time="2.561">
+    </testcase>
+    <testcase classname="Rendimiento Real de la Aplicación debe responder rápidamente a interacciones del usuario" name="Rendimiento Real de la Aplicación debe responder rápidamente a interacciones del usuario" time="0.283">
+    </testcase>
+    <testcase classname="Rendimiento Real de la Aplicación debe manejar múltiples operaciones concurrentes" name="Rendimiento Real de la Aplicación debe manejar múltiples operaciones concurrentes" time="0.235">
+    </testcase>
+    <testcase classname="Rendimiento Real de la Aplicación debe mantener rendimiento bajo carga de trabajo intensa" name="Rendimiento Real de la Aplicación debe mantener rendimiento bajo carga de trabajo intensa" time="3.06">
+    </testcase>
+  </testsuite>
+  <testsuite name="Compatibilidad Real de la Aplicación" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:47:42" time="10.304" tests="9">
+    <testcase classname="Compatibilidad Real de la Aplicación Compatibilidad de Navegadores debe funcionar en navegadores principales" name="Compatibilidad Real de la Aplicación Compatibilidad de Navegadores debe funcionar en navegadores principales" time="0.515">
+    </testcase>
+    <testcase classname="Compatibilidad Real de la Aplicación Compatibilidad de Navegadores debe detectar características del navegador correctamente" name="Compatibilidad Real de la Aplicación Compatibilidad de Navegadores debe detectar características del navegador correctamente" time="0.072">
+    </testcase>
+    <testcase classname="Compatibilidad Real de la Aplicación Compatibilidad de Navegadores debe manejar diferencias de API entre navegadores" name="Compatibilidad Real de la Aplicación Compatibilidad de Navegadores debe manejar diferencias de API entre navegadores" time="0.19">
+    </testcase>
+    <testcase classname="Compatibilidad Real de la Aplicación Compatibilidad de Dispositivos debe adaptarse a diferentes tipos de dispositivos" name="Compatibilidad Real de la Aplicación Compatibilidad de Dispositivos debe adaptarse a diferentes tipos de dispositivos" time="0.677">
+    </testcase>
+    <testcase classname="Compatibilidad Real de la Aplicación Compatibilidad de Dispositivos debe manejar diferentes métodos de entrada" name="Compatibilidad Real de la Aplicación Compatibilidad de Dispositivos debe manejar diferentes métodos de entrada" time="0.37">
+    </testcase>
+    <testcase classname="Compatibilidad Real de la Aplicación Compatibilidad de Formatos de Archivo debe manejar diferentes versiones de BPMN" name="Compatibilidad Real de la Aplicación Compatibilidad de Formatos de Archivo debe manejar diferentes versiones de BPMN" time="0.334">
+    </testcase>
+    <testcase classname="Compatibilidad Real de la Aplicación Compatibilidad de Formatos de Archivo debe exportar en múltiples formatos" name="Compatibilidad Real de la Aplicación Compatibilidad de Formatos de Archivo debe exportar en múltiples formatos" time="1.071">
+    </testcase>
+    <testcase classname="Compatibilidad Real de la Aplicación Compatibilidad de Red y Protocolos debe funcionar con diferentes configuraciones de red" name="Compatibilidad Real de la Aplicación Compatibilidad de Red y Protocolos debe funcionar con diferentes configuraciones de red" time="4.018">
+    </testcase>
+    <testcase classname="Compatibilidad Real de la Aplicación Compatibilidad de Red y Protocolos debe manejar protocolos de seguridad modernos" name="Compatibilidad Real de la Aplicación Compatibilidad de Red y Protocolos debe manejar protocolos de seguridad modernos" time="0.231">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:47:42" time="10.729" tests="21">
+    <testcase classname="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Inicialización del PPIDataManager debe inicializar correctamente con control de concurrencia" name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Inicialización del PPIDataManager debe inicializar correctamente con control de concurrencia" time="0.005">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Inicialización del PPIDataManager debe cargar PPIs al inicializar" name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Inicialización del PPIDataManager debe cargar PPIs al inicializar" time="0.104">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Control de concurrencia en guardado debe prevenir múltiples guardados simultáneos" name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Control de concurrencia en guardado debe prevenir múltiples guardados simultáneos" time="0.063">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Control de concurrencia en guardado debe prevenir múltiples cargas simultáneas" name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Control de concurrencia en guardado debe prevenir múltiples cargas simultáneas" time="0.526">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Control de concurrencia en guardado debe manejar el flag isSaving correctamente" name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Control de concurrencia en guardado debe manejar el flag isSaving correctamente" time="0.047">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Control de concurrencia en guardado debe manejar el flag isLoading correctamente" name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Control de concurrencia en guardado debe manejar el flag isLoading correctamente" time="0.521">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Operaciones CRUD con localStorage debe agregar PPI y guardar en localStorage" name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Operaciones CRUD con localStorage debe agregar PPI y guardar en localStorage" time="0.037">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Operaciones CRUD con localStorage debe actualizar PPI y guardar en localStorage" name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Operaciones CRUD con localStorage debe actualizar PPI y guardar en localStorage" time="0.055">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Operaciones CRUD con localStorage debe eliminar PPI y guardar en localStorage" name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Operaciones CRUD con localStorage debe eliminar PPI y guardar en localStorage" time="0.052">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Carga de datos desde localStorage debe cargar PPIs desde localStorage correctamente" name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Carga de datos desde localStorage debe cargar PPIs desde localStorage correctamente" time="0.703">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Carga de datos desde localStorage debe manejar carga cuando no hay datos guardados" name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Carga de datos desde localStorage debe manejar carga cuando no hay datos guardados" time="0.528">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Carga de datos desde localStorage debe manejar datos corruptos en localStorage" name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Carga de datos desde localStorage debe manejar datos corruptos en localStorage" time="0.515">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Compatibilidad con sistema anterior debe mantener compatibilidad con métodos existentes" name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Compatibilidad con sistema anterior debe mantener compatibilidad con métodos existentes" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Compatibilidad con sistema anterior debe mantener estructura de datos compatible" name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Compatibilidad con sistema anterior debe mantener estructura de datos compatible" time="0.033">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Rendimiento y eficiencia debe evitar guardados innecesarios" name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Rendimiento y eficiencia debe evitar guardados innecesarios" time="0.034">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Rendimiento y eficiencia debe cargar datos de manera eficiente" name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Rendimiento y eficiencia debe cargar datos de manera eficiente" time="0.924">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Manejo de errores debe manejar errores de validación" name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Manejo de errores debe manejar errores de validación" time="0.046">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Manejo de errores debe manejar errores de índice en updatePPI" name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Manejo de errores debe manejar errores de índice en updatePPI" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Manejo de errores debe manejar errores de índice en deletePPI" name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Manejo de errores debe manejar errores de índice en deletePPI" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Filtrado de medidas agregadas debe excluir medidas agregadas del panel PPI" name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Filtrado de medidas agregadas debe excluir medidas agregadas del panel PPI" time="0.058">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Filtrado de medidas agregadas debe excluir PPIs hijas/derivadas del panel PPI" name="8.1 Pruebas Unitarias - PPIDataManager con LocalStorage Filtrado de medidas agregadas debe excluir PPIs hijas/derivadas del panel PPI" time="0.082">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 PPINOT - LocalStorage y Parentescos" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:47:53" time="1.053" tests="11">
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos LocalStorage: Persistencia de PPIs debe guardar y cargar PPIs con targets correctamente" name="8.1 PPINOT - LocalStorage y Parentescos LocalStorage: Persistencia de PPIs debe guardar y cargar PPIs con targets correctamente" time="0.605">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos LocalStorage: Persistencia de PPIs debe manejar PPIs huérfanos (targets inexistentes)" name="8.1 PPINOT - LocalStorage y Parentescos LocalStorage: Persistencia de PPIs debe manejar PPIs huérfanos (targets inexistentes)" time="0.001">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos Parentescos: Medidas Padre-Hijo debe validar jerarquía de medidas padre-hijo correctamente" name="8.1 PPINOT - LocalStorage y Parentescos Parentescos: Medidas Padre-Hijo debe validar jerarquía de medidas padre-hijo correctamente" time="0.001">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos Parentescos: Medidas Padre-Hijo debe detectar parentescos circulares o inválidos" name="8.1 PPINOT - LocalStorage y Parentescos Parentescos: Medidas Padre-Hijo debe detectar parentescos circulares o inválidos" time="0.005">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos Scope: Validación de Ámbitos debe validar scope correcto para cada tipo de medida" name="8.1 PPINOT - LocalStorage y Parentescos Scope: Validación de Ámbitos debe validar scope correcto para cada tipo de medida" time="0.005">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos Targets: Vinculación con Elementos BPMN debe sincronizar targets cuando cambian elementos BPMN" name="8.1 PPINOT - LocalStorage y Parentescos Targets: Vinculación con Elementos BPMN debe sincronizar targets cuando cambian elementos BPMN" time="0.002">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos Targets: Vinculación con Elementos BPMN debe manejar targets con tipos de elemento específicos" name="8.1 PPINOT - LocalStorage y Parentescos Targets: Vinculación con Elementos BPMN debe manejar targets con tipos de elemento específicos" time="0.002">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos Persistencia: Problemas Reales de LocalStorage debe detectar y manejar corrupción de datos PPINOT" name="8.1 PPINOT - LocalStorage y Parentescos Persistencia: Problemas Reales de LocalStorage debe detectar y manejar corrupción de datos PPINOT" time="0.009">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos Persistencia: Problemas Reales de LocalStorage debe manejar límites de localStorage con PPIs complejos" name="8.1 PPINOT - LocalStorage y Parentescos Persistencia: Problemas Reales de LocalStorage debe manejar límites de localStorage con PPIs complejos" time="0.002">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos Medidas Hijas: Relaciones Complejas debe validar dependencias entre medidas hijas" name="8.1 PPINOT - LocalStorage y Parentescos Medidas Hijas: Relaciones Complejas debe validar dependencias entre medidas hijas" time="0.002">
+    </testcase>
+    <testcase classname="8.1 PPINOT - LocalStorage y Parentescos Problemas Reales: Casos de Debugging debe reproducir y diagnosticar problemas específicos del sistema" name="8.1 PPINOT - LocalStorage y Parentescos Problemas Reales: Casos de Debugging debe reproducir y diagnosticar problemas específicos del sistema" time="0.008">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 Pruebas Unitarias - AutosaveManager" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:47:53" time="1.76" tests="19">
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Inicialización del AutosaveManager debe inicializar correctamente con configuración por defecto" name="8.1 Pruebas Unitarias - AutosaveManager Inicialización del AutosaveManager debe inicializar correctamente con configuración por defecto" time="0.006">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Inicialización del AutosaveManager debe inicializar con configuración personalizada" name="8.1 Pruebas Unitarias - AutosaveManager Inicialización del AutosaveManager debe inicializar con configuración personalizada" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Inicialización del AutosaveManager debe configurar listeners de eventos automáticamente" name="8.1 Pruebas Unitarias - AutosaveManager Inicialización del AutosaveManager debe configurar listeners de eventos automáticamente" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Detección de Cambios debe detectar cambios en elementos BPMN" name="8.1 Pruebas Unitarias - AutosaveManager Detección de Cambios debe detectar cambios en elementos BPMN" time="0.071">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Detección de Cambios debe detectar adición de elementos" name="8.1 Pruebas Unitarias - AutosaveManager Detección de Cambios debe detectar adición de elementos" time="0.016">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Detección de Cambios debe detectar eliminación de elementos" name="8.1 Pruebas Unitarias - AutosaveManager Detección de Cambios debe detectar eliminación de elementos" time="0.019">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Ejecución de Autoguardado debe ejecutar autoguardado cuando hay cambios" name="8.1 Pruebas Unitarias - AutosaveManager Ejecución de Autoguardado debe ejecutar autoguardado cuando hay cambios" time="0.02">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Ejecución de Autoguardado debe programar autoguardado automático" name="8.1 Pruebas Unitarias - AutosaveManager Ejecución de Autoguardado debe programar autoguardado automático" time="0.016">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Ejecución de Autoguardado debe publicar evento de autoguardado completado" name="8.1 Pruebas Unitarias - AutosaveManager Ejecución de Autoguardado debe publicar evento de autoguardado completado" time="0.031">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Ejecución de Autoguardado no debe ejecutar autoguardado si no hay cambios" name="8.1 Pruebas Unitarias - AutosaveManager Ejecución de Autoguardado no debe ejecutar autoguardado si no hay cambios" time="0.006">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Ejecución de Autoguardado debe evitar autoguardados concurrentes" name="8.1 Pruebas Unitarias - AutosaveManager Ejecución de Autoguardado debe evitar autoguardados concurrentes" time="0.005">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Manejo de Errores debe manejar errores del modelador" name="8.1 Pruebas Unitarias - AutosaveManager Manejo de Errores debe manejar errores del modelador" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Manejo de Errores debe manejar errores del storage" name="8.1 Pruebas Unitarias - AutosaveManager Manejo de Errores debe manejar errores del storage" time="0.028">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Control de Estado debe habilitar y deshabilitar autoguardado" name="8.1 Pruebas Unitarias - AutosaveManager Control de Estado debe habilitar y deshabilitar autoguardado" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Control de Estado debe forzar autoguardado manualmente" name="8.1 Pruebas Unitarias - AutosaveManager Control de Estado debe forzar autoguardado manualmente" time="0.02">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Control de Estado debe limpiar recursos al destruir" name="8.1 Pruebas Unitarias - AutosaveManager Control de Estado debe limpiar recursos al destruir" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Integración con Sistema Multi-notación debe guardar datos de todas las notaciones" name="8.1 Pruebas Unitarias - AutosaveManager Integración con Sistema Multi-notación debe guardar datos de todas las notaciones" time="0.019">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Integración con Sistema Multi-notación debe responder a cambios en RASCI" name="8.1 Pruebas Unitarias - AutosaveManager Integración con Sistema Multi-notación debe responder a cambios en RASCI" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - AutosaveManager Integración con Sistema Multi-notación debe responder a cambios en PPINOT" name="8.1 Pruebas Unitarias - AutosaveManager Integración con Sistema Multi-notación debe responder a cambios en PPINOT" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 Pruebas Unitarias - LocalStorageIntegration" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:47:54" time="1.012" tests="17">
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageIntegration Inicialización del LocalStorageIntegration debe inicializar correctamente y registrar servicios" name="8.1 Pruebas Unitarias - LocalStorageIntegration Inicialización del LocalStorageIntegration debe inicializar correctamente y registrar servicios" time="0.018">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageIntegration Inicialización del LocalStorageIntegration debe configurar el ServiceRegistry correctamente" name="8.1 Pruebas Unitarias - LocalStorageIntegration Inicialización del LocalStorageIntegration debe configurar el ServiceRegistry correctamente" time="0.012">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageIntegration Migración desde sistema anterior debe migrar datos del formato anterior" name="8.1 Pruebas Unitarias - LocalStorageIntegration Migración desde sistema anterior debe migrar datos del formato anterior" time="0.08">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageIntegration Migración desde sistema anterior debe manejar migración cuando no hay datos anteriores" name="8.1 Pruebas Unitarias - LocalStorageIntegration Migración desde sistema anterior debe manejar migración cuando no hay datos anteriores" time="0.018">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageIntegration Migración desde sistema anterior debe manejar datos corruptos durante migración" name="8.1 Pruebas Unitarias - LocalStorageIntegration Migración desde sistema anterior debe manejar datos corruptos durante migración" time="0.091">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageIntegration Métodos de conveniencia debe exponer saveProject correctamente" name="8.1 Pruebas Unitarias - LocalStorageIntegration Métodos de conveniencia debe exponer saveProject correctamente" time="0.031">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageIntegration Métodos de conveniencia debe exponer loadProject correctamente" name="8.1 Pruebas Unitarias - LocalStorageIntegration Métodos de conveniencia debe exponer loadProject correctamente" time="0.013">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageIntegration Métodos de conveniencia debe exponer clearSavedData correctamente" name="8.1 Pruebas Unitarias - LocalStorageIntegration Métodos de conveniencia debe exponer clearSavedData correctamente" time="0.017">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageIntegration Métodos de conveniencia debe exponer hasSavedData correctamente" name="8.1 Pruebas Unitarias - LocalStorageIntegration Métodos de conveniencia debe exponer hasSavedData correctamente" time="0.009">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageIntegration Métodos de conveniencia debe exponer getStorageInfo correctamente" name="8.1 Pruebas Unitarias - LocalStorageIntegration Métodos de conveniencia debe exponer getStorageInfo correctamente" time="0.01">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageIntegration Métodos de estado debe manejar markRestored correctamente" name="8.1 Pruebas Unitarias - LocalStorageIntegration Métodos de estado debe manejar markRestored correctamente" time="0.009">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageIntegration Métodos de estado debe manejar isRestored correctamente" name="8.1 Pruebas Unitarias - LocalStorageIntegration Métodos de estado debe manejar isRestored correctamente" time="0.008">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageIntegration Integración con sistema existente debe ser compatible con PPIDataManager" name="8.1 Pruebas Unitarias - LocalStorageIntegration Integración con sistema existente debe ser compatible con PPIDataManager" time="0.009">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageIntegration Integración con sistema existente debe manejar errores de manera consistente" name="8.1 Pruebas Unitarias - LocalStorageIntegration Integración con sistema existente debe manejar errores de manera consistente" time="0.023">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageIntegration Compatibilidad con app.js debe proporcionar métodos que app.js necesita" name="8.1 Pruebas Unitarias - LocalStorageIntegration Compatibilidad con app.js debe proporcionar métodos que app.js necesita" time="0.013">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageIntegration Compatibilidad con app.js debe estar disponible a través del ServiceRegistry" name="8.1 Pruebas Unitarias - LocalStorageIntegration Compatibilidad con app.js debe estar disponible a través del ServiceRegistry" time="0.012">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageIntegration Manejo de errores debe manejar errores de inicialización graciosamente" name="8.1 Pruebas Unitarias - LocalStorageIntegration Manejo de errores debe manejar errores de inicialización graciosamente" time="0.027">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.4 Requisitos No Funcionales - Aplicación Real" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:47:42" time="14.093" tests="13">
+    <testcase classname="8.4 Requisitos No Funcionales - Aplicación Real NFR-01: Rendimiento de Aplicación Real la página principal debe cargar en menos de 3 segundos" name="8.4 Requisitos No Funcionales - Aplicación Real NFR-01: Rendimiento de Aplicación Real la página principal debe cargar en menos de 3 segundos" time="2.045">
+    </testcase>
+    <testcase classname="8.4 Requisitos No Funcionales - Aplicación Real NFR-01: Rendimiento de Aplicación Real la carga de diagramas BPMN debe ser fluida" name="8.4 Requisitos No Funcionales - Aplicación Real NFR-01: Rendimiento de Aplicación Real la carga de diagramas BPMN debe ser fluida" time="2.28">
+    </testcase>
+    <testcase classname="8.4 Requisitos No Funcionales - Aplicación Real NFR-01: Rendimiento de Aplicación Real las operaciones de zoom deben ser responsivas" name="8.4 Requisitos No Funcionales - Aplicación Real NFR-01: Rendimiento de Aplicación Real las operaciones de zoom deben ser responsivas" time="0.327">
+    </testcase>
+    <testcase classname="8.4 Requisitos No Funcionales - Aplicación Real NFR-01: Rendimiento de Aplicación Real el guardado de proyectos debe ser eficiente" name="8.4 Requisitos No Funcionales - Aplicación Real NFR-01: Rendimiento de Aplicación Real el guardado de proyectos debe ser eficiente" time="1.632">
+    </testcase>
+    <testcase classname="8.4 Requisitos No Funcionales - Aplicación Real NFR-02: Usabilidad Real la navegación entre paneles debe ser intuitiva" name="8.4 Requisitos No Funcionales - Aplicación Real NFR-02: Usabilidad Real la navegación entre paneles debe ser intuitiva" time="0.189">
+    </testcase>
+    <testcase classname="8.4 Requisitos No Funcionales - Aplicación Real NFR-02: Usabilidad Real la interfaz debe mantener estado entre operaciones" name="8.4 Requisitos No Funcionales - Aplicación Real NFR-02: Usabilidad Real la interfaz debe mantener estado entre operaciones" time="0.09">
+    </testcase>
+    <testcase classname="8.4 Requisitos No Funcionales - Aplicación Real NFR-02: Usabilidad Real los mensajes de error deben ser claros y accionables" name="8.4 Requisitos No Funcionales - Aplicación Real NFR-02: Usabilidad Real los mensajes de error deben ser claros y accionables" time="0.004">
+    </testcase>
+    <testcase classname="8.4 Requisitos No Funcionales - Aplicación Real NFR-03: Escalabilidad Real debe manejar diagramas con muchos elementos" name="8.4 Requisitos No Funcionales - Aplicación Real NFR-03: Escalabilidad Real debe manejar diagramas con muchos elementos" time="2.804">
+    </testcase>
+    <testcase classname="8.4 Requisitos No Funcionales - Aplicación Real NFR-03: Escalabilidad Real el uso de memoria debe ser estable" name="8.4 Requisitos No Funcionales - Aplicación Real NFR-03: Escalabilidad Real el uso de memoria debe ser estable" time="0.32">
+    </testcase>
+    <testcase classname="8.4 Requisitos No Funcionales - Aplicación Real NFR-04: Compatibilidad Real debe funcionar en diferentes resoluciones de pantalla" name="8.4 Requisitos No Funcionales - Aplicación Real NFR-04: Compatibilidad Real debe funcionar en diferentes resoluciones de pantalla" time="0.19">
+    </testcase>
+    <testcase classname="8.4 Requisitos No Funcionales - Aplicación Real NFR-04: Compatibilidad Real debe manejar diferentes tipos de archivos correctamente" name="8.4 Requisitos No Funcionales - Aplicación Real NFR-04: Compatibilidad Real debe manejar diferentes tipos de archivos correctamente" time="0.843">
+    </testcase>
+    <testcase classname="8.4 Requisitos No Funcionales - Aplicación Real NFR-05: Seguridad Real debe validar entrada de usuario correctamente" name="8.4 Requisitos No Funcionales - Aplicación Real NFR-05: Seguridad Real debe validar entrada de usuario correctamente" time="0.001">
+    </testcase>
+    <testcase classname="8.4 Requisitos No Funcionales - Aplicación Real NFR-05: Seguridad Real debe manejar datos sensibles de forma segura" name="8.4 Requisitos No Funcionales - Aplicación Real NFR-05: Seguridad Real debe manejar datos sensibles de forma segura" time="0.119">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.3 Experiencia de Usuario Avanzada" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:47:42" time="17.392" tests="12">
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-01: Flujos de Trabajo Complejos debe manejar flujo completo de modelado multi-notación" name="8.3 Experiencia de Usuario Avanzada UX-01: Flujos de Trabajo Complejos debe manejar flujo completo de modelado multi-notación" time="0.016">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-01: Flujos de Trabajo Complejos debe manejar interrupción y recuperación del flujo de trabajo" name="8.3 Experiencia de Usuario Avanzada UX-01: Flujos de Trabajo Complejos debe manejar interrupción y recuperación del flujo de trabajo" time="0.003">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-02: Manejo de Errores y Feedback al Usuario debe mostrar mensajes de error claros y accionables" name="8.3 Experiencia de Usuario Avanzada UX-02: Manejo de Errores y Feedback al Usuario debe mostrar mensajes de error claros y accionables" time="0.004">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-02: Manejo de Errores y Feedback al Usuario debe proporcionar feedback visual inmediato en operaciones" name="8.3 Experiencia de Usuario Avanzada UX-02: Manejo de Errores y Feedback al Usuario debe proporcionar feedback visual inmediato en operaciones" time="11.707">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-03: Rendimiento y Responsividad de UI debe mantener UI responsiva con diagramas grandes" name="8.3 Experiencia de Usuario Avanzada UX-03: Rendimiento y Responsividad de UI debe mantener UI responsiva con diagramas grandes" time="0.224">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-03: Rendimiento y Responsividad de UI debe optimizar rendering con lazy loading" name="8.3 Experiencia de Usuario Avanzada UX-03: Rendimiento y Responsividad de UI debe optimizar rendering con lazy loading" time="0.001">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-04: Accesibilidad y Usabilidad debe soportar navegación por teclado completa" name="8.3 Experiencia de Usuario Avanzada UX-04: Accesibilidad y Usabilidad debe soportar navegación por teclado completa" time="0.001">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-04: Accesibilidad y Usabilidad debe soportar múltiples idiomas y localización" name="8.3 Experiencia de Usuario Avanzada UX-04: Accesibilidad y Usabilidad debe soportar múltiples idiomas y localización" time="0.001">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-05: Flujos de Usuario Avanzados debe manejar colaboración multi-usuario simulada" name="8.3 Experiencia de Usuario Avanzada UX-05: Flujos de Usuario Avanzados debe manejar colaboración multi-usuario simulada" time="0.001">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-05: Flujos de Usuario Avanzados debe manejar flujo de trabajo con validación en tiempo real" name="8.3 Experiencia de Usuario Avanzada UX-05: Flujos de Usuario Avanzados debe manejar flujo de trabajo con validación en tiempo real" time="1.063">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-06: Casos de Uso Extremos y Edge Cases debe manejar pérdida de datos y recuperación graceful" name="8.3 Experiencia de Usuario Avanzada UX-06: Casos de Uso Extremos y Edge Cases debe manejar pérdida de datos y recuperación graceful" time="0.002">
+    </testcase>
+    <testcase classname="8.3 Experiencia de Usuario Avanzada UX-06: Casos de Uso Extremos y Edge Cases debe optimizar memoria con proyectos muy grandes" name="8.3 Experiencia de Usuario Avanzada UX-06: Casos de Uso Extremos y Edge Cases debe optimizar memoria con proyectos muy grandes" time="0.026">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 Pruebas Unitarias - RASCI Core" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:47:55" time="4.406" tests="13">
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RasciStore - Gestión de Datos debe manejar operaciones básicas de roles" name="8.1 Pruebas Unitarias - RASCI Core RasciStore - Gestión de Datos debe manejar operaciones básicas de roles" time="0.018">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RasciStore - Gestión de Datos debe validar estructura de datos RASCI" name="8.1 Pruebas Unitarias - RASCI Core RasciStore - Gestión de Datos debe validar estructura de datos RASCI" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCIAdapter - Integración debe importar y instanciar RASCIAdapter" name="8.1 Pruebas Unitarias - RASCI Core RASCIAdapter - Integración debe importar y instanciar RASCIAdapter" time="0.457">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCIAdapter - Integración debe manejar comunicación con otros módulos" name="8.1 Pruebas Unitarias - RASCI Core RASCIAdapter - Integración debe manejar comunicación con otros módulos" time="0.032">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCI Validation - Validadores Reales debe ejecutar validación de matriz real" name="8.1 Pruebas Unitarias - RASCI Core RASCI Validation - Validadores Reales debe ejecutar validación de matriz real" time="3.541">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCI Validation - Validadores Reales debe validar reglas RASCI básicas" name="8.1 Pruebas Unitarias - RASCI Core RASCI Validation - Validadores Reales debe validar reglas RASCI básicas" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCI Mapping - Mapeo Automático debe ejecutar funciones de mapeo básicas" name="8.1 Pruebas Unitarias - RASCI Core RASCI Mapping - Mapeo Automático debe ejecutar funciones de mapeo básicas" time="0.01">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCI Mapping - Mapeo Automático debe manejar auto-mapping de roles" name="8.1 Pruebas Unitarias - RASCI Core RASCI Mapping - Mapeo Automático debe manejar auto-mapping de roles" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCI UI - Validadores de Interfaz debe manejar validación de UI" name="8.1 Pruebas Unitarias - RASCI Core RASCI UI - Validadores de Interfaz debe manejar validación de UI" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCI UI - Validadores de Interfaz debe generar mensajes de validación" name="8.1 Pruebas Unitarias - RASCI Core RASCI UI - Validadores de Interfaz debe generar mensajes de validación" time="0.003">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCI Change Management debe manejar cola de cambios" name="8.1 Pruebas Unitarias - RASCI Core RASCI Change Management debe manejar cola de cambios" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCI Change Management debe gestionar estado de cambios pendientes" name="8.1 Pruebas Unitarias - RASCI Core RASCI Change Management debe gestionar estado de cambios pendientes" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - RASCI Core RASCI Configuration debe cargar configuración de validación" name="8.1 Pruebas Unitarias - RASCI Core RASCI Configuration debe cargar configuración de validación" time="0.102">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.2 Change Queue Manager Real" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:47:54" time="5.45" tests="6">
+    <testcase classname="8.2 Change Queue Manager Real REAL: Importación y Funciones del Change Queue debe importar change-queue-manager real y exponer funciones" name="8.2 Change Queue Manager Real REAL: Importación y Funciones del Change Queue debe importar change-queue-manager real y exponer funciones" time="0.008">
+    </testcase>
+    <testcase classname="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe añadir cambios reales a la cola y procesarlos" name="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe añadir cambios reales a la cola y procesarlos" time="0.055">
+    </testcase>
+    <testcase classname="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe procesar cambios pendientes reales independientemente" name="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe procesar cambios pendientes reales independientemente" time="0.019">
+    </testcase>
+    <testcase classname="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe limpiar cola real correctamente" name="8.2 Change Queue Manager Real REAL: Pipeline de Cola de Cambios debe limpiar cola real correctamente" time="0.047">
+    </testcase>
+    <testcase classname="8.2 Change Queue Manager Real REAL: Deduplicación y Optimización debe deduplicar cambios reales correctamente" name="8.2 Change Queue Manager Real REAL: Deduplicación y Optimización debe deduplicar cambios reales correctamente" time="0.035">
+    </testcase>
+    <testcase classname="8.2 Change Queue Manager Real REAL: Debug y Monitoreo debe proporcionar información de debug real" name="8.2 Change Queue Manager Real REAL: Debug y Monitoreo debe proporcionar información de debug real" time="0.019">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 Pruebas Unitarias - Validadores REALES (Corregidos)" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:47:56" time="3.982" tests="17">
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validadores BPMN - Lógica Real debe extraer estadísticas reales de XML BPMN" name="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validadores BPMN - Lógica Real debe extraer estadísticas reales de XML BPMN" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validadores BPMN - Lógica Real debe extraer tareas específicas del XML" name="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validadores BPMN - Lógica Real debe extraer tareas específicas del XML" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validadores BPMN - Lógica Real debe extraer secuencias de flujo reales" name="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validadores BPMN - Lógica Real debe extraer secuencias de flujo reales" time="0.035">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validadores BPMN - Lógica Real debe manejar XML vacío o inválido graciosamente" name="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validadores BPMN - Lógica Real debe manejar XML vacío o inválido graciosamente" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validador RASCI - Lógica Real debe crear instancia de validador correctamente" name="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validador RASCI - Lógica Real debe crear instancia de validador correctamente" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validador RASCI - Lógica Real debe validar matriz vacía correctamente" name="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validador RASCI - Lógica Real debe validar matriz vacía correctamente" time="0.003">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validador RASCI - Lógica Real debe validar matriz con datos válidos" name="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validador RASCI - Lógica Real debe validar matriz con datos válidos" time="0.013">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validador RASCI - Lógica Real debe detectar errores críticos en matriz RASCI" name="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validador RASCI - Lógica Real debe detectar errores críticos en matriz RASCI" time="0.016">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validador RASCI - Lógica Real debe detectar responsables duplicados" name="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validador RASCI - Lógica Real debe detectar responsables duplicados" time="0.022">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validador RASCI - Lógica Real debe generar resumen de validación completo" name="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validador RASCI - Lógica Real debe generar resumen de validación completo" time="0.029">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validadores PPINOT y RALPH - Lógica Real debe verificar tipos soportados por PPINOT" name="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validadores PPINOT y RALPH - Lógica Real debe verificar tipos soportados por PPINOT" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validadores PPINOT y RALPH - Lógica Real debe tener tipos RALPH definidos" name="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validadores PPINOT y RALPH - Lógica Real debe tener tipos RALPH definidos" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validadores PPINOT y RALPH - Lógica Real debe manejar tipos no soportados graciosamente" name="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Validadores PPINOT y RALPH - Lógica Real debe manejar tipos no soportados graciosamente" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Integración entre Validadores debe combinar validación BPMN y RASCI" name="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Integración entre Validadores debe combinar validación BPMN y RASCI" time="0.01">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Integración entre Validadores debe detectar incompatibilidades entre notaciones" name="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Integración entre Validadores debe detectar incompatibilidades entre notaciones" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Tests de regresión debe mantener compatibilidad con XML de diferentes versiones" name="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Tests de regresión debe mantener compatibilidad con XML de diferentes versiones" time="0.019">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Tests de regresión debe manejar matrices RASCI de diferentes tamaños" name="8.1 Pruebas Unitarias - Validadores REALES (Corregidos) Tests de regresión debe manejar matrices RASCI de diferentes tamaños" time="0.053">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.2 Pruebas de Integración Reales" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:48:00" time="0.478" tests="7">
+    <testcase classname="8.2 Pruebas de Integración Reales Integración BPMN + RASCI Real debe sincronizar tareas BPMN con matriz RASCI usando validadores reales" name="8.2 Pruebas de Integración Reales Integración BPMN + RASCI Real debe sincronizar tareas BPMN con matriz RASCI usando validadores reales" time="0.011">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Reales Integración BPMN + RASCI Real debe detectar inconsistencias reales entre BPMN y RASCI" name="8.2 Pruebas de Integración Reales Integración BPMN + RASCI Real debe detectar inconsistencias reales entre BPMN y RASCI" time="0.002">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Reales Integración PPINOT + RALPH Real debe validar compatibilidad entre tipos PPINOT y elementos RALPH" name="8.2 Pruebas de Integración Reales Integración PPINOT + RALPH Real debe validar compatibilidad entre tipos PPINOT y elementos RALPH" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Reales Integración PPINOT + RALPH Real debe manejar elementos híbridos PPINOT-RALPH en un proyecto real" name="8.2 Pruebas de Integración Reales Integración PPINOT + RALPH Real debe manejar elementos híbridos PPINOT-RALPH en un proyecto real" time="0.002">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Reales Integración Multinotación Completa debe coordinar BPMN + PPINOT + RALPH + RASCI en proyecto real" name="8.2 Pruebas de Integración Reales Integración Multinotación Completa debe coordinar BPMN + PPINOT + RALPH + RASCI en proyecto real" time="0.005">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Reales Integración Multinotación Completa debe detectar y manejar conflictos reales entre notaciones" name="8.2 Pruebas de Integración Reales Integración Multinotación Completa debe detectar y manejar conflictos reales entre notaciones" time="0.004">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Reales Casos de Rendimiento Real debe manejar validación de matrices RASCI grandes con rendimiento aceptable" name="8.2 Pruebas de Integración Reales Casos de Rendimiento Real debe manejar validación de matrices RASCI grandes con rendimiento aceptable" time="0.035">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.2 Pruebas de Integración Reales (Corregidas)" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:48:00" time="0.547" tests="12">
+    <testcase classname="8.2 Pruebas de Integración Reales (Corregidas) Integración BPMN + RASCI Real debe sincronizar tareas BPMN con matriz RASCI usando validadores reales" name="8.2 Pruebas de Integración Reales (Corregidas) Integración BPMN + RASCI Real debe sincronizar tareas BPMN con matriz RASCI usando validadores reales" time="0.035">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Reales (Corregidas) Integración BPMN + RASCI Real debe detectar inconsistencias reales entre BPMN y RASCI" name="8.2 Pruebas de Integración Reales (Corregidas) Integración BPMN + RASCI Real debe detectar inconsistencias reales entre BPMN y RASCI" time="0.004">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Reales (Corregidas) Integración BPMN + RASCI Real debe manejar casos extremos en integración BPMN-RASCI" name="8.2 Pruebas de Integración Reales (Corregidas) Integración BPMN + RASCI Real debe manejar casos extremos en integración BPMN-RASCI" time="0.005">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Reales (Corregidas) Integración PPINOT + RALPH Real debe verificar compatibilidad de tipos PPINOT y RALPH reales" name="8.2 Pruebas de Integración Reales (Corregidas) Integración PPINOT + RALPH Real debe verificar compatibilidad de tipos PPINOT y RALPH reales" time="0.003">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Reales (Corregidas) Integración PPINOT + RALPH Real debe validar elementos BPMN en ambas notaciones" name="8.2 Pruebas de Integración Reales (Corregidas) Integración PPINOT + RALPH Real debe validar elementos BPMN en ambas notaciones" time="0.005">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Reales (Corregidas) Integración PPINOT + RALPH Real debe manejar tipos no soportados en integración real" name="8.2 Pruebas de Integración Reales (Corregidas) Integración PPINOT + RALPH Real debe manejar tipos no soportados en integración real" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Reales (Corregidas) Integración Multinotación Completa debe coordinar BPMN + PPINOT + RALPH + RASCI en proyecto real" name="8.2 Pruebas de Integración Reales (Corregidas) Integración Multinotación Completa debe coordinar BPMN + PPINOT + RALPH + RASCI en proyecto real" time="0.004">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Reales (Corregidas) Integración Multinotación Completa debe detectar y manejar conflictos reales entre notaciones" name="8.2 Pruebas de Integración Reales (Corregidas) Integración Multinotación Completa debe detectar y manejar conflictos reales entre notaciones" time="0.004">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Reales (Corregidas) Casos de Rendimiento Real debe manejar validación de matrices RASCI grandes con rendimiento aceptable" name="8.2 Pruebas de Integración Reales (Corregidas) Casos de Rendimiento Real debe manejar validación de matrices RASCI grandes con rendimiento aceptable" time="0.008">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Reales (Corregidas) Casos de Rendimiento Real debe manejar análisis de BPMN complejos eficientemente" name="8.2 Pruebas de Integración Reales (Corregidas) Casos de Rendimiento Real debe manejar análisis de BPMN complejos eficientemente" time="0.036">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Reales (Corregidas) Tests de Regresión Reales debe mantener retrocompatibilidad con formatos XML anteriores" name="8.2 Pruebas de Integración Reales (Corregidas) Tests de Regresión Reales debe mantener retrocompatibilidad con formatos XML anteriores" time="0.011">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Reales (Corregidas) Tests de Regresión Reales debe validar consistentemente diferentes configuraciones RASCI" name="8.2 Pruebas de Integración Reales (Corregidas) Tests de Regresión Reales debe validar consistentemente diferentes configuraciones RASCI" time="0.007">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 Pruebas Unitarias - Validadores REALES" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:48:01" time="0.313" tests="17">
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES Validador BPMN - Lógica Real debe analizar estadísticas de elementos BPMN reales" name="8.1 Pruebas Unitarias - Validadores REALES Validador BPMN - Lógica Real debe analizar estadísticas de elementos BPMN reales" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES Validador BPMN - Lógica Real debe extraer flujos secuenciales de XML real" name="8.1 Pruebas Unitarias - Validadores REALES Validador BPMN - Lógica Real debe extraer flujos secuenciales de XML real" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES Validador BPMN - Lógica Real debe detectar ciclos en flujos usando lógica real" name="8.1 Pruebas Unitarias - Validadores REALES Validador BPMN - Lógica Real debe detectar ciclos en flujos usando lógica real" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES Validador BPMN - Lógica Real debe validar XML BPMN malformado" name="8.1 Pruebas Unitarias - Validadores REALES Validador BPMN - Lógica Real debe validar XML BPMN malformado" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES Validador PPINOT - Configuración Real debe validar tipos PPINOT soportados usando configuración real" name="8.1 Pruebas Unitarias - Validadores REALES Validador PPINOT - Configuración Real debe validar tipos PPINOT soportados usando configuración real" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES Validador PPINOT - Configuración Real debe rechazar tipos PPINOT no soportados" name="8.1 Pruebas Unitarias - Validadores REALES Validador PPINOT - Configuración Real debe rechazar tipos PPINOT no soportados" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES Validador PPINOT - Configuración Real debe obtener iconos para elementos PPINOT válidos" name="8.1 Pruebas Unitarias - Validadores REALES Validador PPINOT - Configuración Real debe obtener iconos para elementos PPINOT válidos" time="0.003">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES Validador PPINOT - Configuración Real debe validar tipos editables de PPINOT" name="8.1 Pruebas Unitarias - Validadores REALES Validador PPINOT - Configuración Real debe validar tipos editables de PPINOT" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES Validador RALPH - Tipos Real debe validar elementos RALPH soportados" name="8.1 Pruebas Unitarias - Validadores REALES Validador RALPH - Tipos Real debe validar elementos RALPH soportados" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES Validador RALPH - Tipos Real debe validar conexiones RALPH soportadas" name="8.1 Pruebas Unitarias - Validadores REALES Validador RALPH - Tipos Real debe validar conexiones RALPH soportadas" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES Validador RALPH - Tipos Real debe validar estructura de roles RALPH" name="8.1 Pruebas Unitarias - Validadores REALES Validador RALPH - Tipos Real debe validar estructura de roles RALPH" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES Validador RASCI - Lógica Real debe validar matriz RASCI usando validador real" name="8.1 Pruebas Unitarias - Validadores REALES Validador RASCI - Lógica Real debe validar matriz RASCI usando validador real" time="0.023">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES Validador RASCI - Lógica Real debe detectar errores críticos en matriz RASCI" name="8.1 Pruebas Unitarias - Validadores REALES Validador RASCI - Lógica Real debe detectar errores críticos en matriz RASCI" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES Validador RASCI - Lógica Real debe detectar responsables duplicados" name="8.1 Pruebas Unitarias - Validadores REALES Validador RASCI - Lógica Real debe detectar responsables duplicados" time="0.003">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES Validador RASCI - Lógica Real debe validar letras RASCI válidas" name="8.1 Pruebas Unitarias - Validadores REALES Validador RASCI - Lógica Real debe validar letras RASCI válidas" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES Validador RASCI - Lógica Real debe generar resumen de validación completo" name="8.1 Pruebas Unitarias - Validadores REALES Validador RASCI - Lógica Real debe generar resumen de validación completo" time="0.003">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores REALES Integración entre Validadores debe combinar validación BPMN y RASCI" name="8.1 Pruebas Unitarias - Validadores REALES Integración entre Validadores debe combinar validación BPMN y RASCI" time="0.002">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.2 Pruebas de Integración Avanzadas - Componentes Reales" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:48:01" time="0.282" tests="12">
+    <testcase classname="8.2 Pruebas de Integración Avanzadas - Componentes Reales Integración BPMN + RASCI con validación real Validación completa BPMN+RASCI con datos reales" name="8.2 Pruebas de Integración Avanzadas - Componentes Reales Integración BPMN + RASCI con validación real Validación completa BPMN+RASCI con datos reales" time="0.008">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas - Componentes Reales Integración BPMN + RASCI con validación real Detección de inconsistencias reales BPMN-RASCI" name="8.2 Pruebas de Integración Avanzadas - Componentes Reales Integración BPMN + RASCI con validación real Detección de inconsistencias reales BPMN-RASCI" time="0.003">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas - Componentes Reales Integración BPMN + RASCI con validación real Rendimiento con BPMN complejo + RASCI grande" name="8.2 Pruebas de Integración Avanzadas - Componentes Reales Integración BPMN + RASCI con validación real Rendimiento con BPMN complejo + RASCI grande" time="0.002">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas - Componentes Reales Integración PPINOT + RALPH con tipos reales Compatibilidad de tipos PPINOT y RALPH reales" name="8.2 Pruebas de Integración Avanzadas - Componentes Reales Integración PPINOT + RALPH con tipos reales Compatibilidad de tipos PPINOT y RALPH reales" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas - Componentes Reales Integración PPINOT + RALPH con tipos reales Validación cruzada PPINOT-RALPH en elementos BPMN" name="8.2 Pruebas de Integración Avanzadas - Componentes Reales Integración PPINOT + RALPH con tipos reales Validación cruzada PPINOT-RALPH en elementos BPMN" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas - Componentes Reales Integración PPINOT + RALPH con tipos reales Manejo de tipos no soportados en integración real" name="8.2 Pruebas de Integración Avanzadas - Componentes Reales Integración PPINOT + RALPH con tipos reales Manejo de tipos no soportados en integración real" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas - Componentes Reales Coordinación completa multinotación real Workflow completo con todas las notaciones integradas" name="8.2 Pruebas de Integración Avanzadas - Componentes Reales Coordinación completa multinotación real Workflow completo con todas las notaciones integradas" time="0.003">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas - Componentes Reales Coordinación completa multinotación real Manejo de errores en cascada multinotación" name="8.2 Pruebas de Integración Avanzadas - Componentes Reales Coordinación completa multinotación real Manejo de errores en cascada multinotación" time="0.004">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas - Componentes Reales Coordinación completa multinotación real Sincronización de cambios entre notaciones" name="8.2 Pruebas de Integración Avanzadas - Componentes Reales Coordinación completa multinotación real Sincronización de cambios entre notaciones" time="0.004">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas - Componentes Reales Tests de regresión con componentes reales Regresión: Validación de secuencias BPMN" name="8.2 Pruebas de Integración Avanzadas - Componentes Reales Tests de regresión con componentes reales Regresión: Validación de secuencias BPMN" time="0.013">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas - Componentes Reales Tests de regresión con componentes reales Regresión: RASCI matrix con roles edge case" name="8.2 Pruebas de Integración Avanzadas - Componentes Reales Tests de regresión con componentes reales Regresión: RASCI matrix con roles edge case" time="0.002">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas - Componentes Reales Tests de regresión con componentes reales Regresión: PPINOT types con elementos complejos" name="8.2 Pruebas de Integración Avanzadas - Componentes Reales Tests de regresión con componentes reales Regresión: PPINOT types con elementos complejos" time="0.004">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.2 Pruebas de Integración Avanzadas" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:48:01" time="0.469" tests="10">
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe sincronizar diagrama grande (50+ elementos) en tiempo razonable" name="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe sincronizar diagrama grande (50+ elementos) en tiempo razonable" time="0.018">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe manejar cambios concurrentes con condiciones de carrera reales" name="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe manejar cambios concurrentes con condiciones de carrera reales" time="0.009">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe mantener rendimiento con matriz RASCI compleja" name="8.2 Pruebas de Integración Avanzadas Tests de Rendimiento y Escalabilidad debe mantener rendimiento con matriz RASCI compleja" time="0.002">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe manejar PPIs con múltiples referencias cruzadas" name="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe manejar PPIs con múltiples referencias cruzadas" time="0.005">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe validar límites del sistema y rechazar excesos" name="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe validar límites del sistema y rechazar excesos" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe manejar sincronización incremental optimizada" name="8.2 Pruebas de Integración Avanzadas Tests de Casos Edge Avanzados debe manejar sincronización incremental optimizada" time="0.006">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Seguridad y Validación Avanzada debe sanitizar y validar inputs maliciosos en integración" name="8.2 Pruebas de Integración Avanzadas Tests de Seguridad y Validación Avanzada debe sanitizar y validar inputs maliciosos en integración" time="0.002">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Seguridad y Validación Avanzada debe validar integridad de datos durante operaciones críticas" name="8.2 Pruebas de Integración Avanzadas Tests de Seguridad y Validación Avanzada debe validar integridad de datos durante operaciones críticas" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Recuperación y Resiliencia debe recuperar estado tras múltiples fallos consecutivos" name="8.2 Pruebas de Integración Avanzadas Tests de Recuperación y Resiliencia debe recuperar estado tras múltiples fallos consecutivos" time="0.002">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración Avanzadas Tests de Recuperación y Resiliencia debe detectar degradación del sistema por carga funcional" name="8.2 Pruebas de Integración Avanzadas Tests de Recuperación y Resiliencia debe detectar degradación del sistema por carga funcional" time="0.003">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 Pruebas Unitarias - PPINOT Core Real" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:48:01" time="0.269" tests="11">
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Configuration - Configuración Principal debe cargar PPINOT_CONFIG con estructura completa" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Configuration - Configuración Principal debe cargar PPINOT_CONFIG con estructura completa" time="0.003">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Configuration - Configuración Principal debe incluir todos los tipos soportados desde Types.js" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Configuration - Configuración Principal debe incluir todos los tipos soportados desde Types.js" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Configuration - Configuración Principal debe incluir eventos PPINOT con sincronización" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Configuration - Configuración Principal debe incluir eventos PPINOT con sincronización" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Icons - Iconos SVG Reales debe cargar todos los iconos desde svg/index.js" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Icons - Iconos SVG Reales debe cargar todos los iconos desde svg/index.js" time="0.011">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Icons - Iconos SVG Reales debe mapear correctamente iconos desde svgIcons" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Icons - Iconos SVG Reales debe mapear correctamente iconos desde svgIcons" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Palette - Entradas de Paleta debe definir entradas de paleta completas" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Palette - Entradas de Paleta debe definir entradas de paleta completas" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Utilities - Funciones Utilitarias getIcon debe retornar iconos correctos" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Utilities - Funciones Utilitarias getIcon debe retornar iconos correctos" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Utilities - Funciones Utilitarias isSupportedType debe validar tipos correctamente" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Utilities - Funciones Utilitarias isSupportedType debe validar tipos correctamente" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Utilities - Funciones Utilitarias getPaletteEntry debe encontrar entradas por tipo" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Utilities - Funciones Utilitarias getPaletteEntry debe encontrar entradas por tipo" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Utilities - Funciones Utilitarias publishSynchronization debe publicar eventos correctamente" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Utilities - Funciones Utilitarias publishSynchronization debe publicar eventos correctamente" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Utilities - Funciones Utilitarias publishSynchronization debe fallar con eventBus inválido" name="8.1 Pruebas Unitarias - PPINOT Core Real PPINOT Utilities - Funciones Utilitarias publishSynchronization debe fallar con eventBus inválido" time="0.03">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 Pruebas Unitarias - MultiNotation Core" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:47:59" time="1.932" tests="6">
+    <testcase classname="8.1 Pruebas Unitarias - MultiNotation Core Inicialización de Aplicación debe inicializar módulos principales correctamente" name="8.1 Pruebas Unitarias - MultiNotation Core Inicialización de Aplicación debe inicializar módulos principales correctamente" time="0.334">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - MultiNotation Core Inicialización de Aplicación debe registrar servicios en ServiceRegistry durante inicialización" name="8.1 Pruebas Unitarias - MultiNotation Core Inicialización de Aplicación debe registrar servicios en ServiceRegistry durante inicialización" time="0.008">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - MultiNotation Core Comunicación Entre Módulos debe facilitar comunicación RASCI ↔ PPINOT" name="8.1 Pruebas Unitarias - MultiNotation Core Comunicación Entre Módulos debe facilitar comunicación RASCI ↔ PPINOT" time="0.342">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - MultiNotation Core Comunicación Entre Módulos debe sincronizar cambios entre notaciones de forma específica" name="8.1 Pruebas Unitarias - MultiNotation Core Comunicación Entre Módulos debe sincronizar cambios entre notaciones de forma específica" time="0.608">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - MultiNotation Core Validación Cross-Notation debe detectar inconsistencias específicas entre BPMN y RASCI" name="8.1 Pruebas Unitarias - MultiNotation Core Validación Cross-Notation debe detectar inconsistencias específicas entre BPMN y RASCI" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - MultiNotation Core Validación Cross-Notation debe validar integridad de datos entre notaciones" name="8.1 Pruebas Unitarias - MultiNotation Core Validación Cross-Notation debe validar integridad de datos entre notaciones" time="0.009">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 Pruebas Unitarias - EventBus" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:48:01" time="0.339" tests="16">
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Gestión de Instancia Singleton debe crear instancia singleton correctamente" name="8.1 Pruebas Unitarias - EventBus Gestión de Instancia Singleton debe crear instancia singleton correctamente" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Gestión de Instancia Singleton debe mantener estado consistente entre llamadas" name="8.1 Pruebas Unitarias - EventBus Gestión de Instancia Singleton debe mantener estado consistente entre llamadas" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Suscripción y Publicación de Eventos debe registrar y ejecutar suscriptores correctamente" name="8.1 Pruebas Unitarias - EventBus Suscripción y Publicación de Eventos debe registrar y ejecutar suscriptores correctamente" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Suscripción y Publicación de Eventos debe manejar múltiples suscriptores para el mismo evento" name="8.1 Pruebas Unitarias - EventBus Suscripción y Publicación de Eventos debe manejar múltiples suscriptores para el mismo evento" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Suscripción y Publicación de Eventos debe desuscribir correctamente" name="8.1 Pruebas Unitarias - EventBus Suscripción y Publicación de Eventos debe desuscribir correctamente" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Eventos Específicos del Sistema Multi-notación debe manejar eventos BPMN → PPINOT" name="8.1 Pruebas Unitarias - EventBus Eventos Específicos del Sistema Multi-notación debe manejar eventos BPMN → PPINOT" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Eventos Específicos del Sistema Multi-notación debe manejar eventos BPMN → RASCI" name="8.1 Pruebas Unitarias - EventBus Eventos Específicos del Sistema Multi-notación debe manejar eventos BPMN → RASCI" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Eventos Específicos del Sistema Multi-notación debe manejar eventos RASCI → RALPH" name="8.1 Pruebas Unitarias - EventBus Eventos Específicos del Sistema Multi-notación debe manejar eventos RASCI → RALPH" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Gestión de Historial de Eventos debe mantener historial de eventos" name="8.1 Pruebas Unitarias - EventBus Gestión de Historial de Eventos debe mantener historial de eventos" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Gestión de Historial de Eventos debe respetar límite de historial" name="8.1 Pruebas Unitarias - EventBus Gestión de Historial de Eventos debe respetar límite de historial" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Gestión de Historial de Eventos debe incluir timestamp en historial" name="8.1 Pruebas Unitarias - EventBus Gestión de Historial de Eventos debe incluir timestamp en historial" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Manejo de Errores debe manejar callbacks que lanzan excepciones" name="8.1 Pruebas Unitarias - EventBus Manejo de Errores debe manejar callbacks que lanzan excepciones" time="0.062">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Manejo de Errores debe manejar eventos sin suscriptores" name="8.1 Pruebas Unitarias - EventBus Manejo de Errores debe manejar eventos sin suscriptores" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Manejo de Errores debe validar parámetros de suscripción" name="8.1 Pruebas Unitarias - EventBus Manejo de Errores debe validar parámetros de suscripción" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Limpieza y Reset debe limpiar todos los suscriptores" name="8.1 Pruebas Unitarias - EventBus Limpieza y Reset debe limpiar todos los suscriptores" time="0.025">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - EventBus Limpieza y Reset debe limpiar historial" name="8.1 Pruebas Unitarias - EventBus Limpieza y Reset debe limpiar historial" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.3 Pruebas UI/E2E - Historias de Usuario" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:48:02" time="0.368" tests="10">
+    <testcase classname="8.3 Pruebas UI/E2E - Historias de Usuario HU-01: Crear Diagrama BPMN debe permitir crear un diagrama BPMN básico" name="8.3 Pruebas UI/E2E - Historias de Usuario HU-01: Crear Diagrama BPMN debe permitir crear un diagrama BPMN básico" time="0.008">
+    </testcase>
+    <testcase classname="8.3 Pruebas UI/E2E - Historias de Usuario HU-01: Crear Diagrama BPMN debe validar diagrama antes de guardar" name="8.3 Pruebas UI/E2E - Historias de Usuario HU-01: Crear Diagrama BPMN debe validar diagrama antes de guardar" time="0.001">
+    </testcase>
+    <testcase classname="8.3 Pruebas UI/E2E - Historias de Usuario HU-05: Crear Matriz RASCI debe permitir crear y editar matriz RASCI" name="8.3 Pruebas UI/E2E - Historias de Usuario HU-05: Crear Matriz RASCI debe permitir crear y editar matriz RASCI" time="0.001">
+    </testcase>
+    <testcase classname="8.3 Pruebas UI/E2E - Historias de Usuario HU-05: Crear Matriz RASCI debe detectar y corregir errores en matriz RASCI" name="8.3 Pruebas UI/E2E - Historias de Usuario HU-05: Crear Matriz RASCI debe detectar y corregir errores en matriz RASCI" time="0.001">
+    </testcase>
+    <testcase classname="8.3 Pruebas UI/E2E - Historias de Usuario HU-07: Sincronizar PPIs debe vincular PPIs a elementos del canvas" name="8.3 Pruebas UI/E2E - Historias de Usuario HU-07: Sincronizar PPIs debe vincular PPIs a elementos del canvas" time="0.001">
+    </testcase>
+    <testcase classname="8.3 Pruebas UI/E2E - Historias de Usuario HU-07: Sincronizar PPIs debe manejar eliminación de elementos vinculados a PPIs" name="8.3 Pruebas UI/E2E - Historias de Usuario HU-07: Sincronizar PPIs debe manejar eliminación de elementos vinculados a PPIs" time="0">
+    </testcase>
+    <testcase classname="8.3 Pruebas UI/E2E - Historias de Usuario HU-09: Autoguardado y Recuperación debe autoguardar cambios automáticamente" name="8.3 Pruebas UI/E2E - Historias de Usuario HU-09: Autoguardado y Recuperación debe autoguardar cambios automáticamente" time="0.001">
+    </testcase>
+    <testcase classname="8.3 Pruebas UI/E2E - Historias de Usuario HU-09: Autoguardado y Recuperación debe recuperar proyecto después de cierre inesperado" name="8.3 Pruebas UI/E2E - Historias de Usuario HU-09: Autoguardado y Recuperación debe recuperar proyecto después de cierre inesperado" time="0.001">
+    </testcase>
+    <testcase classname="8.3 Pruebas UI/E2E - Historias de Usuario HU-12: Exportar e Importar Proyectos debe exportar proyecto completo en formato .mmproject" name="8.3 Pruebas UI/E2E - Historias de Usuario HU-12: Exportar e Importar Proyectos debe exportar proyecto completo en formato .mmproject" time="0.002">
+    </testcase>
+    <testcase classname="8.3 Pruebas UI/E2E - Historias de Usuario HU-12: Exportar e Importar Proyectos debe importar proyecto .mmproject sin pérdida de información" name="8.3 Pruebas UI/E2E - Historias de Usuario HU-12: Exportar e Importar Proyectos debe importar proyecto .mmproject sin pérdida de información" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 Pruebas Unitarias - BPMN Validators Avanzados" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:48:02" time="0.308" tests="15">
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Validación de Eventos Obligatorios debe validar presencia de evento de inicio" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Validación de Eventos Obligatorios debe validar presencia de evento de inicio" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Validación de Eventos Obligatorios debe detectar ausencia de evento de inicio" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Validación de Eventos Obligatorios debe detectar ausencia de evento de inicio" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Validación de Eventos Obligatorios debe validar presencia de evento de fin" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Validación de Eventos Obligatorios debe validar presencia de evento de fin" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Validación de Eventos Obligatorios debe detectar ausencia de evento de fin" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Validación de Eventos Obligatorios debe detectar ausencia de evento de fin" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Detección de Ciclos Infinitos debe detectar ciclos sin eventos de fin" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Detección de Ciclos Infinitos debe detectar ciclos sin eventos de fin" time="0.01">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Detección de Ciclos Infinitos debe permitir ciclos con eventos de fin" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Detección de Ciclos Infinitos debe permitir ciclos con eventos de fin" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Detección de Ciclos Infinitos debe manejar XML sin ciclos" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Detección de Ciclos Infinitos debe manejar XML sin ciclos" time="0.013">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Detección de Ciclos Infinitos debe detectar ciclos complejos con algoritmo DFS" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Detección de Ciclos Infinitos debe detectar ciclos complejos con algoritmo DFS" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Extracción de Flujos Secuenciales debe extraer flujos del XML canónico" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Extracción de Flujos Secuenciales debe extraer flujos del XML canónico" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Extracción de Flujos Secuenciales debe manejar XML sin flujos" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Extracción de Flujos Secuenciales debe manejar XML sin flujos" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Estadísticas de Elementos BPMN debe contar elementos correctamente en diagrama canónico" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Estadísticas de Elementos BPMN debe contar elementos correctamente en diagrama canónico" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Estadísticas de Elementos BPMN debe manejar modeler sin elementRegistry" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Estadísticas de Elementos BPMN debe manejar modeler sin elementRegistry" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Tests Negativos para BPMN debe rechazar XML BPMN malformado" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Tests Negativos para BPMN debe rechazar XML BPMN malformado" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Tests Negativos para BPMN debe rechazar diagramas sin elementos obligatorios" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Tests Negativos para BPMN debe rechazar diagramas sin elementos obligatorios" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - BPMN Validators Avanzados Tests Negativos para BPMN debe detectar elementos BPMN con tipos incorrectos" name="8.1 Pruebas Unitarias - BPMN Validators Avanzados Tests Negativos para BPMN debe detectar elementos BPMN con tipos incorrectos" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 Pruebas Unitarias - ServiceRegistry" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:48:02" time="0.248" tests="11">
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Registro de Servicios debe registrar un servicio correctamente" name="8.1 Pruebas Unitarias - ServiceRegistry Registro de Servicios debe registrar un servicio correctamente" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Registro de Servicios debe sobrescribir servicio existente" name="8.1 Pruebas Unitarias - ServiceRegistry Registro de Servicios debe sobrescribir servicio existente" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Registro de Servicios debe manejar servicios con factory functions" name="8.1 Pruebas Unitarias - ServiceRegistry Registro de Servicios debe manejar servicios con factory functions" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Resolución de Servicios debe resolver servicio registrado" name="8.1 Pruebas Unitarias - ServiceRegistry Resolución de Servicios debe resolver servicio registrado" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Resolución de Servicios debe retornar undefined para servicio no registrado" name="8.1 Pruebas Unitarias - ServiceRegistry Resolución de Servicios debe retornar undefined para servicio no registrado" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Resolución de Servicios debe manejar servicios singleton" name="8.1 Pruebas Unitarias - ServiceRegistry Resolución de Servicios debe manejar servicios singleton" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Gestión de Dependencias debe resolver dependencias automáticamente" name="8.1 Pruebas Unitarias - ServiceRegistry Gestión de Dependencias debe resolver dependencias automáticamente" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Gestión de Dependencias debe manejar dependencias circulares" name="8.1 Pruebas Unitarias - ServiceRegistry Gestión de Dependencias debe manejar dependencias circulares" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Utilidades del Registry debe listar todos los servicios registrados" name="8.1 Pruebas Unitarias - ServiceRegistry Utilidades del Registry debe listar todos los servicios registrados" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Utilidades del Registry debe verificar existencia de servicios" name="8.1 Pruebas Unitarias - ServiceRegistry Utilidades del Registry debe verificar existencia de servicios" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - ServiceRegistry Utilidades del Registry debe limpiar servicios" name="8.1 Pruebas Unitarias - ServiceRegistry Utilidades del Registry debe limpiar servicios" time="0.01">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.2 Pruebas de Integración - Multi-notación" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:48:02" time="0.451" tests="20">
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración BPMN + PPINOT debe vincular PPIs a elementos BPMN correctamente" name="8.2 Pruebas de Integración - Multi-notación Integración BPMN + PPINOT debe vincular PPIs a elementos BPMN correctamente" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración BPMN + PPINOT debe sincronizar cambios en BPMN con PPIs existentes" name="8.2 Pruebas de Integración - Multi-notación Integración BPMN + PPINOT debe sincronizar cambios en BPMN con PPIs existentes" time="0">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración BPMN + RALPH debe asignar roles a tareas BPMN" name="8.2 Pruebas de Integración - Multi-notación Integración BPMN + RALPH debe asignar roles a tareas BPMN" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración BPMN + RALPH debe validar permisos de roles en ejecución" name="8.2 Pruebas de Integración - Multi-notación Integración BPMN + RALPH debe validar permisos de roles en ejecución" time="0">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración RASCI + BPMN + RALPH debe mapear automáticamente RASCI con elementos BPMN y roles RALPH" name="8.2 Pruebas de Integración - Multi-notación Integración RASCI + BPMN + RALPH debe mapear automáticamente RASCI con elementos BPMN y roles RALPH" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración RASCI + BPMN + RALPH debe detectar conflictos entre RASCI y RALPH" name="8.2 Pruebas de Integración - Multi-notación Integración RASCI + BPMN + RALPH debe detectar conflictos entre RASCI y RALPH" time="0">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración Completa: Persistencia Multi-notación debe guardar y cargar proyecto con todas las notaciones" name="8.2 Pruebas de Integración - Multi-notación Integración Completa: Persistencia Multi-notación debe guardar y cargar proyecto con todas las notaciones" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Integración Completa: Persistencia Multi-notación debe sincronizar cambios entre notaciones durante guardado automático" name="8.2 Pruebas de Integración - Multi-notación Integración Completa: Persistencia Multi-notación debe sincronizar cambios entre notaciones durante guardado automático" time="0">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Validación Cruzada de Notaciones debe validar consistencia entre BPMN y RASCI" name="8.2 Pruebas de Integración - Multi-notación Validación Cruzada de Notaciones debe validar consistencia entre BPMN y RASCI" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Validación Cruzada de Notaciones debe detectar PPIs huérfanos (sin elementos BPMN correspondientes)" name="8.2 Pruebas de Integración - Multi-notación Validación Cruzada de Notaciones debe detectar PPIs huérfanos (sin elementos BPMN correspondientes)" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar importación de proyecto corrupto" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar importación de proyecto corrupto" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe sincronizar cambios concurrentes entre notaciones" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe sincronizar cambios concurrentes entre notaciones" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe validar dependencias circulares entre roles" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe validar dependencias circulares entre roles" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar eliminación en cascada de elementos" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar eliminación en cascada de elementos" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe recuperar estado tras error de sincronización" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe recuperar estado tras error de sincronización" time="0">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar migración entre versiones de proyecto" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe manejar migración entre versiones de proyecto" time="0.001">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe validar integridad referencial completa" name="8.2 Pruebas de Integración - Multi-notación Casos Avanzados de Integración debe validar integridad referencial completa" time="0.002">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe manejar conflictos entre roles RASCI y RALPH" name="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe manejar conflictos entre roles RASCI y RALPH" time="0">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe manejar rollback cuando falla integración" name="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe manejar rollback cuando falla integración" time="0">
+    </testcase>
+    <testcase classname="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe verificar orden correcto de eventos en operaciones complejas" name="8.2 Pruebas de Integración - Multi-notación Escenarios de Conflicto Avanzados debe verificar orden correcto de eventos en operaciones complejas" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.3 Componentes UI Críticos" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:48:02" time="0.347" tests="6">
+    <testcase classname="8.3 Componentes UI Críticos Componente: Panel de Propiedades debe actualizar propiedades en tiempo real" name="8.3 Componentes UI Críticos Componente: Panel de Propiedades debe actualizar propiedades en tiempo real" time="0.002">
+    </testcase>
+    <testcase classname="8.3 Componentes UI Críticos Componente: Panel de Propiedades debe validar propiedades antes de aplicar cambios" name="8.3 Componentes UI Críticos Componente: Panel de Propiedades debe validar propiedades antes de aplicar cambios" time="0.001">
+    </testcase>
+    <testcase classname="8.3 Componentes UI Críticos Componente: Toolbar y Menús debe manejar estados de botones dinámicamente" name="8.3 Componentes UI Críticos Componente: Toolbar y Menús debe manejar estados de botones dinámicamente" time="0.001">
+    </testcase>
+    <testcase classname="8.3 Componentes UI Críticos Componente: Toolbar y Menús debe manejar menús contextuales dinámicos" name="8.3 Componentes UI Críticos Componente: Toolbar y Menús debe manejar menús contextuales dinámicos" time="0.002">
+    </testcase>
+    <testcase classname="8.3 Componentes UI Críticos Componente: Sistema de Notificaciones debe gestionar múltiples notificaciones simultáneas" name="8.3 Componentes UI Críticos Componente: Sistema de Notificaciones debe gestionar múltiples notificaciones simultáneas" time="0.002">
+    </testcase>
+    <testcase classname="8.3 Componentes UI Críticos Componente: Canvas y Viewport debe optimizar rendering con viewport virtual" name="8.3 Componentes UI Críticos Componente: Canvas y Viewport debe optimizar rendering con viewport virtual" time="0.007">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 Pruebas Unitarias - Validadores" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:48:02" time="0.271" tests="18">
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador BPMN - Lógica Real debe analizar elementos BPMN usando validador real" name="8.1 Pruebas Unitarias - Validadores Validador BPMN - Lógica Real debe analizar elementos BPMN usando validador real" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador BPMN - Lógica Real debe extraer flujos secuenciales de XML real" name="8.1 Pruebas Unitarias - Validadores Validador BPMN - Lógica Real debe extraer flujos secuenciales de XML real" time="0.019">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador BPMN - Lógica Real debe detectar ciclos en flujos" name="8.1 Pruebas Unitarias - Validadores Validador BPMN - Lógica Real debe detectar ciclos en flujos" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador BPMN - Lógica Real debe validar XML BPMN válido usando helper" name="8.1 Pruebas Unitarias - Validadores Validador BPMN - Lógica Real debe validar XML BPMN válido usando helper" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador PPINOT - Configuración Real debe validar tipos PPINOT soportados" name="8.1 Pruebas Unitarias - Validadores Validador PPINOT - Configuración Real debe validar tipos PPINOT soportados" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador PPINOT - Configuración Real debe obtener iconos PPINOT" name="8.1 Pruebas Unitarias - Validadores Validador PPINOT - Configuración Real debe obtener iconos PPINOT" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador PPINOT - Configuración Real debe validar tipos editables" name="8.1 Pruebas Unitarias - Validadores Validador PPINOT - Configuración Real debe validar tipos editables" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador PPINOT - Configuración Real debe rechazar tipos no válidos" name="8.1 Pruebas Unitarias - Validadores Validador PPINOT - Configuración Real debe rechazar tipos no válidos" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador RALPH - Tipos Real debe validar elementos RALPH" name="8.1 Pruebas Unitarias - Validadores Validador RALPH - Tipos Real debe validar elementos RALPH" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador RALPH - Tipos Real debe validar conexiones RALPH" name="8.1 Pruebas Unitarias - Validadores Validador RALPH - Tipos Real debe validar conexiones RALPH" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador RALPH - Tipos Real debe tener tipos de entidades organizacionales" name="8.1 Pruebas Unitarias - Validadores Validador RALPH - Tipos Real debe tener tipos de entidades organizacionales" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador RASCI - Lógica Real debe validar matriz RASCI válida" name="8.1 Pruebas Unitarias - Validadores Validador RASCI - Lógica Real debe validar matriz RASCI válida" time="0.008">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador RASCI - Lógica Real debe detectar tareas sin responsable" name="8.1 Pruebas Unitarias - Validadores Validador RASCI - Lógica Real debe detectar tareas sin responsable" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador RASCI - Lógica Real debe detectar responsables duplicados" name="8.1 Pruebas Unitarias - Validadores Validador RASCI - Lógica Real debe detectar responsables duplicados" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador RASCI - Lógica Real debe validar celdas individuales" name="8.1 Pruebas Unitarias - Validadores Validador RASCI - Lógica Real debe validar celdas individuales" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Validador RASCI - Lógica Real debe generar resumen de validación" name="8.1 Pruebas Unitarias - Validadores Validador RASCI - Lógica Real debe generar resumen de validación" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Integración entre Validadores debe combinar validación BPMN y RASCI" name="8.1 Pruebas Unitarias - Validadores Integración entre Validadores debe combinar validación BPMN y RASCI" time="0.003">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - Validadores Integración entre Validadores debe detectar incompatibilidades entre notaciones" name="8.1 Pruebas Unitarias - Validadores Integración entre Validadores debe detectar incompatibilidades entre notaciones" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.3 E2E Real - Aplicación Completa" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:47:53" time="11.724" tests="6">
+    <testcase classname="8.3 E2E Real - Aplicación Completa REAL: Inicialización de Aplicación Completa debe inicializar aplicación real y verificar DOM real" name="8.3 E2E Real - Aplicación Completa REAL: Inicialización de Aplicación Completa debe inicializar aplicación real y verificar DOM real" time="11.188">
+    </testcase>
+    <testcase classname="8.3 E2E Real - Aplicación Completa REAL: Inicialización de Aplicación Completa debe manejar eventos DOM reales y actualizar estado" name="8.3 E2E Real - Aplicación Completa REAL: Inicialización de Aplicación Completa debe manejar eventos DOM reales y actualizar estado" time="0.002">
+    </testcase>
+    <testcase classname="8.3 E2E Real - Aplicación Completa REAL: Flujos de Usuario End-to-End debe ejecutar flujo completo: crear -&gt; editar -&gt; guardar -&gt; cargar" name="8.3 E2E Real - Aplicación Completa REAL: Flujos de Usuario End-to-End debe ejecutar flujo completo: crear -&gt; editar -&gt; guardar -&gt; cargar" time="0.013">
+    </testcase>
+    <testcase classname="8.3 E2E Real - Aplicación Completa REAL: Verificación de Estado de la Aplicación debe verificar que los servicios reales están registrados correctamente" name="8.3 E2E Real - Aplicación Completa REAL: Verificación de Estado de la Aplicación debe verificar que los servicios reales están registrados correctamente" time="0.007">
+    </testcase>
+    <testcase classname="8.3 E2E Real - Aplicación Completa REAL: Verificación de Estado de la Aplicación debe verificar persistencia real con localStorage del navegador" name="8.3 E2E Real - Aplicación Completa REAL: Verificación de Estado de la Aplicación debe verificar persistencia real con localStorage del navegador" time="0.003">
+    </testcase>
+    <testcase classname="8.3 E2E Real - Aplicación Completa REAL: Detección de Regresiones debe detectar si el sistema real tiene regresiones críticas" name="8.3 E2E Real - Aplicación Completa REAL: Detección de Regresiones debe detectar si el sistema real tiene regresiones críticas" time="0.005">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.2 Coordinación Real Entre Módulos" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:47:52" time="14.672" tests="9">
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Inicialización y Orquestación del Core debe inicializar MultiNotationModelerCore con dependencias reales" name="8.2 Coordinación Real Entre Módulos REAL: Inicialización y Orquestación del Core debe inicializar MultiNotationModelerCore con dependencias reales" time="7.989">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Inicialización y Orquestación del Core debe coordinar saveModel y loadModel con persistencia real" name="8.2 Coordinación Real Entre Módulos REAL: Inicialización y Orquestación del Core debe coordinar saveModel y loadModel con persistencia real" time="0.968">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: RASCI Manager y Sincronización debe ejercitar RASCIManager real con sincronización BPMN" name="8.2 Coordinación Real Entre Módulos REAL: RASCI Manager y Sincronización debe ejercitar RASCIManager real con sincronización BPMN" time="0.264">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: RASCI Manager y Sincronización debe ejercitar change-queue-manager real" name="8.2 Coordinación Real Entre Módulos REAL: RASCI Manager y Sincronización debe ejercitar change-queue-manager real" time="0.061">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Validación de Comportamientos Observables debe publicar eventos reales cuando se modifican elementos" name="8.2 Coordinación Real Entre Módulos REAL: Validación de Comportamientos Observables debe publicar eventos reales cuando se modifican elementos" time="0.075">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Validación de Comportamientos Observables debe coordinar entre RASCI real y BPMN real" name="8.2 Coordinación Real Entre Módulos REAL: Validación de Comportamientos Observables debe coordinar entre RASCI real y BPMN real" time="0.125">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Pipeline de Guardado/Carga Completo debe ejecutar pipeline completo save/load con módulos reales" name="8.2 Coordinación Real Entre Módulos REAL: Pipeline de Guardado/Carga Completo debe ejecutar pipeline completo save/load con módulos reales" time="0.63">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Detección de Fallos del Sistema debe detectar si initializeApplication falla con el stack real" name="8.2 Coordinación Real Entre Módulos REAL: Detección de Fallos del Sistema debe detectar si initializeApplication falla con el stack real" time="4.174">
+    </testcase>
+    <testcase classname="8.2 Coordinación Real Entre Módulos REAL: Detección de Fallos del Sistema debe detectar problemas reales en la coordinación multi-notación" name="8.2 Coordinación Real Entre Módulos REAL: Detección de Fallos del Sistema debe detectar problemas reales en la coordinación multi-notación" time="0.004">
+    </testcase>
+  </testsuite>
+  <testsuite name="8.1 Pruebas Unitarias - LocalStorageManager" errors="0" failures="0" skipped="0" timestamp="2025-09-22T14:47:42" time="45.044" tests="21">
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageManager Inicialización del LocalStorageManager debe inicializar correctamente con configuración por defecto" name="8.1 Pruebas Unitarias - LocalStorageManager Inicialización del LocalStorageManager debe inicializar correctamente con configuración por defecto" time="0.004">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageManager Inicialización del LocalStorageManager debe tener configuración válida" name="8.1 Pruebas Unitarias - LocalStorageManager Inicialización del LocalStorageManager debe tener configuración válida" time="0">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageManager Captura de datos del proyecto debe capturar proyecto completo" name="8.1 Pruebas Unitarias - LocalStorageManager Captura de datos del proyecto debe capturar proyecto completo" time="0.04">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageManager Captura de datos del proyecto debe incluir datos BPMN con relaciones padre-hijo en proyecto completo" name="8.1 Pruebas Unitarias - LocalStorageManager Captura de datos del proyecto debe incluir datos BPMN con relaciones padre-hijo en proyecto completo" time="0.026">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageManager Captura de datos del proyecto debe incluir datos PPI en proyecto completo" name="8.1 Pruebas Unitarias - LocalStorageManager Captura de datos del proyecto debe incluir datos PPI en proyecto completo" time="0.024">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageManager Captura de datos del proyecto debe incluir datos RASCI en proyecto completo" name="8.1 Pruebas Unitarias - LocalStorageManager Captura de datos del proyecto debe incluir datos RASCI en proyecto completo" time="0.033">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageManager Captura de datos del proyecto debe incluir metadata en proyecto completo" name="8.1 Pruebas Unitarias - LocalStorageManager Captura de datos del proyecto debe incluir metadata en proyecto completo" time="0.015">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageManager Guardado del proyecto debe guardar proyecto completo en localStorage" name="8.1 Pruebas Unitarias - LocalStorageManager Guardado del proyecto debe guardar proyecto completo en localStorage" time="0.017">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageManager Guardado del proyecto debe publicar evento de guardado exitoso" name="8.1 Pruebas Unitarias - LocalStorageManager Guardado del proyecto debe publicar evento de guardado exitoso" time="0.02">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageManager Guardado del proyecto debe manejar errores durante el guardado" name="8.1 Pruebas Unitarias - LocalStorageManager Guardado del proyecto debe manejar errores durante el guardado" time="0.117">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageManager Carga del proyecto debe cargar proyecto desde localStorage" name="8.1 Pruebas Unitarias - LocalStorageManager Carga del proyecto debe cargar proyecto desde localStorage" time="12.599">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageManager Carga del proyecto debe restaurar BPMN con relaciones padre-hijo" name="8.1 Pruebas Unitarias - LocalStorageManager Carga del proyecto debe restaurar BPMN con relaciones padre-hijo" time="12.354">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageManager Carga del proyecto debe manejar carga cuando no hay datos guardados" name="8.1 Pruebas Unitarias - LocalStorageManager Carga del proyecto debe manejar carga cuando no hay datos guardados" time="0.52">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageManager Verificación de datos guardados debe verificar si hay datos guardados" name="8.1 Pruebas Unitarias - LocalStorageManager Verificación de datos guardados debe verificar si hay datos guardados" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageManager Verificación de datos guardados debe obtener información de almacenamiento" name="8.1 Pruebas Unitarias - LocalStorageManager Verificación de datos guardados debe obtener información de almacenamiento" time="0.001">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageManager Limpieza de datos debe limpiar datos guardados" name="8.1 Pruebas Unitarias - LocalStorageManager Limpieza de datos debe limpiar datos guardados" time="0.016">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageManager Limpieza de datos debe publicar evento de limpieza exitosa" name="8.1 Pruebas Unitarias - LocalStorageManager Limpieza de datos debe publicar evento de limpieza exitosa" time="0.026">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageManager Integración con PPIDataManager debe ser compatible con PPIDataManager.savePPIs" name="8.1 Pruebas Unitarias - LocalStorageManager Integración con PPIDataManager debe ser compatible con PPIDataManager.savePPIs" time="0.016">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageManager Integración con PPIDataManager debe ser compatible con PPIDataManager.loadPPIs" name="8.1 Pruebas Unitarias - LocalStorageManager Integración con PPIDataManager debe ser compatible con PPIDataManager.loadPPIs" time="12.332">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageManager Manejo de errores debe manejar errores de localStorage" name="8.1 Pruebas Unitarias - LocalStorageManager Manejo de errores debe manejar errores de localStorage" time="0.002">
+    </testcase>
+    <testcase classname="8.1 Pruebas Unitarias - LocalStorageManager Manejo de errores debe manejar datos corruptos en localStorage" name="8.1 Pruebas Unitarias - LocalStorageManager Manejo de errores debe manejar datos corruptos en localStorage" time="0.514">
+    </testcase>
+  </testsuite>
+</testsuites>

@@ -22,6 +22,24 @@ function isRALph(element) {
   return element && /^RALph:/.test(element.type);
 }
 
+function isPPINOT(element) {
+  return element && /^PPINOT:/.test(element.type);
+}
+
+function hasDuplicateConnection(source, target, connectionType) {
+  if (!source || !target || !source.outgoing) return false;
+  return source.outgoing.some(function(conn) {
+    return conn && conn.target === target && conn.type === connectionType;
+  });
+}
+
+function hasReverseConnection(target, source, connectionType) {
+  if (!target || !source || !target.outgoing) return false;
+  return target.outgoing.some(function(conn) {
+    return conn && conn.target === source && conn.type === connectionType;
+  });
+}
+
 function isDefaultValid(element) {
   return element && (is(element, 'bpmn:Task') || is(element, 'bpmn:Event') || is(element,'bpmn:DataObjectReference') || is(element,'bpmn:ExclusiveGateway') || is(element,'bpmn:EndEvent') || is(element,'bpmn:DataStoreReference') )
 }
@@ -91,6 +109,22 @@ function simpleConnection(source, target, connection) { //function to connect el
     return null;
   }
 
+  // General prohibitions
+  // 1) Forbid PPINOT <-> RALph connections
+  if ((isRALph(source) && isPPINOT(target)) || (isRALph(target) && isPPINOT(source))) {
+    return false;
+  }
+
+  // 2) Forbid identical duplicate connections between same elements
+  if (hasDuplicateConnection(source, target, connection)) {
+    return false;
+  }
+
+  // 3) Forbid circular connections of same type (A->B and B->A)
+  if (hasReverseConnection(target, source, connection)) {
+    return false;
+  }
+
   //usually the structure is enter if is connection X and check that the target and the source can be connected.
   if(connection ===  'bpmn:DataOutputAssociation'){
     if( is(target, 'bpmn:DataObjectReference') && is(source,'bpmn:Task') ){//for instance, if the source is a Task and the target is DataObjectReference, it is possible to connect them
@@ -100,6 +134,11 @@ function simpleConnection(source, target, connection) { //function to connect el
 
   if(connection === 'RALph:negatedAssignment' && cond === true){
     if(isValidForResourceEntities(source) && is(target, 'bpmn:Task')){//only a task can receive the negated connection
+      // Prohibition: Not two negated assignments for same activity and resource
+      var duplicateNeg = (target.incoming || []).some(function(c){
+        return c && c.type === 'RALph:negatedAssignment' && c.source === source;
+      });
+      if (duplicateNeg) return false;
       return { type: connection }
     }
   }
@@ -114,6 +153,16 @@ function simpleConnection(source, target, connection) { //function to connect el
           is(target,'RALph:Complex-Assignment-OR') || is(target, 'bpmn:Task') && is(source,'RALph:reportsTransitively')  ||
           is(target, 'bpmn:Task') && is(source,'RALph:reportsDirectly') || is(target, 'bpmn:Task') && is(source,'RALph:delegatesDirectly') ||
           is(target, 'bpmn:Task') && is(source,'RALph:delegatesTransitively')){
+
+          // Prohibition: A BPMN activity cannot have two primary roles/positions assigned simultaneously
+          if (is(target, 'bpmn:Task') && (is(source, 'RALph:RoleRALph') || is(source, 'RALph:Position'))) {
+            var hasPrimary = (target.incoming || []).some(function(c){
+              return c && c.type === 'RALph:ResourceArc' && c.source && (is(c.source, 'RALph:RoleRALph') || is(c.source, 'RALph:Position'));
+            });
+            if (hasPrimary) {
+              return false;
+            }
+          }
 
           if(is(source,'RALph:Complex-Assignment-AND') || is(source,'RALph:Complex-Assignment-OR')){
 
@@ -193,6 +242,26 @@ function simpleConnection(source, target, connection) { //function to connect el
   else {
     if (!isRALph(source) && !isRALph(target))
       return;
+    
+    // RALph specific prohibitions
+    // - No AND and OR simultaneously on same assignment source
+    if (is(source,'RALph:Complex-Assignment-AND') || is(source,'RALph:Complex-Assignment-OR')) {
+      var hasAND = (source.outgoing || []).some(function(c){ return c && c.source === source && c.type && c.type.indexOf('AND') !== -1; });
+      var hasOR = (source.outgoing || []).some(function(c){ return c && c.source === source && c.type && c.type.indexOf('OR') !== -1; });
+      if (hasAND && hasOR) return false;
+    }
+    
+    // - No conflicting SoD/BoD between same two activities
+    if ((connection === 'RALph:bindingOfDuties' || connection === 'RALph:separationOfDuties') && source && target) {
+      var reverse = (target.outgoing || []).some(function(c){
+        return c && c.target === source && (c.type === 'RALph:bindingOfDuties' || c.type === 'RALph:separationOfDuties');
+      });
+      if (reverse) return false;
+      var conflict = (source.outgoing || []).some(function(c){
+        return c && c.target === target && ((c.type === 'RALph:bindingOfDuties' && connection === 'RALph:separationOfDuties') || (c.type === 'RALph:separationOfDuties' && connection === 'RALph:bindingOfDuties'));
+      });
+      if (conflict) return false;
+    }
   }
 }
 

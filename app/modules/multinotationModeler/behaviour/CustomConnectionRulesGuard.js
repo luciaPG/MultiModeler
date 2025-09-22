@@ -91,7 +91,7 @@ export default function CustomConnectionRulesGuard(eventBus) {
     forceCustomTypeOnConnectContext(event && event.context);
   });
 
-  // Force preview to render with custom type while drawing
+  // Force preview to render with custom type while drawing (HUD desactivado a petición del usuario)
   function forcePreview(event) {
     var ctx = event && event.context;
     if (!ctx) return;
@@ -105,8 +105,7 @@ export default function CustomConnectionRulesGuard(eventBus) {
       if (event && event.connection && event.connection.type !== t) {
         try { event.connection.type = t; } catch (e) { /* ignore */ }
       }
-      // Show HUD near cursor with live type info
-      showHUD(event, t, ctx);
+      // HUD desactivado (no mostrar información de conexión)
     }
   }
 
@@ -118,44 +117,7 @@ export default function CustomConnectionRulesGuard(eventBus) {
   // Ensure hover phase keeps custom type while dragging
   eventBus.on('connect.hover', SUPER_HIGH, forcePreview);
 
-  function ensureHUD() {
-    if (hudEl) return hudEl;
-    try {
-      var el = document.createElement('div');
-      el.style.position = 'fixed';
-      el.style.zIndex = '100000';
-      el.style.pointerEvents = 'none';
-      el.style.background = 'rgba(20,20,20,0.8)';
-      el.style.color = '#fff';
-      el.style.padding = '2px 6px';
-      el.style.fontSize = '11px';
-      el.style.borderRadius = '3px';
-      el.style.display = 'none';
-      document.body.appendChild(el);
-      hudEl = el;
-    } catch (e) {}
-    return hudEl;
-  }
-
-  function showHUD(event, t, ctx) {
-    var el = ensureHUD();
-    if (!el) return;
-    var x = (event && (event.x || (event.originalEvent && event.originalEvent.clientX))) || 0;
-    var y = (event && (event.y || (event.originalEvent && event.originalEvent.clientY))) || 0;
-    var ctype = t || '';
-    var t2 = ctx && ctx.connectionType;
-    var ht = ctx && ctx.hints && ctx.hints.type;
-    el.textContent = 'type: ' + ctype + ' | connType: ' + (t2 || '') + ' | hints: ' + (ht || '');
-    el.style.left = (x + 12) + 'px';
-    el.style.top = (y + 12) + 'px';
-    el.style.display = 'block';
-  }
-
-  function hideHUD() {
-    if (hudEl) hudEl.style.display = 'none';
-  }
-
-  eventBus.on(['connect.cleanup', 'connect.end'], SUPER_HIGH, function() { hideHUD(); });
+  // HUD eliminado; no creamos ni mostramos overlays con info de conexión
 }
 
 inherits(CustomConnectionRulesGuard, RuleProvider);
