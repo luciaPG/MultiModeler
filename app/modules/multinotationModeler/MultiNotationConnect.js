@@ -37,17 +37,41 @@ function computeDefaultWaypoints(source, target) {
     if (s && t && isFinite(s.x) && isFinite(s.y) && isFinite(t.x) && isFinite(t.y)) {
       return [ { x: s.x, y: s.y }, { x: t.x, y: t.y } ];
     }
-  } catch (e) {}
+  } catch (e) { /* ignore */ }
   // Fallback to simple zeros if something is missing (will be laid out later)
   return [ { x: (source && source.x) || 0, y: (source && source.y) || 0 }, { x: (target && target.x) || 0, y: (target && target.y) || 0 } ];
 }
+
+// Notificaciones visuales desactivadas a petición del usuario
 
 /**
  * Multi-notation connection handler that works for BPMN, PPINOT, and RALPH
  */
 export default function MultiNotationConnect(eventBus, dragging, modeling, rules) {
 
+    function isPPINOTElement(el) {
+        return el && typeof el.type === 'string' && el.type.indexOf('PPINOT:') === 0;
+    }
+
+    function isRALphElement(el) {
+        return el && typeof el.type === 'string' && el.type.indexOf('RALph:') === 0;
+    }
+
+    // hasSameType implemented below cubre la cardinalidad por tipo
+
+    function hasSameType(el, type) {
+        if (!el) return false;
+        var incoming = (el.incoming || []).some(function(c){ return c && c.type === type; });
+        if (incoming) return true;
+        var outgoing = (el.outgoing || []).some(function(c){ return c && c.type === type; });
+        return outgoing;
+    }
+
     function canConnect(source, target, type) {
+        // Cinturón y tirantes: bloquear mezcla PPINOT↔RALph a este nivel también
+        if ((isPPINOTElement(source) && isRALphElement(target)) || (isPPINOTElement(target) && isRALphElement(source))) {
+            return false;
+        }
         return rules.allowed('connection.create', {
             source: source,
             target: target,
@@ -91,8 +115,7 @@ export default function MultiNotationConnect(eventBus, dragging, modeling, rules
             if (context.hints && context.hints.waypoints) {
                 context.hints.waypoints = validateAndSanitizeWaypoints(context.hints.waypoints);
             }
-        } catch (error) {
-        }
+        } catch (error) { /* ignore */ }
     });
 
     // Manejador específico para el preview de conexión
@@ -166,21 +189,21 @@ export default function MultiNotationConnect(eventBus, dragging, modeling, rules
             return;
         }
 
-    // No mostrar tipo de conexión cuando es inválido, y marcar prohibido
+    // No mostrar tipo de conexión cuando es inválido, y marcar prohibido (sin toasts)
     if (!canExecute) {
       context.target = null;
       context.canExecute = false;
       // Señal visual de prohibido: cursor not-allowed (si el shell de UI lo respeta)
       try { if (event && event.originalEvent && event.originalEvent.view && event.originalEvent.view.document && event.originalEvent.view.document.body) {
         event.originalEvent.view.document.body.style.cursor = 'not-allowed';
-      } } catch (e) {}
+      } } catch (e) { /* ignore */ }
       return;
     }
 
     // Resetear cursor cuando es válido
     try { if (event && event.originalEvent && event.originalEvent.view && event.originalEvent.view.document && event.originalEvent.view.document.body) {
       event.originalEvent.view.document.body.style.cursor = '';
-    } } catch (e) {}
+    } } catch (e) { /* ignore */ }
 
     context.target = hover;
     context.connectionType = type || context.connectionType;
@@ -207,8 +230,32 @@ export default function MultiNotationConnect(eventBus, dragging, modeling, rules
     if (!canExecute) {
       try { if (event && event.originalEvent && event.originalEvent.view && event.originalEvent.view.document && event.originalEvent.view.document.body) {
         event.originalEvent.view.document.body.style.cursor = '';
-      } } catch (e) {}
+      } } catch (e) { /* ignore */ }
             return false;
+        }
+
+        // Verificación extra de cardinalidad 1 para To/From (por si alguna regla externa devuelve true)
+        if (connectionType === 'PPINOT:ToConnection' || connectionType === 'PPINOT:FromConnection') {
+            // Permitir 1 To y 1 From por elemento, pero bloquear duplicados del mismo tipo
+            if (hasSameType(source, connectionType) || hasSameType(target, connectionType)) {
+                try { if (event && event.originalEvent && event.originalEvent.view && event.originalEvent.view.document && event.originalEvent.view.document.body) {
+                    event.originalEvent.view.document.body.style.cursor = '';
+                } } catch (e) { /* ignore */ }
+                try { console.error('Conexión no permitida: ya existe una del mismo tipo'); } catch (e) { /* ignore */ }
+                return false;
+            }
+        }
+
+        // Bloqueo de duplicados exactos (mismo source, target y tipo)
+        if (source && Array.isArray(source.outgoing)) {
+            var duplicated = source.outgoing.some(function(c){ return c && c.type === connectionType && c.target === target; });
+            if (duplicated) {
+                try { if (event && event.originalEvent && event.originalEvent.view && event.originalEvent.view.document && event.originalEvent.view.document.body) {
+                    event.originalEvent.view.document.body.style.cursor = '';
+                } } catch (e) { /* ignore */ }
+                try { console.error('Esta conexión ya existe.'); } catch (e) { /* ignore */ }
+                return false;
+            }
         }
 
     try {
@@ -244,17 +291,17 @@ export default function MultiNotationConnect(eventBus, dragging, modeling, rules
               if (!hasValidWaypoints(sanitized)) {
                 sanitized = defaultWps;
               }
-              try { modeling.updateWaypoints(connection, sanitized); } catch (e) {}
+              try { modeling.updateWaypoints(connection, sanitized); } catch (e) { /* ignore */ }
             }
             
       try { if (event && event.originalEvent && event.originalEvent.view && event.originalEvent.view.document && event.originalEvent.view.document.body) {
         event.originalEvent.view.document.body.style.cursor = '';
-      } } catch (e) {}
+      } } catch (e) { /* ignore */ }
       return connection;
         } catch (error) {
       try { if (event && event.originalEvent && event.originalEvent.view && event.originalEvent.view.document && event.originalEvent.view.document.body) {
         event.originalEvent.view.document.body.style.cursor = '';
-      } } catch (e) {}
+      } } catch (e) { /* ignore */ }
             return false;
         }
     });

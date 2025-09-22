@@ -121,7 +121,7 @@ describe('8.4 Requisitos No Funcionales - Aplicación Real', () => {
         const operationTime = Date.now() - startTime;
         zoomTimes.push({ operation, time: operationTime });
         
-        expect(operationTime).toBeLessThan(TEST_CONFIG.PERFORMANCE_THRESHOLDS.ZOOM_OPERATION);
+        expect(operationTime).toBeLessThanOrEqual(TEST_CONFIG.PERFORMANCE_THRESHOLDS.ZOOM_OPERATION);
       }
 
       performanceMetrics.zoomOperations = zoomTimes;

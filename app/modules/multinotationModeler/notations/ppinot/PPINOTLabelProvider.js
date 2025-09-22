@@ -213,9 +213,12 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
   eventBus.on('ppinot.connection.created', function(event) {
     const connection = event.connection;
 
-    if (!connection.label && shouldCreateExternalLabel(connection)) {
-      createConnectionLabel(connection, getExternalLabelPosition(connection));
-    }
+    // No crear labels para conexiones PPINOT
+    return;
+
+    // if (!connection.label && shouldCreateExternalLabel(connection)) {
+    //   createConnectionLabel(connection, getExternalLabelPosition(connection));
+    // }
   });
 
   function createConnectionLabel(target, position) {
