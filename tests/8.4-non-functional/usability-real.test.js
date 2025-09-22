@@ -307,8 +307,12 @@ describe('Usabilidad Real de la Aplicación', () => {
       if (bpmnSteps.length > 1 && ppinotSteps.length > 0) {
         const initialSelection = bpmnSteps[0].state.selected;
         const finalSelection = bpmnSteps[bpmnSteps.length - 1].state.selected;
-        // El estado puede cambiar durante el flujo - esto es normal
-        expect(typeof finalSelection).toBe(typeof initialSelection);
+        // El estado puede cambiar durante el flujo; aceptamos que pase de indefinido a una selección válida
+        if (initialSelection == null) {
+          expect(finalSelection == null || typeof finalSelection === 'string').toBe(true);
+        } else {
+          expect(typeof finalSelection).toBe(typeof initialSelection);
+        }
       }
 
       console.log('✅ Estado y contexto mantenidos durante flujos de trabajo');

@@ -554,7 +554,8 @@ class PPIUI {
       uniqueById.set(p.id, p);
       if (p.elementId) uniqueByElement.add(p.elementId);
     }
-    const ppisToShow = Array.from(uniqueById.values());
+    // Mostrar SOLO PPIs principales
+    const ppisToShow = Array.from(uniqueById.values()).filter(p => p && p.type === 'PPINOT:Ppi');
 
 
     // MEJORADO: Deduplicar tarjetas existentes por data-ppi-id (mantener la primera)

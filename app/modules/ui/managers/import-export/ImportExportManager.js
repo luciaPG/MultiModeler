@@ -11,6 +11,8 @@ import { BpmnExporter } from './BpmnExporter.js';
 import { BpmnImporter } from './BpmnImporter.js';
 import { DataCapture } from './DataCapture.js';
 import { DataRestore } from './DataRestore.js';
+import { RelationshipCapture } from './RelationshipCapture.js';
+import { RelationshipRestore } from './RelationshipRestore.js';
 
 export class ImportExportManager {
   constructor() {
@@ -36,6 +38,29 @@ export class ImportExportManager {
     this.setupEventListeners();
     this.createFileInput();
     this.registerService();
+  }
+
+  async clearLocalStorageState() {
+    try {
+      const sr = getServiceRegistry();
+      const storageManager = sr && sr.get ? sr.get('LocalStorageManager') : resolve('LocalStorageManager');
+      if (storageManager && typeof storageManager.clearSavedData === 'function') {
+        await storageManager.clearSavedData();
+        console.log('🧹 LocalStorage cleared before import/open');
+      }
+      const ppiManager = sr && sr.get ? sr.get('PPIManagerInstance') : null;
+      if (ppiManager && ppiManager.core) {
+        // Reset in-memory PPIs to avoid mixing with imported state
+        if (Array.isArray(ppiManager.core.ppis)) {
+          ppiManager.core.ppis = [];
+          if (ppiManager.ui && typeof ppiManager.ui.refreshPPIList === 'function') {
+            ppiManager.ui.refreshPPIList();
+          }
+        }
+      }
+    } catch (e) {
+      console.debug('clearLocalStorageState skipped:', (e && e.message) || e);
+    }
   }
 
   registerService() {
@@ -126,14 +151,39 @@ export class ImportExportManager {
   }
 
   async captureProjectData() {
-    return {
-      version: this.config.version,
-      exportDate: new Date().toISOString(),
-      bpmn: await this.bpmnExporter.captureBpmnFromCanvas(),
-      ppi: await this.dataCapture.capturePPIFromCanvas(),
-      rasci: await this.dataCapture.captureRasciFromStores(),
-      ralph: await this.bpmnExporter.captureRalphFromCanvas()
-    };
+    // Usar LocalStorageManager para captura completa que incluye formularios
+    const storageManager = resolve('LocalStorageManager');
+    if (storageManager && typeof storageManager.captureCompleteProject === 'function') {
+      console.log('📋 Usando LocalStorageManager para captura completa...');
+      // Forzar sincronización de PPIs antes de capturar si el canvas no ha cambiado
+      try {
+        const sr = getServiceRegistry();
+        const ppiManager = sr && sr.get ? sr.get('PPIManagerInstance') : null;
+        if (ppiManager && typeof ppiManager.verifyExistingPPIsInCanvas === 'function') {
+          ppiManager.verifyExistingPPIsInCanvas();
+        }
+      } catch (syncErr) {
+        console.debug('PPI sync before capture skipped:', (syncErr && syncErr.message) || syncErr);
+      }
+      const completeData = await storageManager.captureCompleteProject();
+      
+      return {
+        version: this.config.version,
+        exportDate: new Date().toISOString(),
+        data: completeData // Incluye BPMN, PPI, RASCI, RALPH y datos de formularios
+      };
+    } else {
+      // Fallback al método anterior
+      console.log('⚠️ LocalStorageManager no disponible, usando captura básica...');
+      return {
+        version: this.config.version,
+        exportDate: new Date().toISOString(),
+        bpmn: await this.bpmnExporter.captureBpmnFromCanvas(),
+        ppi: await this.dataCapture.capturePPIFromCanvas(),
+        rasci: await this.dataCapture.captureRasciFromStores(),
+        ralph: await this.bpmnExporter.captureRalphFromCanvas()
+      };
+    }
   }
 
   generateFileName() {
@@ -143,6 +193,48 @@ export class ImportExportManager {
       .toLowerCase();
     const date = new Date().toISOString().split('T')[0];
     return `${sanitizedName}-${date}.mmproject`;
+  }
+  
+  /**
+   * Exporta solo el archivo BPMN con elementos PPINOT integrados
+   */
+  async exportBpmnOnly() {
+    try {
+      console.log('📤 Exporting BPMN only...');
+      
+      const bpmnXml = await this.bpmnExporter.captureBpmnFromCanvas();
+      const fileName = this.generateBpmnFileName();
+      
+      this.downloadBpmnFile(bpmnXml, fileName);
+      
+      console.log('✅ BPMN exported successfully');
+      this.showMessage('BPMN exported successfully', 'success');
+      
+    } catch (error) {
+      console.error('❌ BPMN export error:', error);
+      this.showMessage('BPMN export error: ' + error.message, 'error');
+    }
+  }
+  
+  generateBpmnFileName() {
+    const sanitizedName = this.config.projectName
+      .replace(/[^a-z0-9áéíóúñü\\s-]/gi, '')
+      .replace(/\\s+/g, '-')
+      .toLowerCase();
+    const date = new Date().toISOString().split('T')[0];
+    return `${sanitizedName}-${date}.bpmn`;
+  }
+  
+  downloadBpmnFile(xmlContent, fileName) {
+    const blob = new Blob([xmlContent], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 
   // ==================== PROJECT IMPORT ====================
@@ -154,6 +246,9 @@ export class ImportExportManager {
     try {
       console.log('📥 Loading project - Direct canvas restoration...');
       
+      // Policy: when opening, clear existing local storage and in-memory PPIs first
+      await this.clearLocalStorageState();
+
       const projectData = await this.parseProjectFile(file);
       await this.importProjectData(projectData);
       
@@ -172,6 +267,8 @@ export class ImportExportManager {
   }
 
   async importProjectData(projectData) {
+    // Ensure clean state before any import (JSON, CBPMN, BPMN-only)
+    await this.clearLocalStorageState();
     const importOrder = [
       { key: 'bpmn', method: 'restoreBpmnToCanvas', module: this.bpmnImporter },
       { key: 'ppi', method: 'restorePPIToCanvas', module: this.dataRestore },
@@ -183,6 +280,39 @@ export class ImportExportManager {
       if (projectData[key]) {
         await module[method](projectData[key]);
       }
+    }
+
+    // After import, update project name from imported data if available (via ProjectInfoService)
+    try {
+      const importedName = (projectData.formData && projectData.formData.projectSettings && projectData.formData.projectSettings.name)
+        || (projectData.metadata && projectData.metadata.project && projectData.metadata.project.name)
+        || null;
+      if (importedName) {
+        const sr = getServiceRegistry();
+        const projectInfo = sr && sr.get ? sr.get('ProjectInfoService') : null;
+        if (projectInfo && typeof projectInfo.setName === 'function') {
+          projectInfo.setName(importedName);
+        } else {
+          this.setProjectName(importedName);
+        }
+      }
+    } catch (nameUpdateError) {
+      console.debug('Project name update skipped:', (nameUpdateError && nameUpdateError.message) || nameUpdateError);
+    }
+
+    // Purga adicional: asegurar que no queden PPIs huérfanos tras la importación
+    try {
+      const sr = getServiceRegistry();
+      const ppiManager = sr && sr.get ? sr.get('PPIManagerInstance') : null;
+      if (ppiManager && ppiManager.core && typeof ppiManager.core.purgeOrphanedPPIs === 'function') {
+        ppiManager.core.purgeOrphanedPPIs();
+        // refrescar lista si la UI está disponible
+        if (ppiManager.ui && typeof ppiManager.ui.refreshPPIList === 'function') {
+          ppiManager.ui.refreshPPIList();
+        }
+      }
+    } catch (e) {
+      console.debug('Purge orphan PPIs post-import skipped:', (e && e.message) || e);
     }
   }
 
@@ -221,6 +351,8 @@ export class ImportExportManager {
   async importBpmnXmlFile(xmlContent) {
     console.log('📥 Importing BPMN XML file...');
     
+    await this.clearLocalStorageState();
+
     const modeler = resolve('BpmnModeler');
     if (!modeler) {
       throw new Error('Modeler not available');
@@ -239,6 +371,8 @@ export class ImportExportManager {
   async importCbpmnFile(cbpmnData) {
     console.log('📥 Importing CBPMN file (separate PPINOT elements)...');
     
+    await this.clearLocalStorageState();
+
     const modeler = resolve('BpmnModeler');
     if (!modeler) {
       throw new Error('Modeler not available');
@@ -463,21 +597,18 @@ export class ImportExportManager {
 
     console.log('🧪 Testing relationship capture...');
     
-    // Import RelationshipCapture here to avoid circular dependency
-    import('./RelationshipCapture.js').then(({ RelationshipCapture }) => {
-      const relationshipCapture = new RelationshipCapture(this.config);
-      const relationships = relationshipCapture.captureParentChildRelationships(modeler);
-      
-      console.log('🎯 Significant relationships (to be exported):');
-      relationships.forEach((rel, i) => {
-        console.log(`  ${i + 1}. ${rel.childName || rel.childId} → ${rel.parentName || rel.parentId}`);
-      });
-      
-      return {
-        total: relationships.length,
-        relationships: relationships
-      };
+    const relationshipCapture = new RelationshipCapture(this.config);
+    const relationships = relationshipCapture.captureParentChildRelationships(modeler);
+    
+    console.log('🎯 Significant relationships (to be exported):');
+    relationships.forEach((rel, i) => {
+      console.log(`  ${i + 1}. ${rel.childName || rel.childId} → ${rel.parentName || rel.parentId}`);
     });
+    
+    return {
+      total: relationships.length,
+      relationships: relationships
+    };
   }
 
   debugPPINOTSpecificRelations() {
@@ -524,18 +655,16 @@ export class ImportExportManager {
       
       // Calculate distance to nearest PPI
       if (ppiElements.length > 0) {
-        import('./RelationshipCapture.js').then(({ RelationshipCapture }) => {
-          const relationshipCapture = new RelationshipCapture(this.config);
-          const closest = relationshipCapture.findClosestPPI(child, ppiElements);
-          if (closest) {
-            const closestPos = this.getElementPosition(closest);
-            const distance = Math.sqrt(
-              Math.pow(pos.x - closestPos.x, 2) + 
-              Math.pow(pos.y - closestPos.y, 2)
-            );
-            console.log(`    📏 Nearest PPI: ${closest.id} (distance: ${distance.toFixed(0)}px)`);
-          }
-        });
+        const relationshipCapture = new RelationshipCapture(this.config);
+        const closest = relationshipCapture.findClosestPPI(child, ppiElements);
+        if (closest) {
+          const closestPos = this.getElementPosition(closest);
+          const distance = Math.sqrt(
+            Math.pow(pos.x - closestPos.x, 2) + 
+            Math.pow(pos.y - closestPos.y, 2)
+          );
+          console.log(`    📏 Nearest PPI: ${closest.id} (distance: ${distance.toFixed(0)}px)`);
+        }
       }
     });
 
@@ -570,23 +699,21 @@ export class ImportExportManager {
     console.log(`  🏆 PPIs: ${ppis.length}`);
     
     // Test manually creating Target → nearest PPI relationships
-    import('./RelationshipCapture.js').then(({ RelationshipCapture }) => {
-      const relationshipCapture = new RelationshipCapture(this.config);
-      
-      targets.forEach(target => {
-        const closestPPI = relationshipCapture.findClosestPPI(target, ppis);
-        if (closestPPI) {
-          const distance = relationshipCapture.calculateDistance(
-            relationshipCapture.getElementCenter(target),
-            relationshipCapture.getElementCenter(closestPPI)
-          );
-          console.log(`🎯 Target ${target.id} → PPI ${closestPPI.id} (${distance.toFixed(0)}px)`);
-          
-          // Test if relationship would be significant
-          const isSignificant = relationshipCapture.isSignificantParentChildRelationship(target, closestPPI);
-          console.log(`  ✅ Significant relationship? ${isSignificant}`);
-        }
-      });
+    const relationshipCapture = new RelationshipCapture(this.config);
+    
+    targets.forEach(target => {
+      const closestPPI = relationshipCapture.findClosestPPI(target, ppis);
+      if (closestPPI) {
+        const distance = relationshipCapture.calculateDistance(
+          relationshipCapture.getElementCenter(target),
+          relationshipCapture.getElementCenter(closestPPI)
+        );
+        console.log(`🎯 Target ${target.id} → PPI ${closestPPI.id} (${distance.toFixed(0)}px)`);
+        
+        // Test if relationship would be significant
+        const isSignificant = relationshipCapture.isSignificantParentChildRelationship(target, closestPPI);
+        console.log(`  ✅ Significant relationship? ${isSignificant}`);
+      }
     });
   }
 
@@ -602,7 +729,6 @@ export class ImportExportManager {
       return;
     }
 
-    const { RelationshipRestore } = await import('./RelationshipRestore.js');
     const relationshipRestore = new RelationshipRestore(this.config);
     
     return await relationshipRestore.forceRestoreRelations(modeler, projectData.bpmn.relationships);

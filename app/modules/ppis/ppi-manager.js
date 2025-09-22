@@ -17,6 +17,7 @@ class PPIManager {
     this._isDeleting = false;
     this._recentlyDeletedElements = new Map();
     this._creationCooldownMs = 1500;
+    this._pendingCreationElementIds = new Set();
     this.eventBus = getEventBus();
     this.adapter = ppiAdapter;
     
@@ -295,7 +296,10 @@ class PPIManager {
           const lastDel = this._recentlyDeletedElements.get(element.id) || 0;
           const withinCooldown = Date.now() - lastDel < this._creationCooldownMs;
           if (!existingPPI && !this._isDeleting && !withinCooldown) {
-            // MEJORADO: Usar delay más corto para respuesta más rápida
+            if (this._pendingCreationElementIds.has(element.id)) {
+              return;
+            }
+            this._pendingCreationElementIds.add(element.id);
             setTimeout(() => this.createPPIFromElement(element.id), 50);
           } else {
           }
@@ -314,6 +318,10 @@ class PPIManager {
             const lastDel = this._recentlyDeletedElements.get(element.id) || 0;
             const withinCooldown = Date.now() - lastDel < this._creationCooldownMs;
             if (!exists && !this._isDeleting && !withinCooldown) {
+              if (this._pendingCreationElementIds.has(element.id)) {
+                return;
+              }
+              this._pendingCreationElementIds.add(element.id);
               setTimeout(() => this.createPPIFromElement(element.id), 10);
             }
           }
@@ -323,6 +331,29 @@ class PPIManager {
       };
       eventBus.on('shape.added', shapeAddedHandler);
       this._bpmnListeners.push({ event: 'shape.added', handler: shapeAddedHandler });
+
+      // NUEVO: Listener para fin de creación (al soltar el elemento en el canvas)
+      const createEndHandler = (event) => {
+        try {
+          const element = event && (event.shape || event.element || event.context?.shape);
+          if (element && this.core && this.core.isPPIElement && this.core.isPPIElement(element)) {
+            const exists = this.core.ppis && this.core.ppis.find(ppi => ppi.elementId === element.id);
+            const lastDel = this._recentlyDeletedElements.get(element.id) || 0;
+            const withinCooldown = Date.now() - lastDel < this._creationCooldownMs;
+            if (!exists && !this._isDeleting && !withinCooldown) {
+              if (this._pendingCreationElementIds.has(element.id)) {
+                return;
+              }
+              this._pendingCreationElementIds.add(element.id);
+              setTimeout(() => this.createPPIFromElement(element.id), 10);
+            }
+          }
+        } catch (e) {
+          console.warn('[PPI-Manager] create.end handler error:', e);
+        }
+      };
+      eventBus.on('create.end', createEndHandler);
+      this._bpmnListeners.push({ event: 'create.end', handler: createEndHandler });
 
       // NUEVO: Listener sobre command stack para creación (garantiza captura en todos los flujos)
       const cmdCreateHandler = (event) => {
@@ -334,6 +365,10 @@ class PPIManager {
             const lastDel = this._recentlyDeletedElements.get(shape.id) || 0;
             const withinCooldown = Date.now() - lastDel < this._creationCooldownMs;
             if (!exists && !this._isDeleting && !withinCooldown) {
+              if (this._pendingCreationElementIds.has(shape.id)) {
+                return;
+              }
+              this._pendingCreationElementIds.add(shape.id);
               setTimeout(() => this.createPPIFromElement(shape.id), 10);
             }
           }
@@ -724,6 +759,8 @@ class PPIManager {
       const lastDel = this._recentlyDeletedElements.get(elementId) || 0;
       const withinCooldown = Date.now() - lastDel < this._creationCooldownMs;
       if (this._isDeleting || withinCooldown) {
+        // Asegurar que no quede bloqueado el pending set si se canceló por cooldown
+        this._pendingCreationElementIds.delete(elementId);
         return;
       }
       let elementName = elementId;
@@ -742,6 +779,7 @@ class PPIManager {
       }
       
       const ppi = {
+        type: 'PPINOT:Ppi',
         id: this.core.generatePPIId(),
         title: elementName,
         process: 'Proceso General',
@@ -798,6 +836,9 @@ class PPIManager {
       
     } catch (error) {
       console.error('[PPI-Manager] Error creando PPI:', error);
+    } finally {
+      // Siempre limpiar pending para no bloquear futuras creaciones
+      this._pendingCreationElementIds.delete(elementId);
     }
   }
 
@@ -944,6 +985,12 @@ class PPIManager {
         if (this.core.deletePPI(ppiId)) {
           this.ui.showSuccessMessage('PPI eliminado exitosamente');
           this.ui.refreshPPIList();
+          // Guardar inmediatamente tras eliminación
+          try { this.core.savePPIs && this.core.savePPIs(); } catch(_) {}
+          try {
+            const storageManager = resolve && resolve('LocalStorageManager');
+            storageManager && storageManager.saveProject && storageManager.saveProject();
+          } catch(_) {}
         } else {
         }
       } finally {
@@ -973,6 +1020,10 @@ class PPIManager {
           // Eliminar solo de la lista, no del canvas
           this.core.ppis = this.core.ppis.filter(p => p.id !== ppi.id);
           this.core.savePPIs();
+          try {
+            const storageManager = resolve && resolve('LocalStorageManager');
+            storageManager && storageManager.saveProject && storageManager.saveProject();
+          } catch(_) {}
           
           // Refresh the UI
           this.ui.refreshPPIList();
@@ -990,6 +1041,10 @@ class PPIManager {
             this._isDeleting = true;
             if (this.core.deletePPI(ppiById.id)) {
               this.ui.refreshPPIList();
+              try {
+                const storageManager = resolve && resolve('LocalStorageManager');
+                storageManager && storageManager.saveProject && storageManager.saveProject();
+              } catch(_) {}
               this.ui.showSuccessMessage(`PPI eliminado: ${ppiById.title || ppiId}`);
             } else {
               // Fallback: eliminar solo de la lista
@@ -1181,13 +1236,33 @@ class PPIManager {
     
     // Procesar los datos usando el método del core
     const processedData = this.core.parseFormData(new Map(Object.entries(ppiData)));
+    // Normalizar datos críticos
+    if (processedData) {
+      // Asegurar tipo correcto del PPI para pasar los filtros de la lista
+      processedData.type = 'PPINOT:Ppi';
+      // Asegurar estructura de measureDefinition según contexto
+      const mdType = processedData.measureType || (processedData.measureDefinition && processedData.measureDefinition.type);
+      const mdDef = typeof processedData.measureDefinition === 'string'
+        ? processedData.measureDefinition
+        : (processedData.measureDefinition && processedData.measureDefinition.definition) || '';
+      processedData.measureType = mdType || processedData.measureType || 'derived';
+      processedData.measureDefinition = mdDef;
+    }
     
     
     if (ppiId) {
       // Update existing PPI
-      if (this.core.updatePPI(ppiId, processedData)) {
+      const updatePayload = {
+        ...processedData,
+        // Para actualización, conservar measureDefinition como objeto estructurado
+        measureDefinition: {
+          type: processedData.measureType,
+          definition: processedData.measureDefinition
+        }
+      };
+      if (this.core.updatePPI(ppiId, updatePayload)) {
         // Sync changes back to canvas elements (Target/Scope)
-        this.syncPPIChangesToCanvas(ppiId, processedData);
+        this.syncPPIChangesToCanvas(ppiId, updatePayload);
         
         // Guardar automáticamente en localStorage y proyecto
         this.triggerAutoSave();
@@ -1200,7 +1275,9 @@ class PPIManager {
       }
     } else {
       // Create new PPI
-      const ppi = this.core.createPPI(processedData);
+      // Para creación, el DataManager espera measureDefinition como string + measureType
+      const creationData = { ...processedData };
+      const ppi = this.core.createPPI(creationData);
       this.core.addPPI(ppi);
       
       // Guardar automáticamente en localStorage y proyecto
@@ -1251,6 +1328,16 @@ class PPIManager {
       // Helper function to safely update element and trigger visual refresh
       const safeUpdateElement = (element, newName, elementType) => {
         try {
+          // VALIDACIÓN: Verificar que el elemento existe y es válido
+          if (!element) {
+            console.warn(`⚠️ [syncPPIChangesToCanvas] Elemento ${elementType} es undefined/null, omitiendo actualización`);
+            return;
+          }
+          
+          if (!element.id) {
+            console.warn(`⚠️ [syncPPIChangesToCanvas] Elemento ${elementType} no tiene ID válido, omitiendo actualización`);
+            return;
+          }
           
           // Update the business object name directly
           if (element.businessObject) {
@@ -1258,19 +1345,27 @@ class PPIManager {
           }
           
           // Update properties using modeling service
-          modeling.updateProperties(element, {
-            name: newName
-          });
+          if (modeling && typeof modeling.updateProperties === 'function') {
+            modeling.updateProperties(element, {
+              name: newName
+            });
+          } else {
+            console.warn(`⚠️ [syncPPIChangesToCanvas] Modeling service no disponible para ${elementType}`);
+          }
           
           // Safely trigger visual updates with error handling
           try {
-            eventBus.fire('element.changed', { element: element });
+            if (eventBus && typeof eventBus.fire === 'function') {
+              eventBus.fire('element.changed', { element: element });
+            }
           } catch (eventError) {
             console.warn(`⚠️ [syncPPIChangesToCanvas] Error firing element.changed for ${elementType}:`, eventError);
           }
           
           try {
-            eventBus.fire('shape.changed', { element: element });
+            if (eventBus && typeof eventBus.fire === 'function') {
+              eventBus.fire('shape.changed', { element: element });
+            }
           } catch (eventError) {
             console.warn(`⚠️ [syncPPIChangesToCanvas] Error firing shape.changed for ${elementType}:`, eventError);
           }
@@ -1278,7 +1373,9 @@ class PPIManager {
           // Delayed re-render with error handling
           setTimeout(() => {
             try {
-              eventBus.fire('element.changed', { element: element });
+              if (eventBus && typeof eventBus.fire === 'function' && element && element.id) {
+                eventBus.fire('element.changed', { element: element });
+              }
             } catch (eventError) {
               console.warn(`⚠️ [syncPPIChangesToCanvas] Error in delayed re-render for ${elementType}:`, eventError);
             }
@@ -1292,7 +1389,11 @@ class PPIManager {
       // Update Target elements
       if (ppiData.target && targetElements.length > 0) {
         targetElements.forEach(targetEl => {
-          safeUpdateElement(targetEl, ppiData.target, 'Target');
+          if (targetEl && targetEl.id) {
+            safeUpdateElement(targetEl, ppiData.target, 'Target');
+          } else {
+            console.warn('⚠️ [syncPPIChangesToCanvas] Target element inválido, omitiendo');
+          }
         });
       } else {
       }
@@ -1300,14 +1401,20 @@ class PPIManager {
       // Update Scope elements
       if (ppiData.scope && scopeElements.length > 0) {
         scopeElements.forEach(scopeEl => {
-          safeUpdateElement(scopeEl, ppiData.scope, 'Scope');
+          if (scopeEl && scopeEl.id) {
+            safeUpdateElement(scopeEl, ppiData.scope, 'Scope');
+          } else {
+            console.warn('⚠️ [syncPPIChangesToCanvas] Scope element inválido, omitiendo');
+          }
         });
       } else {
       }
 
       // Update PPI title if provided
-      if (ppiData.title && ppiElement) {
+      if (ppiData.title && ppiElement && ppiElement.id) {
         safeUpdateElement(ppiElement, ppiData.title, 'PPI');
+      } else if (ppiData.title && !ppiElement) {
+        console.warn('⚠️ [syncPPIChangesToCanvas] PPI element no encontrado para actualizar título');
       }
 
       

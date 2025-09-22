@@ -70,22 +70,19 @@ export class PPIUtils {
   static isPPIElement(element) {
     if (!element) return false;
     
-    // Verificar por businessObject.$type
+    // Verificar por businessObject.$type (case-insensitive)
     if (element.businessObject && element.businessObject.$type) {
-      const type = element.businessObject.$type;
-      if (type === 'PPINOT:Ppi') {
+      const type = String(element.businessObject.$type);
+      const t = type.toLowerCase();
+      if (t === 'ppinot:ppi') {
         return true;
       }
     }
     
-    // Verificar por element.type
-    if (element.type === 'PPINOT:Ppi') {
-      return true;
-    }
-    
-    // Verificar por patrones en el tipo
-    if (element.type && element.type.includes('PPINOT') && element.type.includes('Ppi')) {
-      return true;
+    // Verificar por element.type (case-insensitive)
+    if (element.type) {
+      const t = String(element.type).toLowerCase();
+      if (t === 'ppinot:ppi') return true;
     }
     
     return false;

@@ -376,7 +376,7 @@ export class LocalStorageManager {
     
     return relationships;
   }
-
+  
   // COPIAR EXACTAMENTE del BpmnExporter
   initializeBpmnData() {
     return {
@@ -390,9 +390,32 @@ export class LocalStorageManager {
   }
 
   async captureXMLDiagram(modeler, data) {
-    const result = await modeler.saveXML({ format: true });
-    data.diagram = result.xml;
-    console.log('✅ XML diagram captured');
+    try {
+      const result = await modeler.saveXML({ format: true });
+      data.diagram = result.xml;
+      console.log('✅ XML diagram captured');
+    } catch (error) {
+      // Si no hay definiciones cargadas, crear un diagrama vacío y reintentar una vez
+      const message = (error && (error.message || String(error))) || '';
+      if (message && message.toLowerCase().includes('no definitions loaded')) {
+        console.warn('⚠️ No definitions loaded. Creating empty diagram and retrying saveXML...');
+        try {
+          if (typeof modeler.createDiagram === 'function') {
+            await modeler.createDiagram();
+          }
+          const retry = await modeler.saveXML({ format: true });
+          data.diagram = retry.xml;
+          console.log('✅ XML diagram captured after createDiagram');
+        } catch (retryError) {
+          console.warn('⚠️ Retry saveXML failed after createDiagram:', retryError);
+          // Continuar sin diagrama para no bloquear el flujo de guardado
+          data.diagram = null;
+        }
+      } else {
+        console.warn('Error capturando BPMN:', error);
+        data.diagram = null; // Continuar sin diagrama
+      }
+    }
     
     // Use RelationshipCapture imported at the top
     const relationshipCapture = new RelationshipCapture(this.config);
@@ -533,7 +556,7 @@ export class LocalStorageManager {
               setTimeout(check, 100);
             }
           }
-        } catch (error) {
+    } catch (error) {
           if (attempts >= maxAttempts) {
             console.warn(`⚠️ Modeler error after ${maxAttempts} attempts, proceeding anyway:`, error.message);
             resolve();
@@ -609,10 +632,28 @@ export class LocalStorageManager {
         return { indicators: [], captureDate: new Date().toISOString() };
       }
       
-      // Usar getVisiblePPIs() que excluye agregadas y solo incluye las del canvas
-      const visiblePPIs = ppiManager.core.getVisiblePPIs ? 
-                          ppiManager.core.getVisiblePPIs() : 
-                          (ppiManager.core.getAllPPIs ? ppiManager.core.getAllPPIs() : []);
+      // Base: usar getVisiblePPIs() que excluye agregadas y solo incluye las del canvas (con elementId)
+      let visiblePPIs = ppiManager.core.getVisiblePPIs ? 
+                        ppiManager.core.getVisiblePPIs() : 
+                        (ppiManager.core.getAllPPIs ? ppiManager.core.getAllPPIs() : []);
+
+      // Refuerzo: filtrar por existencia real en el canvas
+      try {
+        const modeler = resolve('BpmnModeler');
+        const elementRegistry = modeler && modeler.get ? modeler.get('elementRegistry') : null;
+        if (elementRegistry) {
+          const before = visiblePPIs.length;
+          visiblePPIs = visiblePPIs.filter(ppi => {
+            if (!ppi.elementId) return false; // Si no está en canvas, no lo guardamos
+            return !!elementRegistry.get(ppi.elementId);
+          });
+          if (visiblePPIs.length !== before) {
+            console.log(`🧹 PPIs huérfanos excluidos de captura: ${before - visiblePPIs.length}`);
+          }
+        }
+      } catch (_) {
+        // si no hay modeler/elementRegistry, mantenemos visiblePPIs tal cual
+      }
       
       console.log(`✅ ${visiblePPIs.length} PPIs capturados (solo canvas, sin agregadas)`);
       
@@ -1681,6 +1722,30 @@ export class LocalStorageManager {
         if (formData.projectSettings.name) {
           localStorage.setItem('projectName', formData.projectSettings.name);
           document.title = formData.projectSettings.name;
+          
+          // Actualizar el input del nombre del proyecto
+          const projectNameInput = document.getElementById('project-name-input');
+          if (projectNameInput) {
+            projectNameInput.value = formData.projectSettings.name;
+            console.log('📝 Título DOM actualizado:', formData.projectSettings.name);
+          }
+          
+          // Actualizar variable global
+          window.currentProjectName = formData.projectSettings.name;
+          console.log('📝 Nombre guardado en localStorage:', formData.projectSettings.name);
+          
+          // Actualizar múltiples inputs si existen (para compatibilidad)
+          const allNameInputs = document.querySelectorAll('input[type="text"][placeholder*="nombre"], input[type="text"][placeholder*="Nombre"], #project-name-input, .project-name-input');
+          let updatedInputs = 0;
+          allNameInputs.forEach(input => {
+            if (input && input.value !== formData.projectSettings.name) {
+              input.value = formData.projectSettings.name;
+              updatedInputs++;
+            }
+          });
+          console.log('📝', updatedInputs, 'inputs de nombre actualizados:', formData.projectSettings.name);
+          
+          console.log('✅ Metadata restaurada completamente - Nombre:', formData.projectSettings.name);
         }
         if (formData.projectSettings.description) {
           localStorage.setItem('projectDescription', formData.projectSettings.description);

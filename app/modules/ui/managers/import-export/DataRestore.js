@@ -22,7 +22,21 @@ export class DataRestore {
     if (ppiData.indicators && ppiManager && ppiManager.core) {
       console.log(`📊 Restoring ${ppiData.indicators.length} PPIs to manager...`);
       
-      ppiData.indicators.forEach(ppi => {
+      // Filtrar PPIs a restaurar: deben estar realmente presentes en el canvas
+      let indicators = ppiData.indicators;
+      try {
+        const modeler = resolve('BpmnModeler');
+        const elementRegistry = modeler && modeler.get ? modeler.get('elementRegistry') : null;
+        if (elementRegistry) {
+          const before = indicators.length;
+          indicators = indicators.filter(ppi => !ppi.elementId || !!elementRegistry.get(ppi.elementId));
+          if (indicators.length !== before) {
+            console.log(`🧹 Omite PPIs sin elemento en canvas: ${before - indicators.length}`);
+          }
+        }
+      } catch (_) { /* no-op */ }
+
+      indicators.forEach(ppi => {
         ppiManager.core.addPPI(ppi);
       });
       

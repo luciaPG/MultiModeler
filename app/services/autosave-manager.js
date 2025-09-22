@@ -379,7 +379,10 @@ export class AutosaveManager {
             });
             
             project.ppinot.ppis = uniqueElements;
-            project.welcomeScreenFormat.ppi.indicators = uniqueElements;
+            // Solo incluir PPIs principales en los indicadores de la Welcome Screen
+            project.welcomeScreenFormat.ppi.indicators = uniqueElements.filter(el => 
+              el.type === 'PPINOT:Ppi'
+            );
             
             
             // GUARDAR TAMBIÉN EN LOCALSTORAGE PARA RESTAURACIÓN

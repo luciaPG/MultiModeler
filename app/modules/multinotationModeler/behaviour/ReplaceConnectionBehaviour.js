@@ -83,6 +83,38 @@ export default function ReplaceConnectionBehavior(eventBus, modeling, bpmnRules,
         });
     }
 
+    function getCenter(el) {
+        if (!el) return { x: 0, y: 0 };
+        var x = (typeof el.x === 'number') ? el.x : 0;
+        var y = (typeof el.y === 'number') ? el.y : 0;
+        var w = (typeof el.width === 'number') ? el.width : 0;
+        var h = (typeof el.height === 'number') ? el.height : 0;
+        return { x: x + w / 2, y: y + h / 2 };
+    }
+
+    function computeSafeWaypoints(connection) {
+        var s = connection && connection.source ? getCenter(connection.source) : { x: 0, y: 0 };
+        var t = connection && connection.target ? getCenter(connection.target) : { x: 0, y: 0 };
+        if (!isFinite(s.x) || !isFinite(s.y) || !isFinite(t.x) || !isFinite(t.y)) {
+            return [ { x: 0, y: 0 }, { x: 0, y: 0 } ];
+        }
+        return [ { x: s.x, y: s.y }, { x: t.x, y: t.y } ];
+    }
+
+    function sanitizeWaypointsIfNeeded(connection) {
+        if (!connection) return;
+        var wps = Array.isArray(connection.waypoints) ? connection.waypoints : [];
+        var valid = isValidWaypoints(wps);
+        if (!valid) {
+            var safe = computeSafeWaypoints(connection);
+            try {
+                modeling.updateWaypoints(connection, safe);
+            } catch (e) {
+                // ignore
+            }
+        }
+    }
+
     function fixConnection(connection) {
 
         // Never touch PPINOT custom associations here
@@ -379,6 +411,8 @@ export default function ReplaceConnectionBehavior(eventBus, modeling, bpmnRules,
                     // ignore layout errors
                 }
             }
+            // Always ensure valid waypoints for any connection after move
+            sanitizeWaypointsIfNeeded(conn);
         });
 
         // Restore any PPINOT connections that were deleted during move
@@ -443,13 +477,24 @@ export default function ReplaceConnectionBehavior(eventBus, modeling, bpmnRules,
         var ctx = event.context;
         if (ctx && ctx.connection) {
             dbg('conn.move.post', { connection: ctx.connection });
+            sanitizeWaypointsIfNeeded(ctx.connection);
             restoreIfMissing(ctx.connection);
         }
     });
 
     this.postExecuted('connection.move', function(event) {
         var ctx = event.context;
-        if (ctx && ctx.connection) restoreIfMissing(ctx.connection);
+        if (ctx && ctx.connection) {
+            sanitizeWaypointsIfNeeded(ctx.connection);
+            restoreIfMissing(ctx.connection);
+        }
+    });
+
+    // After connection creation, ensure valid waypoints
+    this.postExecuted('connection.create', function(event) {
+        var ctx = event && event.context;
+        if (!ctx || !ctx.connection) return;
+        sanitizeWaypointsIfNeeded(ctx.connection);
     });
 
     // Hard block: prevent deleting PPINOT connections via command stack

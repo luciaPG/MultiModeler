@@ -50,6 +50,7 @@ export class PPIDataManager {
 
   createPPI(data) {
     return {
+      type: 'PPINOT:Ppi',
       id: this.generatePPIId(),
       title: data.title || data.process,
       process: data.process,
@@ -85,6 +86,8 @@ export class PPIDataManager {
       }
       
       this.ppis.push(ppi);
+      // Recalcular lista filtrada para reflejar cambios en UI
+      this.filterPPIs();
       await this.savePPIs();
       return { success: true, data: ppi };
     } catch (error) {
@@ -107,6 +110,8 @@ export class PPIDataManager {
           updatedAt: new Date().toISOString()
         };
         
+        // Recalcular lista filtrada para reflejar cambios en UI
+        this.filterPPIs();
         await this.savePPIs();
         return { success: true, data: this.ppis[index] };
       }
@@ -121,6 +126,8 @@ export class PPIDataManager {
       const index = this.ppis.findIndex(p => p.id === ppiId);
       if (index !== -1) {
         const deletedPPI = this.ppis.splice(index, 1)[0];
+        // Recalcular lista filtrada para que desaparezca inmediatamente en UI
+        this.filterPPIs();
         await this.savePPIs();
         return { success: true, data: deletedPPI };
       }
@@ -149,18 +156,25 @@ export class PPIDataManager {
       console.log(`🔍 [PPIDataManager] Evaluando PPI: ${ppi.name || ppi.id}`, {
         type: ppi.type,
         elementId: ppi.elementId,
-        measureType: ppi.measureDefinition?.type,
+        measureType: (ppi.measureDefinition && ppi.measureDefinition.type) ? ppi.measureDefinition.type : undefined,
         parentId: ppi.parentId,
         isChild: ppi.isChild,
         derivedFrom: ppi.derivedFrom,
         measureDefinition: ppi.measureDefinition
       });
       
-      // PRIMERA PRIORIDAD: Excluir medidas agregadas Y medidas base (incluso si tienen elementId)
+      // PRIMERA PRIORIDAD: Mostrar SOLO PPIs principales
+      const isMainPPI = (ppi.type === 'PPINOT:Ppi');
+      if (!isMainPPI) {
+        console.log(`❌ [PPIDataManager] Excluido no-PPI: ${ppi.name || ppi.id} (${ppi.type || 'sin tipo'})`);
+        return false;
+      }
+
+      // SEGUNDA PRIORIDAD: Excluir medidas agregadas Y medidas base (incluso si tienen elementId)
       const isAggregatedOrBaseMeasure = (
         (ppi.type && (ppi.type.includes('Aggregated') || ppi.type === 'aggregated')) ||
         (ppi.measureType && (ppi.measureType.includes('Aggregated') || ppi.measureType === 'aggregated')) ||
-        (ppi.measureDefinition?.type && ppi.measureDefinition.type.includes('Aggregated')) ||
+        (ppi.measureDefinition && ppi.measureDefinition.type && ppi.measureDefinition.type.includes('Aggregated')) ||
         (ppi.elementId && ppi.elementId.includes('AggregatedMeasure')) || // Detectar medidas agregadas por ID
         (ppi.elementId && ppi.elementId.includes('BaseMeasure')) // Detectar medidas base por ID
       );
@@ -170,14 +184,14 @@ export class PPIDataManager {
         return false;
       }
       
-      // SEGUNDA PRIORIDAD: Excluir PPIs hijas/derivadas
+      // TERCERA PRIORIDAD: Excluir PPIs hijas/derivadas
       const isChildPPI = (
         ppi.parentId ||                                    // Tiene un PPI padre
         ppi.isChild === true ||                           // Marcada explícitamente como hija
         ppi.derivedFrom ||                                // Deriva de otra PPI
         (ppi.measureDefinition && ppi.measureDefinition.parentMeasure) || // Medida con padre
         (ppi.type && ppi.type.includes('Derived')) ||     // Tipo derivado
-        (ppi.measureDefinition?.type && ppi.measureDefinition.type.includes('Derived'))
+        (ppi.measureDefinition && ppi.measureDefinition.type && ppi.measureDefinition.type.includes('Derived'))
       );
       
       if (isChildPPI) {
@@ -209,11 +223,15 @@ export class PPIDataManager {
 
   filterPPIs(searchTerm = '', typeFilter = '', statusFilter = '') {
     this.filteredPPIs = this.ppis.filter(ppi => {
-      // PRIMERA PRIORIDAD: Excluir medidas agregadas Y medidas base del panel PPI (incluso si tienen elementId)
+      // PRIMERA PRIORIDAD: Mostrar SOLO PPIs principales
+      const isMainPPI = (ppi.type === 'PPINOT:Ppi');
+      if (!isMainPPI) return false;
+
+      // SEGUNDA PRIORIDAD: Excluir medidas agregadas Y medidas base del panel PPI (incluso si tienen elementId)
       const isAggregatedOrBaseMeasure = (
         (ppi.type && (ppi.type.includes('Aggregated') || ppi.type === 'aggregated')) ||
         (ppi.measureType && (ppi.measureType.includes('Aggregated') || ppi.measureType === 'aggregated')) ||
-        (ppi.measureDefinition?.type && ppi.measureDefinition.type.includes('Aggregated')) ||
+        (ppi.measureDefinition && ppi.measureDefinition.type && ppi.measureDefinition.type.includes('Aggregated')) ||
         (ppi.elementId && ppi.elementId.includes('AggregatedMeasure')) || // Detectar medidas agregadas por ID
         (ppi.elementId && ppi.elementId.includes('BaseMeasure')) // Detectar medidas base por ID
       );
@@ -222,14 +240,14 @@ export class PPIDataManager {
         return false; // No mostrar medidas agregadas/base en el panel
       }
       
-      // SEGUNDA PRIORIDAD: Excluir PPIs hijas/derivadas del panel PPI
+      // TERCERA PRIORIDAD: Excluir PPIs hijas/derivadas del panel PPI
       const isChildPPI = (
         ppi.parentId ||                                    // Tiene un PPI padre
         ppi.isChild === true ||                           // Marcada explícitamente como hija
         ppi.derivedFrom ||                                // Deriva de otra PPI
         (ppi.measureDefinition && ppi.measureDefinition.parentMeasure) || // Medida con padre
         (ppi.type && ppi.type.includes('Derived')) ||     // Tipo derivado
-        (ppi.measureDefinition?.type && ppi.measureDefinition.type.includes('Derived'))
+        (ppi.measureDefinition && ppi.measureDefinition.type && ppi.measureDefinition.type.includes('Derived'))
       );
       
       if (isChildPPI) {
@@ -333,7 +351,7 @@ export class PPIDataManager {
       if (result && result.success) {
         // Actualizar la lista local de PPIs con los datos cargados
         if (result.data && result.data.ppi && result.data.ppi.indicators) {
-          this.ppis = result.data.ppi.indicators;
+          this.ppis = result.data.ppi.indicators.filter(ppi => ppi.type === 'PPINOT:Ppi');
           console.log(`✅ ${this.ppis.length} PPIs cargados desde localStorage`);
           
           // IMPORTANTE: Aplicar filtro automáticamente después de cargar para excluir agregadas

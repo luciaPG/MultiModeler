@@ -23,6 +23,25 @@ function validateAndSanitizeWaypoints(waypoints) {
   });
 }
 
+function hasValidWaypoints(waypoints) {
+  if (!Array.isArray(waypoints) || waypoints.length < 2) return false;
+  return waypoints.every(function(point){
+    return point && typeof point.x === 'number' && typeof point.y === 'number' && isFinite(point.x) && isFinite(point.y);
+  });
+}
+
+function computeDefaultWaypoints(source, target) {
+  try {
+    var s = getMid(source);
+    var t = getMid(target);
+    if (s && t && isFinite(s.x) && isFinite(s.y) && isFinite(t.x) && isFinite(t.y)) {
+      return [ { x: s.x, y: s.y }, { x: t.x, y: t.y } ];
+    }
+  } catch (e) {}
+  // Fallback to simple zeros if something is missing (will be laid out later)
+  return [ { x: (source && source.x) || 0, y: (source && source.y) || 0 }, { x: (target && target.x) || 0, y: (target && target.y) || 0 } ];
+}
+
 /**
  * Multi-notation connection handler that works for BPMN, PPINOT, and RALPH
  */
@@ -141,15 +160,30 @@ export default function MultiNotationConnect(eventBus, dragging, modeling, rules
 
         var type = context.type;
 
-        var canExecute = context.canExecute = canConnect(source, hover, type);
+    var canExecute = context.canExecute = canConnect(source, hover, type);
 
         if (canExecute === null) {
             return;
         }
 
-        context.target = hover;
-        // Siempre preservar el tipo, incluso si es undefined
-        context.connectionType = type || context.connectionType;
+    // No mostrar tipo de conexión cuando es inválido, y marcar prohibido
+    if (!canExecute) {
+      context.target = null;
+      context.canExecute = false;
+      // Señal visual de prohibido: cursor not-allowed (si el shell de UI lo respeta)
+      try { if (event && event.originalEvent && event.originalEvent.view && event.originalEvent.view.document && event.originalEvent.view.document.body) {
+        event.originalEvent.view.document.body.style.cursor = 'not-allowed';
+      } } catch (e) {}
+      return;
+    }
+
+    // Resetear cursor cuando es válido
+    try { if (event && event.originalEvent && event.originalEvent.view && event.originalEvent.view.document && event.originalEvent.view.document.body) {
+      event.originalEvent.view.document.body.style.cursor = '';
+    } } catch (e) {}
+
+    context.target = hover;
+    context.connectionType = type || context.connectionType;
     });
 
     eventBus.on('connect.end', function (event) {
@@ -168,24 +202,28 @@ export default function MultiNotationConnect(eventBus, dragging, modeling, rules
             return false;
         }
 
-        var canExecute = canConnect(source, target, connectionType);
+    var canExecute = canConnect(source, target, connectionType);
 
-        if (!canExecute) {
+    if (!canExecute) {
+      try { if (event && event.originalEvent && event.originalEvent.view && event.originalEvent.view.document && event.originalEvent.view.document.body) {
+        event.originalEvent.view.document.body.style.cursor = '';
+      } } catch (e) {}
             return false;
         }
 
-        try {
-            // Usar el tipo de canExecute si connectionType es undefined
+    try {
             var finalType = connectionType || (canExecute && canExecute.type) || null;
-            
-            // Si no tenemos tipo, intentar obtenerlo de las reglas
             if (!finalType && canExecute && typeof canExecute === 'object' && canExecute.type) {
                 finalType = canExecute.type;
             }
-            
+
+            // Always provide safe default waypoints to avoid NaN in bendpoints
+            var defaultWps = computeDefaultWaypoints(source, target);
+
             var connection = modeling.connect(source, target, finalType ? {
-                type: finalType
-            } : null);
+                type: finalType,
+                waypoints: defaultWps
+            } : { waypoints: defaultWps });
             
             // Disparar eventos específicos según el tipo de conexión
             if (connection && connection.type) {
@@ -200,8 +238,23 @@ export default function MultiNotationConnect(eventBus, dragging, modeling, rules
                 }
             }
             
-            return connection;
+            // Ensure created connection has valid waypoints; if not, sanitize
+            if (connection && !hasValidWaypoints(connection.waypoints)) {
+              var sanitized = validateAndSanitizeWaypoints(connection.waypoints);
+              if (!hasValidWaypoints(sanitized)) {
+                sanitized = defaultWps;
+              }
+              try { modeling.updateWaypoints(connection, sanitized); } catch (e) {}
+            }
+            
+      try { if (event && event.originalEvent && event.originalEvent.view && event.originalEvent.view.document && event.originalEvent.view.document.body) {
+        event.originalEvent.view.document.body.style.cursor = '';
+      } } catch (e) {}
+      return connection;
         } catch (error) {
+      try { if (event && event.originalEvent && event.originalEvent.view && event.originalEvent.view.document && event.originalEvent.view.document.body) {
+        event.originalEvent.view.document.body.style.cursor = '';
+      } } catch (e) {}
             return false;
         }
     });

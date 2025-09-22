@@ -67,16 +67,6 @@
             maxlength="50"
           />
         </div>
-        <div class="project-status">
-          <span class="status-indicator" id="status-indicator">
-            <i class="fas fa-circle"></i>
-            <span id="status-text">Sin cambios</span>
-          </span>
-          <span class="status-indicator" id="size-indicator">
-            <i class="fas fa-weight-hanging"></i>
-            <span id="file-size">0 KB</span>
-          </span>
-        </div>
       </div>
       
       <div class="toolbar">
@@ -179,6 +169,16 @@
             if (typeof manager.markRestored === 'function') manager.markRestored();
             if (typeof manager.dismissDraftNotification === 'function') manager.dismissDraftNotification();
           }
+          // Limpiar también PPIs en memoria y refrescar UI del panel PPI
+          try {
+            const ppiManager = registry ? registry.get('PPIManagerInstance') : null;
+            if (ppiManager && ppiManager.core) {
+              ppiManager.core.ppis = [];
+              if (ppiManager.ui && typeof ppiManager.ui.refreshPPIList === 'function') {
+                ppiManager.ui.refreshPPIList();
+              }
+            }
+          } catch (_) { /* no-op */ }
         } catch (_) { /* no-op */ }
 
         // Preparar UI
@@ -188,11 +188,13 @@
         if (modelerContainer) modelerContainer.style.display = 'block';
 
         // Resetear nombre del proyecto
-        window.currentProjectName = 'Nuevo Diagrama';
-        const projectNameInput = document.getElementById('project-name-input');
-        if (projectNameInput) {
-          projectNameInput.value = 'Nuevo Diagrama';
-        }
+      window.currentProjectName = 'Nuevo Diagrama';
+      const projectNameInput = document.getElementById('project-name-input');
+      if (projectNameInput) {
+        projectNameInput.value = 'Nuevo Diagrama';
+      }
+      // Limpiar nombre persistido para evitar que se recupere de sesiones previas
+      try { localStorage.removeItem('projectName'); } catch (_) {}
 
         // Llamar a initModeler si está disponible
         if (typeof window.initModeler === 'function') {
@@ -296,6 +298,22 @@
               if (modelerManager && typeof modelerManager.setModeler === 'function') {
                 modelerManager.setModeler(window.modeler);
               }
+              // Derivar un nombre de proyecto básico para BPMN usando el nombre del archivo si es posible
+              try {
+                if (fileData.fileName) {
+                  const base = fileData.fileName.replace(/\.[^.]+$/, '');
+                  const name = base || 'Diagrama BPMN';
+                  const registry = getServiceRegistry();
+                  const importManager = registry ? registry.get('ImportExportManager') : null;
+                  if (importManager && typeof importManager.setProjectName === 'function') {
+                    importManager.setProjectName(name);
+                  }
+                  const input = document.getElementById('project-name-input');
+                  if (input) input.value = name;
+                  try { localStorage.setItem('projectName', name); } catch (_) {}
+                  window.currentProjectName = name;
+                }
+              } catch (_) {}
             }
           }
         } else {
@@ -440,7 +458,8 @@
               const fileData = {
                 type: file.name.endsWith('.mmproject') ? 'project' : 'bpmn',
                 content: content,
-                data: file.name.endsWith('.mmproject') ? JSON.parse(content) : null
+                data: file.name.endsWith('.mmproject') ? JSON.parse(content) : null,
+                fileName: file.name
               };
               
               // Usar el mismo flujo que openDiagramHandler

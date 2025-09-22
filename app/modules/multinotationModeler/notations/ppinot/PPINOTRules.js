@@ -26,6 +26,30 @@ function isPPINOT(element) {
   return element && /^PPINOT:/.test(element.type);
 }
 
+function isRALph(element) {
+  return element && /^RALph:/.test(element.type);
+}
+
+function hasDuplicateConnection(source, target, connectionType) {
+  if (!source || !target || !source.outgoing) return false;
+  return source.outgoing.some(function(conn) {
+    return conn && conn.target === target && conn.type === connectionType;
+  });
+}
+
+function hasAnyConnectionBetween(source, target) {
+  if (!source || !target || !source.outgoing) return false;
+  return source.outgoing.some(function(conn) {
+    return conn && conn.target === target && /^PPINOT:/.test(conn.type || '');
+  });
+}
+
+function hasReverseConnection(target, source, connectionType) {
+  if (!target || !source || !target.outgoing) return false;
+  return target.outgoing.some(function(conn) {
+    return conn && conn.target === source && conn.type === connectionType;
+  });
+}
 
 function isDefaultValid(element) {
   return element && (is(element, 'bpmn:Task') || is(element, 'bpmn:Event') || is(element, 'bpmn:Pool') || is(element, 'bpmn:DataObjectReference')) 
@@ -62,6 +86,27 @@ function connect(source, target, connection) {
     return null;
   }
   
+  // General prohibitions
+  // 1) Forbid PPINOT <-> RALph connections
+  if ((isPPINOT(source) && isRALph(target)) || (isPPINOT(target) && isRALph(source))) {
+    return false;
+  }
+
+  // 2) Forbid identical duplicate connections between same elements
+  if (hasDuplicateConnection(source, target, connection)) {
+    return false;
+  }
+
+  // 2b) Forbid multiple PPINOT connections between same pair, even of different types
+  if (hasAnyConnectionBetween(source, target)) {
+    return false;
+  }
+
+  // 3) Forbid circular connections of same type (A->B and B->A)
+  if (hasReverseConnection(target, source, connection)) {
+    return false;
+  }
+  
   // During reconnection, keep existing PPINOT connection types even if strict rule wouldn't allow
   if (typeof connection === 'string' && connection.indexOf('PPINOT:') === 0) {
     // try to detect reconnection via relaxed flag on provider instance stored on this
@@ -89,7 +134,14 @@ function connect(source, target, connection) {
     || is(source, 'PPINOT:StateCondAggMeasureAtLeastOne') || is(source, 'PPINOT:StateCondAggMeasureNo')
     || is(source, 'PPINOT:CountMeasure') || is(source, 'PPINOT:DataMeasure') || is(source, 'PPINOT:TimeMeasure')
     || is(source, 'PPINOT:CountAggregatedMeasure') || is(source, 'PPINOT:DataAggregatedMeasure') || is(source, 'PPINOT:TimeAggregatedMeasure')))
-      return { type: connection }
+      {
+        // Prevent same-metric duplicate on same BPMN target
+        var dupMetric = (target.incoming || []).some(function(c){
+          return c && c.type === connection && c.source && c.source.type === source.type;
+        });
+        if (dupMetric) { return false; }
+        return { type: connection }
+      }
     else
       return false
   }
@@ -108,6 +160,11 @@ function connect(source, target, connection) {
   else if(connection === 'PPINOT:ToConnection') {
     if((isDefaultValid(target) || is(target, 'bpmn:Participant')) && 
        (is(source, 'PPINOT:TimeMeasure') || is(source, 'PPINOT:TimeAggregatedMeasure'))) {
+      // Avoid duplicated metric on same BPMN target
+      var dupMetricTo = (target.incoming || []).some(function(c){
+        return c && c.type === connection && c.source && c.source.type === source.type;
+      });
+      if (dupMetricTo) { return false; }
       return { 
         type: connection,
         waypoints: [
@@ -129,7 +186,19 @@ function connect(source, target, connection) {
     || is(source, 'PPINOT:CyclicTimeAggregatedMeasureMIN') || is(source, 'PPINOT:CyclicTimeAggregatedMeasureAVG')
     || is(source, 'PPINOT:CyclicTimeAggregatedMeasure') || is(source, 'PPINOT:TimeAggregatedMeasure')
     || is(source, 'PPINOT:TimeAggregatedMeasureMAX') || is(source, 'PPINOT:TimeAggregatedMeasureMIN') || is(source, 'PPINOT:TimeAggregatedMeasureAVG') || is(source, 'PPINOT:TimeAggregatedMeasureSUM')))
-      return { type: connection }
+      {
+        // One single FROM per PPI/measure
+        var fromCount = (source.outgoing || []).filter(function(c){ return c && c.type === 'PPINOT:FromConnection'; }).length;
+        if (fromCount >= 1) return false;
+
+        // Avoid duplicated metric on same BPMN target
+        var dupMetricFrom = (target.incoming || []).some(function(c){
+          return c && c.type === connection && c.source && c.source.type === source.type;
+        });
+        if (dupMetricFrom) { return false; }
+
+        return { type: connection }
+      }
     else
       return false
   }
@@ -139,7 +208,13 @@ function connect(source, target, connection) {
     || is(source, 'PPINOT:CountAggregatedMeasure') || is(source, 'PPINOT:CountAggregatedMeasureSUM')
     || is(source, 'PPINOT:CountAggregatedMeasureMAX') || is(source, 'PPINOT:CountAggregatedMeasureMIN')
     || is(source, 'PPINOT:CountAggregatedMeasureAVG')))
-      return { type: connection }
+      {
+        var dupMetricStart = (target.incoming || []).some(function(c){
+          return c && c.type === connection && c.source && c.source.type === source.type;
+        });
+        if (dupMetricStart) { return false; }
+        return { type: connection }
+      }
     else
       return false
   }
@@ -148,13 +223,30 @@ function connect(source, target, connection) {
     || is(source, 'PPINOT:CountAggregatedMeasure') || is(source, 'PPINOT:CountAggregatedMeasureSUM')
     || is(source, 'PPINOT:CountAggregatedMeasureMAX') || is(source, 'PPINOT:CountAggregatedMeasureMIN')
     || is(source, 'PPINOT:CountAggregatedMeasureAVG')))
-      return { type: connection }
+      {
+        var dupMetricEnd = (target.incoming || []).some(function(c){
+          return c && c.type === connection && c.source && c.source.type === source.type;
+        });
+        if (dupMetricEnd) { return false; }
+        return { type: connection }
+      }
     else
       return false
   }
   else {
     if (!isPPINOT(source) && !isPPINOT(target))
       return;
+    
+    // Forbid PPI to PPI connections
+    if (is(source, 'PPINOT:Ppi') && is(target, 'PPINOT:Ppi')) {
+      return false;
+    }
+
+    // Forbid connecting PPINOT elements to non-BPMN elements (e.g., RALph) for generic paths
+    if ((isPPINOT(source) && !isDefaultValid(target) && !is(target, 'bpmn:Participant')) ||
+        (isPPINOT(target) && !isDefaultValid(source) && !is(source, 'bpmn:Participant'))) {
+      return false;
+    }
     else if((isDefaultValid(source) && isPPINOTResourceArcElement(target)) 
     || (isDefaultValid(target) && isPPINOTResourceArcElement(source))) {
       return {type: 'PPINOT:ResourceArc'}

@@ -37,6 +37,8 @@ class PPICore {
     return this.dataManager.createPPI(data);
   }
 
+  // Métodos básicos expuestos más abajo con lógica adicional
+
   addPPI(ppi) {
     const result = this.dataManager.addPPI(ppi);
     
@@ -62,18 +64,19 @@ class PPICore {
   }
 
   deletePPI(ppiId) {
-    const deletedPPI = this.dataManager.deletePPI(ppiId);
+    const result = this.dataManager.deletePPI(ppiId);
     
-    if (deletedPPI) {
+    if (result && result.success) {
+      const deletedPPI = result.data;
       // Eliminar también del canvas si tiene elementId
-      if (deletedPPI.elementId) {
+      if (deletedPPI && deletedPPI.elementId) {
         this.canvasManager.deletePPIFromCanvas(ppiId, deletedPPI);
       }
-      
       // Nota: elementManager eliminado, la persistencia se maneja por LocalStorageManager
+      return deletedPPI;
     }
     
-    return deletedPPI;
+    return null;
   }
 
   getPPI(ppiId) {

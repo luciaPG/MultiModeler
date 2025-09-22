@@ -125,7 +125,7 @@ describe('Compatibilidad Real de la Aplicación', () => {
 
       // Verificar que todas las APIs críticas tienen soporte o fallback
       apiCompatibility.forEach(api => {
-        const hasSupport = api.nativeSupport || api.fallbackStrategy;
+        const hasSupport = !!(api.nativeSupport || api.fallbackStrategy);
         expect(hasSupport).toBe(true);
       });
 
