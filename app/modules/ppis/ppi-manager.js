@@ -571,25 +571,29 @@ class PPIManager {
 
       const elementRegistry = modeler.get('elementRegistry');
       const allElements = elementRegistry.getAll();
-      
-      // Buscar elementos PPINOT en el canvas
-      const ppiElements = allElements.filter(el => 
-        el.type && el.type.startsWith('PPINOT:') && 
-        el.type !== 'PPINOT:Target' && 
-        el.type !== 'PPINOT:Scope' && 
-        el.type !== 'PPINOT:Measure' && 
-        el.type !== 'PPINOT:Condition'
+
+      // Identificar SOLO elementos PPI reales en el canvas
+      const realPPIElements = allElements.filter(el => 
+        (el.type === 'PPINOT:Ppi') || (el.businessObject && el.businessObject.$type === 'PPINOT:Ppi')
       );
 
+      // PURGA: eliminar PPIs asociados a elementos que no sean PPINOT:Ppi
+      if (Array.isArray(this.core.ppis) && this.core.ppis.length > 0) {
+        const validIds = new Set(realPPIElements.map(el => el.id));
+        const before = this.core.ppis.length;
+        this.core.ppis = this.core.ppis.filter(ppi => !ppi.elementId || validIds.has(ppi.elementId));
+        if (this.core.ppis.length !== before && this.ui && this.ui.refreshPPIList) {
+          this.ui.refreshPPIList();
+        }
+      }
 
-      // Verificar si cada elemento PPINOT tiene un PPI correspondiente
-      ppiElements.forEach(element => {
+      // Asegurar creación de PPI para cada elemento PPI del canvas
+      realPPIElements.forEach(element => {
         const existingPPI = this.core.ppis.find(ppi => ppi.elementId === element.id);
         if (!existingPPI && !this._isDeleting) {
           setTimeout(() => {
             this.createPPIFromElement(element.id);
           }, 100);
-        } else {
         }
       });
 

@@ -1256,6 +1256,12 @@ export class LocalStorageManager {
         });
         
         console.log('✅ PPIs restaurados en el manager');
+        // Purga inmediata de PPIs inválidos (no vinculados a elementos PPINOT:Ppi)
+        try {
+          if (typeof ppiManager.verifyExistingPPIsInCanvas === 'function') {
+            ppiManager.verifyExistingPPIsInCanvas();
+          }
+        } catch (_) { /* no-op */ }
       }
     } catch (error) {
       console.error('Error restaurando PPIs:', error);

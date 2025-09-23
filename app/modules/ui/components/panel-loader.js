@@ -779,18 +779,14 @@ class PanelLoader {
       const elementRegistry = modeler.get('elementRegistry');
       const allElements = elementRegistry.getAll();
       
-      // Buscar elementos PPINOT en el canvas
+      // Buscar SOLO elementos PPI reales en el canvas
       const ppiElements = allElements.filter(el => 
-        el.type && el.type.startsWith('PPINOT:') && 
-        el.type !== 'PPINOT:Target' && 
-        el.type !== 'PPINOT:Scope' && 
-        el.type !== 'PPINOT:Measure' && 
-        el.type !== 'PPINOT:Condition'
+        (el.type === 'PPINOT:Ppi') || (el.businessObject && el.businessObject.$type === 'PPINOT:Ppi')
       );
 
       console.log(`[PanelLoader] Encontrados ${ppiElements.length} elementos PPINOT en el canvas`);
 
-      // Verificar si cada elemento PPINOT tiene un PPI correspondiente
+      // Verificar si cada elemento PPI tiene un PPI correspondiente
       ppiElements.forEach(element => {
         const existingPPI = ppiManager.core.ppis.find(ppi => ppi.elementId === element.id);
         if (!existingPPI) {
