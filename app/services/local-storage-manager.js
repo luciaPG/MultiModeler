@@ -932,6 +932,9 @@ export class LocalStorageManager {
       
       // Si faltan elementos, añadir BPMNShapes al XML (igual que ImportExportManager)
       let correctedXml = xmlContent;
+
+      // Normalize PPINOT connection refs: source/target -> sourceRef/targetRef
+      correctedXml = this.normalizePPINOTConnections(correctedXml);
       if (missingShapes.length > 0 && bpmnData.relationships) {
         console.log(`🔧 FIXING XML: Missing ${missingShapes.length} elements with BPMNShape`);
         correctedXml = this.addMissingBPMNShapes(xmlContent, bpmnData.relationships);
@@ -994,6 +997,47 @@ export class LocalStorageManager {
     } catch (error) {
       console.error('Error restaurando BPMN:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Ensure PPINOT connections use BPMN association refs (sourceRef/targetRef) for import
+   */
+  normalizePPINOTConnections(xml) {
+    try {
+      if (!xml || typeof xml !== 'string') return xml;
+
+      // Replace attributes source="..." -> sourceRef="..." and target -> targetRef
+      // Only inside PPINOT:* connection tags
+      const connectionTypes = [
+        'FromConnection', 'ToConnection', 'StartConnection', 'EndConnection',
+        'AggregatedConnection', 'GroupedBy', 'ResourceArc', 'ConsequenceFlow',
+        'TimeDistanceArcStart', 'TimeDistanceArcEnd', 'RFCStateConnection', 'MyConnection', 'DashedLine'
+      ];
+
+      connectionTypes.forEach((type) => {
+        const openTag = new RegExp(`<PPINOT:${type}([^>]*)>`, 'g');
+        xml = xml.replace(openTag, (match, attrs) => {
+          let updated = attrs;
+          // attribute-level replacements (avoid duplicating if already correct)
+          updated = updated.replace(/\ssource="([^"]+)"/g, ' sourceRef="$1"');
+          updated = updated.replace(/\starget="([^"]+)"/g, ' targetRef="$1"');
+          // If both missing, leave as-is
+          return `<PPINOT:${type}${updated}>`;
+        });
+        // Self-closing variant
+        const selfClosing = new RegExp(`<PPINOT:${type}([^>]*)/>`, 'g');
+        xml = xml.replace(selfClosing, (match, attrs) => {
+          let updated = attrs;
+          updated = updated.replace(/\ssource="([^"]+)"/g, ' sourceRef="$1"');
+          updated = updated.replace(/\starget="([^"]+)"/g, ' targetRef="$1"');
+          return `<PPINOT:${type}${updated}/>`;
+        });
+      });
+
+      return xml;
+    } catch (_) {
+      return xml;
     }
   }
 

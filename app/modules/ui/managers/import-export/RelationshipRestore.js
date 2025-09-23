@@ -381,10 +381,11 @@ export class RelationshipRestore {
     const requiredElementIds = new Set();
     relationships.forEach(rel => {
       // Only add non-label elements to required list
-      if (!rel.childId.includes('_label')) {
+      const isLabelId = (id) => typeof id === 'string' && (id.includes('_label') || id.startsWith('label_'));
+      if (!isLabelId(rel.childId)) {
         requiredElementIds.add(rel.childId);
       }
-      if (!rel.parentId.includes('_label')) {
+      if (!isLabelId(rel.parentId)) {
         requiredElementIds.add(rel.parentId);
       }
     });

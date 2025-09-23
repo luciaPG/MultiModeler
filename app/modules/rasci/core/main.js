@@ -453,6 +453,22 @@ export function initRasciPanel(panel) {
     sr.registerFunction('forceImmediateReload', forceImmediateReload);
   }
 
+  // Expose minimal globals for legacy inline handlers in HTML templates
+  if (typeof window !== 'undefined') {
+    // Bridge for <div onclick="cambiarPestana('...')">
+    window.cambiarPestana = function(tabName) {
+      try {
+        changeTab(tabName);
+      } catch (e) { /* ignore */ }
+    };
+    // Bridge for <button onclick="manualReloadRasciMatrix()">
+    window.manualReloadRasciMatrix = function() {
+      try {
+        reloadRasciMatrix();
+      } catch (e) { /* ignore */ }
+    };
+  }
+
   // Function for BPMN event debugging
   const debugBpmnEvents = () => {
     const modeler = rasciAdapter.getBpmnModeler();

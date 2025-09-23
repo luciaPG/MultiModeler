@@ -34,18 +34,6 @@ class PanelManager {
         icon: 'fas fa-chart-line',
         description: 'Indicadores de Rendimiento de Procesos',
         enabled: true
-      },
-      'test': {
-        name: 'Panel de Prueba',
-        icon: 'fas fa-flask',
-        description: 'Panel de pruebas y utilidades',
-        enabled: true
-      },
-      'logs': {
-        name: 'Logs del Sistema',
-        icon: 'fas fa-terminal',
-        description: 'Registros del sistema',
-        enabled: true
       }
     };
     
