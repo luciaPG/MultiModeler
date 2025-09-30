@@ -18,17 +18,14 @@ import { getServiceRegistry } from '../../ui/core/ServiceRegistry.js';
 class PPICore {
   constructor(adapter = null) {
     this.adapter = adapter;
-    
-    // Inicializar managers especializados
+
     this.dataManager = new PPIDataManager();
     this.canvasManager = new PPICanvasManager();
     this.xmlManager = new PPIXMLManager();
-    
-    console.log('✅ PPICore refactorizado inicializado con managers especializados');
   }
 
   // ==================== API PÚBLICA - GESTIÓN DE PPIS ====================
-  
+
   generatePPIId() {
     return this.dataManager.generatePPIId();
   }
@@ -37,46 +34,24 @@ class PPICore {
     return this.dataManager.createPPI(data);
   }
 
-  // Métodos básicos expuestos más abajo con lógica adicional
-
   addPPI(ppi) {
-    const result = this.dataManager.addPPI(ppi);
-    
-    // Coordinar con otros managers si es necesario
-    // Nota: elementManager eliminado, la persistencia se maneja por LocalStorageManager
-    
-    return result;
+    return this.dataManager.addPPI(ppi);
   }
 
-  updatePPI(ppiId, updatedData, __source = null) {
-    const result = this.dataManager.updatePPI(ppiId, updatedData, __source);
-    
-    if (result) {
-      // Si la actualización viene del formulario, coordinar con canvas
-      if (__source === 'form' && result.elementId) {
-        this.syncFormToCanvas(result, updatedData);
-      }
-      
-      // Nota: elementManager eliminado, la persistencia se maneja por LocalStorageManager
+  updatePPI(ppiId, updatedData, source = null) {
+    const result = this.dataManager.updatePPI(ppiId, updatedData, source);
+    if (result && source === 'form' && result.elementId) {
+      this.syncFormToCanvas(result, updatedData);
     }
-    
     return result;
   }
 
   deletePPI(ppiId) {
     const result = this.dataManager.deletePPI(ppiId);
-    
-    if (result && result.success) {
-      const deletedPPI = result.data;
-      // Eliminar también del canvas si tiene elementId
-      if (deletedPPI && deletedPPI.elementId) {
-        this.canvasManager.deletePPIFromCanvas(ppiId, deletedPPI);
-      }
-      // Nota: elementManager eliminado, la persistencia se maneja por LocalStorageManager
-      return deletedPPI;
+    if (result?.success && result.data?.elementId) {
+      this.canvasManager.deletePPIFromCanvas(ppiId, result.data);
     }
-    
-    return null;
+    return result?.data || null;
   }
 
   getPPI(ppiId) {
@@ -86,7 +61,7 @@ class PPICore {
   getAllPPIs() {
     return this.dataManager.getAllPPIs();
   }
-  
+
   getVisiblePPIs() {
     return this.dataManager.getVisiblePPIs();
   }
@@ -96,28 +71,21 @@ class PPICore {
   }
 
   // ==================== API PÚBLICA - ELEMENTOS PPINOT ====================
-  
+
   savePPINOTElements() {
-    // Nota: elementManager eliminado, la persistencia se maneja por LocalStorageManager
-    console.log('ℹ️ savePPINOTElements - delegando al LocalStorageManager');
+    return false; // Delegado a LocalStorageManager
   }
 
   loadPPINOTElements() {
-    // Nota: elementManager eliminado, la persistencia se maneja por LocalStorageManager
-    console.log('ℹ️ loadPPINOTElements - delegando al LocalStorageManager');
-    return false;
+    return false; // Delegado a LocalStorageManager
   }
 
   restorePPINOTElements() {
-    // Método simplificado - delegar al ImportExportManager si está disponible
-    console.log('ℹ️ restorePPINOTElements - delegando al sistema unificado');
-    return false;
+    return false; // Delegado a ImportExportManager
   }
 
-  restoreParentChildRelationship(childId, parentId, /* eslint-disable-line no-unused-vars */ _ = null) {
-    // Nota: elementManager eliminado, la restauración se maneja por LocalStorageManager
-    console.log('ℹ️ restoreParentChildRelationship - delegando al LocalStorageManager');
-    return false;
+  restoreParentChildRelationship() {
+    return false; // Delegado a LocalStorageManager
   }
 
   // ==================== API PÚBLICA - CANVAS ====================
@@ -165,19 +133,15 @@ class PPICore {
   // ==================== API PÚBLICA - CONFIGURACIÓN ====================
 
   enableAutoSave() {
-    // Nota: elementManager eliminado, el autosave se maneja por LocalStorageManager
-    console.log('ℹ️ enableAutoSave - delegando al LocalStorageManager');
+    return false; // Delegado a LocalStorageManager
   }
 
   disableAutoSave() {
-    // Nota: elementManager eliminado, el autosave se maneja por LocalStorageManager
-    console.log('ℹ️ disableAutoSave - delegando al LocalStorageManager');
+    return false; // Delegado a LocalStorageManager
   }
 
   isAutoSaveEnabled() {
-    // Nota: elementManager eliminado, el autosave se maneja por LocalStorageManager
-    console.log('ℹ️ isAutoSaveEnabled - delegando al LocalStorageManager');
-    return false;
+    return false; // Delegado a LocalStorageManager
   }
 
   // ==================== API PÚBLICA - UTILIDADES ====================
@@ -186,10 +150,8 @@ class PPICore {
     return PPIUtils.detectMeasureType(elementId, elementType);
   }
 
-  extractChildElementInfo(/* eslint-disable-line no-unused-vars */ _) {
-    // Nota: elementManager eliminado, esta funcionalidad se maneja por LocalStorageManager
-    console.log('ℹ️ extractChildElementInfo - delegando al LocalStorageManager');
-    return null;
+  extractChildElementInfo() {
+    return null; // Delegado a LocalStorageManager
   }
 
   exportPPIsToFile() {
@@ -200,34 +162,26 @@ class PPICore {
     return this.dataManager.parseFormData(formData);
   }
 
-  // ==================== MÉTODOS LEGACY PARA COMPATIBILIDAD ====================
+  // ==================== MÉTODOS LEGACY (Compatibilidad) ====================
 
   loadPPIs() {
-    // Método legacy - los PPIs se cargan automáticamente en el constructor del dataManager
     this.dataManager.loadPPIs();
   }
 
   savePPIs() {
-    // Método legacy - delegar al dataManager
     this.dataManager.savePPIs();
   }
 
-  // Método de utilidad para truncar texto (usado por UI)
   truncateText(text, maxLength) {
     return PPIUtils.truncateText(text, maxLength);
   }
 
-  // Métodos adicionales para compatibilidad con UI
   debouncedSavePPINOTElements() {
-    // Nota: elementManager eliminado, la persistencia se maneja por LocalStorageManager
-    console.log('ℹ️ debouncedSavePPINOTElements - delegando al LocalStorageManager');
-    return false;
+    return false; // Delegado a LocalStorageManager
   }
 
   forceSavePPINOTElements() {
-    // Nota: elementManager eliminado, la persistencia se maneja por LocalStorageManager
-    console.log('ℹ️ forceSavePPINOTElements - delegando al LocalStorageManager');
-    return false;
+    return false; // Delegado a LocalStorageManager
   }
 
   updatePPIsWithRestoredChildren(restoredChildren) {
@@ -239,9 +193,7 @@ class PPICore {
   }
 
   cleanupOldData() {
-    // Nota: elementManager eliminado, la limpieza se maneja por LocalStorageManager
-    console.log('ℹ️ cleanupOldData - delegando al LocalStorageManager');
-    return false;
+    return false; // Delegado a LocalStorageManager
   }
 
   // ==================== MÉTODOS DE COORDINACIÓN INTERNA ====================
@@ -250,10 +202,9 @@ class PPICore {
     try {
       const modeler = this.getBpmnModeler();
       if (!modeler || !ppi.elementId) return;
-      
+
       const elementRegistry = modeler.get('elementRegistry');
       const modeling = modeler.get('modeling');
-      
       if (!elementRegistry || !modeling) return;
 
       const parentElement = elementRegistry.get(ppi.elementId);
@@ -261,63 +212,56 @@ class PPICore {
 
       const allElements = elementRegistry.getAll();
 
-      // Sincronizar target
       if (Object.prototype.hasOwnProperty.call(updatedData, 'target')) {
-        const targetEl = allElements.find(el => 
-          el.parent && el.parent.id === ppi.elementId && 
-          (el.type === 'PPINOT:Target' || (el.businessObject && el.businessObject.$type === 'PPINOT:Target'))
+        const targetEl = allElements.find(
+          el =>
+            el.parent?.id === ppi.elementId &&
+            (el.type === 'PPINOT:Target' || el.businessObject?.$type === 'PPINOT:Target')
         );
-        
         if (targetEl) {
           try {
             modeling.updateProperties(targetEl, { name: updatedData.target || '' });
             if (targetEl.businessObject) targetEl.businessObject.name = updatedData.target || '';
-            } catch (error) {
-            console.debug('Error actualizando target:', error);
+          } catch (error) {
+            console.warn('Error actualizando target en canvas:', error);
           }
         }
       }
 
-      // Sincronizar scope
       if (Object.prototype.hasOwnProperty.call(updatedData, 'scope')) {
-        const scopeEl = allElements.find(el => 
-          el.parent && el.parent.id === ppi.elementId && 
-          (el.type === 'PPINOT:Scope' || (el.businessObject && el.businessObject.$type === 'PPINOT:Scope'))
+        const scopeEl = allElements.find(
+          el =>
+            el.parent?.id === ppi.elementId &&
+            (el.type === 'PPINOT:Scope' || el.businessObject?.$type === 'PPINOT:Scope')
         );
-        
         if (scopeEl) {
           try {
             modeling.updateProperties(scopeEl, { name: updatedData.scope || '' });
             if (scopeEl.businessObject) scopeEl.businessObject.name = updatedData.scope || '';
-      } catch (error) {
-            console.debug('Error actualizando scope:', error);
+          } catch (error) {
+            console.warn('Error actualizando scope en canvas:', error);
           }
         }
       }
-      
     } catch (error) {
-      console.warn('⚠️ Error sincronizando formulario con canvas:', error);
+      console.warn('Error sincronizando formulario con canvas:', error);
     }
   }
 
   getBpmnModeler() {
-    if (this.adapter && typeof this.adapter.getBpmnModeler === 'function') {
+    if (this.adapter?.getBpmnModeler) {
       return this.adapter.getBpmnModeler();
     }
-    
     return PPIUtils.getBpmnModeler();
   }
 
-
-
-  // ==================== GETTERS PARA COMPATIBILIDAD ====================
+  // ==================== GETTERS / SETTERS (Compatibilidad) ====================
 
   get ppis() {
     return this.dataManager.ppis;
   }
 
   set ppis(value) {
-    // Redirigir la asignación al dataManager
     if (this.dataManager && this.dataManager.ppis !== undefined) {
       this.dataManager.ppis = value;
     }
@@ -328,7 +272,6 @@ class PPICore {
   }
 
   set filteredPPIs(value) {
-    // Redirigir la asignación al dataManager
     if (this.dataManager && this.dataManager.filteredPPIs !== undefined) {
       this.dataManager.filteredPPIs = value;
     }
@@ -339,13 +282,12 @@ class PPICore {
   }
 }
 
-// Registrar en ServiceRegistry para compatibilidad
+// Registro en ServiceRegistry
 const registry = getServiceRegistry();
 if (registry) {
-  registry.register('PPICore', PPICore, { 
-    description: 'Core de PPIs refactorizado con managers especializados' 
+  registry.register('PPICore', PPICore, {
+    description: 'Core de PPIs refactorizado con managers especializados',
   });
-  console.log('✅ PPICore refactorizado registrado en ServiceRegistry');
 }
 
 export default PPICore;

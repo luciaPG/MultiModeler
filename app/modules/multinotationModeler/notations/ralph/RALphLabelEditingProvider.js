@@ -346,11 +346,11 @@ export default function RALphLabelEditingProvider(
         
         if (labelElement) {
             // Edit directly on the existing label
-            createDirectLabelEditor(element, labelElement, labelType);
+            createDirectLabelEditor.call(this, element, labelElement, labelType);
             return true;
         } else {
             // Fallback to overlay method
-            createCustomEditor(element, labelType);
+            createCustomEditor.call(this, element, labelType);
             return true;
         }
     }
@@ -750,7 +750,7 @@ export default function RALphLabelEditingProvider(
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
-                finishEditing(false);
+                finishEditingWithValue(false);
                 return false;
             }
             

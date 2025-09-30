@@ -13,14 +13,41 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
     const element = event.element;
     
     if (canEditPPINOTConnection(element)) {
+      console.log('PPINOT double click detected on:', element.type, element.id);
       
-      // Si el elemento tiene un label, editar el label. Si no, editar el elemento.
       let targetElement = element;
-      if (element.label && element.type !== 'label') {
+      
+      // Si es una conexión PPINOT sin label, crear uno
+      if (element.type !== 'label' && isPPINOTConnection(element) && !element.label) {
+        console.log('Creating label for PPINOT connection:', element.id);
+        const position = getExternalLabelPosition(element);
+        console.log('Label position:', position);
+        
+        const createdLabel = createConnectionLabel(element, position);
+        console.log('Created label:', createdLabel);
+        
+        if (createdLabel) {
+          targetElement = createdLabel;
+        } else {
+          console.warn('Failed to create label for connection:', element.id);
+        }
+      }
+      // Si el elemento tiene un label, editar el label
+      else if (element.label && element.type !== 'label') {
+        console.log('Using existing label for editing:', element.label.id);
         targetElement = element.label;
       }
       
-      createCustomEditor(targetElement);
+      // Crear el editor
+      if (targetElement) {
+        console.log('Opening editor for:', targetElement.type, targetElement.id);
+        // Usar un pequeño timeout para asegurar que el DOM esté actualizado
+        setTimeout(() => {
+          createCustomEditor(targetElement);
+        }, 50);
+      } else {
+        console.warn('No target element found for editing');
+      }
     }
   });
 
@@ -71,34 +98,57 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
     input.select();
     input.focus();
     
+    let isFinishing = false;
     
     // Manejar eventos
     function finishEditing(save = true) {
-      if (!activeInput) return;
+      if (!activeInput || isFinishing) return;
+      
+      console.log('finishEditing called with save:', save);
+      isFinishing = true;
+      const inputToRemove = input;
+      activeInput = null; // Set to null first to prevent re-entry
       
       if (save) {
-        const newText = input.value.trim();
+        const rawText = inputToRemove.value;
+        const newText = rawText ? rawText.trim() : '';
+        console.log('finishEditing - rawText:', rawText, 'newText:', newText);
         updatePPINOTConnectionLabel(element, newText);
+      } else {
+        console.log('finishEditing - save=false, skipping update');
       }
       
-      input.remove();
-      activeInput = null;
+      // Safely remove the input element
+      try {
+        if (inputToRemove && inputToRemove.parentNode) {
+          inputToRemove.parentNode.removeChild(inputToRemove);
+        }
+      } catch (e) {
+        // Element already removed, ignore
+      }
+      
+      console.log('finishEditing completed');
     }
     
     // Enter para guardar
     input.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
         e.preventDefault();
+        e.stopPropagation();
         finishEditing(true);
       } else if (e.key === 'Escape') {
         e.preventDefault();
+        e.stopPropagation();
         finishEditing(false);
       }
     });
     
     // Perder foco para guardar
     input.addEventListener('blur', function() {
-      finishEditing(true);
+      // Add a small delay to prevent race condition with keydown
+      setTimeout(() => {
+        finishEditing(true);
+      }, 10);
     });
     
     // Click fuera para guardar
@@ -171,107 +221,157 @@ export default function PPINOTLabelProvider(eventBus, modeling, elementFactory, 
       if (is(element, 'PPINOT:EndConnection')) {
         return 'end';
       }
+      if (is(element, 'PPINOT:MyConnection')) {
+        return 'connection';
+      }
+      // Para cualquier otra conexión PPINOT, usar texto genérico
+      return 'Label';
     }
     
-    return '';
+    // Nunca devolver cadena vacía - usar texto por defecto
+    return 'Label';
   }
 
   function updatePPINOTConnectionLabel(element, newText) {
-    const safeText = (newText == null || newText === undefined) ? '' : String(newText);
-    
-    
-    // Para labels externos de conexiones
-    if (element.type === 'label' && element.labelTarget) {
-      // Actualizar el businessObject del label
-      if (!element.businessObject) {
-        element.businessObject = { $type: 'bpmn:Label' };
-      }
-      element.businessObject.name = safeText;
-      
-      // Actualizar el businessObject del target también  
-      if (!element.labelTarget.businessObject) {
-        element.labelTarget.businessObject = {};
-      }
-      element.labelTarget.businessObject.name = safeText;
-      
-      // Forzar re-render
-      eventBus.fire('element.changed', { element: element });
-      
+    // Validar y normalizar el texto de entrada
+    let safeText;
+    if (newText == null || newText === undefined || newText === '') {
+      safeText = 'Label'; // Usar texto por defecto en lugar de cadena vacía
     } else {
-      // Para conexiones sin label externo
-      if (!element.businessObject) {
-        element.businessObject = {};
-      }
-      element.businessObject.name = safeText;
-      
-      eventBus.fire('element.changed', { element: element });
+      safeText = String(newText).trim() || 'Label';
     }
     
+    console.log('updatePPINOTConnectionLabel - element:', element && element.id, 'safeText:', safeText);
+    
+    try {
+      // EVITAR modeling.updateLabel() que causa el error split()
+      // Usar actualización directa del businessObject que es más segura
+      
+      if (element.type === 'label' && element.labelTarget) {
+        // Actualizar la label directamente
+        if (!element.businessObject) {
+          element.businessObject = { $type: 'bpmn:Label' };
+        }
+        element.businessObject.name = safeText;
+        
+        // Actualizar el target también
+        if (!element.labelTarget.businessObject) {
+          element.labelTarget.businessObject = {};
+        }
+        element.labelTarget.businessObject.name = safeText;
+        
+        // Forzar re-render de ambos elementos
+        eventBus.fire('element.changed', { element: element });
+        eventBus.fire('element.changed', { element: element.labelTarget });
+        
+        console.log('✅ Label updated via direct businessObject update');
+        
+      } else {
+        // Para elementos sin label externo
+        if (!element.businessObject) {
+          element.businessObject = {};
+        }
+        element.businessObject.name = safeText;
+        
+        eventBus.fire('element.changed', { element: element });
+        console.log('✅ Element properties updated via direct businessObject update');
+      }
+      
+    } catch (error) {
+      console.error('❌ Error updating PPINOT label:', error);
+      // Como último recurso, intentar solo actualizar propiedades mínimas
+      try {
+        if (element && element.businessObject) {
+          element.businessObject.name = safeText;
+          eventBus.fire('element.changed', { element: element });
+          console.log('✅ Minimal update successful');
+        }
+      } catch (finalError) {
+        console.error('❌ All update methods failed:', finalError);
+      }
+    }
   }
 
   // Listener específico para conexiones PPINOT creadas
   eventBus.on('ppinot.connection.created', function(event) {
     const connection = event.connection;
 
-    // No crear labels para conexiones PPINOT
-    return;
-
-    // if (!connection.label && shouldCreateExternalLabel(connection)) {
-    //   createConnectionLabel(connection, getExternalLabelPosition(connection));
-    // }
+    // Crear labels automáticamente para conexiones PPINOT
+    if (connection && isPPINOTConnection(connection) && !connection.label) {
+      createConnectionLabel(connection, getExternalLabelPosition(connection));
+    }
   });
 
   function createConnectionLabel(target, position) {
+    console.log('createConnectionLabel called with:', target && target.id, position);
+    
     if (target.label || !target || !position || 
         typeof position.x !== 'number' || typeof position.y !== 'number') {
-      return;
+      console.log('Early return from createConnectionLabel:', {
+        hasLabel: !!target.label,
+        hasTarget: !!target,
+        hasPosition: !!position,
+        validPosition: position && typeof position.x === 'number' && typeof position.y === 'number'
+      });
+      return null;
     }
 
     const defaultText = getPPINOTDefaultText(target);
+    console.log('Default text for label:', defaultText);
 
-    // Asegurar que el businessObject del target tiene el nombre establecido
-    if (target.businessObject) {
+    try {
+      // Asegurar que el businessObject del target tiene el nombre
+      if (!target.businessObject) {
+        target.businessObject = {};
+      }
       target.businessObject.name = defaultText;
-    } else {
-      target.businessObject = { name: defaultText };
+
+      const parent = canvas.findRoot(target) || canvas.getRootElement();
+
+      // Crear el businessObject del label
+      const labelBusinessObject = {
+        $type: 'bpmn:Label',
+        name: defaultText
+      };
+
+      // Usar elementFactory para crear el label
+      const label = elementFactory.createLabel({
+        id: target.id + '_label',
+        businessObject: labelBusinessObject,
+        type: 'label',
+        labelTarget: target,
+        width: 80,
+        height: 20
+      });
+
+      // Establecer posición
+      label.x = position.x - label.width / 2;
+      label.y = position.y - label.height / 2;
+
+      // Establecer referencias cruzadas
+      target.label = label;
+      label.labelTarget = target;
+
+      // Crear el shape usando modeling
+      modeling.createShape(label, {
+        x: label.x + label.width / 2,
+        y: label.y + label.height / 2
+      }, parent);
+
+      // Forzar actualización visual
+      eventBus.fire('element.changed', { element: label });
+      eventBus.fire('element.changed', { element: target });
+
+      return label;
+
+    } catch (error) {
+      console.warn('Error creating connection label:', error);
+      // Limpiar en caso de error
+      if (target.label) {
+        target.label = null;
+      }
+      return null;
     }
-
-    // Crear label específico para conexiones con dimensiones pequeñas
-    const labelBusinessObject = {
-      $type: 'bpmn:Label',
-      name: defaultText
-    };
-
-    const labelElement = elementFactory.createLabel({
-      id: target.id + '_label',
-      businessObject: labelBusinessObject,
-      type: 'label',
-      labelTarget: target,
-      width: 80,
-      height: 20
-    });
-
-    assign(labelElement, {
-      x: position.x - labelElement.width / 2,
-      y: position.y - labelElement.height / 2,
-      hidden: false,
-      isLabel: true,
-      _isLabel: true,
-      movable: true,
-      dragable: true,
-      parent: canvas.findRoot(target) || canvas.getRootElement()
-    });
-
-    target.label = labelElement;
-    labelElement.labelTarget = target;
-
-    const parent = canvas.findRoot(target) || canvas.getRootElement();
-
-    modeling.createShape(labelElement, {
-      x: position.x,
-      y: position.y
-    }, parent);
-
   }
 
   // Funcionalidad estándar para elementos PPINOT (no conexiones) - aproximación simple

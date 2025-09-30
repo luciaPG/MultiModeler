@@ -9,8 +9,8 @@ module.exports = {
     }]
   ],
   plugins: [
-    // Elimina todas las llamadas a console.* en los bundles
-    ['transform-remove-console']
+    // TEMPORALMENTE DESHABILITADO PARA DEBUGGING: Elimina todas las llamadas a console.* en los bundles
+    // ['transform-remove-console']
   ],
   env: {
     test: {

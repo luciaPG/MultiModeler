@@ -428,11 +428,21 @@ export class LocalStorageManager {
   async capturePPINOTElements(modeler, data) {
     const elementRegistry = modeler.get('elementRegistry');
     const allElements = elementRegistry.getAll();
-    const ppinotElements = allElements.filter(el => 
-      el.type && (el.type.includes('PPINOT:') || el.type.includes('ppinot:'))
-    );
     
-    console.log(`🔍 XML verification: ${ppinotElements.length} PPINOT elements in canvas`);
+    // Incluir elementos PPINOT y labels de conexiones PPINOT
+    const ppinotElements = allElements.filter(el => {
+      if (el.type && (el.type.includes('PPINOT:') || el.type.includes('ppinot:'))) {
+        return true;
+      }
+      // Incluir labels que pertenecen a conexiones PPINOT
+      if (el.type === 'label' && el.labelTarget && el.labelTarget.type && 
+          (el.labelTarget.type.includes('PPINOT:') || el.labelTarget.type.includes('ppinot:'))) {
+        return true;
+      }
+      return false;
+    });
+    
+    console.log(`🔍 XML verification: ${ppinotElements.length} PPINOT elements (including labels) in canvas`);
     
     const missingFromXml = ppinotElements.filter(el => 
       !data.diagram.includes(`id="${el.id}"`)
@@ -492,16 +502,25 @@ export class LocalStorageManager {
   }
 
   serializePPINOTElements(elements) {
-    return elements.map(el => ({
-      type: el.type,
-      id: el.id,
-      width: el.width || 100,
-      height: el.height || 80,
-      x: el.x || 0,
-      y: el.y || 0,
-      text: el.businessObject && el.businessObject.name || null,
-      parent: el.parent && el.parent.id || null
-    }));
+    return elements.map(el => {
+      const serialized = {
+        type: el.type,
+        id: el.id,
+        width: el.width || (el.type === 'label' ? 80 : 100),
+        height: el.height || (el.type === 'label' ? 20 : 80),
+        x: el.x || 0,
+        y: el.y || 0,
+        text: el.businessObject && el.businessObject.name || null,
+        parent: el.parent && el.parent.id || null
+      };
+      
+      // Para labels, guardar información del labelTarget
+      if (el.type === 'label' && el.labelTarget) {
+        serialized.labelTargetId = el.labelTarget.id;
+      }
+      
+      return serialized;
+    });
   }
 
   serializeRALPHElements(elements) {
@@ -1113,8 +1132,13 @@ export class LocalStorageManager {
     let createdCount = 0;
     const createdElements = [];
 
-    // Create elements in order: first PPIs, then children
+    // Create elements in order: first PPIs, then other elements, then labels last
     const sortedElements = [...ppinotElements].sort((a, b) => {
+      // Labels go last
+      if (a.type === 'label' && b.type !== 'label') return 1;
+      if (b.type === 'label' && a.type !== 'label') return -1;
+      
+      // PPIs go first (among non-labels)
       if (a.type === 'PPINOT:Ppi' && b.type !== 'PPINOT:Ppi') return -1;
       if (b.type === 'PPINOT:Ppi' && a.type !== 'PPINOT:Ppi') return 1;
       return 0;
@@ -1140,25 +1164,84 @@ export class LocalStorageManager {
           }
         }
 
-        // Create simple and effective element
-        const element = elementFactory.create('shape', {
-          type: elementData.type,
-          id: elementData.id,
-          width: elementData.width,
-          height: elementData.height
-        });
+        // Manejar labels de forma especial
+        if (elementData.type === 'label') {
+          // Para labels, necesitamos encontrar el labelTarget primero
+          const elementRegistry = modeler.get('elementRegistry');
+          const labelTargetId = elementData.labelTargetId || elementData.id.replace('_label', ''); // Usar labelTargetId guardado o asumir convención
+          const labelTarget = elementRegistry.get(labelTargetId);
+          
+          if (labelTarget) {
+            // Crear la label usando elementFactory.createLabel
+            const labelBusinessObject = {
+              $type: 'bpmn:Label',
+              name: elementData.text || 'Label'
+            };
+            
+            const label = elementFactory.createLabel({
+              id: elementData.id,
+              businessObject: labelBusinessObject,
+              type: 'label',
+              labelTarget: labelTarget,
+              width: elementData.width || 80,
+              height: elementData.height || 20
+            });
+            
+            // Establecer posición
+            label.x = elementData.x;
+            label.y = elementData.y;
+            
+            // Agregar al canvas usando modeling.createShape
+            const createdLabel = modeling.createShape(
+              label,
+              { x: elementData.x, y: elementData.y },
+              parentElement
+            );
+            
+            if (createdLabel) {
+              // Asociar la label con el target
+              labelTarget.label = createdLabel;
+              createdLabel.labelTarget = labelTarget;
+              
+              // Asegurar que el businessObject del target tenga el nombre
+              if (!labelTarget.businessObject) {
+                labelTarget.businessObject = {};
+              }
+              labelTarget.businessObject.name = elementData.text || 'Label';
+              
+              createdElements.push(createdLabel);
+              createdCount++;
+              console.log(`✅ PPINOT label restored: ${elementData.id} for target ${labelTargetId} with text "${elementData.text}"`);
+            }
+          } else {
+            console.warn(`⚠️ Label target not found for label ${elementData.id}, expected target: ${labelTargetId}`);
+          }
+        } else {
+          // Para elementos regulares (no labels)
+          const element = elementFactory.create('shape', {
+            type: elementData.type,
+            id: elementData.id,
+            width: elementData.width,
+            height: elementData.height
+          });
 
-        // Create in canvas with exact position
-        const createdElement = modeling.createShape(
-          element,
-          { x: elementData.x, y: elementData.y },
-          parentElement
-        );
-        
-        if (createdElement) {
-          createdElements.push(createdElement);
-          createdCount++;
-          console.log(`✅ PPINOT element created: ${elementData.id} at (${elementData.x}, ${elementData.y})`);
+          // Create in canvas with exact position
+          const createdElement = modeling.createShape(
+            element,
+            { x: elementData.x, y: elementData.y },
+            parentElement
+          );
+          
+          if (createdElement) {
+            // Restaurar el texto si existe
+            if (elementData.text && createdElement.businessObject) {
+              createdElement.businessObject.name = elementData.text;
+            }
+            
+            createdElements.push(createdElement);
+            createdCount++;
+            console.log(`✅ PPINOT element created: ${elementData.id} at (${elementData.x}, ${elementData.y})`);
+          }
         }
         
       } catch (error) {
