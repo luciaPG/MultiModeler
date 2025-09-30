@@ -475,4 +475,49 @@ describe('8.1 Pruebas Unitarias - PPIDataManager con LocalStorage', () => {
       expect(visiblePPIs[0].name).toBe('PPI Padre');
     });
   });
+
+  describe('Método clearAllPPIs', () => {
+    test('debe limpiar todos los PPIs de memoria y localStorage', async () => {
+      // Crear instancia con skip autoLoad
+      const ppiManager = new PPIDataManager({ skipAutoLoad: true });
+
+      // Agregar algunos PPIs primero
+      await ppiManager.addPPI({
+        name: 'Test PPI 1',
+        type: 'TimeMeasure',
+        description: 'Test 1'
+      });
+
+      await ppiManager.addPPI({
+        name: 'Test PPI 2',
+        type: 'CountMeasure',
+        description: 'Test 2'
+      });
+
+      // Verificar que se agregaron
+      expect(ppiManager.ppis.length).toBe(2);
+      expect(ppiManager.getVisiblePPIs().length).toBe(2);
+
+      // Limpiar todos los PPIs
+      const result = await ppiManager.clearAllPPIs();
+
+      // Verificar que se limpiaron correctamente
+      expect(result.success).toBe(true);
+      expect(ppiManager.ppis.length).toBe(0);
+      expect(ppiManager.filteredPPIs.length).toBe(0);
+      expect(ppiManager.getVisiblePPIs().length).toBe(0);
+    });
+
+    test('debe manejar errores al limpiar PPIs', async () => {
+      const ppiManager = new PPIDataManager({ skipAutoLoad: true });
+      
+      // Mockear savePPIs para que falle
+      jest.spyOn(ppiManager, 'savePPIs').mockRejectedValue(new Error('Test error'));
+
+      const result = await ppiManager.clearAllPPIs();
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Test error');
+    });
+  });
 });

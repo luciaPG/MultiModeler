@@ -137,6 +137,27 @@ export class PPIDataManager {
     }
   }
 
+  /**
+   * Limpia todos los PPIs de la memoria y del localStorage
+   * Se usa cuando se crea un nuevo diagrama para evitar que los PPIs del diagrama anterior permanezcan
+   */
+  async clearAllPPIs() {
+    try {
+      console.log('🧹 Limpiando todos los PPIs...');
+      this.ppis = [];
+      this.filteredPPIs = [];
+      
+      // Guardar el estado vacío en localStorage
+      await this.savePPIs();
+      
+      console.log('✅ Todos los PPIs eliminados exitosamente');
+      return { success: true, message: 'Todos los PPIs eliminados exitosamente' };
+    } catch (error) {
+      console.error('❌ Error al limpiar PPIs:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   // ==================== CONSULTAS ====================
 
   getPPI(ppiId) {

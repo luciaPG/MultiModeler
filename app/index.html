@@ -142,6 +142,17 @@
           manager.clearProjectState();
         }
 
+        // Limpiar todos los PPIs cuando se crea un nuevo diagrama
+        try {
+          const ppiManager = registry ? registry.get('PPIManagerInstance') : null;
+          if (ppiManager && ppiManager.core && typeof ppiManager.core.clearAllPPIs === 'function') {
+            await ppiManager.core.clearAllPPIs();
+            console.log('✅ PPIs limpiados al crear nuevo diagrama');
+          }
+        } catch (ppiError) {
+          console.warn('⚠️ No se pudieron limpiar los PPIs:', ppiError);
+        }
+
         const welcomeScreen = document.getElementById('welcome-screen');
         const modelerContainer = document.getElementById('modeler-container');
         if (welcomeScreen) welcomeScreen.style.display = 'none';

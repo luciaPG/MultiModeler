@@ -159,6 +159,18 @@ export class LocalStorageManager {
       localStorage.removeItem(this.config.storageKey);
       console.log('🗑️ Datos del proyecto eliminados del localStorage');
       
+      // También limpiar PPIs en memoria si hay un PPIManager activo
+      try {
+        const ppiManager = resolve('PPIManagerInstance');
+        if (ppiManager && ppiManager.core && typeof ppiManager.core.clearAllPPIs === 'function') {
+          // Uso síncrono porque clearSavedData no es async y no queremos cambiar su interfaz
+          ppiManager.core.clearAllPPIs();
+          console.log('✅ PPIs limpiados junto con datos del proyecto');
+        }
+      } catch (ppiError) {
+        console.warn('⚠️ No se pudieron limpiar los PPIs:', ppiError);
+      }
+      
       // Notificar que se eliminaron los datos
       this.notifyClearSuccess();
       

@@ -70,6 +70,14 @@ class PPICore {
     return this.dataManager.getPPIsForElement(elementId);
   }
 
+  /**
+   * Limpia todos los PPIs de la memoria y del localStorage
+   * Se usa cuando se crea un nuevo diagrama
+   */
+  async clearAllPPIs() {
+    return await this.dataManager.clearAllPPIs();
+  }
+
   // ==================== API PÚBLICA - ELEMENTOS PPINOT ====================
 
   savePPINOTElements() {
