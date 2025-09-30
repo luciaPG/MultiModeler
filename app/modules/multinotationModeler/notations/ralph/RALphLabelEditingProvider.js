@@ -77,7 +77,7 @@ export default function RALphLabelEditingProvider(
     });
 
     // Handle double-click events for RALPH elements with dual labels
-    eventBus.on('element.dblclick', function(event) {
+    eventBus.on('element.dblclick', (event) => {
         const element = event.element;
         
         // Define elements that should NOT be editable
@@ -121,10 +121,10 @@ export default function RALphLabelEditingProvider(
                                   clickedElement.parentElement !== element;
             
             if (isInternalLabel || isExternalLabel) {
-                activateDirectEdit(element, isInternalLabel ? 'internal' : 'external');
+                activateDirectEdit.call(this, element, isInternalLabel ? 'internal' : 'external');
             } else {
                 // Clicking on the element itself - edit internal label
-                activateDirectEdit(element, 'internal');
+                activateDirectEdit.call(this, element, 'internal');
             }
         }
     });
@@ -162,7 +162,7 @@ export default function RALphLabelEditingProvider(
         if (isEditable) {
             // For RALPH elements with dual labels, we need to determine which label to edit
             const labelType = context && context.labelType ? context.labelType : 'internal';
-            return activateDirectEdit(element, labelType);
+            return activateDirectEdit.call(this, element, labelType);
         }
         
         // For other elements, don't handle them
@@ -357,6 +357,9 @@ export default function RALphLabelEditingProvider(
 
     // Create direct editor on existing label
     function createDirectLabelEditor(element, labelElement, labelType) {
+        // Capture the correct 'this' context
+        const self = this;
+        
         const nonEditableElements = [
             'RALph:history',
             'RALph:historyStart',
@@ -374,8 +377,8 @@ export default function RALphLabelEditingProvider(
             return;
         }
         // Remove any existing overlay
-        if (this.activeOverlay) {
-            this.activeOverlay.remove();
+        if (self.activeOverlay) {
+            self.activeOverlay.remove();
         }
 
         // Store original content and hide it
@@ -421,8 +424,8 @@ export default function RALphLabelEditingProvider(
         
         // Add input to canvas container
         canvas.getContainer().appendChild(input);
-        this.activeOverlay = input;
-        this.activeOverlayElement = element;
+        self.activeOverlay = input;
+        self.activeOverlayElement = element;
         
         // Focus and select
         input.focus();
@@ -501,7 +504,7 @@ export default function RALphLabelEditingProvider(
             }
 
             setTimeout(() => {
-                if (this.activeOverlay && !isFinishing && !enterPressed && !processingKeyEvent && !processingDocumentClick && !processingFinishCall && !hasFinished) {
+                if (self.activeOverlay && !isFinishing && !enterPressed && !processingKeyEvent && !processingDocumentClick && !processingFinishCall && !hasFinished) {
                     const activeElement = document.activeElement;
                     if (!input.contains(activeElement)) {
                         const currentValue = input && input.value ? input.value : '';
@@ -519,7 +522,7 @@ export default function RALphLabelEditingProvider(
         function finishDirectEdit(save = true, capturedValue = null) {
             if (capturedValue && capturedValue.trim() && !hasFinished && !processingFinishCall) {
                 processingFinishCall = true;
-            } else if (!this.activeOverlay || isFinishing || hasFinished || processingFinishCall) {
+            } else if (!self.activeOverlay || isFinishing || hasFinished || processingFinishCall) {
                 return;
             } else {
                 processingFinishCall = true;
@@ -555,11 +558,11 @@ export default function RALphLabelEditingProvider(
                 hasFinished = true;
                 
                 // Remove input
-                if (this.activeOverlay) {
-                    this.activeOverlay.remove();
-                    this.activeOverlay = null;
+                if (self.activeOverlay) {
+                    self.activeOverlay.remove();
+                    self.activeOverlay = null;
                 }
-                this.activeOverlayElement = null;
+                self.activeOverlayElement = null;
                 
                 // Restore label visibility
                 labelElement.style.visibility = 'visible';
@@ -617,6 +620,9 @@ export default function RALphLabelEditingProvider(
 
     // Create a custom editor for RALPH elements with dual labels
     function createCustomEditor(element, labelType) {
+        // Capture the correct 'this' context
+        const self = this;
+        
         const nonEditableElements = [
             'RALph:history',
             'RALph:historyStart',
@@ -634,8 +640,8 @@ export default function RALphLabelEditingProvider(
             return;
         }
         // Remove any existing overlay
-        if (this.activeOverlay) {
-            this.activeOverlay.remove();
+        if (self.activeOverlay) {
+            self.activeOverlay.remove();
         }
 
         // Create overlay
@@ -709,8 +715,8 @@ export default function RALphLabelEditingProvider(
         input.select();
         
         // Store overlay reference
-        this.activeOverlay = overlay;
-        this.activeOverlayElement = element;
+        self.activeOverlay = overlay;
+        self.activeOverlayElement = element;
         
         // Event handlers
         let hasFinished = false;
@@ -785,7 +791,7 @@ export default function RALphLabelEditingProvider(
         }
 
             setTimeout(() => {
-                if (this.activeOverlay && !isFinishing && !enterPressed && !processingKeyEvent && !processingDocumentClick && !processingFinishCall && !hasFinished) {
+                if (self.activeOverlay && !isFinishing && !enterPressed && !processingKeyEvent && !processingDocumentClick && !processingFinishCall && !hasFinished) {
                     const activeElement = document.activeElement;
                     if (!overlay.contains(activeElement)) {
                         const currentValue = input && input.value ? input.value : '';
@@ -803,7 +809,7 @@ export default function RALphLabelEditingProvider(
         function finishEditingWithValue(save = true, capturedValue = null) {
             if (capturedValue && capturedValue.trim() && !hasFinished && !processingFinishCall) {
                 processingFinishCall = true;
-            } else if (!this.activeOverlay || isFinishing || hasFinished || processingFinishCall) {
+            } else if (!self.activeOverlay || isFinishing || hasFinished || processingFinishCall) {
                 return;
             } else {
                 processingFinishCall = true;
@@ -885,9 +891,9 @@ export default function RALphLabelEditingProvider(
             }
             
             hasFinished = true;
-            if (this.activeOverlay) {
-                this.activeOverlay.remove();
-                this.activeOverlay = null;
+            if (self.activeOverlay) {
+                self.activeOverlay.remove();
+                self.activeOverlay = null;
             }
             isFinishing = false;
             processingFinishCall = false;

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PPINOT-RALPH Hybrid Modeler</title>
+  <title>MNModeler</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="vendor/diagram-js/diagram-js.css">
   <link rel="stylesheet" href="vendor/bpmn-js/bpmn-js.css">
@@ -19,14 +19,13 @@
   <div class="welcome-screen" id="welcome-screen">
     <div class="welcome-content">
       <div class="logo" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-        <button class="back-to-welcome-btn" id="back-to-welcome-btn" style="font-size: 2.5rem; font-weight: 800;" title="Volver a la pantalla de bienvenida">
-          <i style="font-size: 2rem; font-weight: 800;" class="fas fa-project-diagram"></i>
-          <span>MultiModeler</span>
+        <button class="back-to-welcome-btn" id="back-to-welcome-btn" title="Volver a la pantalla de bienvenida">
+          <i class="fas fa-project-diagram"></i>
+          <span>MNModeler</span>
         </button>
       </div>
       <p class="welcome-subtitle">Herramienta híbrida para modelado de procesos BPMN, PPINOT y RASCI</p>
       <div class="welcome-buttons">
-        <!-- Botón para continuar con diagrama guardado (solo aparece si hay uno) -->
         <button class="welcome-btn success" id="continue-diagram-btn" style="display:none">
           <i class="fas fa-play"></i>
           Continuar último diagrama
@@ -40,23 +39,19 @@
           Abrir Diagrama
         </button>
       </div>
-      
-
     </div>
   </div>
 
   <!-- Contenedor del modelador -->
   <div class="modeler-container" id="modeler-container" style="display: none;">
-    <!-- Header principal -->
     <header class="app-header" id="app-header">
       <div class="logo">
         <button class="back-to-welcome-btn" id="back-to-welcome-btn" title="Volver a la pantalla de bienvenida">
           <i class="fas fa-project-diagram"></i>
-          <span>MultiModeler</span>
+          <span>MNModeler</span>
         </button>
       </div>
-      
-      <!-- Información del proyecto -->
+
       <div class="project-info" id="project-info">
         <div class="project-name-display">
           <span class="project-label">Proyecto:</span>
@@ -91,58 +86,43 @@
           </button>
         </div>
         
-        <!-- Input oculto para abrir archivos -->
         <input type="file" id="file-input" accept=".bpmn,.json,.xml" style="display: none;">
 
-        <!-- Indicador de guardado exitoso -->
         <div class="save-success-indicator" id="save-success-indicator">
           <i class="fas fa-check"></i>
           <span>Guardado exitoso</span>
         </div>
       </div>
-      
-      <!-- Botones para restaurar paneles minimizados -->
-      <div class="restore-buttons" id="restore-buttons">
-      </div>
+
+      <div class="restore-buttons" id="restore-buttons"></div>
     </header>
 
-    <!-- Área de trabajo -->
     <div class="workspace" id="workspace">
-      <!-- Contenedor de paneles -->
       <div class="panel-container" id="panel-container" data-layout="3"></div>
     </div>
   </div>
 
   <!-- Scripts principales -->
   <script>
-    // Constantes globales necesarias para la aplicación
     window.APP_CONFIG = {
-      debug: true,
-      autosaveInterval: 30000, // 30 segundos
+      debug: false,
+      autosaveInterval: 30000,
       maxUndoSteps: 50,
       defaultLayout: 3
     };
 
-    // Variable global para el nombre del proyecto
     window.currentProjectName = 'Nuevo Diagrama';
-
-    // Variables de control
     let isOpenButtonClicked = false;
 
-    // Funciones auxiliares del app.js original
     function getServiceRegistry() {
-      // Importar desde el módulo
       if (typeof window.serviceRegistry !== 'undefined') {
         return window.serviceRegistry;
       }
-      // Intentar obtener del bundle
       try {
         if (typeof window.getServiceRegistry === 'function') {
           return window.getServiceRegistry();
         }
-      } catch (e) {
-        console.log('ServiceRegistry no disponible aún');
-      }
+      } catch (_) {}
       return null;
     }
 
@@ -151,351 +131,166 @@
       alert(message);
     }
 
-    // Handler para nuevo diagrama (copiado del app.js original)
     async function newDiagramHandler() {
       try {
-        console.log('[DEBUG] Botón Nuevo Diagrama clickeado');
-        
-        // Ocultar botón de continuar si estaba visible y resetear localStorage
-        try {
-          const continueBtn = document.getElementById('continue-diagram-btn');
-          if (continueBtn) continueBtn.style.display = 'none';
-          
-          const registry = getServiceRegistry();
-          const manager = registry ? registry.get('localStorageAutoSaveManager') : null;
-          if (manager) {
-            console.log('🔄 Reseteando localStorage para nuevo diagrama...');
-            if (typeof manager.clearProjectState === 'function') {
-              manager.clearProjectState();
-            }
-            if (typeof manager.markRestored === 'function') manager.markRestored();
-            if (typeof manager.dismissDraftNotification === 'function') manager.dismissDraftNotification();
-          }
-          // Limpiar también PPIs en memoria y refrescar UI del panel PPI
-          try {
-            const ppiManager = registry ? registry.get('PPIManagerInstance') : null;
-            if (ppiManager && ppiManager.core) {
-              ppiManager.core.ppis = [];
-              if (ppiManager.ui && typeof ppiManager.ui.refreshPPIList === 'function') {
-                ppiManager.ui.refreshPPIList();
-              }
-            }
-          } catch (_) { /* no-op */ }
-        } catch (_) { /* no-op */ }
+        const continueBtn = document.getElementById('continue-diagram-btn');
+        if (continueBtn) continueBtn.style.display = 'none';
 
-        // Preparar UI
+        const registry = getServiceRegistry();
+        const manager = registry ? registry.get('localStorageAutoSaveManager') : null;
+        if (manager && typeof manager.clearProjectState === 'function') {
+          manager.clearProjectState();
+        }
+
         const welcomeScreen = document.getElementById('welcome-screen');
         const modelerContainer = document.getElementById('modeler-container');
         if (welcomeScreen) welcomeScreen.style.display = 'none';
         if (modelerContainer) modelerContainer.style.display = 'block';
 
-        // Resetear nombre del proyecto
-      window.currentProjectName = 'Nuevo Diagrama';
-      const projectNameInput = document.getElementById('project-name-input');
-      if (projectNameInput) {
-        projectNameInput.value = 'Nuevo Diagrama';
-      }
-      // Limpiar nombre persistido para evitar que se recupere de sesiones previas
-      try { localStorage.removeItem('projectName'); } catch (_) {}
+        window.currentProjectName = 'Nuevo Diagrama';
+        const projectNameInput = document.getElementById('project-name-input');
+        if (projectNameInput) projectNameInput.value = 'Nuevo Diagrama';
+        localStorage.removeItem('projectName');
 
-        // Llamar a initModeler si está disponible
         if (typeof window.initModeler === 'function') {
           await window.initModeler();
-        } else {
-          console.log('initModeler no disponible, esperando inicialización...');
         }
       } catch (e) {
         showErrorMessage('Error al iniciar nuevo diagrama: ' + e.message);
       }
     }
 
-    // Handler para descargar proyecto (usa nombre del input + .mmproject)
     async function downloadProjectHandler() {
       try {
-        console.log('[DEBUG] === INICIO DESCARGA PROYECTO ===');
-        
-        // Obtener el nombre del proyecto del input
         const projectNameInput = document.getElementById('project-name-input');
         const projectName = projectNameInput ? projectNameInput.value.trim() : '';
         const finalProjectName = projectName || 'Nuevo Diagrama';
-        
-        console.log('[DEBUG] Valor del input:', projectNameInput ? projectNameInput.value : 'INPUT NO ENCONTRADO');
-        console.log('[DEBUG] Nombre final del proyecto:', finalProjectName);
-        
-        // Actualizar variable global
         window.currentProjectName = finalProjectName;
-        
+
         const registry = getServiceRegistry();
-        console.log('[DEBUG] Registry obtenido:', registry ? 'SÍ' : 'NO');
-        
         const importManager = registry ? registry.get('ImportExportManager') : null;
-        console.log('[DEBUG] ImportManager obtenido:', importManager ? 'SÍ' : 'NO');
-        
+
         if (importManager) {
-          // Verificar si existe el método
-          console.log('[DEBUG] setProjectName disponible:', typeof importManager.setProjectName === 'function' ? 'SÍ' : 'NO');
-          
-          // Establecer el nombre personalizado JUSTO ANTES de exportar
           if (typeof importManager.setProjectName === 'function') {
-            console.log('[DEBUG] Llamando setProjectName con:', finalProjectName);
             importManager.setProjectName(finalProjectName);
-            
-            // Verificar que se estableció correctamente
-            console.log('[DEBUG] customProjectName después de set:', importManager.customProjectName);
           }
-          
-          console.log('[DEBUG] Iniciando exportProject...');
           await importManager.exportProject();
-          console.log('[DEBUG] Export completado');
         } else {
           throw new Error('No se pudo acceder al gestor de exportación');
         }
-        
-        console.log('[DEBUG] === FIN DESCARGA PROYECTO ===');
       } catch (e) {
-        console.error('[ERROR] Error al descargar proyecto:', e);
         showErrorMessage('Error al descargar proyecto: ' + e.message);
       }
     }
 
-    // Handler para abrir diagrama (copiado del app.js original)
     async function openDiagramHandler() {
-      console.log('[DEBUG] Botón Abrir Diagrama clickeado');
-      if (isOpenButtonClicked) {
-        console.log('[DEBUG] Evitando doble clic en Abrir');
-        return;
-      }
+      if (isOpenButtonClicked) return;
       isOpenButtonClicked = true;
       
       try {
-        console.log('[DEBUG] Abriendo archivo...');
-        
-        // Usar la función openFile del app.js
         if (typeof window.openFile === 'function') {
           const fileData = await window.openFile();
-          console.log('[DEBUG] Archivo abierto:', fileData.type, fileData.content ? fileData.content.substring(0, 50) + '...' : 'sin contenido');
-          
+
           const welcomeScreen = document.getElementById('welcome-screen');
           const modelerContainer = document.getElementById('modeler-container');
           if (welcomeScreen) welcomeScreen.style.display = 'none';
           if (modelerContainer) modelerContainer.style.display = 'block';
-          
+
           if (fileData.type === 'project') {
-            // Es un archivo de proyecto completo
-            console.log('[DEBUG] Importando proyecto completo...');
             const registry = getServiceRegistry();
             const importManager = registry ? registry.get('ImportExportManager') : null;
             if (importManager) {
               await importManager.importAllProjectData(fileData.data);
-              console.log('[DEBUG] Proyecto completo importado correctamente.');
-            } else {
-              throw new Error('No se pudo acceder al gestor de importación');
             }
-          } else if (fileData.type === 'bpmn') {
-            // Es un archivo XML BPMN
-            console.log('[DEBUG] Importando diagrama BPMN...');
-            if (window.modeler && typeof window.modeler.importXML === 'function') {
+          } else if (fileData.type === 'bpmn' && window.modeler) {
+            if (typeof window.modeler.importXML === 'function') {
               await window.modeler.importXML(fileData.content);
-              const modelerManager = window.modelerManager;
-              if (modelerManager && typeof modelerManager.setModeler === 'function') {
-                modelerManager.setModeler(window.modeler);
-              }
-              // Derivar un nombre de proyecto básico para BPMN usando el nombre del archivo si es posible
-              try {
-                if (fileData.fileName) {
-                  const base = fileData.fileName.replace(/\.[^.]+$/, '');
-                  const name = base || 'Diagrama BPMN';
-                  const registry = getServiceRegistry();
-                  const importManager = registry ? registry.get('ImportExportManager') : null;
-                  if (importManager && typeof importManager.setProjectName === 'function') {
-                    importManager.setProjectName(name);
-                  }
-                  const input = document.getElementById('project-name-input');
-                  if (input) input.value = name;
-                  try { localStorage.setItem('projectName', name); } catch (_) {}
-                  window.currentProjectName = name;
-                }
-              } catch (_) {}
             }
           }
         } else {
-          // Fallback usando input file
           const fileInput = document.getElementById('file-input');
-          if (fileInput) {
-            fileInput.click();
-          } else {
-            throw new Error('No se pudo abrir el selector de archivos');
-          }
+          if (fileInput) fileInput.click();
         }
       } catch (e) {
-        console.error('[ERROR] Error al abrir diagrama:', e);
         showErrorMessage('Error al abrir diagrama: ' + e.message);
       } finally {
         isOpenButtonClicked = false;
       }
     }
 
-    // Funcionalidad de botones
     document.addEventListener('DOMContentLoaded', function() {
-      // Input del nombre del proyecto
       const projectNameInput = document.getElementById('project-name-input');
       if (projectNameInput) {
-        // Actualizar variable global al escribir
         projectNameInput.addEventListener('input', function() {
           window.currentProjectName = this.value || 'Nuevo Diagrama';
-          
-          // Guardar en localStorage inmediatamente
-          localStorage.setItem('projectName', this.value || 'Nuevo Diagrama');
-          
-          // Actualizar ImportExportManager si está disponible
+          localStorage.setItem('projectName', window.currentProjectName);
           try {
             const registry = getServiceRegistry();
             const importManager = registry ? registry.get('ImportExportManager') : null;
             if (importManager && typeof importManager.setProjectName === 'function') {
-              importManager.setProjectName(this.value || 'Nuevo Diagrama');
-              console.log('✅ Nombre del proyecto actualizado en ImportExportManager:', this.value);
+              importManager.setProjectName(window.currentProjectName);
             }
-          } catch (e) {
-            console.warn('⚠️ No se pudo actualizar ImportExportManager:', e.message);
-          }
+          } catch (_) {}
         });
-        
-        // Solo guardar el nombre al pulsar Enter (NO descargar)
+
         projectNameInput.addEventListener('keydown', function(event) {
           if (event.key === 'Enter') {
-            event.preventDefault(); // Prevenir comportamiento por defecto
-            this.blur(); // Quitar foco del input
-            
-            // Solo actualizar nombre del proyecto
+            event.preventDefault();
+            this.blur();
             window.currentProjectName = this.value || 'Nuevo Diagrama';
-            console.log('Nombre del proyecto actualizado:', window.currentProjectName);
-            
-            // Guardar en localStorage
-            localStorage.setItem('projectName', this.value || 'Nuevo Diagrama');
-            
-            // Actualizar ImportExportManager
-            try {
-              const registry = getServiceRegistry();
-              const importManager = registry ? registry.get('ImportExportManager') : null;
-              if (importManager && typeof importManager.setProjectName === 'function') {
-                importManager.setProjectName(this.value || 'Nuevo Diagrama');
-                console.log('✅ Nombre del proyecto guardado en ImportExportManager:', this.value);
-              }
-            } catch (e) {
-              console.warn('⚠️ No se pudo actualizar ImportExportManager:', e.message);
-            }
-            
-            // Opcional: mostrar feedback visual
-            const originalBorder = this.style.border;
-            this.style.border = '2px solid #22c55e';
-            setTimeout(() => {
-              this.style.border = originalBorder;
-            }, 500);
+            localStorage.setItem('projectName', window.currentProjectName);
           }
         });
-        
-        // Guardar al perder foco (blur)
-        projectNameInput.addEventListener('blur', function() {
-          window.currentProjectName = this.value || 'Nuevo Diagrama';
-        });
       }
 
-      // Botón Nuevo Diagrama
-      const newBtn = document.getElementById('new-btn');
-      if (newBtn && !newBtn.hasAttribute('data-listener-added')) {
-        newBtn.addEventListener('click', newDiagramHandler);
-        newBtn.setAttribute('data-listener-added', 'true');
-      }
+      document.getElementById('new-btn')?.addEventListener('click', newDiagramHandler);
+      document.getElementById('open-btn')?.addEventListener('click', openDiagramHandler);
+      document.getElementById('save-btn')?.addEventListener('click', downloadProjectHandler);
 
-      // Botón Abrir
-      const openBtn = document.getElementById('open-btn');
-      if (openBtn && !openBtn.hasAttribute('data-listener-added')) {
-        openBtn.addEventListener('click', openDiagramHandler);
-        openBtn.setAttribute('data-listener-added', 'true');
-      }
+      document.getElementById('back-to-welcome-btn')?.addEventListener('click', function() {
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const modelerContainer = document.getElementById('modeler-container');
+        if (welcomeScreen && modelerContainer) {
+          welcomeScreen.style.display = 'flex';
+          modelerContainer.style.display = 'none';
+        }
+      });
 
-      // Botón Guardar/Descargar - Usa la función original del app.js
-      const saveBtn = document.getElementById('save-btn');
-      if (saveBtn && !saveBtn.hasAttribute('data-listener-added')) {
-        saveBtn.addEventListener('click', function() {
-          // La función downloadProjectHandler del app.js ya está modificada
-          // para usar el nombre del input
-          if (typeof window.downloadProjectHandler === 'function') {
-            window.downloadProjectHandler();
-          } else {
-            console.error('downloadProjectHandler no disponible');
-          }
-        });
-        saveBtn.setAttribute('data-listener-added', 'true');
-      }
-
-      // Funcionalidad del botón de volver a bienvenida
-      const backToWelcomeBtn = document.getElementById('back-to-welcome-btn');
-      if (backToWelcomeBtn && !backToWelcomeBtn.hasAttribute('data-listener-added')) {
-        backToWelcomeBtn.addEventListener('click', function() {
-          const welcomeScreen = document.getElementById('welcome-screen');
-          const modelerContainer = document.getElementById('modeler-container');
-          
-          if (welcomeScreen && modelerContainer) {
-            welcomeScreen.style.display = 'flex';
-            modelerContainer.style.display = 'none';
-          }
-        });
-        backToWelcomeBtn.setAttribute('data-listener-added', 'true');
-      }
-
-      // Manejador para el input file (fallback)
       const fileInput = document.getElementById('file-input');
-      if (fileInput && !fileInput.hasAttribute('data-listener-added')) {
+      if (fileInput) {
         fileInput.addEventListener('change', async function(event) {
           const file = event.target.files[0];
           if (!file) return;
-          
-          try {
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-              const content = e.target.result;
-              
-              // Simular el objeto fileData como lo espera el sistema original
-              const fileData = {
-                type: file.name.endsWith('.mmproject') ? 'project' : 'bpmn',
-                content: content,
-                data: file.name.endsWith('.mmproject') ? JSON.parse(content) : null,
-                fileName: file.name
-              };
-              
-              // Usar el mismo flujo que openDiagramHandler
-              const welcomeScreen = document.getElementById('welcome-screen');
-              const modelerContainer = document.getElementById('modeler-container');
-              if (welcomeScreen) welcomeScreen.style.display = 'none';
-              if (modelerContainer) modelerContainer.style.display = 'block';
-              
-              if (fileData.type === 'project') {
-                const registry = getServiceRegistry();
-                const importManager = registry ? registry.get('ImportExportManager') : null;
-                if (importManager) {
-                  await importManager.importAllProjectData(fileData.data);
-                }
-              } else if (fileData.type === 'bpmn') {
-                if (window.modeler && typeof window.modeler.importXML === 'function') {
-                  await window.modeler.importXML(fileData.content);
-                }
-              }
+          const reader = new FileReader();
+          reader.onload = async function(e) {
+            const content = e.target.result;
+            const fileData = {
+              type: file.name.endsWith('.mmproject') ? 'project' : 'bpmn',
+              content: content,
+              data: file.name.endsWith('.mmproject') ? JSON.parse(content) : null,
+              fileName: file.name
             };
-            reader.readAsText(file);
-          } catch (error) {
-            console.error('Error al procesar archivo:', error);
-            showErrorMessage('Error al procesar archivo: ' + error.message);
-          }
-          
+            const welcomeScreen = document.getElementById('welcome-screen');
+            const modelerContainer = document.getElementById('modeler-container');
+            if (welcomeScreen) welcomeScreen.style.display = 'none';
+            if (modelerContainer) modelerContainer.style.display = 'block';
+            if (fileData.type === 'project') {
+              const registry = getServiceRegistry();
+              const importManager = registry ? registry.get('ImportExportManager') : null;
+              if (importManager) await importManager.importAllProjectData(fileData.data);
+            } else if (fileData.type === 'bpmn' && window.modeler) {
+              if (typeof window.modeler.importXML === 'function') {
+                await window.modeler.importXML(fileData.content);
+              }
+            }
+          };
+          reader.readAsText(file);
           event.target.value = '';
         });
-        fileInput.setAttribute('data-listener-added', 'true');
       }
     });
   </script>
   
-  <!-- Bundle compilado por webpack -->
   <script src="bundle.js"></script>
 </body>
 </html>
