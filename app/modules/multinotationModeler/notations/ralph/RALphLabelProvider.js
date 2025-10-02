@@ -200,8 +200,10 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
     input.focus();
     
     // Manejar eventos
+    let isFinishing = false;
     function finishEditing(save = true) {
-      if (!activeInput) return;
+      if (!activeInput || isFinishing) return;
+      isFinishing = true;
       
       if (save) {
         const newText = input.value.trim();
@@ -243,33 +245,41 @@ export default function RALPHLabelProvider(eventBus, modeling, elementFactory, c
         }
       }
       
-      input.remove();
+      try {
+        // Quitar listeners antes de eliminar para evitar dobles llamadas desde blur/click
+        input.removeEventListener('keydown', onKeyDown);
+        input.removeEventListener('blur', onBlur);
+        document.removeEventListener('click', onDocumentClick);
+      } catch (_) {}
+      const toRemove = activeInput;
       activeInput = null;
+      try { if (toRemove && toRemove.parentNode) toRemove.parentNode.removeChild(toRemove); } catch (_) {}
+      isFinishing = false;
     }
     
-    // Enter para guardar
-    input.addEventListener('keydown', function(e) {
+    function onKeyDown(e) {
       if (e.key === 'Enter') {
         e.preventDefault();
+        e.stopPropagation();
         finishEditing(true);
       } else if (e.key === 'Escape') {
         e.preventDefault();
         finishEditing(false);
       }
-    });
+    }
+    input.addEventListener('keydown', onKeyDown);
     
-    // Perder foco para guardar
-    input.addEventListener('blur', function() {
-      finishEditing(true);
-    });
+    function onBlur() { finishEditing(true); }
+    input.addEventListener('blur', onBlur);
     
-    // Click fuera para guardar
-    document.addEventListener('click', function onDocumentClick(e) {
+    function onDocumentClick(e) {
       if (e.target !== input) {
         document.removeEventListener('click', onDocumentClick);
         finishEditing(true);
       }
-    });
+    }
+    // Click fuera para guardar
+    document.addEventListener('click', onDocumentClick);
   }
 
   function canEditRALPHElement(element) {

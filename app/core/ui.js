@@ -87,6 +87,17 @@ export function setupUIEvents(hooks) {
             if (typeof manager.dismissDraftNotification === 'function') manager.dismissDraftNotification();
           }
 
+          // Limpiar todos los PPIs cuando se crea un nuevo diagrama
+          try {
+            const ppiManager = registry ? registry.get('PPIManagerInstance') : null;
+            if (ppiManager && ppiManager.core && typeof ppiManager.core.clearAllPPIs === 'function') {
+              await ppiManager.core.clearAllPPIs();
+              console.log('✅ PPIs limpiados al crear nuevo diagrama');
+            }
+          } catch (ppiError) {
+            console.warn('⚠️ No se pudieron limpiar los PPIs:', ppiError);
+          }
+
           $('#welcome-screen').hide();
           $('#modeler-container').show();
 

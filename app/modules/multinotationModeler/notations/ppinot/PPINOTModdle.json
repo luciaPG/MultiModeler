@@ -635,211 +635,55 @@
       },
       {
         "name": "ResourceArc",
-        "superClass": ["bpmn:Association"],
-        "properties": [
-          {
-            "name": "source",
-            "isReference": true,
-            "type": "Element"
-          },
-          {
-            "name": "target",
-            "isReference": true,
-            "type": "Element"
-          }
-        ]
+        "superClass": ["bpmn:Association"]
       },
       {
         "name": "ConsequenceFlow",
-        "superClass": ["bpmn:Association"],
-        "properties": [
-          {
-            "name": "source",
-            "isReference": true,
-            "type": "Element"
-          },
-          {
-            "name": "target",
-            "isReference": true,
-            "type": "Element"
-          }
-        ]
+        "superClass": ["bpmn:Association"]
       },
       {
         "name": "TimeDistanceArcStart",
-        "superClass": ["bpmn:Association"],
-        "properties": [
-          {
-            "name": "source",
-            "isReference": true,
-            "type": "Element"
-          },
-          {
-            "name": "target",
-            "isReference": true,
-            "type": "Element"
-          }
-        ]
+        "superClass": ["bpmn:Association"]
       },
       {
         "name": "TimeDistanceArcEnd",
-        "superClass": ["bpmn:Association"],
-        "properties": [
-          {
-            "name": "source",
-            "isReference": true,
-            "type": "Element"
-          },
-          {
-            "name": "target",
-            "isReference": true,
-            "type": "Element"
-          }
-        ]
+        "superClass": ["bpmn:Association"]
       },
       {
         "name": "RFCStateConnection",
-        "superClass": ["bpmn:Association"],
-        "properties": [
-          {
-            "name": "source",
-            "isReference": true,
-            "type": "Element"
-          },
-          {
-            "name": "target",
-            "isReference": true,
-            "type": "Element"
-          }
-        ]
+        "superClass": ["bpmn:Association"]
       },
       {
         "name": "MyConnection",
-        "superClass": ["bpmn:Association"],
-        "properties": [
-          {
-            "name": "source",
-            "isReference": true,
-            "type": "Element"
-          },
-          {
-            "name": "target",
-            "isReference": true,
-            "type": "Element"
-          }
-        ]
+        "superClass": ["bpmn:Association"]
       },
       {
         "name": "DashedLine",
-        "superClass": ["bpmn:Association"],
-        "properties": [
-          {
-            "name": "source",
-            "isReference": true,
-            "type": "Element"
-          },
-          {
-            "name": "target",
-            "isReference": true,
-            "type": "Element"
-          }
-        ]
+        "superClass": ["bpmn:Association"]
       },
       {
         "name": "AggregatedConnection",
-        "superClass": ["bpmn:Association"],
-        "properties": [
-          {
-            "name": "source",
-            "isReference": true,
-            "type": "Element"
-          },
-          {
-            "name": "target",
-            "isReference": true,
-            "type": "Element"
-          }
-        ]
+        "superClass": ["bpmn:Association"]
       },
       {
         "name": "GroupedBy",
-        "superClass": ["bpmn:Association"],
-        "properties": [
-          {
-            "name": "source",
-            "isReference": true,
-            "type": "Element"
-          },
-          {
-            "name": "target",
-            "isReference": true,
-            "type": "Element"
-          }
-        ]
+        "superClass": ["bpmn:Association"]
       },
       {
         "name": "ToConnection",
-        "superClass": ["bpmn:Association"],
-        "properties": [
-          {
-            "name": "source",
-            "isReference": true,
-            "type": "Element"
-          },
-          {
-            "name": "target",
-            "isReference": true,
-            "type": "Element"
-          }
-        ]
+        "superClass": ["bpmn:Association"]
       },
       {
         "name": "FromConnection",
-        "superClass": ["bpmn:Association"],
-        "properties": [
-          {
-            "name": "source",
-            "isReference": true,
-            "type": "Element"
-          },
-          {
-            "name": "target",
-            "isReference": true,
-            "type": "Element"
-          }
-        ]
+        "superClass": ["bpmn:Association"]
       },
       {
         "name": "StartConnection",
-        "superClass": ["bpmn:Association"],
-        "properties": [
-          {
-            "name": "source",
-            "isReference": true,
-            "type": "Element"
-          },
-          {
-            "name": "target",
-            "isReference": true,
-            "type": "Element"
-          }
-        ]
+        "superClass": ["bpmn:Association"]
       },
       {
         "name": "EndConnection",
-        "superClass": ["bpmn:Association"],
-        "properties": [
-          {
-            "name": "source",
-            "isReference": true,
-            "type": "Element"
-          },
-          {
-            "name": "target",
-            "isReference": true,
-            "type": "Element"
-          }
-        ]
+        "superClass": ["bpmn:Association"]
       }
     ]
   }

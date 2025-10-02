@@ -85,3 +85,6 @@ if (typeof window !== 'undefined' && !window.getServiceRegistry) {
 
 // ES6 export for modern modules
 export { ServiceRegistry, getServiceRegistry };
+
+// Default export for environments/tests that import the module default
+export default ServiceRegistry;

@@ -1,6 +1,5 @@
-
 @startuml
-left to right direction
+!theme plain
 skinparam packageStyle rectangle
 skinparam shadowing false
 skinparam defaultTextAlignment center
@@ -12,10 +11,13 @@ skinparam component {
   BorderColor black
 }
 
+title Arquitectura del MultiNotation Modeler
+
 package "Núcleo" {
   [App Shell] <<core>>
   [Panel Manager] <<core>>
   [Storage Manager] <<core>>
+  [Service Registry] <<registry>>
 }
 
 [MultiNotation Modeler] <<core>>
@@ -26,37 +28,47 @@ package "Modeladores" {
   [RALPH] <<model>>
 }
 
+package "Módulos" {
+  [PPIs Module] <<model>>
+  [RASCI Module] <<model>>
+}
+
 package "Paneles" {
   [Panel PPI] <<panel>>
   [Panel RASCI] <<panel>>
-  [Panel RALPH] <<panel>>
 }
 
 [PANEL_REGISTRY] <<registry>>
 
 ' Relaciones principales
-[App Shell] --> [MultiNotation Modeler] : Inicializa estructura
-[Panel Manager] --> [MultiNotation Modeler] : Provee gestión de paneles
-[Storage Manager] --> [MultiNotation Modeler] : Provee persistencia
+[App Shell] --> [MultiNotation Modeler] : inicializa
+[Panel Manager] --> [MultiNotation Modeler] : gestiona
+[Storage Manager] --> [MultiNotation Modeler] : persiste
+[Service Registry] --> [MultiNotation Modeler] : servicios
 
-[MultiNotation Modeler] --> [BPMN Modeler] : Activa notaciones
-[MultiNotation Modeler] --> [PPINOT]
-[MultiNotation Modeler] --> [RALPH]
+[MultiNotation Modeler] --> [BPMN Modeler] : base
+[MultiNotation Modeler] --> [PPINOT] : notación
+[MultiNotation Modeler] --> [RALPH] : notación
 
-[Panel Manager] --> [Panel PPI] : Monta paneles
-[Panel Manager] --> [Panel RASCI]
-[Panel Manager] --> [Panel RALPH]
-[PANEL_REGISTRY] --> [Panel Manager] : Define paneles disponibles
+[PPINOT] --> [PPIs Module] : gestiona
+[RASCI Module] --> [RALPH] : mapea
+
+[Panel Manager] --> [Panel PPI] : monta
+[Panel Manager] --> [Panel RASCI] : monta
+[PANEL_REGISTRY] --> [Panel Manager] : define
+
+[Panel PPI] --> [PPIs Module] : controla
+[Panel RASCI] --> [RASCI Module] : controla
 
 note right of [MultiNotation Modeler]
-  Coordinador global de la aplicación
+  Coordinador central
+  - Estado compartido
+  - Orquesta notaciones
 end note
 
-note right of [Panel Manager]
-  Gestiona el montaje y actualización de paneles
+note bottom of [RALPH]
+  Solo notación
+  (sin panel)
 end note
 
-note bottom of [PANEL_REGISTRY]
-  Registro estático de paneles
-end note
 @enduml

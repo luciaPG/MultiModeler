@@ -1,14 +1,22 @@
 const path = require('path');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
+const isProd = process.env.NODE_ENV === 'production';
+
 module.exports = {
-    mode: 'development',
+    mode: isProd ? 'production' : 'development',
     entry: './app/app.js',
     output: {
         path: path.resolve(__dirname, 'public'),
         filename: 'bundle.js',
         publicPath: '/'
     },
+    devtool: isProd ? 'source-map' : 'eval-cheap-module-source-map',
+    optimization: {
+        // Allow disabling minification to debug prod bundles: set NO_MINIFY=true
+        minimize: isProd && process.env.NO_MINIFY !== 'true'
+    },
+    stats: 'errors-warnings',
     module: {
         rules: [
         
