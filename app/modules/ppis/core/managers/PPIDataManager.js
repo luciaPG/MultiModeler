@@ -123,16 +123,29 @@ export class PPIDataManager {
 
   async deletePPI(ppiId) {
     try {
+      console.log('🗑️ [PPIDataManager] Iniciando borrado de PPI:', ppiId);
+      console.log('📊 [PPIDataManager] PPIs antes del borrado:', this.ppis.length);
+      
       const index = this.ppis.findIndex(p => p.id === ppiId);
       if (index !== -1) {
         const deletedPPI = this.ppis.splice(index, 1)[0];
+        console.log('✅ [PPIDataManager] PPI eliminado del array:', deletedPPI.title);
+        console.log('📊 [PPIDataManager] PPIs después del splice:', this.ppis.length);
+        
         // Recalcular lista filtrada para que desaparezca inmediatamente en UI
         this.filterPPIs();
+        console.log('📊 [PPIDataManager] PPIs filtrados después del filtro:', this.filteredPPIs.length);
+        
+        console.log('💾 [PPIDataManager] Guardando cambios en localStorage...');
         await this.savePPIs();
+        console.log('✅ [PPIDataManager] Cambios guardados en localStorage');
+        
         return { success: true, data: deletedPPI };
       }
+      console.log('❌ [PPIDataManager] PPI no encontrado:', ppiId);
       return { success: false, error: 'PPI not found' };
     } catch (error) {
+      console.error('❌ [PPIDataManager] Error en deletePPI:', error);
       return { success: false, error: error.message };
     }
   }
@@ -288,7 +301,9 @@ export class PPIDataManager {
     this.isSaving = true;
     
     try {
-      console.log('💾 Guardando PPIs usando nuevo LocalStorageManager...');
+      console.log('💾 [PPIDataManager] Guardando PPIs usando LocalStorageManager...');
+      console.log('📊 [PPIDataManager] Cantidad de PPIs a guardar:', this.ppis.length);
+      console.log('📋 [PPIDataManager] Lista de PPIs a guardar:', this.ppis.map(p => `${p.id}: ${p.title}`));
       
       // Usar el nuevo LocalStorageManager para guardar todo el estado del proyecto
       const storageManager = LocalStorageManager;
@@ -296,9 +311,17 @@ export class PPIDataManager {
       const result = await storageManager.saveProject();
       
       if (result.success) {
-        console.log('✅ PPIs guardados exitosamente');
+        console.log('✅ [PPIDataManager] PPIs guardados exitosamente');
+        
+        // Verificar inmediatamente qué se guardó
+        const verification = localStorage.getItem('mmproject:localstorage');
+        if (verification) {
+          const parsed = JSON.parse(verification);
+          const savedCount = (parsed && parsed.ppi && parsed.ppi.indicators && parsed.ppi.indicators.length) || 0;
+          console.log('🔍 [PPIDataManager] Verificación - PPIs guardados en localStorage:', savedCount);
+        }
       } else {
-        console.warn('⚠️ Error guardando PPIs:', result.error || result.reason);
+        console.warn('⚠️ [PPIDataManager] Error guardando PPIs:', result.error || result.reason);
       }
       
       return result;
@@ -320,7 +343,11 @@ export class PPIDataManager {
     this.isLoading = true;
     
     try {
-      console.log('📂 Cargando PPIs usando nuevo LocalStorageManager...');
+      console.log('📂 [PPIDataManager] Cargando PPIs usando LocalStorageManager...');
+      console.log('📊 [PPIDataManager] PPIs en memoria antes de cargar:', this.ppis.length);
+      
+      // Stack trace para ver quién está llamando a loadPPIs
+      console.trace('🔍 [PPIDataManager] loadPPIs llamado desde:');
       
       // Usar el nuevo LocalStorageManager para cargar todo el estado del proyecto
       const storageManager = LocalStorageManager;

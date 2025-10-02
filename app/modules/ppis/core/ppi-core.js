@@ -51,7 +51,8 @@ class PPICore {
     if (result?.success && result.data?.elementId) {
       this.canvasManager.deletePPIFromCanvas(ppiId, result.data);
     }
-    return result?.data || null;
+    // CORREGIDO: Retornar el resultado completo para verificar success
+    return result;
   }
 
   getPPI(ppiId) {
