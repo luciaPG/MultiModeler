@@ -110,17 +110,34 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
 
   // Also listen for shape.delete command execution to catch keyboard deletions
   this.executed('shape.delete', function(event) {
+    console.log('🔥 [PPINOTUpdater] shape.delete interceptado:', event);
     const context = event.context;
     const elements = context.elements || [context.shape];
     
-    
+    console.log('📋 [PPINOTUpdater] Elementos a procesar:', elements);
     elements.forEach(element => {
+      console.log('🔍 [PPINOTUpdater] Procesando elemento:', element && element.id, 'isPPINOT:', isPPINOT(element));
       if (element && isPPINOT(element)) {
+        console.log('✅ [PPINOTUpdater] Elemento PPINOT detectado, removiendo de lista:', element.id);
         
-        // Try to remove from PPI list without window
-        const sr = getServiceRegistry?.();
-        const ppiMgr = sr?.get('PPIManager') || this.adapter?.getPPIManager?.();
-        ppiMgr?.removePPIFromList?.(element.id);
+        // Try to remove from PPI list
+        const sr = getServiceRegistry && getServiceRegistry();
+        // CORREGIDO: Buscar tanto PPIManagerInstance como PPIManager
+        let ppiMgr = sr && (sr.get('PPIManagerInstance') || sr.get('PPIManager'));
+        
+        // Fallback: usar adapter si no se encuentra en registry
+        if (!ppiMgr && this.adapter && this.adapter.getPPIManager) {
+          ppiMgr = this.adapter.getPPIManager();
+        }
+        
+        console.log('🎯 [PPINOTUpdater] PPIManager obtenido:', !!ppiMgr, 'tipo:', ppiMgr && ppiMgr.constructor && ppiMgr.constructor.name);
+        
+        if (ppiMgr && ppiMgr.removePPIFromList) {
+          console.log('🗑️ [PPINOTUpdater] Llamando removePPIFromList para:', element.id);
+          ppiMgr.removePPIFromList(element.id);
+        } else {
+          console.error('❌ [PPINOTUpdater] No se pudo obtener PPIManager válido');
+        }
       }
     });
   });
@@ -428,7 +445,8 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
  */
 PPINOTUpdater.prototype.tryRemoveFromPPIList = async function(elementId) {
   try {
-    const ppiManager = getServiceRegistry()?.get('PPIManagerInstance');
+    const registry = getServiceRegistry();
+    const ppiManager = registry && registry.get('PPIManagerInstance');
     if (ppiManager) {
       ppiManager.removePPIFromList(elementId);
     }

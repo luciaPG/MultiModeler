@@ -62,17 +62,25 @@ export class LocalStorageManager {
 
     try {
       this.isSaving = true;
+      const saveTimestamp = Date.now();
       console.log('💾 Iniciando guardado del proyecto...');
+      console.log(`⏰ [LocalStorageManager] Timestamp de guardado: ${saveTimestamp}`);
       console.log('🔍 DEBUG - Iniciando proceso de guardado completo...');
+      
+      // Generar stack trace para saber quién inició el guardado
+      const stack = new Error().stack;
+      const stackLines = stack.split('\n');
+      const caller = (stackLines[2] && stackLines[2].trim()) || 'desconocido';
+      console.log(`📞 [LocalStorageManager] Guardado iniciado por: ${caller}`);
 
       const projectData = await this.captureCompleteProject();
       const success = await this.saveToLocalStorage(projectData);
 
       if (success) {
-      console.log('✅ Proyecto guardado exitosamente en localStorage');
+      console.log(`✅ Proyecto guardado exitosamente en localStorage (timestamp: ${saveTimestamp})`);
       this.notifySaveSuccess(projectData);
       
-      return { success: true, data: projectData };
+      return { success: true, data: projectData, timestamp: saveTimestamp };
       } else {
         throw new Error('Error al guardar en localStorage');
       }
@@ -663,10 +671,16 @@ export class LocalStorageManager {
         return { indicators: [], captureDate: new Date().toISOString() };
       }
       
+      // DEBUGGING: Verificar qué PPIs tiene el DataManager en este momento
+      const rawPPIs = ppiManager.core.dataManager ? ppiManager.core.dataManager.ppis : [];
+      console.log('🔍 [LocalStorageManager] PPIs en memoria antes de captura:', rawPPIs.map(p => `${p.id}: ${p.title || p.name}`));
+      
       // Base: usar getVisiblePPIs() que excluye agregadas y solo incluye las del canvas (con elementId)
       let visiblePPIs = ppiManager.core.getVisiblePPIs ? 
                         ppiManager.core.getVisiblePPIs() : 
                         (ppiManager.core.getAllPPIs ? ppiManager.core.getAllPPIs() : []);
+
+      console.log('🔍 [LocalStorageManager] PPIs devueltos por getVisiblePPIs():', visiblePPIs.map(p => `${p.id}: ${p.title || p.name}`));
 
       // Refuerzo: filtrar por existencia real en el canvas
       try {
@@ -686,7 +700,8 @@ export class LocalStorageManager {
         // si no hay modeler/elementRegistry, mantenemos visiblePPIs tal cual
       }
       
-      console.log(`✅ ${visiblePPIs.length} PPIs capturados (solo canvas, sin agregadas)`);
+      console.log(`✅ ${visiblePPIs.length} PPIs capturados (solo canvas, sin agregadas):`);
+      console.log('📋 [LocalStorageManager] PPIs finales a guardar:', visiblePPIs.map(p => `${p.id}: ${p.title || p.name}`));
       
       return {
         indicators: visiblePPIs,
