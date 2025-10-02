@@ -22,13 +22,6 @@ Una aplicación web avanzada para el modelado visual de procesos de negocio que 
 - **Importación/Exportación** de proyectos completos
 - **Interfaz modular** con paneles especializados
 
-### 🏗️ **Arquitectura Robusta**
-- **Monolito modular** con composición estática
-- **Service Registry** para gestión de dependencias
-- **Event Bus** para comunicación desacoplada
-- **Panel Manager** para gestión de interfaces
-- **Storage Manager** para persistencia unificada
-
 ## 🛠️ Instalación y Uso
 
 ### Prerrequisitos
@@ -145,26 +138,6 @@ npm run test:nfr
 npm run test:report
 ```
 
-## 📚 Documentación
-
-- **Arquitectura**: `docs/arquitectura.puml`
-- **Módulos RASCI**: `app/modules/rasci/README.md`
-- **Validación**: `app/modules/rasci/validation/README.md`
-
-## 🤝 Contribución
-
-### Cómo Contribuir
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
-
-### Estándares de Código
-- **ESLint** para linting
-- **Jest** para testing
-- **Conventional Commits** para mensajes
-- **Modularidad** y separación de responsabilidades
 
 ## 📄 Licencia
 
