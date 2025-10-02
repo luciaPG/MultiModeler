@@ -748,12 +748,36 @@ class PPIUI {
       }
       deleteBtn._clickHandler = () => {
         console.log('[PPI-UI] Delete button clicked for PPI:', ppi.id);
+        
+        // VALIDACIÓN: Verificar que el PPI existe antes de intentar eliminarlo
         const ppiManager = resolve('PPIManagerInstance');
-        if (ppiManager && typeof ppiManager.confirmDeletePPI === 'function') {
-          console.log('[PPI-UI] Calling confirmDeletePPI for:', ppi.id);
-          ppiManager.confirmDeletePPI(ppi.id);
-        } else {
+        if (!ppiManager || typeof ppiManager.confirmDeletePPI !== 'function') {
           console.error('[PPI-UI] PPIManager not found or confirmDeletePPI not available');
+          return;
+        }
+        
+        // Verificar que el PPI existe en memoria
+        const ppiExists = ppiManager.core.getPPI(ppi.id);
+        if (!ppiExists) {
+          console.warn('[PPI-UI] ⚠️ PPI no encontrado en memoria, buscando por elementId:', ppi.elementId);
+          
+          // Intentar buscar por elementId
+          const allPPIs = ppiManager.core.getAllPPIs();
+          const ppiByElement = allPPIs.find(p => p.elementId === ppi.elementId);
+          
+          if (ppiByElement) {
+            console.log('[PPI-UI] ✅ PPI encontrado por elementId:', ppiByElement.id);
+            console.log('[PPI-UI] 🔄 Actualizando ID de', ppi.id, 'a', ppiByElement.id);
+            ppiManager.confirmDeletePPI(ppiByElement.id);
+          } else {
+            console.error('[PPI-UI] ❌ PPI no encontrado ni por ID ni por elementId');
+            // Forzar refresh de la lista para sincronizar
+            this.refreshPPIList();
+            return;
+          }
+        } else {
+          console.log('[PPI-UI] ✅ PPI encontrado, procediendo con eliminación:', ppi.id);
+          ppiManager.confirmDeletePPI(ppi.id);
         }
       };
       deleteBtn.addEventListener('click', deleteBtn._clickHandler);

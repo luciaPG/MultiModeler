@@ -983,109 +983,88 @@ class PPIManager {
     const proceed = async () => {
       console.log('✅ [PPIManager] proceed() ejecutándose para PPI:', ppiId);
       
-      if (this._deletingPPIIds.has(ppiId)) {
+      // VALIDACIONES PREVIAS ROBUSTAS
+      if (this._deletingPPIIds && this._deletingPPIIds.has(ppiId)) {
         console.log('⚠️ [PPIManager] PPI ya está siendo eliminado:', ppiId);
-        return;
+        return { success: false, reason: 'Already deleting' };
+      }
+      
+      // Validar que el PPI existe antes de continuar
+      const ppiToDelete = this.core.getPPI(ppiId);
+      if (!ppiToDelete) {
+        console.log('❌ [PPIManager] PPI no encontrado:', ppiId);
+        this.ui.showMessage('PPI no encontrado', 'error');
+        return { success: false, reason: 'PPI not found' };
+      }
+      
+      // Inicializar Set si no existe
+      if (!this._deletingPPIIds) {
+        this._deletingPPIIds = new Set();
       }
       this._deletingPPIIds.add(ppiId);
       
       try {
         this._isDeleting = true;
-        console.log('🔄 [PPIManager] Buscando elemento en canvas para PPI:', ppiId);
+        console.log('🔄 [PPIManager] Iniciando eliminación robusta para PPI:', ppiId);
+        console.log('📋 [PPIManager] PPI a eliminar:', ppiToDelete);
         
-        // SOLUCIÓN DIRECTA: Borrar PRIMERO de la lista, LUEGO del canvas
-        console.log('🔄 [PPIManager] MÉTODO DIRECTO: Eliminando PPI de la lista primero');
         const eliminationTimestamp = Date.now();
         console.log(`⏰ [PPIManager] Timestamp de eliminación: ${eliminationTimestamp}`);
         
+        // PASO 1: Eliminar del array de memoria
+        console.log('📝 [PPIManager] PASO 1: Eliminando PPI del array de memoria...');
         const deleteResult = await this.core.deletePPI(ppiId);
         
-        if (deleteResult && deleteResult.success) {
-          // Forzar recálculo de filtros
-          if (this.core.dataManager && this.core.dataManager.filterPPIs) {
-            console.log('🔍 [PPIManager] Recalculando filtros...');
-            this.core.dataManager.filterPPIs();
-          }
-          
-          // Actualizar UI inmediatamente
-          this.ui.refreshPPIList();
-          
-          // Forzar guardado en localStorage para asegurar persistencia
-          try {
-            console.log('💾 [PPIManager] Forzando guardado en localStorage POST-ELIMINACIÓN...');
-            console.log('📊 [PPIManager] PPIs en memoria antes del guardado:', this.core.ppis.length);
-            console.log(`🏷️ [PPIManager] Eliminación timestamp: ${eliminationTimestamp}`);
-            
-            await this.core.savePPIs();
-            
-            console.log('✅ [PPIManager] Guardado en localStorage POST-ELIMINACIÓN completado');
-            console.log('📊 [PPIManager] PPIs en memoria después del guardado:', this.core.ppis.length);
-            
-            // Verificar qué hay en localStorage después del guardado
-            const storageData = localStorage.getItem('mmproject:localstorage');
-            if (storageData) {
-              const parsed = JSON.parse(storageData);
-              const ppiCount = (parsed?.data?.ppi?.indicators?.length) || 0;
-              const savedTimestamp = parsed.timestamp || 'desconocido';
-              console.log(`🔍 [PPIManager] VERIFICACIÓN POST-ELIMINACIÓN:`);
-              console.log(`   - PPIs en localStorage: ${ppiCount}`);
-              console.log(`   - Timestamp guardado: ${savedTimestamp}`);
-              console.log(`   - Timestamp eliminación: ${eliminationTimestamp}`);
-              console.log(`   - ¿Guardado posterior?: ${savedTimestamp >= eliminationTimestamp ? 'SÍ' : 'NO'}`);
-            }
-          } catch (saveError) {
-            console.warn('⚠️ [PPIManager] Error guardando en localStorage:', saveError);
-          }
-          
-          // Borrar del canvas SI tiene elementId ANTES del segundo guardado
-          const deletedPPI = deleteResult.data;
-          if (deletedPPI && deletedPPI.elementId) {
-            console.log('🎯 [PPIManager] Borrando del canvas elementId:', deletedPPI.elementId);
-            
-            const modeler = this.getBpmnModeler();
-            if (modeler) {
-              const elementRegistry = modeler.get('elementRegistry');
-              const modeling = modeler.get('modeling');
-              
-              const element = elementRegistry.get(deletedPPI.elementId);
-              if (element) {
-                console.log('🗑️ [PPIManager] Ejecutando borrado del canvas');
-                modeling.removeElements([element]);
-                
-                // ESPERAR un momento para que el canvas se actualice
-                await new Promise(resolve => setTimeout(resolve, 100));
-                console.log('✅ [PPIManager] Canvas actualizado después del borrado');
-              }
-            }
-          }
-          
-          // SEGUNDO GUARDADO después de limpiar el canvas
-          console.log('💾 [PPIManager] SEGUNDO guardado POST-CANVAS-CLEANUP...');
-          await this.core.savePPIs();
-          
-          this.ui.showSuccessMessage('PPI eliminado exitosamente');
-          
-          // Verificación final del estado de localStorage
-          setTimeout(() => {
-            console.log('🔍 [PPIManager] Verificación final - Estado localStorage después del borrado:');
-            const storageData = localStorage.getItem('mmproject:localstorage');
-            if (storageData) {
-              const parsed = JSON.parse(storageData);
-              const ppiCount = (parsed && parsed.ppi && parsed.ppi.indicators && parsed.ppi.indicators.length) || 0;
-              console.log('📊 [PPIManager] PPIs en localStorage (verificación final):', ppiCount);
-              if (ppiCount > 0) {
-                console.log('📋 [PPIManager] PPIs encontrados en localStorage:', parsed.ppi.indicators.map(p => `${p.id}: ${p.title}`));
-              }
-            }
-            console.log('📊 [PPIManager] PPIs en memoria (verificación final):', this.core.ppis.length);
-          }, 500);
-          
-          // Pequeño delay para asegurar que el guardado se complete antes de cerrar el modal
-          await new Promise(resolve => setTimeout(resolve, 200));
-        } else {
-          console.log('❌ [PPIManager] Error al eliminar PPI de la lista');
-          this.ui.showMessage('Error al eliminar el PPI', 'error');
+        if (!deleteResult || !deleteResult.success) {
+          throw new Error(`Error eliminando PPI del core: ${deleteResult?.error || 'Unknown error'}`);
         }
+        
+        console.log('✅ [PPIManager] PPI eliminado del array correctamente');
+        
+        // PASO 2: Guardar estado en localStorage INMEDIATAMENTE
+        console.log('� [PPIManager] PASO 2: Guardando estado sin PPI en localStorage...');
+        await this.waitForReady();
+        await this.core.savePPIs();
+        console.log('✅ [PPIManager] Estado guardado en localStorage');
+        
+        // PASO 3: Actualizar UI
+        console.log('� [PPIManager] PASO 3: Actualizando interfaz...');
+        if (this.core.dataManager && this.core.dataManager.filterPPIs) {
+          this.core.dataManager.filterPPIs();
+        }
+        this.ui.refreshPPIList();
+        console.log('✅ [PPIManager] UI actualizada');
+        
+        // PASO 4: Eliminar del canvas visual
+        const deletedPPI = deleteResult.data;
+        if (deletedPPI && deletedPPI.elementId) {
+          console.log('📝 [PPIManager] PASO 4: Eliminando elemento del canvas...');
+          await this.removeFromCanvas(deletedPPI.elementId);
+          console.log('✅ [PPIManager] Elemento eliminado del canvas');
+          
+          // PASO 5: Guardado final para capturar XML limpio
+          console.log('📝 [PPIManager] PASO 5: Guardado final con XML limpio...');
+          await this.waitForReady();
+          await this.core.savePPIs();
+          console.log('✅ [PPIManager] Guardado final completado');
+        }
+        
+        // PASO 6: Verificación y notificación final
+        this.ui.showSuccessMessage('PPI eliminado exitosamente');
+        
+        // Verificación final del estado de localStorage
+        setTimeout(() => {
+          console.log('🔍 [PPIManager] Verificación final - Estado localStorage después del borrado:');
+          const storageData = localStorage.getItem('mmproject:localstorage');
+          if (storageData) {
+            const parsed = JSON.parse(storageData);
+            const ppiCount = (parsed && parsed.data && parsed.data.ppi && parsed.data.ppi.indicators && parsed.data.ppi.indicators.length) || 0;
+            console.log('📊 [PPIManager] PPIs en localStorage (verificación final):', ppiCount);
+          }
+          console.log('📊 [PPIManager] PPIs en memoria (verificación final):', this.core.ppis.length);
+        }, 500);
+        
+        return { success: true };
       } catch (error) {
         console.error('❌ [PPIManager] Error en borrado:', error);
         this.ui.showMessage('Error al eliminar el PPI', 'error');
@@ -1097,6 +1076,64 @@ class PPIManager {
 
     // Usar modal de confirmación del proyecto en lugar de window.confirm
     this.showConfirmModal('¿Estás seguro de que quieres eliminar este PPI?', proceed);
+  }
+
+  // Método auxiliar para esperar a que el sistema esté listo
+  async waitForReady(maxWait = 2000) {
+    const startTime = Date.now();
+    while (Date.now() - startTime < maxWait) {
+      if (this.core && this.core.dataManager && !this.core.dataManager.isSaving) {
+        return true;
+      }
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    console.warn('⚠️ [PPIManager] Timeout esperando que el sistema esté listo');
+    return false;
+  }
+
+  // Método auxiliar para eliminar del canvas de forma robusta
+  async removeFromCanvas(elementId) {
+    try {
+      const modeler = this.getBpmnModeler();
+      if (!modeler) {
+        console.warn('⚠️ [PPIManager] Modeler no disponible para eliminar del canvas');
+        return false;
+      }
+
+      const elementRegistry = modeler.get('elementRegistry');
+      const modeling = modeler.get('modeling');
+      
+      if (!elementRegistry || !modeling) {
+        console.warn('⚠️ [PPIManager] Registry o modeling no disponibles');
+        return false;
+      }
+
+      const element = elementRegistry.get(elementId);
+      if (!element) {
+        console.log('ℹ️ [PPIManager] Elemento no encontrado en canvas:', elementId);
+        return true; // No es error, ya no existe
+      }
+
+      console.log('🗑️ [PPIManager] Eliminando elemento del canvas:', elementId);
+      modeling.removeElements([element]);
+      
+      // Esperar a que el canvas se actualice
+      await new Promise(resolve => setTimeout(resolve, 150));
+      
+      // Verificar que se eliminó
+      const stillExists = elementRegistry.get(elementId);
+      if (stillExists) {
+        console.warn('⚠️ [PPIManager] El elemento aún existe después de la eliminación');
+        return false;
+      }
+      
+      console.log('✅ [PPIManager] Elemento eliminado exitosamente del canvas');
+      return true;
+      
+    } catch (error) {
+      console.error('❌ [PPIManager] Error eliminando del canvas:', error);
+      return false;
+    }
   }
 
   removePPIFromList(elementId) {
