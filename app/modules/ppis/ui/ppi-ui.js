@@ -887,6 +887,8 @@ class PPIUI {
   }
 
   showDetailModal(ppi) {
+    console.log('🎭 [PPI-UI] showDetailModal llamado con PPI:', ppi ? { id: ppi.id, title: ppi.title, target: ppi.target, scope: ppi.scope, updatedAt: ppi.updatedAt } : 'PPI nulo');
+    
     if (!ppi) {
       console.warn('[PPI-UI] No se puede mostrar modal de detalle: PPI no proporcionado');
       return;
@@ -899,6 +901,7 @@ class PPIUI {
       return;
     }
     
+    console.log('✅ [PPI-UI] PPI validado, mostrando modal con datos:', { id: validatedPPI.id, title: validatedPPI.title, target: validatedPPI.target, scope: validatedPPI.scope });
     this.createModal('Detalles del PPI', this.generateDetailContent(validatedPPI), false);
   }
 
@@ -1062,6 +1065,8 @@ class PPIUI {
   // === FORM GENERATION ===
   
   generateDetailContent(ppi) {
+    console.log('📋 [PPI-UI] generateDetailContent recibió PPI:', ppi);
+    
     // Validar que existe el tipo de medida
     const measureTypeKey = (ppi.measureDefinition && ppi.measureDefinition.type) || 'derived';
     const measureType = this.core.measureTypes[measureTypeKey] || this.core.measureTypes.derived || {
@@ -1074,14 +1079,26 @@ class PPIUI {
       id: ppi.id || 'Sin ID',
       title: ppi.title || 'Sin título',
       description: ppi.description || 'Sin descripción',
-      target: ppi.target || 'Sin objetivo',
-      scope: ppi.scope || 'Sin alcance',
-      businessObjective: ppi.businessObjective || 'Sin objetivo de negocio',
+      process: ppi.process || '',  // AGREGADO: Campo process
+      target: ppi.target || '',
+      scope: ppi.scope || '',
+      businessObjective: ppi.businessObjective || '',
       measureDefinition: ppi.measureDefinition || { type: 'derived', definition: 'Sin definición' },
+      source: ppi.source || '',  // AGREGADO: Campo source (¡ESTE ERA EL PROBLEMA!)
+      responsible: ppi.responsible || '',  // AGREGADO: Campo responsible
+      informed: Array.isArray(ppi.informed) ? ppi.informed : (ppi.informed ? [ppi.informed] : []),  // AGREGADO: Campo informed
+      comments: ppi.comments || '',  // AGREGADO: Campo comments
       createdAt: ppi.createdAt || new Date().toISOString(),
       updatedAt: ppi.updatedAt || new Date().toISOString(),
       elementId: ppi.elementId || 'Sin elemento'
     };
+    
+    console.log('🔧 [PPI-UI] safePPI construido:', { 
+      source: safePPI.source, 
+      responsible: safePPI.responsible, 
+      informed: safePPI.informed, 
+      comments: safePPI.comments 
+    });
     
     const createdAt = new Date(safePPI.createdAt).toLocaleDateString('es-ES', {
       year: 'numeric',

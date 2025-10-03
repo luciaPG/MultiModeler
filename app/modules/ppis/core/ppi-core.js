@@ -38,17 +38,20 @@ class PPICore {
     return this.dataManager.addPPI(ppi);
   }
 
-  updatePPI(ppiId, updatedData, source = null) {
-    const result = this.dataManager.updatePPI(ppiId, updatedData, source);
-    if (result && source === 'form' && result.elementId) {
-      this.syncFormToCanvas(result, updatedData);
+  async updatePPI(ppiId, updatedData, source = null) {
+    console.log('🔧 [PPICore] Iniciando updatePPI para:', ppiId, 'desde source:', source);
+    const result = await this.dataManager.updatePPI(ppiId, updatedData, source);
+    console.log('✅ [PPICore] Resultado updatePPI:', result);
+    
+    if (result && result.success && source === 'form' && result.data && result.data.elementId) {
+      this.syncFormToCanvas(result.data, updatedData);
     }
     return result;
   }
 
   deletePPI(ppiId) {
     const result = this.dataManager.deletePPI(ppiId);
-    if (result?.success && result.data?.elementId) {
+    if (result && result.success && result.data && result.data.elementId) {
       this.canvasManager.deletePPIFromCanvas(ppiId, result.data);
     }
     // CORREGIDO: Retornar el resultado completo para verificar success

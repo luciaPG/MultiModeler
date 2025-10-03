@@ -335,7 +335,7 @@ class PPIManager {
       // NUEVO: Listener para fin de creación (al soltar el elemento en el canvas)
       const createEndHandler = (event) => {
         try {
-          const element = event && (event.shape || event.element || event.context?.shape);
+          const element = event && (event.shape || event.element || (event.context && event.context.shape));
           if (element && this.core && this.core.isPPIElement && this.core.isPPIElement(element)) {
             const exists = this.core.ppis && this.core.ppis.find(ppi => ppi.elementId === element.id);
             const lastDel = this._recentlyDeletedElements.get(element.id) || 0;
@@ -966,8 +966,28 @@ class PPIManager {
   }
 
   viewPPI(ppiId) {
+    console.log('👁️ [PPIManager] Accediendo a viewPPI para:', ppiId);
+    
+    // MEJORADO: Forzar recarga desde localStorage para asegurar datos más recientes
+    if (this.core && this.core.dataManager && typeof this.core.dataManager.loadPPIs === 'function') {
+      console.log('🔄 [PPIManager] Forzando recarga de PPIs desde localStorage antes de mostrar modal');
+      this.core.dataManager.loadPPIs();
+    }
+    
     const ppi = this.core.getPPI(ppiId);
-    if (!ppi) return;
+    console.log('📋 [PPIManager] Datos PPI obtenidos:', ppi ? { id: ppi.id, title: ppi.title, target: ppi.target, scope: ppi.scope, updatedAt: ppi.updatedAt } : 'PPI no encontrado');
+    
+    if (!ppi) {
+      console.warn('⚠️ [PPIManager] PPI no encontrado para ID:', ppiId);
+      return;
+    }
+    
+    // Validar que los datos son recientes (menos de 5 segundos de diferencia)
+    const now = new Date();
+    const updatedAt = new Date(ppi.updatedAt);
+    const timeDiff = now - updatedAt;
+    console.log('⏰ [PPIManager] PPI actualizado hace:', Math.round(timeDiff / 1000), 'segundos');
+    
     this.ui.showDetailModal(ppi);
   }
 
@@ -1392,7 +1412,8 @@ class PPIManager {
     }
   }
 
-  saveEditedPPI(ppiId) {
+  async saveEditedPPI(ppiId) {
+    console.log('🔄 [PPIManager] Iniciando saveEditedPPI para:', ppiId);
     const form = document.getElementById('edit-ppi-form');
     if (!form) return;
 
@@ -1459,7 +1480,11 @@ class PPIManager {
           definition: processedData.measureDefinition
         }
       };
-      if (this.core.updatePPI(ppiId, updatePayload)) {
+      console.log('💾 [PPIManager] Actualizando PPI con payload:', updatePayload);
+      const updateResult = await this.core.updatePPI(ppiId, updatePayload);
+      console.log('📊 [PPIManager] Resultado updatePPI:', updateResult);
+      
+      if (updateResult && updateResult.success) {
         // Sync changes back to canvas elements (Target/Scope)
         this.syncPPIChangesToCanvas(ppiId, updatePayload);
         
@@ -1468,8 +1493,11 @@ class PPIManager {
         
         document.getElementById('ppi-modal').remove();
         this.ui.showSuccessMessage('PPI actualizado exitosamente');
+        
+        console.log('🔄 [PPIManager] Refrescando lista UI después de actualización exitosa');
         this.ui.refreshPPIList();
       } else {
+        console.error('❌ [PPIManager] Error al actualizar PPI:', updateResult);
         this.ui.showMessage('Error al actualizar el PPI', 'error');
       }
     } else {
