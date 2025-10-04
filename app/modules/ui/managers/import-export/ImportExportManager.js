@@ -8,7 +8,7 @@
 import { resolve } from '../../../../services/global-access.js';
 import { getServiceRegistry } from '../../core/ServiceRegistry.js';
 import { BpmnExporter } from './BpmnExporter.js';
-import { BpmnImporter } from './BpmnImporter.js';
+import { BpmnImporter, normalizeRALPHNamespaces } from './BpmnImporter.js';
 import { DataCapture } from './DataCapture.js';
 import { DataRestore } from './DataRestore.js';
 import { RelationshipCapture } from './RelationshipCapture.js';
@@ -269,6 +269,17 @@ export class ImportExportManager {
   async importProjectData(projectData) {
     // Ensure clean state before any import (JSON, CBPMN, BPMN-only)
     await this.clearLocalStorageState();
+    
+    // Apply RALPH namespace normalization to BPMN data if present
+    if (projectData.bpmn) {
+      // Verificar si es el formato nuevo (con diagram) o antiguo (string directo)
+      if (projectData.bpmn.diagram) {
+        projectData.bpmn.diagram = normalizeRALPHNamespaces(projectData.bpmn.diagram);
+      } else if (typeof projectData.bpmn === 'string') {
+        projectData.bpmn = normalizeRALPHNamespaces(projectData.bpmn);
+      }
+    }
+    
     const importOrder = [
       { key: 'bpmn', method: 'restoreBpmnToCanvas', module: this.bpmnImporter },
       { key: 'ppi', method: 'restorePPIToCanvas', module: this.dataRestore },
@@ -336,7 +347,11 @@ export class ImportExportManager {
       
       // Import in order: BPMN → PPI → RASCI → RALPH (unified JSON format)
       console.log('🔍 Detected unified JSON format - importing complete project');
-      await this.importProjectData(projectData);
+      
+      // Si projectData tiene una estructura anidada con 'data', usamos eso
+      const dataToImport = projectData.data || projectData;
+      
+      await this.importProjectData(dataToImport);
       
       console.log('✅ Project imported correctly (public API)');
       this.showMessage('Project imported correctly', 'success');

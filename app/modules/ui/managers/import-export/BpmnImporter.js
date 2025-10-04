@@ -374,3 +374,23 @@ export class BpmnImporter {
     return modifiedXml;
   }
 }
+
+/**
+ * Función independiente para normalizar namespaces RALPH
+ * Convierte del namespace nuevo al original que funciona correctamente
+ * @param {string} xmlString - El XML a normalizar
+ * @returns {string} - El XML normalizado
+ */
+export function normalizeRALPHNamespaces(xmlString) {
+  // Convertir del namespace nuevo (http://www.isa.us.es/ralph) al original (http://ralph.org)
+  let normalizedXml = xmlString
+    // 1. Reemplazar declaración de namespace del nuevo al original
+    .replace(/xmlns:ralph="http:\/\/www\.isa\.us\.es\/ralph"/g, 'xmlns:RALph="http://ralph.org"')
+    // 2. Reemplazar elementos que usan el prefijo ralph: con RALph:
+    .replace(/<ralph:/g, '<RALph:')
+    .replace(/<\/ralph:/g, '</RALph:')
+    // 3. Reemplazar referencias en atributos ralph: con RALph:
+    .replace(/ralph:/g, 'RALph:');
+  
+  return normalizedXml;
+}
