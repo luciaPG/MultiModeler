@@ -4,6 +4,8 @@
  * Gestiona el autoguardado de proyectos multi-notación incluyendo relaciones padre-hijo.
  */
 
+import { getServiceRegistry } from '../modules/ui/core/ServiceRegistry.js';
+
 export class AutosaveManager {
   constructor(options = {}) {
     this.modeler = options.modeler;
@@ -98,44 +100,60 @@ export class AutosaveManager {
         return { success: false, error: storageError };
       }
       
-      // Llamar save de forma temprana para cumplir NFR y aserción de test
-      if (this.storageManager && typeof this.storageManager.save === 'function') {
+      // Usar LocalStorageManager real para guardar
+      if (this.storageManager && typeof this.storageManager.saveProject === 'function') {
         try {
-          await this.storageManager.save('draft', draftHeader);
-          if (this.eventBus) {
-            this.eventBus.publish('autosave.persisted', { ok: true, at: Date.now() });
+          console.log('💾 AutosaveManager: Llamando a LocalStorageManager.saveProject()...');
+          const result = await this.storageManager.saveProject();
+          
+          if (result.success) {
+            console.log('✅ AutosaveManager: Proyecto guardado exitosamente');
+            if (this.eventBus) {
+              this.eventBus.publish('autosave.persisted', { ok: true, at: Date.now(), data: result.data });
+            }
+            
+            // Proyecto completo ya guardado, no necesitamos hacer más
+            this.hasChanges = false;
+            
+            if (this.eventBus) {
+              this.eventBus.publish('autosave.completed', {
+                success: true,
+                timestamp: new Date().toISOString(),
+                data: result.data
+              });
+            }
+            
+            return result;
+          } else {
+            console.warn('⚠️ AutosaveManager: Error al guardar:', result.error);
           }
         } catch (error) {
-          // no-op en test
+          console.error('❌ AutosaveManager: Error durante guardado:', error);
+          if (this.eventBus) {
+            this.eventBus.publish('autosave.error', { error: error, timestamp: new Date().toISOString() });
+          }
         }
       }
 
-      // Capturar proyecto completo y actualizar el draft con datos
+      // Si llegamos aquí, el guardado falló o no está configurado
+      // Fallback: intentar crear proyecto manual
+      console.log('⚠️ AutosaveManager: Fallback a creación manual del proyecto...');
       const projectData = await this.createCompleteProject();
       const draftData = {
         ...draftHeader,
         value: projectData.welcomeScreenFormat || projectData,
         data: projectData
       };
+      
       try {
         localStorage.setItem('draft:multinotation', JSON.stringify(draftData));
-      } catch (_) { /* mantener el header si falla la actualización */ }
+        console.log('💾 AutosaveManager: Guardado directo en localStorage como fallback');
+      } catch (storageError) {
+        console.error('❌ AutosaveManager: Error en fallback localStorage:', storageError);
+        throw storageError;
+      }
       
       this.hasChanges = false;
-
-      // Compatibilidad con tests que esperan storageManager.save() y propagación de error
-      if (this.storageManager && typeof this.storageManager.save === 'function') {
-        try {
-          // Compat con tests: invocar aunque el retorno no sea usado
-          await this.storageManager.save('draft', projectData);
-          // Notificar explícitamente para facilitar aserciones temporizadas
-          if (this.eventBus) {
-            this.eventBus.publish('autosave.persisted', { ok: true, at: Date.now() });
-          }
-        } catch (error) {
-          // En entorno de test, no bloquear el NFR por excepción del mock
-        }
-      }
 
       if (this.eventBus) {
         this.eventBus.publish('autosave.completed', {
@@ -212,8 +230,7 @@ export class AutosaveManager {
   async capturarElementosPPINOT(project) {
     try {
       console.log('🔍 Iniciando capturarElementosPPINOT...');
-      const serviceRegistry = await import('../modules/ui/core/ServiceRegistry.js');
-      const registry = serviceRegistry.getServiceRegistry();
+      const registry = getServiceRegistry();
       
       if (!registry) return;
 
@@ -449,8 +466,7 @@ export class AutosaveManager {
       
       // 2. Si no hay datos, intentar desde ServiceRegistry
       if ((!roles || roles.length === 0) || (!matrix || Object.keys(matrix).length === 0)) {
-        const serviceRegistry = await import('../modules/ui/core/ServiceRegistry.js');
-        const registry = serviceRegistry.getServiceRegistry();
+        const registry = getServiceRegistry();
         
         const rasciAdapter = registry?.get('RASCIAdapter');
         if (rasciAdapter) {
@@ -492,8 +508,7 @@ export class AutosaveManager {
   async capturarDatosRALPH(project) {
     try {
       // Intentar capturar datos RALPH desde diferentes fuentes
-      const serviceRegistry = await import('../modules/ui/core/ServiceRegistry.js');
-      const registry = serviceRegistry.getServiceRegistry();
+      const registry = getServiceRegistry();
       
       // Intentar obtener desde ServiceRegistry
       const ralphAdapter = registry?.get('RALPHAdapter');
@@ -589,8 +604,7 @@ export class AutosaveManager {
         
         // TAMBIÉN llamar al sistema legacy para reparentar medidas existentes
         try {
-          const serviceRegistry = await import('../modules/ui/core/ServiceRegistry.js');
-          const registry = serviceRegistry.getServiceRegistry();
+          const registry = getServiceRegistry();
           const legacyManager = registry?.get('LocalStorageAutoSaveManager');
           
           if (legacyManager && typeof legacyManager.restorePPIState === 'function') {
@@ -670,8 +684,7 @@ export class AutosaveManager {
       }
       
       // También intentar restaurar via ServiceRegistry
-      const serviceRegistry = await import('../modules/ui/core/ServiceRegistry.js');
-      const registry = serviceRegistry.getServiceRegistry();
+      const registry = getServiceRegistry();
       const rasciAdapter = registry?.get('RASCIAdapter');
       
       if (rasciAdapter) {
@@ -721,8 +734,7 @@ export class AutosaveManager {
       // CRÍTICO: Llamar funciones directas de actualización del sistema (con delay adicional)
       setTimeout(async () => {
         try {
-          const serviceRegistry = await import('../modules/ui/core/ServiceRegistry.js');
-          const registry = serviceRegistry.getServiceRegistry();
+          const registry = getServiceRegistry();
           
           console.log('🔄 Ejecutando funciones directas de actualización RASCI...');
           
@@ -764,8 +776,7 @@ export class AutosaveManager {
       console.log('🔄 Restaurando datos RALPH:', ralphData);
       
       // Intentar restaurar via ServiceRegistry
-      const serviceRegistry = await import('../modules/ui/core/ServiceRegistry.js');
-      const registry = serviceRegistry.getServiceRegistry();
+      const registry = getServiceRegistry();
       const ralphAdapter = registry?.get('RALPHAdapter');
       
       if (ralphAdapter && ralphData.roles) {
@@ -852,8 +863,6 @@ export class AutosaveManager {
 export default AutosaveManager;
 
 // Registro en ServiceRegistry
-import { getServiceRegistry } from '../modules/ui/core/ServiceRegistry.js';
-
 const registry = getServiceRegistry();
 if (registry) {
   registry.register('AutosaveManager', AutosaveManager, { 

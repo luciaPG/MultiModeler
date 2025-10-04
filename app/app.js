@@ -236,8 +236,64 @@ async function initLocalStorageSystem() {
     } else {
       console.warn('LocalStorageIntegration no disponible');
     }
+
+    // Inicializar AutosaveManager real para eventos model.changed
+    await initializeAutosaveManager();
   } catch (error) {
     console.warn('Error inicializando LocalStorage:', error);
+  }
+}
+
+/* -------------------------
+ * Autoguardado directo y simple
+ * ------------------------- */
+async function initializeAutosaveManager() {
+  try {
+    if (!app?.core?.eventBus) {
+      console.warn('EventBus no disponible para autoguardado');
+      return;
+    }
+
+    // Importar instancia singleton del LocalStorageManager
+    const LocalStorageManager = (await import('./services/local-storage-manager.js')).default;
+    
+    let saveTimeout = null;
+    let isSaving = false;
+
+    // Función de autoguardado simple y directa
+    const performAutoSave = async () => {
+      if (isSaving) {
+        console.log('⏳ Ya hay un guardado en progreso');
+        return;
+      }
+
+      try {
+        isSaving = true;
+        const result = await LocalStorageManager.saveProject();
+        
+        if (!result.success) {
+          console.warn('Error al guardar proyecto:', result.error);
+        }
+      } catch (error) {
+        console.error('Error durante autoguardado:', error);
+      } finally {
+        isSaving = false;
+      }
+    };
+
+    // Suscribirse directamente a model.changed
+    app.core.eventBus.subscribe('model.changed', (event) => {
+      // Cancelar guardado anterior si existe
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
+      }
+      
+      // Programar nuevo guardado en 2 segundos
+      saveTimeout = setTimeout(performAutoSave, 2000);
+    });
+
+  } catch (error) {
+    console.error('Error inicializando autoguardado:', error);
   }
 }
 
@@ -279,7 +335,9 @@ function setupEventHandlers() {
   modeler.on('elements.changed', () => {
     const lsMgr = getServiceRegistry()?.get('LocalStorageIntegration');
     const inCooldown = lsMgr?._postRestoreCooldownUntil > Date.now();
-    if (!inCooldown) app?.core?.eventBus?.publish('model.changed', { source: 'bpmn' });
+    if (!inCooldown) {
+      app?.core?.eventBus?.publish('model.changed', { source: 'bpmn' });
+    }
   });
 
   modeler.on('selection.changed', (e) => {
@@ -288,6 +346,23 @@ function setupEventHandlers() {
         element: e.newSelection[0],
       });
     }
+  });
+
+  // Eventos adicionales para asegurar guardado
+  modeler.on('shape.added', () => {
+    app?.core?.eventBus?.publish('model.changed', { source: 'shape-added' });
+  });
+
+  modeler.on('shape.removed', () => {
+    app?.core?.eventBus?.publish('model.changed', { source: 'shape-removed' });
+  });
+
+  modeler.on('connection.added', () => {
+    app?.core?.eventBus?.publish('model.changed', { source: 'connection-added' });
+  });
+
+  modeler.on('element.changed', () => {
+    app?.core?.eventBus?.publish('model.changed', { source: 'element-changed' });
   });
 }
 
@@ -298,7 +373,24 @@ async function initModeler() {
   if (panelManager) await panelManager.applyConfiguration();
   await initModelerCore(modeler);
   isModelerInitialized = true;
+
+  // Guardar inmediatamente el nuevo diagrama vacío
+  setTimeout(async () => {
+    try {
+      const LocalStorageManager = (await import('./services/local-storage-manager.js')).default;
+      await LocalStorageManager.saveProject();
+      
+      // Disparar evento model.changed
+      if (app?.core?.eventBus) {
+        app.core.eventBus.publish('model.changed', { source: 'new-diagram' });
+      }
+    } catch (error) {
+      console.warn('Error durante guardado inicial:', error);
+    }
+  }, 1500);
 }
+
+
 
 /* -------------------------
  * API exposure

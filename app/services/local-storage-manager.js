@@ -10,6 +10,7 @@ import { getServiceRegistry } from '../modules/ui/core/ServiceRegistry.js';
 import { RasciStore } from '../modules/rasci/store.js';
 import { RelationshipCapture } from '../modules/ui/managers/import-export/RelationshipCapture.js';
 import { RelationshipRestore } from '../modules/ui/managers/import-export/RelationshipRestore.js';
+import { normalizeRALPHNamespaces } from '../modules/ui/managers/import-export/BpmnImporter.js';
 
 export class LocalStorageManager {
   constructor(options = {}) {
@@ -413,7 +414,15 @@ export class LocalStorageManager {
     try {
       const result = await modeler.saveXML({ format: true });
       data.diagram = result.xml;
-      console.log('✅ XML diagram captured');
+      
+      // DEBUG: Mostrar información sobre el XML guardado
+      const xmlLength = result.xml ? result.xml.length : 0;
+      const hasElements = result.xml && (result.xml.includes('<bpmn:') || result.xml.includes('<PPINOT:'));
+      console.log(`✅ XML diagram captured - Length: ${xmlLength}, Has elements: ${hasElements}`);
+      
+      if (result.xml && xmlLength < 2000) {
+        console.log('🔍 DEBUG - XML content (small):', result.xml.substring(0, 1000));
+      }
     } catch (error) {
       // Si no hay definiciones cargadas, crear un diagrama vacío y reintentar una vez
       const message = (error && (error.message || String(error))) || '';
@@ -544,16 +553,35 @@ export class LocalStorageManager {
   }
 
   serializeRALPHElements(elements) {
-    return elements.map(el => ({
-      type: el.type,
-      id: el.id,
-      width: el.width || 50,
-      height: el.height || 50,
-      x: el.x || 0,
-      y: el.y || 0,
-      text: el.businessObject && el.businessObject.name || null,
-      parent: el.parent && el.parent.id || null
-    }));
+    return elements.map(el => {
+      const serialized = {
+        type: el.type,
+        id: el.id,
+        text: el.businessObject && el.businessObject.name || null,
+        parent: el.parent && el.parent.id || null,
+        properties: el.businessObject ? {
+          type: el.businessObject.$type,
+          name: el.businessObject.name
+        } : null
+      };
+
+      // Para conexiones: guardar source, target, waypoints
+      if (el.source && el.target) {
+        serialized.source = el.source.id;
+        serialized.target = el.target.id;
+        serialized.waypoints = el.waypoints || [];
+      } else {
+        // Para shapes: guardar posición y tamaño
+        serialized.position = {
+          width: el.width || 50,
+          height: el.height || 50,
+          x: el.x || 0,
+          y: el.y || 0
+        };
+      }
+
+      return serialized;
+    });
   }
 
   async waitForModelerReady() {
@@ -637,9 +665,24 @@ export class LocalStorageManager {
       try {
         const elementRegistry = modeler.get('elementRegistry');
         const allElements = elementRegistry.getAll();
+        
+        // DEBUG: Ver qué elementos hay en el canvas
+        console.log(`🔍 DEBUG - Total elementos en canvas: ${allElements.length}`);
+        const ralphTypes = allElements
+          .filter(el => el.type && (el.type.includes('RALPH') || el.type.includes('RALph')))
+          .map(el => ({ id: el.id, type: el.type }));
+        console.log(`🔍 DEBUG - Elementos con tipo RALPH/RALph: ${ralphTypes.length}`, ralphTypes);
+        
+        const ralphBusinessObjects = allElements
+          .filter(el => el.businessObject && el.businessObject.$type && 
+                      (el.businessObject.$type.includes('RALPH') || el.businessObject.$type.includes('RALph')))
+          .map(el => ({ id: el.id, businessType: el.businessObject.$type }));
+        console.log(`🔍 DEBUG - Elementos con businessObject RALPH/RALph: ${ralphBusinessObjects.length}`, ralphBusinessObjects);
+        
         const ralphElements = allElements.filter(el => 
-          (el.type && el.type.includes('RALPH')) ||
-          (el.businessObject && el.businessObject.$type && el.businessObject.$type.includes('RALPH'))
+          (el.type && (el.type.includes('RALPH') || el.type.includes('RALph'))) ||
+          (el.businessObject && el.businessObject.$type && 
+           (el.businessObject.$type.includes('RALPH') || el.businessObject.$type.includes('RALph')))
         );
         
         data.elements = ralphElements.map(element => ({
@@ -900,8 +943,11 @@ export class LocalStorageManager {
   }
 
   async restoreBpmnData(bpmnData) {
-    if (!bpmnData) return;
-    console.log('🔍 DEBUG - Iniciando restauración de datos BPMN...');
+    if (!bpmnData) {
+      console.log('❌ BPMN DATA ES NULL - NO SE RESTAURARÁ NADA');
+      return;
+    }
+    console.log('🚀🚀🚀 INICIANDO RESTAURACIÓN BPMN - ESTE LOG DEBE APARECER 🚀🚀🚀');
 
     const modeler = resolve('BpmnModeler');
     if (!modeler) {
@@ -911,6 +957,15 @@ export class LocalStorageManager {
     try {
       // Restaurar XML del BPMN
       const xmlContent = bpmnData.diagram || bpmnData.xml || bpmnData;
+      
+      // DEBUG: Mostrar información sobre el XML que se va a restaurar
+      const xmlLength = xmlContent ? xmlContent.length : 0;
+      const hasElements = xmlContent && (xmlContent.includes('<bpmn:') || xmlContent.includes('<PPINOT:'));
+      console.log(`🔍 DEBUG - XML a restaurar - Length: ${xmlLength}, Has elements: ${hasElements}`);
+      
+      if (xmlContent && xmlLength < 2000) {
+        console.log('🔍 DEBUG - XML content to restore:', xmlContent.substring(0, 1000));
+      }
       
       // CRITICAL: Verificar si elementos tienen BPMNShape (igual que ImportExportManager)
       let missingShapes = [];
@@ -1418,7 +1473,10 @@ export class LocalStorageManager {
     }
 
     try {
-      console.log(`🎭 Restaurando ${ralphData.elements.length} elementos RALPH...`);
+      const elementsLength = (ralphData.elements && ralphData.elements.length) || 0;
+      const connectionsLength = (ralphData.connections && ralphData.connections.length) || 0;
+      const totalElements = elementsLength + connectionsLength;
+      console.log(`🎭 Restaurando ${elementsLength} elementos y ${connectionsLength} conexiones RALPH (total: ${totalElements})...`);
       
       const elementRegistry = modeler.get('elementRegistry');
       const modeling = modeler.get('modeling');
@@ -1432,7 +1490,9 @@ export class LocalStorageManager {
       const rootElement = canvas.getRootElement();
       let restoredCount = 0;
 
-      for (const ralphEl of ralphData.elements) {
+      // Procesar primero los elementos (shapes)
+      if (ralphData.elements) {
+        for (const ralphEl of ralphData.elements) {
         try {
           // Verificar si el elemento ya existe
           const existingElement = elementRegistry.get(ralphEl.id);
@@ -1441,39 +1501,157 @@ export class LocalStorageManager {
             continue;
           }
 
-          // Crear elemento RALPH
-          const element = elementFactory.create('shape', {
-            type: ralphEl.type,
+          // Crear businessObject RALPH primero
+          const moddle = modeler.get('moddle');
+          const businessObjectType = (ralphEl.properties && ralphEl.properties.type) || ralphEl.type;
+          const businessObjectName = (ralphEl.properties && ralphEl.properties.name) || ralphEl.name;
+          
+          const businessObject = moddle.create(businessObjectType, {
             id: ralphEl.id,
-            width: ralphEl.position.width || 50,
-            height: ralphEl.position.height || 50
+            name: businessObjectName
           });
 
-          // Establecer propiedades del businessObject
-          if (element.businessObject && ralphEl.properties) {
-            element.businessObject.name = ralphEl.properties.name || ralphEl.name;
-            if (ralphEl.properties.type) {
-              element.businessObject.$type = ralphEl.properties.type;
-            }
-          }
+          // Determinar si es una conexión o un shape
+          const isConnection = ralphEl.type && (
+            ralphEl.type.includes('Arc') || 
+            ralphEl.type.includes('Connection') ||
+            ralphEl.type === 'RALph:ResourceArc'
+          );
 
-          // Crear en el canvas
-          const position = { 
-            x: ralphEl.position.x || 100, 
-            y: ralphEl.position.y || 100 
-          };
+          let element;
+          if (isConnection) {
+            // Para conexiones: necesitan sourceId, targetId y waypoints
+            const sourceId = ralphEl.sourceId || ralphEl.source;
+            const targetId = ralphEl.targetId || ralphEl.target;
+            
+            if (!sourceId || !targetId) {
+              console.warn(`⚠️ Conexión RALPH ${ralphEl.id} sin sourceId/targetId, saltando...`);
+              continue;
+            }
+
+            // Buscar source y target elements
+            const sourceElement = elementRegistry.get(sourceId);
+            const targetElement = elementRegistry.get(targetId);
+            
+            if (!sourceElement || !targetElement) {
+              console.warn(`⚠️ Conexión RALPH ${ralphEl.id} elementos source (${sourceId}) o target (${targetId}) no encontrados, saltando...`);
+              continue;
+            }
+
+            // Crear waypoints básicos si no existen
+            const waypoints = ralphEl.waypoints || [
+              { x: sourceElement.x + sourceElement.width/2, y: sourceElement.y + sourceElement.height/2 },
+              { x: targetElement.x + targetElement.width/2, y: targetElement.y + targetElement.height/2 }
+            ];
+
+            element = elementFactory.create('connection', {
+              type: ralphEl.type,
+              id: ralphEl.id,
+              businessObject: businessObject,
+              source: sourceElement,
+              target: targetElement,
+              waypoints: waypoints
+            });
+
+            // Crear conexión en el canvas
+            modeling.createConnection(sourceElement, targetElement, element, rootElement);
+          } else {
+            // Para shapes normales
+            element = elementFactory.create('shape', {
+              type: ralphEl.type,
+              id: ralphEl.id,
+              businessObject: businessObject,
+              width: ralphEl.position.width || 50,
+              height: ralphEl.position.height || 50
+            });
+
+            // Crear en el canvas
+            const position = { 
+              x: ralphEl.position.x || 100, 
+              y: ralphEl.position.y || 100 
+            };
+            
+            modeling.createShape(element, position, rootElement);
+          }
           
-          modeling.createShape(element, position, rootElement);
           restoredCount++;
-          
           console.log(`🎭 Elemento RALPH restaurado: ${ralphEl.id} (${ralphEl.type})`);
           
         } catch (error) {
           console.warn(`⚠️ Error restaurando elemento RALPH ${ralphEl.id}:`, error);
         }
+        }
       }
 
-      console.log(`✅ Restauración RALPH completada: ${restoredCount}/${ralphData.elements.length} elementos`);
+      // Procesar después las conexiones
+      if (ralphData.connections) {
+        for (const ralphEl of ralphData.connections) {
+        try {
+          // Verificar si el elemento ya existe
+          const existingElement = elementRegistry.get(ralphEl.id);
+          if (existingElement) {
+            console.log(`✅ Conexión RALPH ya existe: ${ralphEl.id}`);
+            continue;
+          }
+
+          // Crear businessObject RALPH primero
+          const moddle = modeler.get('moddle');
+          const businessObjectType = (ralphEl.properties && ralphEl.properties.type) || ralphEl.type;
+          const businessObjectName = (ralphEl.properties && ralphEl.properties.name) || ralphEl.name;
+          
+          const businessObject = moddle.create(businessObjectType, {
+            id: ralphEl.id,
+            name: businessObjectName
+          });
+
+          // Para conexiones: necesitan sourceId, targetId y waypoints
+          const sourceId = ralphEl.sourceId || ralphEl.source;
+          const targetId = ralphEl.targetId || ralphEl.target;
+          
+          if (!sourceId || !targetId) {
+            console.warn(`⚠️ Conexión RALPH ${ralphEl.id} sin sourceId/targetId, saltando...`);
+            continue;
+          }
+
+          // Buscar source y target elements
+          const sourceElement = elementRegistry.get(sourceId);
+          const targetElement = elementRegistry.get(targetId);
+          
+          if (!sourceElement || !targetElement) {
+            console.warn(`⚠️ Conexión RALPH ${ralphEl.id} elementos source (${sourceId}) o target (${targetId}) no encontrados, saltando...`);
+            continue;
+          }
+
+          // Crear waypoints básicos si no existen
+          const waypoints = ralphEl.waypoints || [
+            { x: sourceElement.x + sourceElement.width/2, y: sourceElement.y + sourceElement.height/2 },
+            { x: targetElement.x + targetElement.width/2, y: targetElement.y + targetElement.height/2 }
+          ];
+
+          const element = elementFactory.create('connection', {
+            type: ralphEl.type,
+            id: ralphEl.id,
+            businessObject: businessObject,
+            source: sourceElement,
+            target: targetElement,
+            waypoints: waypoints
+          });
+
+          // Crear conexión en el canvas
+          modeling.createConnection(sourceElement, targetElement, element, rootElement);
+          restoredCount++;
+          
+          console.log(`✅ Conexión RALPH restaurada: ${ralphEl.id} (${sourceId} -> ${targetId})`);
+          
+        } catch (error) {
+          console.warn(`⚠️ Error restaurando conexión RALPH ${ralphEl.id}:`, error);
+        }
+        }
+      }
+
+      const elementsCount = (ralphData.elements && ralphData.elements.length) || 0;
+      const connectionsCount = (ralphData.connections && ralphData.connections.length) || 0;
+      console.log(`✅ Restauración RALPH completada: ${restoredCount}/${elementsCount + connectionsCount} elementos total`);
       
     } catch (error) {
       console.error('❌ Error restaurando RALPH:', error);

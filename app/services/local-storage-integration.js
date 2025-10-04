@@ -154,6 +154,16 @@ class LocalStorageIntegration {
   }
 
   /**
+   * Verifica si los datos han sido restaurados recientemente (para evitar imports conflictivos)
+   */
+  isRecentlyRestored() {
+    const now = Date.now();
+    const hasCooldown = this._postRestoreCooldownUntil && now < this._postRestoreCooldownUntil;
+    const isMarkedRestored = this.restored;
+    return hasCooldown || isMarkedRestored;
+  }
+
+  /**
    * Limpia el estado de restauración y cooldown (para nuevo diagrama)
    */
   resetRestoreState() {

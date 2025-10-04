@@ -334,6 +334,17 @@ export class ImportExportManager {
     try {
       console.log('📥 Importing project data (public API)...');
       
+      // CRITICAL: Evitar import automático si localStorage ya fue restaurado recientemente
+      const registry = getServiceRegistry && getServiceRegistry();
+      const localStorageIntegration = registry && registry.get ? registry.get('LocalStorageIntegration') : null;
+      if (localStorageIntegration && typeof localStorageIntegration.isRecentlyRestored === 'function') {
+        const isRecent = localStorageIntegration.isRecentlyRestored();
+        if (isRecent) {
+          console.log('🛑 Skipping import - LocalStorage was recently restored, avoiding overwrite');
+          return;
+        }
+      }
+      
       // NEW: Detect file type
       if (typeof projectData === 'string' && projectData.includes('<?xml')) {
         console.log('🔍 Detected BPMN XML file - importing as basic diagram');
