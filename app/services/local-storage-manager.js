@@ -500,22 +500,39 @@ export class LocalStorageManager {
   async captureRALPHElements(modeler, data) {
     const elementRegistry = modeler.get('elementRegistry');
     const allElements = elementRegistry.getAll();
-    const ralphElements = allElements.filter(el => 
-      el.type && (el.type.includes('RALph:') || el.type.includes('ralph:'))
-    );
     
-    // CRITICAL: Only capture separately if missing from XML (like BpmnExporter)
-    const missingFromXml = ralphElements.filter(el => 
-      !data.diagram.includes(`id="${el.id}"`)
-    );
+    // Improved filtering with more verbose logging
+    const ralphElements = allElements.filter(el => {
+      const isRalph = el.type && (el.type.includes('RALph:') || el.type.includes('ralph:'));
+      if (isRalph) {
+        console.log(`🔍 Found RALPH element: ${el.id} (${el.type})`);
+      }
+      return isRalph;
+    });
     
-    if (missingFromXml.length > 0) {
-      console.log(`📋 Saving ${missingFromXml.length} RALPH elements separately...`);
-      data.ralphElements = this.serializeRALPHElements(missingFromXml);
-      console.log(`✅ ${data.ralphElements.length} RALPH elements saved separately`);
-    } else {
+    console.log(`🎯 Total RALPH elements found: ${ralphElements.length}`);
+    
+    if (ralphElements.length === 0) {
       data.ralphElements = [];
-      console.log('✅ All RALPH elements are in XML, no separate capture needed');
+      console.log('⚠️ No RALPH elements found in registry');
+      return;
+    }
+    
+    // NEW STRATEGY: Always save ALL RALPH elements separately for reliability
+    console.log(`📋 Saving ALL ${ralphElements.length} RALPH elements separately for guaranteed persistence...`);
+    
+    // Log which ones are in XML vs not (for debugging)
+    ralphElements.forEach(el => {
+      const inXml = data.diagram.includes(`id="${el.id}"`);
+      console.log(`📋 RALPH element ${el.id}: ${inXml ? 'in XML' : 'missing from XML'} - saving separately anyway`);
+    });
+    
+    data.ralphElements = this.serializeRALPHElements(ralphElements);
+    console.log(`✅ ${data.ralphElements.length} RALPH elements saved separately (all elements)`);
+    
+    // Also log serialized data for debugging
+    if (data.ralphElements.length > 0) {
+      console.log(`🔍 RALPH elements to save:`, data.ralphElements.map(el => ({ id: el.id, type: el.type, hasWaypoints: !!el.waypoints })));
     }
   }
 
@@ -553,6 +570,8 @@ export class LocalStorageManager {
   }
 
   serializeRALPHElements(elements) {
+    console.log(`🔍 DEBUG - Serializando ${elements.length} elementos RALPH:`, elements.map(e => ({ id: e.id, type: e.type, hasSource: !!e.source, hasTarget: !!e.target, hasWaypoints: !!e.waypoints })));
+    
     return elements.map(el => {
       const serialized = {
         type: el.type,
@@ -569,7 +588,43 @@ export class LocalStorageManager {
       if (el.source && el.target) {
         serialized.source = el.source.id;
         serialized.target = el.target.id;
-        serialized.waypoints = el.waypoints || [];
+        
+        console.log(`🔍 [SERIALIZATION] Connection ${el.id}:`);
+        console.log(`   Original waypoints:`, el.waypoints);
+        console.log(`   Array check: isArray=${Array.isArray(el.waypoints)}, length=${el.waypoints ? el.waypoints.length : 0}`);
+        
+        // Validate and sanitize waypoints before saving
+        if (el.waypoints && Array.isArray(el.waypoints) && el.waypoints.length >= 2) {
+          // Filter out invalid waypoints (including null values)
+          const validWaypoints = el.waypoints.filter(point => {
+            const isValid = point && 
+              point.x !== null && point.y !== null &&
+              typeof point.x === 'number' && typeof point.y === 'number' && 
+              isFinite(point.x) && isFinite(point.y) && 
+              !isNaN(point.x) && !isNaN(point.y);
+            if (!isValid) {
+              console.warn(`   ❌ Invalid waypoint filtered out:`, point);
+            }
+            return isValid;
+          });
+          
+          if (validWaypoints.length >= 2) {
+            // Create clean copies with ONLY x and y coordinates (remove 'original' and other properties)
+            serialized.waypoints = validWaypoints.map(wp => {
+              // Extract x and y, ensuring they're valid numbers
+              const x = (wp.x !== null && typeof wp.x === 'number') ? wp.x : 0;
+              const y = (wp.y !== null && typeof wp.y === 'number') ? wp.y : 0;
+              return { x, y };
+            });
+            console.log(`✅ [SERIALIZATION] ${el.id}: Saved ${serialized.waypoints.length} clean waypoints:`, serialized.waypoints);
+          } else {
+            console.warn(`⚠️ [SERIALIZATION] ${el.id}: Only ${validWaypoints.length} valid waypoints, using default`);
+            serialized.waypoints = [{ x: 0, y: 0 }, { x: 100, y: 0 }];
+          }
+        } else {
+          console.warn(`⚠️ [SERIALIZATION] ${el.id}: No valid waypoints array, using default`);
+          serialized.waypoints = [{ x: 0, y: 0 }, { x: 100, y: 0 }];
+        }
       } else {
         // Para shapes: guardar posición y tamaño
         serialized.position = {
@@ -578,6 +633,7 @@ export class LocalStorageManager {
           x: el.x || 0,
           y: el.y || 0
         };
+        console.log(`✅ Serialized shape ${el.id} at (${el.x}, ${el.y})`);
       }
 
       return serialized;
@@ -925,7 +981,56 @@ export class LocalStorageManager {
     for (const { key, method } of restoreOrder) {
       if (projectData[key]) {
         try {
-          await this[method](projectData[key]);
+          // CRITICAL: For RALPH, merge data from both sources to get waypoints
+          let dataToRestore = projectData[key];
+          
+          if (key === 'ralph' && projectData.bpmn && projectData.bpmn.ralphElements) {
+            console.log('🔄 RALPH: Merging waypoints from bpmn.ralphElements into ralph.elements');
+            console.log('   bpmn.ralphElements available:', !!projectData.bpmn.ralphElements);
+            console.log('   bpmn.ralphElements length:', projectData.bpmn.ralphElements ? projectData.bpmn.ralphElements.length : 0);
+            
+            const bpmnRalphElements = projectData.bpmn.ralphElements;
+            const ralphElements = projectData.ralph.elements || [];
+            
+            console.log('   ralph.elements length:', ralphElements.length);
+            
+            // Create a map of waypoints from bpmn data
+            const waypointsMap = {};
+            const sourceTargetMap = {};
+            
+            bpmnRalphElements.forEach(el => {
+              if (el.waypoints && el.id) {
+                waypointsMap[el.id] = el.waypoints;
+                console.log(`   Found waypoints for ${el.id}: ${el.waypoints.length} points`);
+              }
+              if (el.source && el.target && el.id) {
+                sourceTargetMap[el.id] = { source: el.source, target: el.target };
+                console.log(`   Found source/target for ${el.id}: ${el.source} -> ${el.target}`);
+              }
+            });
+            
+            // Merge waypoints AND source/target into ralph elements
+            const mergedElements = ralphElements.map(el => {
+              const merged = { ...el };
+              
+              if (waypointsMap[el.id]) {
+                merged.waypoints = waypointsMap[el.id];
+              }
+              
+              if (sourceTargetMap[el.id]) {
+                merged.source = sourceTargetMap[el.id].source;
+                merged.target = sourceTargetMap[el.id].target;
+              }
+              
+              return merged;
+            });
+            
+            console.log(`✅ Merged waypoints for ${Object.keys(waypointsMap).length} RALPH connections`);
+            console.log(`✅ Merged source/target for ${Object.keys(sourceTargetMap).length} RALPH connections`);
+            dataToRestore = { elements: mergedElements };
+          }
+          
+          await this[method](dataToRestore);
           console.log(`✅ ${key} restaurado correctamente`);
           
           // Pequeño delay entre restauraciones para evitar conflictos
@@ -1337,6 +1442,14 @@ export class LocalStorageManager {
   async restoreRALPHElements(modeler, ralphElements) {
     // COPIAR EXACTAMENTE del BpmnImporter
     console.log('🔧 Restoring RALPH elements from separate data...');
+    console.log('🔍 DEBUG - Elements to restore:', ralphElements.map(e => ({ 
+      id: e.id, 
+      type: e.type, 
+      source: e.source, 
+      target: e.target, 
+      waypoints: e.waypoints,
+      position: e.position 
+    })));
     
     const elementFactory = modeler.get('elementFactory');
     const canvas = modeler.get('canvas');
@@ -1369,29 +1482,190 @@ export class LocalStorageManager {
           }
         }
 
-        // Create simple and effective element
-        const element = elementFactory.create('shape', {
-          type: elementData.type,
-          id: elementData.id,
-          width: elementData.width,
-          height: elementData.height
-        });
+        let createdElement;
+        
+        // Check if this is a connection (has source and target)
+        if (elementData.source && elementData.target) {
+          // This is a connection
+          const sourceElement = elementRegistry.get(elementData.source);
+          const targetElement = elementRegistry.get(elementData.target);
+          
+          console.log(`🔍 DEBUG - Attempting to create connection ${elementData.id}:`, {
+            source: elementData.source,
+            sourceFound: !!sourceElement,
+            target: elementData.target,
+            targetFound: !!targetElement,
+            waypoints: elementData.waypoints
+          });
+          
+          if (sourceElement && targetElement) {
+            console.log(`🔗 Creating RALPH connection: ${elementData.id} (${elementData.type})`);
+            
+            // CRITICAL: Validate waypoints before using them
+            let waypointsToUse = null;
+            
+            if (elementData.waypoints && Array.isArray(elementData.waypoints) && elementData.waypoints.length >= 2) {
+              // Validate each waypoint (including null check)
+              const validWaypoints = elementData.waypoints.filter(wp => 
+                wp && wp.x !== null && wp.y !== null &&
+                typeof wp.x === 'number' && typeof wp.y === 'number' &&
+                !isNaN(wp.x) && !isNaN(wp.y) && isFinite(wp.x) && isFinite(wp.y)
+              );
+              
+              if (validWaypoints.length >= 2) {
+                // Clean waypoints: create PURE objects with ONLY x and y (no 'original' or other props)
+                waypointsToUse = validWaypoints.map(wp => {
+                  const x = (wp.x !== null && typeof wp.x === 'number') ? wp.x : 0;
+                  const y = (wp.y !== null && typeof wp.y === 'number') ? wp.y : 0;
+                  return { x, y };
+                });
+                console.log(`✅ Using ${waypointsToUse.length} clean saved waypoints for ${elementData.id}`, waypointsToUse);
+              } else {
+                console.warn(`⚠️ Saved waypoints invalid for ${elementData.id} (${validWaypoints.length}/${elementData.waypoints.length} valid), will compute defaults`);
+              }
+            } else {
+              console.warn(`⚠️ No waypoints saved for ${elementData.id}, will compute defaults`);
+            }
+            
+            // Compute default waypoints if needed
+            if (!waypointsToUse) {
+              const srcX = sourceElement.x || 0;
+              const srcY = sourceElement.y || 0;
+              const srcW = sourceElement.width || 50;
+              const srcH = sourceElement.height || 50;
+              const tgtX = targetElement.x || 0;
+              const tgtY = targetElement.y || 0;
+              const tgtW = targetElement.width || 50;
+              const tgtH = targetElement.height || 50;
+              
+              waypointsToUse = [
+                { x: srcX + srcW/2, y: srcY + srcH/2 },
+                { x: tgtX + tgtW/2, y: tgtY + tgtH/2 }
+              ];
+              console.log(`🔧 Computed default waypoints for ${elementData.id}:`, waypointsToUse);
+            }
+            
+            // Create connection WITH waypoints directly
+            const connection = elementFactory.create('connection', {
+              type: elementData.type,
+              id: elementData.id,
+              source: sourceElement,
+              target: targetElement,
+              waypoints: waypointsToUse  // Pass waypoints directly
+            });
 
-        // Create in canvas with exact position
-        const createdElement = modeling.createShape(
-          element,
-          { x: elementData.x, y: elementData.y },
-          parentElement
-        );
+            console.log(`🔍 [RESTORATION] Creating connection WITH waypoints:`, waypointsToUse);
+
+            createdElement = modeling.createConnection(
+              sourceElement,
+              targetElement, 
+              connection,
+              parentElement
+            );
+            
+            // Immediately verify the created element's waypoints
+            console.log(`🔍 [RESTORATION] Connection created, checking waypoints...`);
+            console.log(`   Expected waypoints:`, waypointsToUse);
+            console.log(`   Actual waypoints:`, createdElement.waypoints);
+            
+            // Check if waypoints need to be forced
+            if (createdElement && waypointsToUse) {
+              const currentWaypoints = createdElement.waypoints;
+              const needsUpdate = !currentWaypoints || 
+                                  currentWaypoints.length !== waypointsToUse.length ||
+                                  currentWaypoints.some((wp, i) => 
+                                    !wp || wp.x !== waypointsToUse[i].x || wp.y !== waypointsToUse[i].y
+                                  );
+              
+              if (needsUpdate) {
+                console.warn(`⚠️ [RESTORATION] Waypoints don't match, forcing update for ${elementData.id}`);
+                
+                // Try multiple strategies to force waypoints
+                try {
+                  // Strategy 1: modeling.updateWaypoints
+                  modeling.updateWaypoints(createdElement, waypointsToUse);
+                  console.log(`   Strategy 1 (updateWaypoints): ${createdElement.waypoints ? 'SUCCESS' : 'FAILED'}`);
+                } catch (e) {
+                  console.error(`   Strategy 1 failed:`, e.message);
+                }
+                
+                // Strategy 2: Direct assignment
+                if (!createdElement.waypoints || createdElement.waypoints.length < 2) {
+                  try {
+                    createdElement.waypoints = waypointsToUse;
+                    console.log(`   Strategy 2 (direct assignment): ${createdElement.waypoints ? 'SUCCESS' : 'FAILED'}`);
+                  } catch (e) {
+                    console.error(`   Strategy 2 failed:`, e.message);
+                  }
+                }
+                
+                console.log(`   Final waypoints:`, createdElement.waypoints);
+              } else {
+                console.log(`✅ [RESTORATION] Waypoints already correct for ${elementData.id}`);
+              }
+            }
+            
+            console.log(`✅ RALPH connection created: ${elementData.id}`);
+            console.log(`🔍 DEBUG - Final element waypoints:`, createdElement.waypoints);
+            
+            // CRITICAL: Verify the element in the registry has the waypoints
+            const elementRegistry = modeler.get('elementRegistry');
+            const registeredElement = elementRegistry.get(elementData.id);
+            if (registeredElement) {
+              console.log(`🔍 [REGISTRY CHECK] Element ${elementData.id} in registry:`, {
+                hasWaypoints: !!registeredElement.waypoints,
+                waypointsLength: registeredElement.waypoints ? registeredElement.waypoints.length : 0,
+                waypoints: registeredElement.waypoints
+              });
+              
+              // If waypoints are missing in registry, force them again
+              if (!registeredElement.waypoints || registeredElement.waypoints.length < 2) {
+                console.warn(`⚠️ Waypoints missing in registry element! Forcing direct assignment...`);
+                registeredElement.waypoints = waypointsToUse;
+                console.log(`   Assigned waypoints directly to registry element`);
+              }
+            }
+          } else {
+            console.warn(`⚠️ Cannot create connection ${elementData.id}: source or target not found`, {
+              sourceId: elementData.source,
+              targetId: elementData.target,
+              sourceFound: !!sourceElement,
+              targetFound: !!targetElement
+            });
+          }
+        } else {
+          // This is a regular shape  
+          const element = elementFactory.create('shape', {
+            type: elementData.type,
+            id: elementData.id,
+            width: (elementData.position && elementData.position.width) || 50,
+            height: (elementData.position && elementData.position.height) || 50
+          });
+
+          // Create in canvas with exact position
+          createdElement = modeling.createShape(
+            element,
+            { 
+              x: (elementData.position && elementData.position.x) || 100, 
+              y: (elementData.position && elementData.position.y) || 100 
+            },
+            parentElement
+          );
+          
+          const posX = (elementData.position && elementData.position.x) || 100;
+          const posY = (elementData.position && elementData.position.y) || 100;
+          console.log(`✅ RALPH shape created: ${elementData.id} at (${posX}, ${posY})`);
+        }
         
         if (createdElement) {
           createdElements.push(createdElement);
           createdCount++;
-          console.log(`✅ RALPH element created: ${elementData.id} at (${elementData.x}, ${elementData.y})`);
+        } else {
+          console.warn(`⚠️ Element ${elementData.id} was not created`);
         }
         
       } catch (error) {
-        console.warn(`⚠️ Error restoring ${elementData.id}:`, error.message);
+        console.warn(`⚠️ Error restoring ${elementData.id}:`, error.message, error);
       }
     }
 
@@ -1462,7 +1736,11 @@ export class LocalStorageManager {
   }
 
   async restoreRalphData(ralphData) {
-    if (!ralphData || !ralphData.elements || ralphData.elements.length === 0) {
+    // Handle both old format (ralphData.elements) and new format (direct array)
+    const ralphElements = ralphData.elements || ralphData || [];
+    
+    if (!ralphElements || ralphElements.length === 0) {
+      console.log('📋 No RALPH elements to restore');
       return;
     }
 
@@ -1473,10 +1751,7 @@ export class LocalStorageManager {
     }
 
     try {
-      const elementsLength = (ralphData.elements && ralphData.elements.length) || 0;
-      const connectionsLength = (ralphData.connections && ralphData.connections.length) || 0;
-      const totalElements = elementsLength + connectionsLength;
-      console.log(`🎭 Restaurando ${elementsLength} elementos y ${connectionsLength} conexiones RALPH (total: ${totalElements})...`);
+      console.log(`🎭 Restaurando ${ralphElements.length} elementos RALPH...`);
       
       const elementRegistry = modeler.get('elementRegistry');
       const modeling = modeler.get('modeling');
@@ -1490,171 +1765,13 @@ export class LocalStorageManager {
       const rootElement = canvas.getRootElement();
       let restoredCount = 0;
 
-      // Procesar primero los elementos (shapes)
-      if (ralphData.elements) {
-        for (const ralphEl of ralphData.elements) {
-        try {
-          // Verificar si el elemento ya existe
-          const existingElement = elementRegistry.get(ralphEl.id);
-          if (existingElement) {
-            console.log(`✅ Elemento RALPH ya existe: ${ralphEl.id}`);
-            continue;
-          }
-
-          // Crear businessObject RALPH primero
-          const moddle = modeler.get('moddle');
-          const businessObjectType = (ralphEl.properties && ralphEl.properties.type) || ralphEl.type;
-          const businessObjectName = (ralphEl.properties && ralphEl.properties.name) || ralphEl.name;
-          
-          const businessObject = moddle.create(businessObjectType, {
-            id: ralphEl.id,
-            name: businessObjectName
-          });
-
-          // Determinar si es una conexión o un shape
-          const isConnection = ralphEl.type && (
-            ralphEl.type.includes('Arc') || 
-            ralphEl.type.includes('Connection') ||
-            ralphEl.type === 'RALph:ResourceArc'
-          );
-
-          let element;
-          if (isConnection) {
-            // Para conexiones: necesitan sourceId, targetId y waypoints
-            const sourceId = ralphEl.sourceId || ralphEl.source;
-            const targetId = ralphEl.targetId || ralphEl.target;
-            
-            if (!sourceId || !targetId) {
-              console.warn(`⚠️ Conexión RALPH ${ralphEl.id} sin sourceId/targetId, saltando...`);
-              continue;
-            }
-
-            // Buscar source y target elements
-            const sourceElement = elementRegistry.get(sourceId);
-            const targetElement = elementRegistry.get(targetId);
-            
-            if (!sourceElement || !targetElement) {
-              console.warn(`⚠️ Conexión RALPH ${ralphEl.id} elementos source (${sourceId}) o target (${targetId}) no encontrados, saltando...`);
-              continue;
-            }
-
-            // Crear waypoints básicos si no existen
-            const waypoints = ralphEl.waypoints || [
-              { x: sourceElement.x + sourceElement.width/2, y: sourceElement.y + sourceElement.height/2 },
-              { x: targetElement.x + targetElement.width/2, y: targetElement.y + targetElement.height/2 }
-            ];
-
-            element = elementFactory.create('connection', {
-              type: ralphEl.type,
-              id: ralphEl.id,
-              businessObject: businessObject,
-              source: sourceElement,
-              target: targetElement,
-              waypoints: waypoints
-            });
-
-            // Crear conexión en el canvas
-            modeling.createConnection(sourceElement, targetElement, element, rootElement);
-          } else {
-            // Para shapes normales
-            element = elementFactory.create('shape', {
-              type: ralphEl.type,
-              id: ralphEl.id,
-              businessObject: businessObject,
-              width: ralphEl.position.width || 50,
-              height: ralphEl.position.height || 50
-            });
-
-            // Crear en el canvas
-            const position = { 
-              x: ralphEl.position.x || 100, 
-              y: ralphEl.position.y || 100 
-            };
-            
-            modeling.createShape(element, position, rootElement);
-          }
-          
-          restoredCount++;
-          console.log(`🎭 Elemento RALPH restaurado: ${ralphEl.id} (${ralphEl.type})`);
-          
-        } catch (error) {
-          console.warn(`⚠️ Error restaurando elemento RALPH ${ralphEl.id}:`, error);
-        }
-        }
-      }
-
-      // Procesar después las conexiones
-      if (ralphData.connections) {
-        for (const ralphEl of ralphData.connections) {
-        try {
-          // Verificar si el elemento ya existe
-          const existingElement = elementRegistry.get(ralphEl.id);
-          if (existingElement) {
-            console.log(`✅ Conexión RALPH ya existe: ${ralphEl.id}`);
-            continue;
-          }
-
-          // Crear businessObject RALPH primero
-          const moddle = modeler.get('moddle');
-          const businessObjectType = (ralphEl.properties && ralphEl.properties.type) || ralphEl.type;
-          const businessObjectName = (ralphEl.properties && ralphEl.properties.name) || ralphEl.name;
-          
-          const businessObject = moddle.create(businessObjectType, {
-            id: ralphEl.id,
-            name: businessObjectName
-          });
-
-          // Para conexiones: necesitan sourceId, targetId y waypoints
-          const sourceId = ralphEl.sourceId || ralphEl.source;
-          const targetId = ralphEl.targetId || ralphEl.target;
-          
-          if (!sourceId || !targetId) {
-            console.warn(`⚠️ Conexión RALPH ${ralphEl.id} sin sourceId/targetId, saltando...`);
-            continue;
-          }
-
-          // Buscar source y target elements
-          const sourceElement = elementRegistry.get(sourceId);
-          const targetElement = elementRegistry.get(targetId);
-          
-          if (!sourceElement || !targetElement) {
-            console.warn(`⚠️ Conexión RALPH ${ralphEl.id} elementos source (${sourceId}) o target (${targetId}) no encontrados, saltando...`);
-            continue;
-          }
-
-          // Crear waypoints básicos si no existen
-          const waypoints = ralphEl.waypoints || [
-            { x: sourceElement.x + sourceElement.width/2, y: sourceElement.y + sourceElement.height/2 },
-            { x: targetElement.x + targetElement.width/2, y: targetElement.y + targetElement.height/2 }
-          ];
-
-          const element = elementFactory.create('connection', {
-            type: ralphEl.type,
-            id: ralphEl.id,
-            businessObject: businessObject,
-            source: sourceElement,
-            target: targetElement,
-            waypoints: waypoints
-          });
-
-          // Crear conexión en el canvas
-          modeling.createConnection(sourceElement, targetElement, element, rootElement);
-          restoredCount++;
-          
-          console.log(`✅ Conexión RALPH restaurada: ${ralphEl.id} (${sourceId} -> ${targetId})`);
-          
-        } catch (error) {
-          console.warn(`⚠️ Error restaurando conexión RALPH ${ralphEl.id}:`, error);
-        }
-        }
-      }
-
-      const elementsCount = (ralphData.elements && ralphData.elements.length) || 0;
-      const connectionsCount = (ralphData.connections && ralphData.connections.length) || 0;
-      console.log(`✅ Restauración RALPH completada: ${restoredCount}/${elementsCount + connectionsCount} elementos total`);
+      // Use our improved restoreRALPHElements function
+      await this.restoreRALPHElements(modeler, ralphElements);
       
+      console.log(`✅ RALPH restoration completed: ${ralphElements.length} elements processed`);
+
     } catch (error) {
-      console.error('❌ Error restaurando RALPH:', error);
+      console.error('Error restaurando RALPH:', error);
       throw error;
     }
   }

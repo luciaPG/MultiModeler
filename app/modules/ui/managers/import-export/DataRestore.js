@@ -96,32 +96,83 @@ export class DataRestore {
             continue;
           }
 
-          // Create RALPH element (ralph pattern)
-          const element = elementFactory.create('shape', {
-            type: ralphEl.type,
-            id: ralphEl.id,
-            width: ralphEl.position.width || 50,
-            height: ralphEl.position.height || 50
-          });
+          // Check if this is a connection (has source and target)
+          if (ralphEl.source && ralphEl.target) {
+            // This is a connection
+            const sourceElement = elementRegistry.get(ralphEl.source);
+            const targetElement = elementRegistry.get(ralphEl.target);
+            
+            if (sourceElement && targetElement) {
+              console.log(`🔗 Creating RALPH connection: ${ralphEl.id} (${ralphEl.type})`);
+              
+              // Get waypoints if available
+              let waypoints = ralphEl.waypoints;
+              if (!waypoints || waypoints.length < 2) {
+                // Compute default waypoints from source/target
+                const srcX = sourceElement.x || 0;
+                const srcY = sourceElement.y || 0;
+                const srcW = sourceElement.width || 50;
+                const srcH = sourceElement.height || 50;
+                const tgtX = targetElement.x || 0;
+                const tgtY = targetElement.y || 0;
+                const tgtW = targetElement.width || 50;
+                const tgtH = targetElement.height || 50;
+                
+                waypoints = [
+                  { x: srcX + srcW/2, y: srcY + srcH/2 },
+                  { x: tgtX + tgtW/2, y: tgtY + tgtH/2 }
+                ];
+              }
+              
+              // Create connection WITH waypoints
+              const connection = elementFactory.create('connection', {
+                type: ralphEl.type,
+                id: ralphEl.id,
+                source: sourceElement,
+                target: targetElement,
+                waypoints: waypoints
+              });
 
-          // Set businessObject properties
-          if (element.businessObject && ralphEl.properties) {
-            element.businessObject.name = ralphEl.properties.name || ralphEl.name;
-            if (ralphEl.properties.type) {
-              element.businessObject.$type = ralphEl.properties.type;
+              const createdElement = modeling.createConnection(
+                sourceElement,
+                targetElement,
+                connection,
+                rootElement
+              );
+              
+              restoredCount++;
+              console.log(`✅ RALPH connection created: ${ralphEl.id} with ${waypoints.length} waypoints`);
+            } else {
+              console.warn(`⚠️ Cannot create connection ${ralphEl.id}: source or target not found`);
             }
-          }
+          } else {
+            // This is a shape
+            const element = elementFactory.create('shape', {
+              type: ralphEl.type,
+              id: ralphEl.id,
+              width: (ralphEl.position && ralphEl.position.width) || 50,
+              height: (ralphEl.position && ralphEl.position.height) || 50
+            });
 
-          // Create in canvas
-          const position = { 
-            x: ralphEl.position.x || 100, 
-            y: ralphEl.position.y || 100 
-          };
-          
-          modeling.createShape(element, position, rootElement);
-          restoredCount++;
-          
-          console.log(`🎭 RALPH element restored: ${ralphEl.id} (${ralphEl.type})`);
+            // Set businessObject properties
+            if (element.businessObject && ralphEl.properties) {
+              element.businessObject.name = ralphEl.properties.name || ralphEl.name;
+              if (ralphEl.properties.type) {
+                element.businessObject.$type = ralphEl.properties.type;
+              }
+            }
+
+            // Create in canvas
+            const position = { 
+              x: (ralphEl.position && ralphEl.position.x) || 100, 
+              y: (ralphEl.position && ralphEl.position.y) || 100 
+            };
+            
+            modeling.createShape(element, position, rootElement);
+            restoredCount++;
+            
+            console.log(`✅ RALPH shape restored: ${ralphEl.id} (${ralphEl.type})`);
+          }
           
         } catch (error) {
           console.warn(`⚠️ Error restoring RALPH element ${ralphEl.id}:`, error);

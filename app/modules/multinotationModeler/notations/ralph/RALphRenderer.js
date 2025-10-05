@@ -424,17 +424,46 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
     return textElement;
   }
 
-  // Helper functions for crossed lines
+  // Helper functions for crossed lines - Simplified and more robust
   function drawCrossedLine(points, attrs) {
     var line = svgCreate('polyline');
-    var result = '';
-    var middlePosition = points.length / 2;
-    middlePosition = Math.round(middlePosition);
-
-    var middlePointX = (points[middlePosition].x + points[middlePosition - 1].x) / 2;
-    var middlePointY = (points[middlePosition].y + points[middlePosition - 1].y) / 2;
-    result += (middlePointX - 20).toString() + ',' + (middlePointY + 20).toString() + ',' + (middlePointX + 20).toString() + ',' + parseInt(middlePointY - 20).toString();
-
+    
+    // SUPER ROBUST: Always use safe fallback coordinates
+    var safeX = 100, safeY = 100; // Default center position
+    
+    try {
+      // Try to get middle point safely
+      if (points && Array.isArray(points) && points.length >= 2) {
+        var middleIndex = Math.floor(points.length / 2);
+        var point1 = points[Math.max(0, middleIndex - 1)];
+        var point2 = points[Math.min(points.length - 1, middleIndex)];
+        
+        if (point1 && point2 && 
+            typeof point1.x === 'number' && typeof point1.y === 'number' &&
+            typeof point2.x === 'number' && typeof point2.y === 'number' &&
+            isFinite(point1.x) && isFinite(point1.y) && 
+            isFinite(point2.x) && isFinite(point2.y)) {
+          
+          var midX = (point1.x + point2.x) / 2;
+          var midY = (point1.y + point2.y) / 2;
+          
+          if (isFinite(midX) && isFinite(midY)) {
+            safeX = midX;
+            safeY = midY;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('RALph drawCrossedLine: Exception in calculation, using safe defaults');
+    }
+    
+    // Always use safe coordinates - create a simple cross
+    var x1 = safeX - 20;
+    var y1 = safeY + 20; 
+    var x2 = safeX + 20;
+    var y2 = safeY - 20;
+    
+    var result = x1 + ',' + y1 + ',' + x2 + ',' + y2;
     svgAttr(line, { points: result });
 
     if (attrs) {
@@ -446,14 +475,43 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
 
   function drawCrossedLine2(points, attrs) {
     var line = svgCreate('polyline');
-    var result = '';
-    var middlePosition = points.length / 2;
-    middlePosition = Math.round(middlePosition);
-
-    var middlePointX = (points[middlePosition].x + points[middlePosition - 1].x) / 2;
-    var middlePointY = (points[middlePosition].y + points[middlePosition - 1].y) / 2;
-
-    result += (middlePointX + 20).toString() + ',' + (middlePointY + 20).toString() + ',' + (middlePointX - 20).toString() + ',' + parseInt(middlePointY - 20).toString();
+    
+    // SUPER ROBUST: Always use safe fallback coordinates  
+    var safeX = 100, safeY = 100; // Default center position
+    
+    try {
+      // Try to get middle point safely
+      if (points && Array.isArray(points) && points.length >= 2) {
+        var middleIndex = Math.floor(points.length / 2);
+        var point1 = points[Math.max(0, middleIndex - 1)];
+        var point2 = points[Math.min(points.length - 1, middleIndex)];
+        
+        if (point1 && point2 && 
+            typeof point1.x === 'number' && typeof point1.y === 'number' &&
+            typeof point2.x === 'number' && typeof point2.y === 'number' &&
+            isFinite(point1.x) && isFinite(point1.y) && 
+            isFinite(point2.x) && isFinite(point2.y)) {
+          
+          var midX = (point1.x + point2.x) / 2;
+          var midY = (point1.y + point2.y) / 2;
+          
+          if (isFinite(midX) && isFinite(midY)) {
+            safeX = midX;
+            safeY = midY;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('RALph drawCrossedLine2: Exception in calculation, using safe defaults');
+    }
+    
+    // Always use safe coordinates - create the opposite cross  
+    var x1 = safeX + 20;
+    var y1 = safeY + 20;
+    var x2 = safeX - 20; 
+    var y2 = safeY - 20;
+    
+    var result = x1 + ',' + y1 + ',' + x2 + ',' + y2;
     svgAttr(line, { points: result });
 
     if (attrs) {
@@ -463,7 +521,40 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
     return line;
   }
 
-
+  // Helper function to validate waypoints like PPINOT does
+  function getValidWaypoints(element) {
+    console.log(`🔍 [VALIDATOR] Checking waypoints for ${element.id} (${element.type}):`, {
+      hasWaypoints: !!element.waypoints,
+      isArray: Array.isArray(element.waypoints),
+      length: element.waypoints ? element.waypoints.length : 0,
+      waypoints: element.waypoints
+    });
+    
+    if (!element.waypoints || !Array.isArray(element.waypoints) || element.waypoints.length < 2) {
+      console.warn(`❌ RALph ${element.type} ${element.id}: Invalid waypoints structure, using fallback`);
+      return [{ x: 0, y: 0 }, { x: 50, y: 0 }];
+    }
+    
+    // Additional validation for waypoint coordinate values - MUST match serialization/restoration validation
+    const validWaypoints = element.waypoints.filter(point => {
+      const isValid = point && 
+        point.x !== null && point.y !== null &&
+        typeof point.x === 'number' && typeof point.y === 'number' && 
+        !isNaN(point.x) && !isNaN(point.y) && isFinite(point.x) && isFinite(point.y);
+      if (!isValid) {
+        console.warn(`❌ Invalid waypoint in ${element.id}:`, point);
+      }
+      return isValid;
+    });
+    
+    if (validWaypoints.length < 2) {
+      console.warn(`❌ RALph ${element.type} ${element.id}: Not enough valid waypoints (${validWaypoints.length}/${element.waypoints.length}), using fallback`);
+      return [{ x: 0, y: 0 }, { x: 50, y: 0 }];
+    }
+    
+    console.log(`✅ [VALIDATOR] ${element.id}: ${validWaypoints.length} valid waypoints passed validation`);
+    return validWaypoints;
+  }
 
   function drawDataField(shape){
 
@@ -918,8 +1009,8 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
         //markerBetween: marker('history-source-another-end', 'white',BLACK),
       });
       
-
-      return svgAppend(p, createLine(element.waypoints, attrs));
+      const validWaypoints = getValidWaypoints(element);
+      return svgAppend(p, createLine(validWaypoints, attrs));
 
     },
 
@@ -945,11 +1036,16 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
         strokeWidth: 1,
       };
 
-      svgAppend(p, drawCrossedLine(element.waypoints,attrs2));
-      svgAppend(p, drawCrossedLine2(element.waypoints,attrs2));
+      // Use our robust validation function
+      const validWaypoints = getValidWaypoints(element);
+      
+      console.log('RALph negatedAssignment: element.id =', element.id, 'waypoints =', element.waypoints, 'validWaypoints =', validWaypoints);
+
+      svgAppend(p, drawCrossedLine(validWaypoints, attrs2));
+      svgAppend(p, drawCrossedLine2(validWaypoints, attrs2));
 
       
-      return svgAppend(p, createLine(element.waypoints, attrs));
+      return svgAppend(p, createLine(validWaypoints, attrs));
     },
     'RALph:simpleArrow':(p, element)=>{
       var attrs = {
@@ -960,7 +1056,8 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
         //strokeDasharray: [8,5]
       };
 
-      return svgAppend(p, createLine(element.waypoints, attrs));
+      const validWaypoints = getValidWaypoints(element);
+      return svgAppend(p, createLine(validWaypoints, attrs));
     }, 
     'RALph:doubleArrow':(p,element)=>{
       var attrs = {
@@ -971,7 +1068,8 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
         //strokeDasharray: [8,5]
       };
       
-      return svgAppend(p, createLine(element.waypoints, attrs));
+      const validWaypoints = getValidWaypoints(element);
+      return svgAppend(p, createLine(validWaypoints, attrs));
 
     }
     
@@ -982,7 +1080,8 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
         strokeLinejoin: 'round',
       };
 
-      return svgAppend(p, createLine(element.waypoints, attrs));
+      const validWaypoints = getValidWaypoints(element);
+      return svgAppend(p, createLine(validWaypoints, attrs));
     },
     'RALph:solidLineWithCircle':(p,element)=>{
       var attrs = {
@@ -992,7 +1091,8 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
         markerEnd: marker('history-source-another-start', 'white',BLACK),
       };
 
-      return svgAppend(p, createLine(element.waypoints, attrs));
+      const validWaypoints = getValidWaypoints(element);
+      return svgAppend(p, createLine(validWaypoints, attrs));
     },
     'RALph:dashedLine':(p,element)=>{
       var attrs = {
@@ -1002,7 +1102,8 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
         strokeDasharray: [8,5],
       };
 
-      return svgAppend(p, createLine(element.waypoints, attrs));
+      const validWaypoints = getValidWaypoints(element);
+      return svgAppend(p, createLine(validWaypoints, attrs));
     },
     'RALph:dashedLineWithCircle':(p,element)=>{
       var attrs = {
@@ -1013,7 +1114,8 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
         markerEnd: marker('history-source-another-start', 'white',BLACK),
       };
 
-      return svgAppend(p, createLine(element.waypoints, attrs));
+      const validWaypoints = getValidWaypoints(element);
+      return svgAppend(p, createLine(validWaypoints, attrs));
     },
     'RALph:ConsequenceFlow': (p, element) => {
       var attrs = {
@@ -1024,7 +1126,8 @@ export default function RALphRenderer(styles, canvas, textRenderer) {
         //strokeDasharray: [8,5]
       };
 
-      return svgAppend(p, createLine(element.waypoints, attrs));
+      const validWaypoints = getValidWaypoints(element);
+      return svgAppend(p, createLine(validWaypoints, attrs));
     }
   }
 

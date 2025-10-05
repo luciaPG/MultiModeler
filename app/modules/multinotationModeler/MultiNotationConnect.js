@@ -349,6 +349,35 @@ export default function MultiNotationConnect(eventBus, dragging, modeling, rules
             }
         });
     };
+
+    // Add waypoint validation before element movement to prevent intersection errors
+    eventBus.on(['elements.move.start', 'shape.move.start'], function(event) {
+        try {
+            // Get all connections in the diagram and validate their waypoints
+            var elementRegistry = event.context && event.context.elementRegistry;
+            if (!elementRegistry) return;
+            
+            var allElements = elementRegistry.getAll();
+            allElements.forEach(function(element) {
+                if (element.waypoints && !hasValidWaypoints(element.waypoints)) {
+                    console.warn('Fixing invalid waypoints for element:', element.id, element.type);
+                    // Fix waypoints to prevent intersection calculation errors
+                    var sanitized = validateAndSanitizeWaypoints(element.waypoints);
+                    if (sanitized.length < 2) {
+                        // Use default waypoints if sanitization failed
+                        element.waypoints = computeDefaultWaypoints(
+                            element.source || { x: 0, y: 0 }, 
+                            element.target || { x: 50, y: 0 }
+                        );
+                    } else {
+                        element.waypoints = sanitized;
+                    }
+                }
+            });
+        } catch (error) {
+            console.warn('Error during waypoint validation:', error.message);
+        }
+    });
 }
 
 MultiNotationConnect.$inject = [

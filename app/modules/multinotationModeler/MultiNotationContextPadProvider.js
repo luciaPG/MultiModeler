@@ -55,7 +55,14 @@ class MultiNotationContextPadProvider extends ContextPadProvider {
     } else if (isRalphShape(element)) {
       return this._ralphProvider.getContextPadEntries(element) || {};
     } else {
-      entries = super.getContextPadEntries(element) || {};
+      try {
+        console.log('Getting context pad entries for BPMN element:', element.type, element.id);
+        entries = super.getContextPadEntries(element) || {};
+      } catch (error) {
+        console.warn('BPMN ContextPad error caught for element:', element.type, element.id, 'Error:', error.message);
+        // Provide minimal fallback entries for BPMN elements
+        entries = {};
+      }
       // if (!entries.replace) {
       //   entries.replace = {
       //     group: 'edit',

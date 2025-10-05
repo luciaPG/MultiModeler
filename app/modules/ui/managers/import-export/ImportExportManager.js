@@ -289,7 +289,46 @@ export class ImportExportManager {
 
     for (const { key, method, module } of importOrder) {
       if (projectData[key]) {
-        await module[method](projectData[key]);
+        // CRITICAL: For RALPH, merge waypoints from bpmn.ralphElements (same as localStorage)
+        let dataToRestore = projectData[key];
+        
+        if (key === 'ralph' && projectData.bpmn && projectData.bpmn.ralphElements) {
+          console.log('🔄 RALPH IMPORT: Merging waypoints from bpmn.ralphElements into ralph.elements');
+          const bpmnRalphElements = projectData.bpmn.ralphElements;
+          const ralphElements = projectData.ralph.elements || [];
+          
+          // Create maps for waypoints and source/target
+          const waypointsMap = {};
+          const sourceTargetMap = {};
+          
+          bpmnRalphElements.forEach(el => {
+            if (el.waypoints && el.id) {
+              waypointsMap[el.id] = el.waypoints;
+              console.log(`   Found waypoints for ${el.id}: ${el.waypoints.length} points`);
+            }
+            if (el.source && el.target && el.id) {
+              sourceTargetMap[el.id] = { source: el.source, target: el.target };
+            }
+          });
+          
+          // Merge into ralph elements
+          const mergedElements = ralphElements.map(el => {
+            const merged = { ...el };
+            if (waypointsMap[el.id]) {
+              merged.waypoints = waypointsMap[el.id];
+            }
+            if (sourceTargetMap[el.id]) {
+              merged.source = sourceTargetMap[el.id].source;
+              merged.target = sourceTargetMap[el.id].target;
+            }
+            return merged;
+          });
+          
+          console.log(`✅ IMPORT: Merged waypoints for ${Object.keys(waypointsMap).length} RALPH connections`);
+          dataToRestore = { elements: mergedElements };
+        }
+        
+        await module[method](dataToRestore);
       }
     }
 
