@@ -1613,15 +1613,6 @@ export function validateAndToggleAutoMapping() {
     autoMappingSwitch.checked = false;
     autoMappingSwitch.disabled = true; // DESHABILITAR EL TOGGLE
     
-    // Mostrar botón manual y hacerlo más visible
-    if (manualBtn) {
-      manualBtn.style.display = 'block';
-      manualBtn.style.backgroundColor = '#ff6b6b';
-      manualBtn.style.color = 'white';
-      manualBtn.style.border = '2px solid #ff4757';
-      manualBtn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Mapeo Manual (${validation.errors.length} Errores)`;
-    }
-    
     // NO MOSTRAR MODAL - solo logs en consola
     if (isBeingActivated) {
       console.log('🚫 Usuario intentó activar toggle con errores');
@@ -1699,16 +1690,6 @@ export function validateAndToggleAutoMapping() {
     } else {
       // Si no está siendo activado, mantener el estado actual
       
-    }
-    
-    // Restaurar botón manual normal
-    if (manualBtn) {
-      const isEnabled = autoMappingSwitch.checked;
-      manualBtn.style.display = isEnabled ? 'none' : 'block';
-      manualBtn.style.backgroundColor = '';
-      manualBtn.style.color = '';
-      manualBtn.style.border = '';
-      manualBtn.innerHTML = '<i class="fas fa-magic"></i> Ejecutar Mapeo Manual';
     }
   }
   
@@ -1802,7 +1783,6 @@ export function updateUIForErrorState() {
   
   const validation = validateRasciCriticalRules();
   const autoMappingSwitch = document.getElementById('auto-mapping-switch');
-  const manualBtn = document.getElementById('manual-mapping-btn');
   
   // BLOQUEAR SI HAY CUALQUIER ERROR (lista > 0)
   if (validation.errors && validation.errors.length > 0) {
@@ -1814,12 +1794,16 @@ export function updateUIForErrorState() {
       autoMappingSwitch.disabled = true; // DESHABILITAR
     }
     
+    // Mostrar botón manual como AVISO de errores
+    const manualBtn = document.getElementById('manual-mapping-btn');
     if (manualBtn) {
       manualBtn.style.display = 'block';
       manualBtn.style.backgroundColor = '#ff6b6b';
       manualBtn.style.color = 'white';
       manualBtn.style.border = '2px solid #ff4757';
-      manualBtn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Mapeo Manual (${validation.errors.length} Errores)`;
+      manualBtn.style.cursor = 'not-allowed';
+      manualBtn.disabled = true;
+      manualBtn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Mapeo BLOQUEADO (${validation.errors.length} Errores)`;
     }
   } else {
     // NO HAY ERRORES - PERMITIR TOGGLE NORMAL
@@ -1828,18 +1812,10 @@ export function updateUIForErrorState() {
       autoMappingSwitch.disabled = false; // HABILITAR EL TOGGLE
     }
     
+    // OCULTAR botón manual cuando no hay errores
+    const manualBtn = document.getElementById('manual-mapping-btn');
     if (manualBtn) {
-      manualBtn.style.backgroundColor = '';
-      manualBtn.style.color = '';
-      manualBtn.style.border = '';
-      manualBtn.innerHTML = '<i class="fas fa-magic"></i> Ejecutar Mapeo Manual';
-      
-      // Solo ocultar si el toggle está activado
-      if (autoMappingSwitch && autoMappingSwitch.checked) {
-        manualBtn.style.display = 'none';
-      } else {
-        manualBtn.style.display = 'block';
-      }
+      manualBtn.style.display = 'none';
     }
   }
 }
@@ -1882,13 +1858,15 @@ export function validateHardRulesInRealTime() {
       autoMappingSwitch.disabled = true; // DESHABILITAR
     }
     
-    // Actualizar botón manual
+    // Mostrar botón manual como AVISO VISUAL de que hay errores
     const manualBtn = document.getElementById('manual-mapping-btn');
     if (manualBtn) {
       manualBtn.style.display = 'block';
       manualBtn.style.backgroundColor = '#ff6b6b';
       manualBtn.style.color = 'white';
       manualBtn.style.border = '2px solid #ff4757';
+      manualBtn.style.cursor = 'not-allowed';
+      manualBtn.disabled = true;
       manualBtn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Mapeo BLOQUEADO (${validation.errors.length} Errores)`;
     }
     
@@ -1909,20 +1887,10 @@ export function validateHardRulesInRealTime() {
     autoMappingSwitch.disabled = false; // HABILITAR EL TOGGLE
   }
   
-  // Restaurar botón manual normal
+  // OCULTAR botón manual cuando no hay errores (el usuario debe usar el toggle)
   const manualBtn = document.getElementById('manual-mapping-btn');
   if (manualBtn) {
-    manualBtn.style.backgroundColor = '';
-    manualBtn.style.color = '';
-    manualBtn.style.border = '';
-    manualBtn.innerHTML = '<i class="fas fa-magic"></i> Ejecutar Mapeo Manual';
-    
-    // Solo ocultar si el toggle está activado
-    if (autoMappingSwitch && autoMappingSwitch.checked) {
-      manualBtn.style.display = 'none';
-    } else {
-      manualBtn.style.display = 'block';
-    }
+    manualBtn.style.display = 'none';
   }
   
   // Si veníamos de errores o hay cambios pendientes, aplicar estado bufferizado y mapear
