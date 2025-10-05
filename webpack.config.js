@@ -1,5 +1,6 @@
 const path = require('path');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -13,10 +14,24 @@ module.exports = {
     },
     devtool: isProd ? 'source-map' : 'eval-cheap-module-source-map',
     optimization: {
-        // Allow disabling minification to debug prod bundles: set NO_MINIFY=true
-        minimize: isProd && process.env.NO_MINIFY !== 'true'
+        minimize: isProd && process.env.NO_MINIFY !== 'true',
+        minimizer: isProd ? [
+            new TerserPlugin({
+                terserOptions: {
+                    compress: {
+                        drop_console: true,
+                        drop_debugger: true
+                    }
+                }
+            })
+        ] : []
     },
-    stats: 'errors-warnings',
+    stats: 'errors-only',
+    performance: {
+        hints: false,
+        maxEntrypointSize: 512000,
+        maxAssetSize: 512000
+    },
     module: {
         rules: [
         
@@ -88,9 +103,15 @@ module.exports = {
                     from: 'app/panels',
                     to: 'panels'
                 }
-            ]
+            ],
+            options: {
+                concurrency: 100
+            }
         })
     ],
+    infrastructureLogging: {
+        level: 'error'
+    },
     devServer: {
         static: [
             {

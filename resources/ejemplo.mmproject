@@ -1,0 +1,617 @@
+{
+  "version": "2.0.0",
+  "exportDate": "2025-10-05T12:18:18.732Z",
+  "data": {
+    "version": "2.0.0",
+    "saveDate": "2025-10-05T12:18:18.712Z",
+    "bpmn": {
+      "diagram": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:PPINOT=\"http://ppinot.org\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:RALph=\"http://ralph.org\" xmlns:ppinot=\"http://www.isa.us.es/ppinot\" id=\"Definitions_1\">\n  <bpmn:process id=\"Process_1\" isExecutable=\"false\">\n    <bpmn:startEvent id=\"StartEvent_1\">\n      <bpmn:outgoing>Flow_0c8rozf</bpmn:outgoing>\n    </bpmn:startEvent>\n    <PPINOT:ppi id=\"Ppi_1i20tzw\" name=\"Ppi_1i20tzw\" type=\"PPINOT:Ppi\" width=\"300\" height=\"250\" />\n    <PPINOT:ppi id=\"Ppi_0tf5xqz\" name=\"Ppi_0tf5xqz\" type=\"PPINOT:Ppi\" width=\"300\" height=\"250\" />\n    <PPINOT:ppi id=\"Ppi_1xat81f\" name=\"Ppi_1xat81f\" type=\"PPINOT:Ppi\" width=\"300\" height=\"250\" />\n    <PPINOT:target id=\"Target_1xojj76\" name=\"95%\" type=\"PPINOT:Target\" width=\"25\" height=\"25\" />\n    <bpmn:task id=\"Activity_073loox\" name=\"Tarea 1\">\n      <bpmn:incoming>Flow_0c8rozf</bpmn:incoming>\n      <bpmn:incoming>negatedAssignment_1hsa3j1</bpmn:incoming>\n      <bpmn:outgoing>Flow_1mq8rlp</bpmn:outgoing>\n      <bpmn:outgoing>Flow_0d72547</bpmn:outgoing>\n      <bpmn:outgoing>ResourceArc_10o24z6</bpmn:outgoing>\n    </bpmn:task>\n    <bpmn:sequenceFlow id=\"Flow_0c8rozf\" sourceRef=\"StartEvent_1\" targetRef=\"Activity_073loox\" />\n    <bpmn:task id=\"Activity_1r73m38\" name=\"Tarea 2\">\n      <bpmn:incoming>Flow_1mq8rlp</bpmn:incoming>\n      <bpmn:outgoing>Flow_1eq7pr3</bpmn:outgoing>\n      <bpmn:outgoing>ResourceArc_1v738sn</bpmn:outgoing>\n    </bpmn:task>\n    <bpmn:task id=\"Activity_1dih0yf\" name=\"Tarea 3\">\n      <bpmn:incoming>Flow_0xpwjym</bpmn:incoming>\n      <bpmn:outgoing>Flow_0kbp7c8</bpmn:outgoing>\n      <bpmn:outgoing>ResourceArc_0htapim</bpmn:outgoing>\n    </bpmn:task>\n    <bpmn:intermediateThrowEvent id=\"Event_0j17wnb\">\n      <bpmn:incoming>Flow_0uc17ht</bpmn:incoming>\n      <bpmn:outgoing>Flow_1hgas9a</bpmn:outgoing>\n    </bpmn:intermediateThrowEvent>\n    <bpmn:endEvent id=\"Event_1jbyc5i\">\n      <bpmn:incoming>Flow_1hgas9a</bpmn:incoming>\n      <bpmn:incoming>Flow_13rrngy</bpmn:incoming>\n    </bpmn:endEvent>\n    <bpmn:sequenceFlow id=\"Flow_1hgas9a\" sourceRef=\"Event_0j17wnb\" targetRef=\"Event_1jbyc5i\" />\n    <PPINOT:ppi id=\"Ppi_1emod50\" name=\"PPI Nuevo\" type=\"PPINOT:Ppi\" width=\"300\" height=\"250\" />\n    <PPINOT:timeAggregatedMeasure id=\"TimeAggregatedMeasure_1x5ivjs\" type=\"PPINOT:TimeAggregatedMeasure\" width=\"120\" height=\"100\" />\n    <PPINOT:scope id=\"Scope_1oq2d97\" name=\"wekly\" type=\"PPINOT:Scope\" width=\"28\" height=\"28\" />\n    <RALph:personcap id=\"Personcap_1cnlnf1\" name=\"Capability\" type=\"RALph:Personcap\">\n      <bpmn:outgoing>negatedAssignment_1hsa3j1</bpmn:outgoing>\n    </RALph:personcap>\n    <bpmn:sequenceFlow id=\"Flow_1mq8rlp\" sourceRef=\"Activity_073loox\" targetRef=\"Activity_1r73m38\" />\n    <bpmn:userTask id=\"Activity_0exp46q\" name=\"Aprobar Tarea 1\">\n      <bpmn:incoming>Flow_0d72547</bpmn:incoming>\n      <bpmn:outgoing>Flow_0xpwjym</bpmn:outgoing>\n      <bpmn:outgoing>ResourceArc_1eoio0w</bpmn:outgoing>\n    </bpmn:userTask>\n    <bpmn:sequenceFlow id=\"Flow_0d72547\" sourceRef=\"Activity_073loox\" targetRef=\"Activity_0exp46q\" />\n    <bpmn:sequenceFlow id=\"Flow_0xpwjym\" sourceRef=\"Activity_0exp46q\" targetRef=\"Activity_1dih0yf\" />\n    <bpmn:userTask id=\"Activity_0h2zzke\" name=\"Aprobar Tarea 2\">\n      <bpmn:incoming>Flow_1eq7pr3</bpmn:incoming>\n      <bpmn:outgoing>Flow_061cw0l</bpmn:outgoing>\n      <bpmn:outgoing>ResourceArc_08lqcga</bpmn:outgoing>\n    </bpmn:userTask>\n    <bpmn:sequenceFlow id=\"Flow_1eq7pr3\" sourceRef=\"Activity_1r73m38\" targetRef=\"Activity_0h2zzke\" />\n    <bpmn:intermediateThrowEvent id=\"Event_19x7331\" name=\"Informar Rol 1\">\n      <bpmn:incoming>Flow_061cw0l</bpmn:incoming>\n      <bpmn:outgoing>Flow_13rrngy</bpmn:outgoing>\n    </bpmn:intermediateThrowEvent>\n    <bpmn:sequenceFlow id=\"Flow_061cw0l\" sourceRef=\"Activity_0h2zzke\" targetRef=\"Event_19x7331\" />\n    <bpmn:sequenceFlow id=\"Flow_13rrngy\" sourceRef=\"Event_19x7331\" targetRef=\"Event_1jbyc5i\" />\n    <bpmn:intermediateThrowEvent id=\"Event_1f1tfux\" name=\"Consultar Rol 1\">\n      <bpmn:incoming>Flow_0kbp7c8</bpmn:incoming>\n      <bpmn:outgoing>Flow_0uc17ht</bpmn:outgoing>\n    </bpmn:intermediateThrowEvent>\n    <bpmn:sequenceFlow id=\"Flow_0kbp7c8\" sourceRef=\"Activity_1dih0yf\" targetRef=\"Event_1f1tfux\" />\n    <bpmn:sequenceFlow id=\"Flow_0uc17ht\" sourceRef=\"Event_1f1tfux\" targetRef=\"Event_0j17wnb\" />\n    <RALph:roleRALph id=\"RoleRALph_1hvyrmo\" name=\"Rol 1\" type=\"RALph:RoleRALph\">\n      <bpmn:incoming>ResourceArc_10o24z6</bpmn:incoming>\n    </RALph:roleRALph>\n    <RALph:resourceArc id=\"ResourceArc_10o24z6\" name=\"\" sourceRef=\"Activity_073loox\" targetRef=\"RoleRALph_1hvyrmo\" type=\"RALph:ResourceArc\" />\n    <RALph:roleRALph id=\"RoleRALph_1ejhihy\" name=\"Rol 2\" type=\"RALph:RoleRALph\">\n      <bpmn:incoming>ResourceArc_1eoio0w</bpmn:incoming>\n      <bpmn:incoming>ResourceArc_1v738sn</bpmn:incoming>\n    </RALph:roleRALph>\n    <RALph:resourceArc id=\"ResourceArc_1eoio0w\" name=\"\" sourceRef=\"Activity_0exp46q\" targetRef=\"RoleRALph_1ejhihy\" type=\"RALph:ResourceArc\" />\n    <RALph:resourceArc id=\"ResourceArc_1v738sn\" name=\"\" sourceRef=\"Activity_1r73m38\" targetRef=\"RoleRALph_1ejhihy\" type=\"RALph:ResourceArc\" />\n    <RALph:roleRALph id=\"RoleRALph_1105a6f\" name=\"Rol 3\" type=\"RALph:RoleRALph\">\n      <bpmn:incoming>ResourceArc_08lqcga</bpmn:incoming>\n      <bpmn:incoming>ResourceArc_0htapim</bpmn:incoming>\n    </RALph:roleRALph>\n    <RALph:resourceArc id=\"ResourceArc_08lqcga\" name=\"\" sourceRef=\"Activity_0h2zzke\" targetRef=\"RoleRALph_1105a6f\" type=\"RALph:ResourceArc\" />\n    <RALph:resourceArc id=\"ResourceArc_0htapim\" name=\"\" sourceRef=\"Activity_1dih0yf\" targetRef=\"RoleRALph_1105a6f\" type=\"RALph:ResourceArc\" />\n    <RALph:negatedAssignment id=\"negatedAssignment_1hsa3j1\" name=\"\" sourceRef=\"Personcap_1cnlnf1\" targetRef=\"Activity_073loox\" type=\"RALph:negatedAssignment\" source=\"[object Object]\" target=\"[object Object]\" waypoints=\"[object Object],[object Object]\" />\n    <PPINOT:ppi id=\"Ppi_1jrdo77\" name=\"PPI 1\" type=\"PPINOT:Ppi\" width=\"300\" height=\"250\" />\n    <PPINOT:fromConnection id=\"FromConnection_05osgka\" sourceRef=\"TimeAggregatedMeasure_1lf3yjm\" targetRef=\"Activity_0exp46q\" type=\"PPINOT:FromConnection\" waypoints=\"[object Object],[object Object]\" />\n    <PPINOT:toConnection id=\"ToConnection_1fmofrq\" sourceRef=\"TimeAggregatedMeasure_1lf3yjm\" targetRef=\"Activity_1dih0yf\" type=\"PPINOT:ToConnection\" waypoints=\"[object Object],[object Object]\" />\n    <PPINOT:fromConnection id=\"FromConnection_1ixq8sn\" type=\"PPINOT:FromConnection\" waypoints=\"[object Object],[object Object]\" />\n    <PPINOT:toConnection id=\"ToConnection_029m6ex\" type=\"PPINOT:ToConnection\" waypoints=\"[object Object],[object Object]\" />\n    <PPINOT:fromConnection id=\"FromConnection_05wn11x\" targetRef=\"Activity_073loox\" type=\"PPINOT:FromConnection\" waypoints=\"[object Object],[object Object]\" />\n    <PPINOT:toConnection id=\"ToConnection_112khc2\" targetRef=\"Activity_1dih0yf\" type=\"PPINOT:ToConnection\" waypoints=\"[object Object],[object Object]\" />\n  </bpmn:process>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_1\">\n    <bpmndi:BPMNPlane id=\"BPMNPlane_1\" bpmnElement=\"Process_1\">\n      <bpmndi:BPMNShape id=\"_BPMNShape_StartEvent_1\" bpmnElement=\"StartEvent_1\">\n        <dc:Bounds x=\"152\" y=\"82\" width=\"36\" height=\"36\" />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_073loox_di\" bpmnElement=\"Activity_073loox\">\n        <dc:Bounds x=\"240\" y=\"60\" width=\"100\" height=\"80\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_0h2zzke_di\" bpmnElement=\"Activity_0h2zzke\">\n        <dc:Bounds x=\"490\" y=\"-190\" width=\"100\" height=\"80\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Event_19x7331_di\" bpmnElement=\"Event_19x7331\">\n        <dc:Bounds x=\"792\" y=\"-208\" width=\"36\" height=\"36\" />\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"775\" y=\"-232\" width=\"70\" height=\"14\" />\n        </bpmndi:BPMNLabel>\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Event_0j17wnb_di\" bpmnElement=\"Event_0j17wnb\">\n        <dc:Bounds x=\"922\" y=\"202\" width=\"36\" height=\"36\" />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Event_1f1tfux_di\" bpmnElement=\"Event_1f1tfux\">\n        <dc:Bounds x=\"752\" y=\"202\" width=\"36\" height=\"36\" />\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"732\" y=\"243\" width=\"76\" height=\"14\" />\n        </bpmndi:BPMNLabel>\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_1dih0yf_di\" bpmnElement=\"Activity_1dih0yf\">\n        <dc:Bounds x=\"620\" y=\"190\" width=\"100\" height=\"80\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"RoleRALph_1105a6f_di\" bpmnElement=\"RoleRALph_1105a6f\">\n        <dc:Bounds x=\"651\" y=\"29\" width=\"58\" height=\"81\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_0exp46q_di\" bpmnElement=\"Activity_0exp46q\">\n        <dc:Bounds x=\"420\" y=\"220\" width=\"100\" height=\"80\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_1r73m38_di\" bpmnElement=\"Activity_1r73m38\">\n        <dc:Bounds x=\"315\" y=\"-150\" width=\"100\" height=\"80\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"RoleRALph_1ejhihy_di\" bpmnElement=\"RoleRALph_1ejhihy\">\n        <dc:Bounds x=\"441\" y=\"-1\" width=\"58\" height=\"81\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"RoleRALph_1hvyrmo_di\" bpmnElement=\"RoleRALph_1hvyrmo\">\n        <dc:Bounds x=\"1\" y=\"-121\" width=\"58\" height=\"81\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Personcap_1cnlnf1_di\" bpmnElement=\"Personcap_1cnlnf1\">\n        <dc:Bounds x=\"120\" y=\"238\" width=\"60\" height=\"75\" />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Ppi_1jrdo77_di\" bpmnElement=\"Ppi_1jrdo77\">\n        <dc:Bounds x=\"410\" y=\"415\" width=\"300\" height=\"250\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"TimeAggregatedMeasure_1lf3yjm_di\" bpmnElement=\"TimeAggregatedMeasure_1lf3yjm\">\n        <dc:Bounds x=\"490\" y=\"450\" width=\"120\" height=\"100\" />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Target_1xvdwyf_di\" bpmnElement=\"Target_1xvdwyf\">\n        <dc:Bounds x=\"418\" y=\"628\" width=\"25\" height=\"25\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Scope_0mtf14b_di\" bpmnElement=\"Scope_0mtf14b\">\n        <dc:Bounds x=\"666\" y=\"627\" width=\"28\" height=\"28\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Event_1jbyc5i_di\" bpmnElement=\"Event_1jbyc5i\">\n        <dc:Bounds x=\"1132\" y=\"52\" width=\"36\" height=\"36\" />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNEdge id=\"Flow_0c8rozf_di\" bpmnElement=\"Flow_0c8rozf\">\n        <di:waypoint x=\"188\" y=\"100\" />\n        <di:waypoint x=\"240\" y=\"100\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_1hgas9a_di\" bpmnElement=\"Flow_1hgas9a\">\n        <di:waypoint x=\"940\" y=\"202\" />\n        <di:waypoint x=\"940\" y=\"172\" />\n        <di:waypoint x=\"990\" y=\"172\" />\n        <di:waypoint x=\"990\" y=\"70\" />\n        <di:waypoint x=\"1132\" y=\"70\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_1mq8rlp_di\" bpmnElement=\"Flow_1mq8rlp\">\n        <di:waypoint x=\"340\" y=\"100\" />\n        <di:waypoint x=\"365\" y=\"100\" />\n        <di:waypoint x=\"365\" y=\"-70\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_0d72547_di\" bpmnElement=\"Flow_0d72547\">\n        <di:waypoint x=\"290\" y=\"140\" />\n        <di:waypoint x=\"290\" y=\"260\" />\n        <di:waypoint x=\"420\" y=\"260\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_0xpwjym_di\" bpmnElement=\"Flow_0xpwjym\">\n        <di:waypoint x=\"520\" y=\"260\" />\n        <di:waypoint x=\"570\" y=\"260\" />\n        <di:waypoint x=\"570\" y=\"230\" />\n        <di:waypoint x=\"620\" y=\"230\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_1eq7pr3_di\" bpmnElement=\"Flow_1eq7pr3\">\n        <di:waypoint x=\"365\" y=\"-150\" />\n        <di:waypoint x=\"365\" y=\"-210\" />\n        <di:waypoint x=\"540\" y=\"-210\" />\n        <di:waypoint x=\"540\" y=\"-190\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_061cw0l_di\" bpmnElement=\"Flow_061cw0l\">\n        <di:waypoint x=\"590\" y=\"-150\" />\n        <di:waypoint x=\"690\" y=\"-150\" />\n        <di:waypoint x=\"690\" y=\"-190\" />\n        <di:waypoint x=\"792\" y=\"-190\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_13rrngy_di\" bpmnElement=\"Flow_13rrngy\">\n        <di:waypoint x=\"810\" y=\"-172\" />\n        <di:waypoint x=\"810\" y=\"70\" />\n        <di:waypoint x=\"1132\" y=\"70\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_0kbp7c8_di\" bpmnElement=\"Flow_0kbp7c8\">\n        <di:waypoint x=\"720\" y=\"230\" />\n        <di:waypoint x=\"736\" y=\"230\" />\n        <di:waypoint x=\"736\" y=\"220\" />\n        <di:waypoint x=\"752\" y=\"220\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_0uc17ht_di\" bpmnElement=\"Flow_0uc17ht\">\n        <di:waypoint x=\"788\" y=\"220\" />\n        <di:waypoint x=\"922\" y=\"220\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"ResourceArc_10o24z6_di\" bpmnElement=\"ResourceArc_10o24z6\">\n        <di:waypoint x=\"250\" y=\"60\" />\n        <di:waypoint x=\"250\" y=\"-80\" />\n        <di:waypoint x=\"59\" y=\"-80\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"ResourceArc_1eoio0w_di\" bpmnElement=\"ResourceArc_1eoio0w\">\n        <di:waypoint x=\"470\" y=\"220\" />\n        <di:waypoint x=\"470\" y=\"80\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"ResourceArc_1v738sn_di\" bpmnElement=\"ResourceArc_1v738sn\">\n        <di:waypoint x=\"415\" y=\"-110\" />\n        <di:waypoint x=\"470\" y=\"-110\" />\n        <di:waypoint x=\"470\" y=\"-1\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"ResourceArc_08lqcga_di\" bpmnElement=\"ResourceArc_08lqcga\">\n        <di:waypoint x=\"540\" y=\"-110\" />\n        <di:waypoint x=\"540\" y=\"-20\" />\n        <di:waypoint x=\"680\" y=\"-20\" />\n        <di:waypoint x=\"680\" y=\"29\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"ResourceArc_0htapim_di\" bpmnElement=\"ResourceArc_0htapim\">\n        <di:waypoint x=\"670\" y=\"190\" />\n        <di:waypoint x=\"670\" y=\"160\" />\n        <di:waypoint x=\"680\" y=\"160\" />\n        <di:waypoint x=\"680\" y=\"110\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"negatedAssignment_1hsa3j1_di\" bpmnElement=\"negatedAssignment_1hsa3j1\">\n        <di:waypoint x=\"160\" y=\"238\" />\n        <di:waypoint x=\"260\" y=\"238\" />\n        <di:waypoint x=\"290\" y=\"140\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"FromConnection_05osgka_di\" bpmnElement=\"FromConnection_05osgka\">\n        <di:waypoint x=\"533\" y=\"450\" />\n        <di:waypoint x=\"483\" y=\"300\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"ToConnection_1fmofrq_di\" bpmnElement=\"ToConnection_1fmofrq\">\n        <di:waypoint x=\"572\" y=\"450\" />\n        <di:waypoint x=\"652\" y=\"270\" />\n      </bpmndi:BPMNEdge>\n    </bpmndi:BPMNPlane>\n  </bpmndi:BPMNDiagram>\n</bpmn:definitions>\n",
+      "relationships": [
+        {
+          "childId": "TimeAggregatedMeasure_1lf3yjm",
+          "parentId": "Ppi_1jrdo77",
+          "childName": "Aggregated",
+          "parentName": "PPI 1",
+          "childType": "PPINOT:TimeAggregatedMeasure",
+          "parentType": "PPINOT:Ppi",
+          "position": {
+            "x": 490,
+            "y": 450,
+            "width": 120,
+            "height": 100
+          },
+          "timestamp": 1759666698715,
+          "source": "visual_canvas"
+        },
+        {
+          "childId": "Target_1xvdwyf",
+          "parentId": "Ppi_1jrdo77",
+          "childName": "Target",
+          "parentName": "PPI 1",
+          "childType": "PPINOT:Target",
+          "parentType": "PPINOT:Ppi",
+          "position": {
+            "x": 418,
+            "y": 628,
+            "width": 25,
+            "height": 25
+          },
+          "timestamp": 1759666698715,
+          "source": "visual_canvas"
+        },
+        {
+          "childId": "Scope_0mtf14b",
+          "parentId": "Ppi_1jrdo77",
+          "childName": "Scope",
+          "parentName": "PPI 1",
+          "childType": "PPINOT:Scope",
+          "parentType": "PPINOT:Ppi",
+          "position": {
+            "x": 666,
+            "y": 627,
+            "width": 28,
+            "height": 28
+          },
+          "timestamp": 1759666698715,
+          "source": "visual_canvas"
+        },
+        {
+          "childId": "label_12",
+          "parentId": "Ppi_1jrdo77",
+          "childName": "Aggregated",
+          "parentName": "PPI 1",
+          "childType": "label",
+          "parentType": "PPINOT:Ppi",
+          "position": {
+            "x": 475,
+            "y": 555,
+            "width": 150,
+            "height": 50
+          },
+          "timestamp": 1759666698715,
+          "source": "businessObject_parent",
+          "businessObjectParent": "Ppi_1jrdo77"
+        }
+      ],
+      "elements": {},
+      "canvas": {
+        "zoom": 1,
+        "viewbox": {
+          "x": -900,
+          "y": -718,
+          "width": 894,
+          "height": 1773,
+          "scale": 1,
+          "inner": {
+            "width": 1167,
+            "height": 897.0999755859375,
+            "x": 1,
+            "y": -232.10000610351562
+          },
+          "outer": {
+            "width": 894,
+            "height": 1773
+          }
+        }
+      },
+      "ppinotElements": [
+        {
+          "type": "PPINOT:TimeAggregatedMeasure",
+          "id": "TimeAggregatedMeasure_1lf3yjm",
+          "width": 120,
+          "height": 100,
+          "x": 490,
+          "y": 450,
+          "text": "Aggregated",
+          "parent": "Ppi_1jrdo77"
+        },
+        {
+          "type": "label",
+          "id": "label_12",
+          "width": 150,
+          "height": 50,
+          "x": 475,
+          "y": 555,
+          "text": "Aggregated",
+          "parent": "Process_1",
+          "labelTargetId": "TimeAggregatedMeasure_1lf3yjm"
+        },
+        {
+          "type": "label",
+          "id": "FromConnection_05osgka_label",
+          "width": 80,
+          "height": 20,
+          "x": 468,
+          "y": 350,
+          "text": "from",
+          "parent": "Process_1",
+          "labelTargetId": "FromConnection_05osgka"
+        },
+        {
+          "type": "label",
+          "id": "ToConnection_1fmofrq_label",
+          "width": 80,
+          "height": 20,
+          "x": 572,
+          "y": 335,
+          "text": "to",
+          "parent": "Process_1",
+          "labelTargetId": "ToConnection_1fmofrq"
+        },
+        {
+          "type": "PPINOT:Target",
+          "id": "Target_1xvdwyf",
+          "width": 25,
+          "height": 25,
+          "x": 418,
+          "y": 628,
+          "text": "Target",
+          "parent": "Ppi_1jrdo77"
+        },
+        {
+          "type": "PPINOT:Scope",
+          "id": "Scope_0mtf14b",
+          "width": 28,
+          "height": 28,
+          "x": 666,
+          "y": 627,
+          "text": "Scope",
+          "parent": "Ppi_1jrdo77"
+        }
+      ],
+      "ralphElements": [
+        {
+          "type": "RALph:Personcap",
+          "id": "Personcap_1cnlnf1",
+          "text": "Capability",
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:Personcap",
+            "name": "Capability"
+          },
+          "position": {
+            "width": 60,
+            "height": 75,
+            "x": 120,
+            "y": 238
+          }
+        },
+        {
+          "type": "RALph:RoleRALph",
+          "id": "RoleRALph_1hvyrmo",
+          "text": "Rol 1",
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:RoleRALph",
+            "name": "Rol 1"
+          },
+          "position": {
+            "width": 58,
+            "height": 81,
+            "x": 1,
+            "y": -121
+          }
+        },
+        {
+          "type": "RALph:RoleRALph",
+          "id": "RoleRALph_1ejhihy",
+          "text": "Rol 2",
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:RoleRALph",
+            "name": "Rol 2"
+          },
+          "position": {
+            "width": 58,
+            "height": 81,
+            "x": 441,
+            "y": -1
+          }
+        },
+        {
+          "type": "RALph:RoleRALph",
+          "id": "RoleRALph_1105a6f",
+          "text": "Rol 3",
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:RoleRALph",
+            "name": "Rol 3"
+          },
+          "position": {
+            "width": 58,
+            "height": 81,
+            "x": 651,
+            "y": 29
+          }
+        },
+        {
+          "type": "RALph:ResourceArc",
+          "id": "ResourceArc_10o24z6",
+          "text": null,
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:ResourceArc",
+            "name": ""
+          },
+          "source": "Activity_073loox",
+          "target": "RoleRALph_1hvyrmo",
+          "waypoints": [
+            {
+              "x": 250,
+              "y": 60
+            },
+            {
+              "x": 250,
+              "y": -80
+            },
+            {
+              "x": 59,
+              "y": -80
+            }
+          ]
+        },
+        {
+          "type": "RALph:ResourceArc",
+          "id": "ResourceArc_1eoio0w",
+          "text": null,
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:ResourceArc",
+            "name": ""
+          },
+          "source": "Activity_0exp46q",
+          "target": "RoleRALph_1ejhihy",
+          "waypoints": [
+            {
+              "x": 470,
+              "y": 220
+            },
+            {
+              "x": 470,
+              "y": 80
+            }
+          ]
+        },
+        {
+          "type": "RALph:ResourceArc",
+          "id": "ResourceArc_1v738sn",
+          "text": null,
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:ResourceArc",
+            "name": ""
+          },
+          "source": "Activity_1r73m38",
+          "target": "RoleRALph_1ejhihy",
+          "waypoints": [
+            {
+              "x": 415,
+              "y": -110
+            },
+            {
+              "x": 470,
+              "y": -110
+            },
+            {
+              "x": 470,
+              "y": -1
+            }
+          ]
+        },
+        {
+          "type": "RALph:ResourceArc",
+          "id": "ResourceArc_08lqcga",
+          "text": null,
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:ResourceArc",
+            "name": ""
+          },
+          "source": "Activity_0h2zzke",
+          "target": "RoleRALph_1105a6f",
+          "waypoints": [
+            {
+              "x": 540,
+              "y": -110
+            },
+            {
+              "x": 540,
+              "y": -20
+            },
+            {
+              "x": 680,
+              "y": -20
+            },
+            {
+              "x": 680,
+              "y": 29
+            }
+          ]
+        },
+        {
+          "type": "RALph:ResourceArc",
+          "id": "ResourceArc_0htapim",
+          "text": null,
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:ResourceArc",
+            "name": ""
+          },
+          "source": "Activity_1dih0yf",
+          "target": "RoleRALph_1105a6f",
+          "waypoints": [
+            {
+              "x": 670,
+              "y": 190
+            },
+            {
+              "x": 670,
+              "y": 160
+            },
+            {
+              "x": 680,
+              "y": 160
+            },
+            {
+              "x": 680,
+              "y": 110
+            }
+          ]
+        },
+        {
+          "type": "RALph:negatedAssignment",
+          "id": "negatedAssignment_1hsa3j1",
+          "text": null,
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:negatedAssignment",
+            "name": ""
+          },
+          "source": "Personcap_1cnlnf1",
+          "target": "Activity_073loox",
+          "waypoints": [
+            {
+              "x": 160,
+              "y": 238
+            },
+            {
+              "x": 260,
+              "y": 238
+            },
+            {
+              "x": 290,
+              "y": 140
+            }
+          ]
+        }
+      ]
+    },
+    "ppi": {
+      "indicators": [
+        {
+          "type": "PPINOT:Ppi",
+          "id": "ppi_1759666629276_lez2p64xt",
+          "title": "PPI 1",
+          "process": "Proceso General",
+          "businessObjective": "Mejroar Rendimiento",
+          "measureDefinition": {
+            "type": "time",
+            "definition": "La media de ..."
+          },
+          "target": "Target",
+          "scope": "Scope",
+          "source": "",
+          "responsible": "",
+          "informed": "",
+          "comments": "PPI generado automáticamente desde elemento: Ppi_1jrdo77",
+          "elementId": "Ppi_1jrdo77",
+          "createdAt": "2025-10-05T12:17:09.276Z",
+          "updatedAt": "2025-10-05T12:18:18.151Z",
+          "measureType": "time"
+        }
+      ],
+      "captureDate": "2025-10-05T12:18:18.731Z"
+    },
+    "rasci": {
+      "roles": [
+        "Rol 1",
+        "Rol 2",
+        "Rol 3"
+      ],
+      "matrix": {
+        "Tarea 1": {
+          "Rol 1": "R",
+          "Rol 3": "",
+          "Rol 2": "A"
+        },
+        "Tarea 2": {
+          "Rol 1": "I",
+          "Rol 2": "R",
+          "Rol 3": "A"
+        },
+        "Tarea 3": {
+          "Rol 1": "C",
+          "Rol 2": "",
+          "Rol 3": "R"
+        }
+      },
+      "captureDate": "2025-10-05T12:18:18.731Z"
+    },
+    "ralph": {
+      "elements": [
+        {
+          "id": "Personcap_1cnlnf1",
+          "type": "RALph:Personcap",
+          "name": "Capability",
+          "position": {
+            "x": 120,
+            "y": 238,
+            "width": 60,
+            "height": 75
+          },
+          "properties": {
+            "name": "Capability",
+            "type": "RALph:Personcap"
+          }
+        },
+        {
+          "id": "RoleRALph_1hvyrmo",
+          "type": "RALph:RoleRALph",
+          "name": "Rol 1",
+          "position": {
+            "x": 1,
+            "y": -121,
+            "width": 58,
+            "height": 81
+          },
+          "properties": {
+            "name": "Rol 1",
+            "type": "RALph:RoleRALph"
+          }
+        },
+        {
+          "id": "RoleRALph_1ejhihy",
+          "type": "RALph:RoleRALph",
+          "name": "Rol 2",
+          "position": {
+            "x": 441,
+            "y": -1,
+            "width": 58,
+            "height": 81
+          },
+          "properties": {
+            "name": "Rol 2",
+            "type": "RALph:RoleRALph"
+          }
+        },
+        {
+          "id": "RoleRALph_1105a6f",
+          "type": "RALph:RoleRALph",
+          "name": "Rol 3",
+          "position": {
+            "x": 651,
+            "y": 29,
+            "width": 58,
+            "height": 81
+          },
+          "properties": {
+            "name": "Rol 3",
+            "type": "RALph:RoleRALph"
+          }
+        },
+        {
+          "id": "ResourceArc_10o24z6",
+          "type": "RALph:ResourceArc",
+          "name": "ResourceArc_10o24z6",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 100,
+            "height": 80
+          },
+          "properties": {
+            "name": "",
+            "type": "RALph:ResourceArc"
+          }
+        },
+        {
+          "id": "ResourceArc_1eoio0w",
+          "type": "RALph:ResourceArc",
+          "name": "ResourceArc_1eoio0w",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 100,
+            "height": 80
+          },
+          "properties": {
+            "name": "",
+            "type": "RALph:ResourceArc"
+          }
+        },
+        {
+          "id": "ResourceArc_1v738sn",
+          "type": "RALph:ResourceArc",
+          "name": "ResourceArc_1v738sn",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 100,
+            "height": 80
+          },
+          "properties": {
+            "name": "",
+            "type": "RALph:ResourceArc"
+          }
+        },
+        {
+          "id": "ResourceArc_08lqcga",
+          "type": "RALph:ResourceArc",
+          "name": "ResourceArc_08lqcga",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 100,
+            "height": 80
+          },
+          "properties": {
+            "name": "",
+            "type": "RALph:ResourceArc"
+          }
+        },
+        {
+          "id": "ResourceArc_0htapim",
+          "type": "RALph:ResourceArc",
+          "name": "ResourceArc_0htapim",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 100,
+            "height": 80
+          },
+          "properties": {
+            "name": "",
+            "type": "RALph:ResourceArc"
+          }
+        },
+        {
+          "id": "negatedAssignment_1hsa3j1",
+          "type": "RALph:negatedAssignment",
+          "name": "negatedAssignment_1hsa3j1",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 100,
+            "height": 80
+          },
+          "properties": {
+            "name": "",
+            "type": "RALph:negatedAssignment"
+          }
+        }
+      ],
+      "captureDate": "2025-10-05T12:18:18.731Z"
+    },
+    "metadata": {
+      "diagramName": "mi_diagrama.bpmn",
+      "captureDate": "2025-10-05T12:18:18.732Z"
+    },
+    "formData": {
+      "timestamp": "2025-10-05T12:18:18.732Z",
+      "projectSettings": {
+        "name": "MNModeler",
+        "description": "",
+        "author": "",
+        "version": "1.0.0"
+      },
+      "ppiFormSettings": {},
+      "rasciFormSettings": {},
+      "userPreferences": {
+        "theme": "default",
+        "language": "es",
+        "panelLayout": "2v",
+        "autoSave": true
+      }
+    }
+  }
+}
