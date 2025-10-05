@@ -32,9 +32,9 @@ describe('NFR - Autosave latency', () => {
   test('autosave completes within <= 2.5s window from first change', async () => {
     const eventBus = createEventBus();
 
-    // Mock storageManager.save to succeed quickly
+    // Mock storageManager.saveProject to succeed quickly
     const storageManager = {
-      save: jest.fn().mockResolvedValue({ success: true })
+      saveProject: jest.fn().mockResolvedValue({ success: true })
     };
 
     // Configure interval to 2000ms and enabled=true
@@ -54,10 +54,10 @@ describe('NFR - Autosave latency', () => {
     // Allow any pending microtasks to flush
     await Promise.resolve();
 
-    // Assertions: a draft should be written and storageManager.save called
+    // Assertions: a draft should be written and storageManager.saveProject called
     const draft = localStorage.getItem('draft:multinotation');
     expect(draft).toBeTruthy();
-    expect(storageManager.save).toHaveBeenCalled();
+    expect(storageManager.saveProject).toHaveBeenCalled();
   });
 });
 
