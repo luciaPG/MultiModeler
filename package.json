@@ -7,7 +7,8 @@
         "start": "cross-env NODE_ENV=production webpack-dev-server --open --no-stats",
         "dev": "cross-env NODE_ENV=development webpack-dev-server --open --no-stats",
         "lint": "eslint .",
-        "tests": "jest --config jest.config.tfg.js"
+        "tests": "jest --config jest.config.tfg.js",
+        "test:ca-nfr": "jest --config jest.config.tfg.js tests/8.4-non-functional/load-performance-nfr.test.js tests/8.4-non-functional/interaction-latency-nfr.test.js tests/8.4-non-functional/novice-usability-nfr.test.js tests/8.4-non-functional/autosave-latency-nfr.test.js tests/8.4-non-functional/e2e-critical-flows-nfr.test.js tests/8.4-non-functional/export-audit-nfr.test.js tests/8.4-non-functional/code-quality-nfr.test.js"
     },
     "repository": {
         "type": "git",

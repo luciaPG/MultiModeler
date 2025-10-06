@@ -35,7 +35,6 @@ describe('8.4 Requisitos No Funcionales - Aplicación Real', () => {
 
   beforeAll(async () => {
     // Esta sección se configurará cuando tengamos puppeteer o similar
-    console.log('Configurando entorno para tests de aplicación real...');
     
     // Por ahora simulamos el setup del navegador
     global.realAppEnvironment = {
@@ -48,7 +47,6 @@ describe('8.4 Requisitos No Funcionales - Aplicación Real', () => {
   afterAll(async () => {
     // Cleanup después de los tests
     if (global.realAppEnvironment) {
-      console.log('Performance Summary:', performanceMetrics);
       delete global.realAppEnvironment;
     }
   });
