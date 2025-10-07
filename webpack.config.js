@@ -37,7 +37,10 @@ module.exports = {
         
             {
                 test: /\.js$/,
-                exclude: /node_modules/,
+                exclude: [
+                    /node_modules/,
+                    /SVGs\/index\.js$/  // Excluir archivos SVG grandes de Babel
+                ],
                 use: {
                     loader: 'babel-loader'
                 }
