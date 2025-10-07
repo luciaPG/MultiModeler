@@ -32,10 +32,13 @@ import rasciAdapter from './modules/rasci/RASCIAdapter.js';
 import PPINOTModdle from './modules/multinotationModeler/notations/ppinot/PPINOTModdle.json';
 import RALphModdle from './modules/multinotationModeler/notations/ralph/RALphModdle.json';
 
-// CSS
-import 'bpmn-js/dist/assets/diagram-js.css';
-import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
+// CSS - Importar estilos de BPMN.js y de la aplicación
 import 'diagram-js/assets/diagram-js.css';
+import 'bpmn-js/dist/assets/diagram-js.css';
+import 'bpmn-js/dist/assets/bpmn-js.css';
+import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
+import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-codes.css';
+import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import './css/app.css';
 
 /* -------------------------
