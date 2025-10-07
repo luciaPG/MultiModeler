@@ -63,6 +63,7 @@
         "diagram-js": "15.4.0",
         "inherits": "2.0.4",
         "jquery": "^3.4.1",
+        "json-loader": "^0.5.7",
         "min-dash": "^4.2.2",
         "ppinot-visual": "file:",
         "style-loader": "^4.0.0",
