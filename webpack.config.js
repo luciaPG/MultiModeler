@@ -45,15 +45,7 @@ module.exports = {
                     loader: 'babel-loader'
                 }
             },
-         
             {
-                test: /\.json$/,
-                type: 'javascript/auto', 
-                use: {
-                    loader: 'json-loader'
-                }
-            },
-                        {
               test: /\.css$/,
               use: ['style-loader', 'css-loader']
             }
