@@ -5,18 +5,12 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": null,
-  "routes": [
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
-  "build": {
-    "env": {
-      "NODE_ENV": "production",
-      "NO_MINIFY": "false"
-    }
-  },
   "headers": [
     {
       "source": "/(.*)",
@@ -27,5 +21,11 @@
         }
       ]
     }
-  ]
+  ],
+  "build": {
+    "env": {
+      "NODE_ENV": "production",
+      "NO_MINIFY": "false"
+    }
+  }
 }
