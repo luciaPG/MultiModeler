@@ -62,12 +62,16 @@
     },
     "dependencies": {
         "bpmn-js": "^18.6.2",
-        "bpmn-moddle": "latest",
-        "diagram-js": "latest",
-        "inherits": "latest",
+        "bpmn-moddle": "9.0.4",
+        "diagram-js": "15.4.0",
+        "inherits": "2.0.4",
         "jquery": "^3.4.1",
         "min-dash": "^4.2.2",
         "ppinot-visual": "file:",
-        "tiny-svg": "latest"
+        "tiny-svg": "4.1.3"
+    },
+    "engines": {
+        "node": ">=18.0.0",
+        "npm": ">=9.0.0"
     }
 }
