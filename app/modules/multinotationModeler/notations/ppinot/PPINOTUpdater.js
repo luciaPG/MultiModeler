@@ -257,14 +257,12 @@ export default function PPINOTUpdater(eventBus, modeling, bpmnjs) {
         }
 
         connection.waypoints = recomputed;
-        assign(businessObject, { waypoints: recomputed });
+        // IMPORTANT: Do NOT assign waypoints to businessObject - they're handled by DI (Diagram Interchange)
         return;
       }
 
-      // Persist filtered valid waypoints
-      assign(businessObject, {
-        waypoints: valid.map(function(p) { return { x: p.x, y: p.y }; })
-      });
+      // Only set waypoints on the visual element, NOT on businessObject
+      // The DI layer handles waypoints persistence in XML automatically
       connection.waypoints = valid;
     })();
 
