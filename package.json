@@ -3,7 +3,7 @@
     "version": "0.5.0",
     "description": "A visual modeler of Process Performance Indicators based on PPINOT and built with bpmn-js",
     "scripts": {
-        "build": "cross-env NODE_ENV=production webpack --mode production --no-stats",
+        "build": "cross-env NODE_ENV=production webpack --mode production",
         "start": "cross-env NODE_ENV=production webpack-dev-server --open --no-stats",
         "dev": "cross-env NODE_ENV=development webpack-dev-server --open --no-stats",
         "lint": "eslint .",
