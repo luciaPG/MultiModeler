@@ -76,6 +76,10 @@ module.exports = {
                     to: 'index.html'
                 },
                 {
+                    from: 'app/favicon.ico',
+                    to: 'favicon.ico'
+                },
+                {
                     from: 'node_modules/bpmn-js/dist/assets/',
                     to: 'vendor/bpmn-js'
                 },
