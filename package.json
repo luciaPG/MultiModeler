@@ -34,7 +34,6 @@
     "devDependencies": {
         "@testing-library/jest-dom": "^6.8.0",
         "babel-jest": "^30.1.2",
-        "babel-plugin-transform-remove-console": "^6.9.4",
         "canvas": "^3.2.0",
         "eslint": "^6.5.1",
         "eslint-plugin-bpmn-io": "^0.10.0",
@@ -55,6 +54,7 @@
         "@babel/core": "^7.26.7",
         "@babel/preset-env": "^7.28.3",
         "babel-loader": "^9.2.1",
+        "babel-plugin-transform-remove-console": "^6.9.4",
         "bpmn-js": "^18.6.2",
         "bpmn-moddle": "9.0.4",
         "copy-webpack-plugin": "^11.0.0",

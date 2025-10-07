@@ -80,7 +80,8 @@ module.exports = {
                 },
                 {
                     from: 'app/favicon.ico',
-                    to: 'favicon.ico'
+                    to: 'favicon.ico',
+                    noErrorOnMissing: true
                 },
                 {
                     from: 'node_modules/bpmn-js/dist/assets/',
