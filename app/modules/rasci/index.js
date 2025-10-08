@@ -20,9 +20,6 @@ import { rasciAutoMapping } from './mapping/auto-mapper.js';
 // Change queue management
 import { changeQueueManager, addChangeToQueue, processPendingChanges, getQueueInfo, clearPendingChanges } from './core/change-queue-manager.js';
 
-// Debug helper
-import './debug-helper.js';
-
 /**
  * RASCI Matrix Manager
  * Manages the RASCI matrix data and UI

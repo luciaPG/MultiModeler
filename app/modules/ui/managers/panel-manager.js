@@ -5,7 +5,6 @@ import { PanelLoader } from '../components/panel-loader.js';
 // CookieAutoSaveManager is accessed via ServiceRegistry; direct import not needed
 import { resolve } from '../../../services/global-access.js';
 import { getServiceRegistry } from '../core/ServiceRegistry.js';
-import { registerDebug } from '../../../shared/debug-registry.js';
 
 // Bootstrap SR
 const sr = (typeof getServiceRegistry === 'function') ? getServiceRegistry() : undefined;
@@ -1944,8 +1943,8 @@ if (registry) {
 }
 
 // Debug exposure only in development
-registerDebug('panelManager', panelManager);
-registerDebug('PanelManager', PanelManager);
+// registerDebug('panelManager', panelManager); // Removed: debug-registry deleted
+// registerDebug('PanelManager', PanelManager); // Removed: debug-registry deleted
 
 // Panel selector close function
 const closePanelSelector = function() {

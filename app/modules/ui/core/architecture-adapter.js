@@ -2,7 +2,6 @@
 import { getEventBus } from './event-bus.js';
 import MultiNotationModelerCore from '../core/MultiNotationModelerCore.js';
 import { getServiceRegistry } from './ServiceRegistry.js';
-import { registerDebug } from '../../../shared/debug-registry.js';
 
 // Bootstrap SR
 const serviceRegistry = (typeof getServiceRegistry === 'function') ? getServiceRegistry() : undefined;
@@ -61,7 +60,7 @@ export class ArchitectureAdapter {
       }
       
       // Debug exposure only in development
-      registerDebug('mnmCore', this.core);
+      // registerDebug('mnmCore', this.core); // Removed: debug-registry deleted
 
       // Connect event bus to existing events
       this.connectEvents();
@@ -178,4 +177,4 @@ if (sr) {
 }
 
 // Expose in debug for development
-registerDebug('ArchitectureInitializer', initializeArchitecture);
+// registerDebug('ArchitectureInitializer', initializeArchitecture); // Removed: debug-registry deleted

@@ -6,7 +6,6 @@ import { rasciUIValidator } from '../ui/matrix-ui-validator.js';
 import { getServiceRegistry } from '../../ui/core/ServiceRegistry.js';
 import { onBeforeUnload, onLoad } from '../../ui/core/dom-events.js';
 import rasciAdapter from '../RASCIAdapter.js';
-import { registerDebug } from '../../../shared/debug-registry.js';
 
 // Bootstrap SR
 const sr = (typeof getServiceRegistry === 'function') ? getServiceRegistry() : undefined;
@@ -679,7 +678,7 @@ export function initRasciPanel(panel) {
   }
 
   // Expose in __debug for development
-  registerDebug('RASCIAPI', rasciDebugAPI);
+  // registerDebug('RASCIAPI', rasciDebugAPI); // Removed: debug-registry deleted
   // Register RASCI control functions in service registry
   if (sr) {
     // Save state function

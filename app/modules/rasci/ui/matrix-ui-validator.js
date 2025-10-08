@@ -4,7 +4,6 @@ import { rasciValidator } from '../validation/matrix-validator.js';
 import { RasciStore } from '../store.js';
 import { getServiceRegistry } from '../../ui/core/ServiceRegistry.js';
 import { onStorage } from '../../ui/core/dom-events.js';
-import { registerDebug } from '../../../shared/debug-registry.js';
 
 // Bootstrap SR
 const sr = (typeof getServiceRegistry === 'function') ? getServiceRegistry() : undefined;
@@ -983,14 +982,7 @@ function setupServiceRegistry() {
   registry.register('rasciUIValidator', rasciUIValidator);
 
   // Exponer API de debug en modo desarrollo
-  registerDebug('rasciUIValidator', {
-    debugRasciValidator: registry.getFunction('debugRasciValidator'),
-    forceRasciValidation: registry.getFunction('forceRasciValidation'),
-    autoValidateRasci: registry.getFunction('autoValidateRasci'),
-    validateEmptyRasciTasks: registry.getFunction('validateEmptyRasciTasks'),
-    analyzeRasciState: registry.getFunction('analyzeRasciState'),
-    getValidator: () => registry.get('rasciUIValidator')
-  });
+  // registerDebug('rasciUIValidator', { ... }); // Removed: debug-registry deleted
 
   // Optimización: Log eliminado para mejorar rendimiento
   // console.log('✅ ServiceRegistry configurado para RASCI UI Validator');
