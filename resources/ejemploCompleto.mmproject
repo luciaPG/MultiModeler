@@ -1,0 +1,533 @@
+{
+  "version": "2.0.0",
+  "exportDate": "2025-10-08T10:22:28.551Z",
+  "data": {
+    "version": "2.0.0",
+    "saveDate": "2025-10-08T10:22:28.548Z",
+    "bpmn": {
+      "diagram": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<bpmn:definitions xmlns:bpmn=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:PPINOT=\"http://ppinot.org\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:RALph=\"http://ralph.org\" xmlns:ppinot=\"http://www.isa.us.es/ppinot\" id=\"Definitions_1\">\n  <bpmn:process id=\"Process_1\" isExecutable=\"false\">\n    <bpmn:startEvent id=\"StartEvent_1\">\n      <bpmn:outgoing>Flow_0c8rozf</bpmn:outgoing>\n    </bpmn:startEvent>\n    <PPINOT:ppi id=\"Ppi_1i20tzw\" name=\"Ppi_1i20tzw\" type=\"PPINOT:Ppi\" width=\"300\" height=\"250\" />\n    <PPINOT:ppi id=\"Ppi_0tf5xqz\" name=\"Ppi_0tf5xqz\" type=\"PPINOT:Ppi\" width=\"300\" height=\"250\" />\n    <PPINOT:ppi id=\"Ppi_1xat81f\" name=\"Ppi_1xat81f\" type=\"PPINOT:Ppi\" width=\"300\" height=\"250\" />\n    <PPINOT:target id=\"Target_1xojj76\" name=\"95%\" type=\"PPINOT:Target\" width=\"25\" height=\"25\" />\n    <bpmn:task id=\"Activity_073loox\" name=\"Tarea 1\">\n      <bpmn:incoming>Flow_0c8rozf</bpmn:incoming>\n      <bpmn:incoming>negatedAssignment_1e91u75</bpmn:incoming>\n      <bpmn:outgoing>Flow_1ckfnro</bpmn:outgoing>\n      <bpmn:outgoing>Flow_065zhvo</bpmn:outgoing>\n      <bpmn:outgoing>ResourceArc_0igxuih</bpmn:outgoing>\n    </bpmn:task>\n    <bpmn:sequenceFlow id=\"Flow_0c8rozf\" sourceRef=\"StartEvent_1\" targetRef=\"Activity_073loox\" />\n    <bpmn:task id=\"Activity_1r73m38\" name=\"Tarea 2\">\n      <bpmn:incoming>Flow_065zhvo</bpmn:incoming>\n      <bpmn:outgoing>Flow_1i7ci3z</bpmn:outgoing>\n      <bpmn:outgoing>ResourceArc_16sdqpe</bpmn:outgoing>\n    </bpmn:task>\n    <bpmn:task id=\"Activity_1dih0yf\" name=\"Tarea 3\">\n      <bpmn:incoming>Flow_1ckfnro</bpmn:incoming>\n      <bpmn:outgoing>Flow_0uh3lvf</bpmn:outgoing>\n      <bpmn:outgoing>ResourceArc_12iitwz</bpmn:outgoing>\n    </bpmn:task>\n    <bpmn:sequenceFlow id=\"Flow_1ckfnro\" sourceRef=\"Activity_073loox\" targetRef=\"Activity_1dih0yf\" />\n    <bpmn:intermediateThrowEvent id=\"Event_0j17wnb\">\n      <bpmn:incoming>Flow_1s09dtl</bpmn:incoming>\n      <bpmn:outgoing>Flow_1hgas9a</bpmn:outgoing>\n    </bpmn:intermediateThrowEvent>\n    <bpmn:endEvent id=\"Event_1jbyc5i\">\n      <bpmn:incoming>Flow_1hgas9a</bpmn:incoming>\n      <bpmn:incoming>Flow_0gn7635</bpmn:incoming>\n    </bpmn:endEvent>\n    <bpmn:sequenceFlow id=\"Flow_1hgas9a\" sourceRef=\"Event_0j17wnb\" targetRef=\"Event_1jbyc5i\" />\n    <PPINOT:ppi id=\"Ppi_1emod50\" name=\"PPI Nuevo\" type=\"PPINOT:Ppi\" width=\"300\" height=\"250\" />\n    <PPINOT:timeAggregatedMeasure id=\"TimeAggregatedMeasure_1x5ivjs\" type=\"PPINOT:TimeAggregatedMeasure\" width=\"120\" height=\"100\" />\n    <PPINOT:scope id=\"Scope_1oq2d97\" name=\"wekly\" type=\"PPINOT:Scope\" width=\"28\" height=\"28\" />\n    <bpmn:sequenceFlow id=\"Flow_065zhvo\" sourceRef=\"Activity_073loox\" targetRef=\"Activity_1r73m38\" />\n    <bpmn:userTask id=\"Activity_05dldr2\" name=\"Aprobar Tarea 2\">\n      <bpmn:incoming>Flow_1i7ci3z</bpmn:incoming>\n      <bpmn:outgoing>Flow_0vonnuo</bpmn:outgoing>\n      <bpmn:outgoing>ResourceArc_1lgjsns</bpmn:outgoing>\n    </bpmn:userTask>\n    <bpmn:sequenceFlow id=\"Flow_1i7ci3z\" sourceRef=\"Activity_1r73m38\" targetRef=\"Activity_05dldr2\" />\n    <bpmn:intermediateThrowEvent id=\"Event_08gc15c\" name=\"Informar Rol 1\">\n      <bpmn:incoming>Flow_0vonnuo</bpmn:incoming>\n      <bpmn:outgoing>Flow_0gn7635</bpmn:outgoing>\n    </bpmn:intermediateThrowEvent>\n    <bpmn:sequenceFlow id=\"Flow_0vonnuo\" sourceRef=\"Activity_05dldr2\" targetRef=\"Event_08gc15c\" />\n    <bpmn:sequenceFlow id=\"Flow_0gn7635\" sourceRef=\"Event_08gc15c\" targetRef=\"Event_1jbyc5i\" />\n    <bpmn:intermediateThrowEvent id=\"Event_0vl7b09\" name=\"Consultar Rol 1\">\n      <bpmn:incoming>Flow_0uh3lvf</bpmn:incoming>\n      <bpmn:outgoing>Flow_1s09dtl</bpmn:outgoing>\n    </bpmn:intermediateThrowEvent>\n    <bpmn:sequenceFlow id=\"Flow_0uh3lvf\" sourceRef=\"Activity_1dih0yf\" targetRef=\"Event_0vl7b09\" />\n    <bpmn:sequenceFlow id=\"Flow_1s09dtl\" sourceRef=\"Event_0vl7b09\" targetRef=\"Event_0j17wnb\" />\n    <RALph:roleRALph id=\"RoleRALph_18sqf4q\" name=\"Rol 1\" type=\"RALph:RoleRALph\">\n      <bpmn:outgoing>ResourceArc_15ueuyh</bpmn:outgoing>\n    </RALph:roleRALph>\n    <RALph:roleRALph id=\"RoleRALph_0piwcqc\" name=\"Rol 2\" type=\"RALph:RoleRALph\">\n      <bpmn:incoming>ResourceArc_16sdqpe</bpmn:incoming>\n      <bpmn:outgoing>ResourceArc_1eryzbh</bpmn:outgoing>\n    </RALph:roleRALph>\n    <RALph:complex-Assignment-AND id=\"Complex-Assignment-AND_00l33bn\" name=\"AND\" type=\"RALph:Complex-Assignment-AND\">\n      <bpmn:incoming>ResourceArc_0igxuih</bpmn:incoming>\n      <bpmn:incoming>ResourceArc_15ueuyh</bpmn:incoming>\n      <bpmn:incoming>ResourceArc_1eryzbh</bpmn:incoming>\n    </RALph:complex-Assignment-AND>\n    <RALph:resourceArc id=\"ResourceArc_0igxuih\" name=\"\" sourceRef=\"Activity_073loox\" targetRef=\"Complex-Assignment-AND_00l33bn\" type=\"RALph:ResourceArc\" />\n    <RALph:resourceArc id=\"ResourceArc_15ueuyh\" name=\"\" sourceRef=\"RoleRALph_18sqf4q\" targetRef=\"Complex-Assignment-AND_00l33bn\" type=\"RALph:ResourceArc\" />\n    <RALph:resourceArc id=\"ResourceArc_1eryzbh\" name=\"\" sourceRef=\"RoleRALph_0piwcqc\" targetRef=\"Complex-Assignment-AND_00l33bn\" type=\"RALph:ResourceArc\" />\n    <RALph:resourceArc id=\"ResourceArc_16sdqpe\" name=\"\" sourceRef=\"Activity_1r73m38\" targetRef=\"RoleRALph_0piwcqc\" type=\"RALph:ResourceArc\" />\n    <RALph:roleRALph id=\"RoleRALph_15cs2va\" name=\"Rol 3\" type=\"RALph:RoleRALph\">\n      <bpmn:incoming>ResourceArc_1lgjsns</bpmn:incoming>\n      <bpmn:incoming>ResourceArc_12iitwz</bpmn:incoming>\n    </RALph:roleRALph>\n    <RALph:resourceArc id=\"ResourceArc_1lgjsns\" name=\"\" sourceRef=\"Activity_05dldr2\" targetRef=\"RoleRALph_15cs2va\" type=\"RALph:ResourceArc\" />\n    <RALph:resourceArc id=\"ResourceArc_12iitwz\" name=\"\" sourceRef=\"Activity_1dih0yf\" targetRef=\"RoleRALph_15cs2va\" type=\"RALph:ResourceArc\" />\n    <RALph:personcap id=\"Personcap_1cnlnf1\" name=\"Capability\" type=\"RALph:Personcap\">\n      <bpmn:outgoing>negatedAssignment_1e91u75</bpmn:outgoing>\n    </RALph:personcap>\n    <RALph:negatedAssignment id=\"negatedAssignment_1e91u75\" name=\"\" sourceRef=\"Personcap_1cnlnf1\" targetRef=\"Activity_073loox\" type=\"RALph:negatedAssignment\" source=\"[object Object]\" target=\"[object Object]\" waypoints=\"[object Object],[object Object]\" />\n    <PPINOT:fromConnection id=\"FromConnection_1ixq8sn\" type=\"PPINOT:FromConnection\" waypoints=\"[object Object],[object Object]\" />\n    <PPINOT:toConnection id=\"ToConnection_029m6ex\" type=\"PPINOT:ToConnection\" waypoints=\"[object Object],[object Object]\" />\n    <PPINOT:fromConnection id=\"FromConnection_05wn11x\" targetRef=\"Activity_073loox\" type=\"PPINOT:FromConnection\" waypoints=\"[object Object],[object Object]\" />\n    <PPINOT:toConnection id=\"ToConnection_112khc2\" targetRef=\"Activity_1dih0yf\" type=\"PPINOT:ToConnection\" waypoints=\"[object Object],[object Object]\" />\n  </bpmn:process>\n  <bpmndi:BPMNDiagram id=\"BPMNDiagram_1\">\n    <bpmndi:BPMNPlane id=\"BPMNPlane_1\" bpmnElement=\"Process_1\">\n      <bpmndi:BPMNShape id=\"_BPMNShape_StartEvent_1\" bpmnElement=\"StartEvent_1\">\n        <dc:Bounds x=\"152\" y=\"82\" width=\"36\" height=\"36\" />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_073loox_di\" bpmnElement=\"Activity_073loox\">\n        <dc:Bounds x=\"240\" y=\"60\" width=\"100\" height=\"80\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_1r73m38_di\" bpmnElement=\"Activity_1r73m38\">\n        <dc:Bounds x=\"390\" y=\"-150\" width=\"100\" height=\"80\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_1dih0yf_di\" bpmnElement=\"Activity_1dih0yf\">\n        <dc:Bounds x=\"400\" y=\"170\" width=\"100\" height=\"80\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Event_0j17wnb_di\" bpmnElement=\"Event_0j17wnb\">\n        <dc:Bounds x=\"752\" y=\"192\" width=\"36\" height=\"36\" />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Event_1jbyc5i_di\" bpmnElement=\"Event_1jbyc5i\">\n        <dc:Bounds x=\"832\" y=\"192\" width=\"36\" height=\"36\" />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Activity_05dldr2_di\" bpmnElement=\"Activity_05dldr2\">\n        <dc:Bounds x=\"580\" y=\"-140\" width=\"100\" height=\"80\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Event_08gc15c_di\" bpmnElement=\"Event_08gc15c\">\n        <dc:Bounds x=\"792\" y=\"-98\" width=\"36\" height=\"36\" />\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"775\" y=\"-122\" width=\"70\" height=\"14\" />\n        </bpmndi:BPMNLabel>\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Event_0vl7b09_di\" bpmnElement=\"Event_0vl7b09\">\n        <dc:Bounds x=\"532\" y=\"152\" width=\"36\" height=\"36\" />\n        <bpmndi:BPMNLabel>\n          <dc:Bounds x=\"512\" y=\"195\" width=\"76\" height=\"14\" />\n        </bpmndi:BPMNLabel>\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"RoleRALph_18sqf4q_di\" bpmnElement=\"RoleRALph_18sqf4q\">\n        <dc:Bounds x=\"-99\" y=\"39\" width=\"58\" height=\"81\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"RoleRALph_0piwcqc_di\" bpmnElement=\"RoleRALph_0piwcqc\">\n        <dc:Bounds x=\"161\" y=\"-351\" width=\"58\" height=\"81\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Complex-Assignment-AND_00l33bn_di\" bpmnElement=\"Complex-Assignment-AND_00l33bn\">\n        <dc:Bounds x=\"142\" y=\"-150\" width=\"96\" height=\"100\" />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"RoleRALph_15cs2va_di\" bpmnElement=\"RoleRALph_15cs2va\">\n        <dc:Bounds x=\"551\" y=\"-31\" width=\"58\" height=\"81\" />\n        <bpmndi:BPMNLabel />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNShape id=\"Personcap_1cnlnf1_di\" bpmnElement=\"Personcap_1cnlnf1\">\n        <dc:Bounds x=\"260\" y=\"302\" width=\"60\" height=\"75\" />\n      </bpmndi:BPMNShape>\n      <bpmndi:BPMNEdge id=\"Flow_0c8rozf_di\" bpmnElement=\"Flow_0c8rozf\">\n        <di:waypoint x=\"188\" y=\"100\" />\n        <di:waypoint x=\"240\" y=\"100\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_1ckfnro_di\" bpmnElement=\"Flow_1ckfnro\">\n        <di:waypoint x=\"340\" y=\"100\" />\n        <di:waypoint x=\"370\" y=\"100\" />\n        <di:waypoint x=\"370\" y=\"210\" />\n        <di:waypoint x=\"400\" y=\"210\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_1hgas9a_di\" bpmnElement=\"Flow_1hgas9a\">\n        <di:waypoint x=\"770\" y=\"192\" />\n        <di:waypoint x=\"770\" y=\"172\" />\n        <di:waypoint x=\"850\" y=\"172\" />\n        <di:waypoint x=\"850\" y=\"192\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_065zhvo_di\" bpmnElement=\"Flow_065zhvo\">\n        <di:waypoint x=\"340\" y=\"100\" />\n        <di:waypoint x=\"440\" y=\"100\" />\n        <di:waypoint x=\"440\" y=\"-70\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_1i7ci3z_di\" bpmnElement=\"Flow_1i7ci3z\">\n        <di:waypoint x=\"490\" y=\"-110\" />\n        <di:waypoint x=\"535\" y=\"-110\" />\n        <di:waypoint x=\"535\" y=\"-100\" />\n        <di:waypoint x=\"580\" y=\"-100\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_0vonnuo_di\" bpmnElement=\"Flow_0vonnuo\">\n        <di:waypoint x=\"680\" y=\"-100\" />\n        <di:waypoint x=\"736\" y=\"-100\" />\n        <di:waypoint x=\"736\" y=\"-80\" />\n        <di:waypoint x=\"792\" y=\"-80\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_0gn7635_di\" bpmnElement=\"Flow_0gn7635\">\n        <di:waypoint x=\"810\" y=\"-62\" />\n        <di:waypoint x=\"810\" y=\"70\" />\n        <di:waypoint x=\"850\" y=\"70\" />\n        <di:waypoint x=\"850\" y=\"192\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_0uh3lvf_di\" bpmnElement=\"Flow_0uh3lvf\">\n        <di:waypoint x=\"500\" y=\"210\" />\n        <di:waypoint x=\"520\" y=\"210\" />\n        <di:waypoint x=\"520\" y=\"170\" />\n        <di:waypoint x=\"532\" y=\"170\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"Flow_1s09dtl_di\" bpmnElement=\"Flow_1s09dtl\">\n        <di:waypoint x=\"568\" y=\"170\" />\n        <di:waypoint x=\"660\" y=\"170\" />\n        <di:waypoint x=\"660\" y=\"210\" />\n        <di:waypoint x=\"752\" y=\"210\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"ResourceArc_0igxuih_di\" bpmnElement=\"ResourceArc_0igxuih\">\n        <di:waypoint x=\"340\" y=\"100\" />\n        <di:waypoint x=\"370\" y=\"100\" />\n        <di:waypoint x=\"370\" y=\"-100\" />\n        <di:waypoint x=\"238\" y=\"-100\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"ResourceArc_15ueuyh_di\" bpmnElement=\"ResourceArc_15ueuyh\">\n        <di:waypoint x=\"-41\" y=\"80\" />\n        <di:waypoint x=\"100\" y=\"80\" />\n        <di:waypoint x=\"100\" y=\"-100\" />\n        <di:waypoint x=\"142\" y=\"-100\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"ResourceArc_1eryzbh_di\" bpmnElement=\"ResourceArc_1eryzbh\">\n        <di:waypoint x=\"190\" y=\"-270\" />\n        <di:waypoint x=\"190\" y=\"-150\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"ResourceArc_16sdqpe_di\" bpmnElement=\"ResourceArc_16sdqpe\">\n        <di:waypoint x=\"440\" y=\"-150\" />\n        <di:waypoint x=\"440\" y=\"-310\" />\n        <di:waypoint x=\"219\" y=\"-310\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"ResourceArc_1lgjsns_di\" bpmnElement=\"ResourceArc_1lgjsns\">\n        <di:waypoint x=\"630\" y=\"-60\" />\n        <di:waypoint x=\"630\" y=\"10\" />\n        <di:waypoint x=\"609\" y=\"10\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"ResourceArc_12iitwz_di\" bpmnElement=\"ResourceArc_12iitwz\">\n        <di:waypoint x=\"490\" y=\"170\" />\n        <di:waypoint x=\"490\" y=\"10\" />\n        <di:waypoint x=\"551\" y=\"10\" />\n      </bpmndi:BPMNEdge>\n      <bpmndi:BPMNEdge id=\"negatedAssignment_1e91u75_di\" bpmnElement=\"negatedAssignment_1e91u75\">\n        <di:waypoint x=\"290\" y=\"302\" />\n        <di:waypoint x=\"290\" y=\"140\" />\n      </bpmndi:BPMNEdge>\n    </bpmndi:BPMNPlane>\n  </bpmndi:BPMNDiagram>\n</bpmn:definitions>\n",
+      "relationships": [],
+      "elements": {},
+      "canvas": {
+        "zoom": 1.218,
+        "viewbox": {
+          "x": -439.00821018062396,
+          "y": -492.31362889983586,
+          "width": 1706.0755336617406,
+          "height": 1055.8292282430214,
+          "scale": 1.218,
+          "inner": {
+            "width": 967,
+            "height": 728,
+            "x": -99,
+            "y": -351
+          },
+          "outer": {
+            "width": 2078,
+            "height": 1286
+          }
+        }
+      },
+      "ppinotElements": [],
+      "ralphElements": [
+        {
+          "type": "RALph:RoleRALph",
+          "id": "RoleRALph_18sqf4q",
+          "text": "Rol 1",
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:RoleRALph",
+            "name": "Rol 1"
+          },
+          "position": {
+            "width": 58,
+            "height": 81,
+            "x": -99,
+            "y": 39
+          }
+        },
+        {
+          "type": "RALph:RoleRALph",
+          "id": "RoleRALph_0piwcqc",
+          "text": "Rol 2",
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:RoleRALph",
+            "name": "Rol 2"
+          },
+          "position": {
+            "width": 58,
+            "height": 81,
+            "x": 161,
+            "y": -351
+          }
+        },
+        {
+          "type": "RALph:Complex-Assignment-AND",
+          "id": "Complex-Assignment-AND_00l33bn",
+          "text": "AND",
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:Complex-Assignment-AND",
+            "name": "AND"
+          },
+          "position": {
+            "width": 96,
+            "height": 100,
+            "x": 142,
+            "y": -150
+          }
+        },
+        {
+          "type": "RALph:RoleRALph",
+          "id": "RoleRALph_15cs2va",
+          "text": "Rol 3",
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:RoleRALph",
+            "name": "Rol 3"
+          },
+          "position": {
+            "width": 58,
+            "height": 81,
+            "x": 551,
+            "y": -31
+          }
+        },
+        {
+          "type": "RALph:Personcap",
+          "id": "Personcap_1cnlnf1",
+          "text": "Capability",
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:Personcap",
+            "name": "Capability"
+          },
+          "position": {
+            "width": 60,
+            "height": 75,
+            "x": 260,
+            "y": 302
+          }
+        },
+        {
+          "type": "RALph:ResourceArc",
+          "id": "ResourceArc_0igxuih",
+          "text": null,
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:ResourceArc",
+            "name": ""
+          },
+          "source": "Activity_073loox",
+          "target": "Complex-Assignment-AND_00l33bn",
+          "waypoints": [
+            {
+              "x": 340,
+              "y": 100
+            },
+            {
+              "x": 370,
+              "y": 100
+            },
+            {
+              "x": 370,
+              "y": -100
+            },
+            {
+              "x": 238,
+              "y": -100
+            }
+          ]
+        },
+        {
+          "type": "RALph:ResourceArc",
+          "id": "ResourceArc_15ueuyh",
+          "text": null,
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:ResourceArc",
+            "name": ""
+          },
+          "source": "RoleRALph_18sqf4q",
+          "target": "Complex-Assignment-AND_00l33bn",
+          "waypoints": [
+            {
+              "x": -41,
+              "y": 80
+            },
+            {
+              "x": 100,
+              "y": 80
+            },
+            {
+              "x": 100,
+              "y": -100
+            },
+            {
+              "x": 142,
+              "y": -100
+            }
+          ]
+        },
+        {
+          "type": "RALph:ResourceArc",
+          "id": "ResourceArc_1eryzbh",
+          "text": null,
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:ResourceArc",
+            "name": ""
+          },
+          "source": "RoleRALph_0piwcqc",
+          "target": "Complex-Assignment-AND_00l33bn",
+          "waypoints": [
+            {
+              "x": 190,
+              "y": -270
+            },
+            {
+              "x": 190,
+              "y": -150
+            }
+          ]
+        },
+        {
+          "type": "RALph:ResourceArc",
+          "id": "ResourceArc_16sdqpe",
+          "text": null,
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:ResourceArc",
+            "name": ""
+          },
+          "source": "Activity_1r73m38",
+          "target": "RoleRALph_0piwcqc",
+          "waypoints": [
+            {
+              "x": 440,
+              "y": -150
+            },
+            {
+              "x": 440,
+              "y": -310
+            },
+            {
+              "x": 219,
+              "y": -310
+            }
+          ]
+        },
+        {
+          "type": "RALph:ResourceArc",
+          "id": "ResourceArc_1lgjsns",
+          "text": null,
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:ResourceArc",
+            "name": ""
+          },
+          "source": "Activity_05dldr2",
+          "target": "RoleRALph_15cs2va",
+          "waypoints": [
+            {
+              "x": 630,
+              "y": -60
+            },
+            {
+              "x": 630,
+              "y": 10
+            },
+            {
+              "x": 609,
+              "y": 10
+            }
+          ]
+        },
+        {
+          "type": "RALph:ResourceArc",
+          "id": "ResourceArc_12iitwz",
+          "text": null,
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:ResourceArc",
+            "name": ""
+          },
+          "source": "Activity_1dih0yf",
+          "target": "RoleRALph_15cs2va",
+          "waypoints": [
+            {
+              "x": 490,
+              "y": 170
+            },
+            {
+              "x": 490,
+              "y": 10
+            },
+            {
+              "x": 551,
+              "y": 10
+            }
+          ]
+        },
+        {
+          "type": "RALph:negatedAssignment",
+          "id": "negatedAssignment_1e91u75",
+          "text": null,
+          "parent": "Process_1",
+          "properties": {
+            "type": "RALph:negatedAssignment",
+            "name": ""
+          },
+          "source": "Personcap_1cnlnf1",
+          "target": "Activity_073loox",
+          "waypoints": [
+            {
+              "x": 290,
+              "y": 302
+            },
+            {
+              "x": 290,
+              "y": 140
+            }
+          ]
+        }
+      ]
+    },
+    "ppi": {
+      "indicators": [],
+      "captureDate": "2025-10-08T10:22:28.551Z"
+    },
+    "rasci": {
+      "roles": [
+        "Rol 1",
+        "Rol 2",
+        "Rol 3"
+      ],
+      "matrix": {
+        "Tarea 1": {
+          "Rol 1": "R",
+          "Rol 3": "",
+          "Rol 2": "S"
+        },
+        "Tarea 2": {
+          "Rol 1": "I",
+          "Rol 2": "R",
+          "Rol 3": "A"
+        },
+        "Tarea 3": {
+          "Rol 1": "C",
+          "Rol 2": "",
+          "Rol 3": "R"
+        }
+      },
+      "captureDate": "2025-10-08T10:22:28.551Z"
+    },
+    "ralph": {
+      "elements": [
+        {
+          "id": "RoleRALph_18sqf4q",
+          "type": "RALph:RoleRALph",
+          "name": "Rol 1",
+          "position": {
+            "x": -99,
+            "y": 39,
+            "width": 58,
+            "height": 81
+          },
+          "properties": {
+            "name": "Rol 1",
+            "type": "RALph:RoleRALph"
+          }
+        },
+        {
+          "id": "RoleRALph_0piwcqc",
+          "type": "RALph:RoleRALph",
+          "name": "Rol 2",
+          "position": {
+            "x": 161,
+            "y": -351,
+            "width": 58,
+            "height": 81
+          },
+          "properties": {
+            "name": "Rol 2",
+            "type": "RALph:RoleRALph"
+          }
+        },
+        {
+          "id": "Complex-Assignment-AND_00l33bn",
+          "type": "RALph:Complex-Assignment-AND",
+          "name": "AND",
+          "position": {
+            "x": 142,
+            "y": -150,
+            "width": 96,
+            "height": 100
+          },
+          "properties": {
+            "name": "AND",
+            "type": "RALph:Complex-Assignment-AND"
+          }
+        },
+        {
+          "id": "RoleRALph_15cs2va",
+          "type": "RALph:RoleRALph",
+          "name": "Rol 3",
+          "position": {
+            "x": 551,
+            "y": -31,
+            "width": 58,
+            "height": 81
+          },
+          "properties": {
+            "name": "Rol 3",
+            "type": "RALph:RoleRALph"
+          }
+        },
+        {
+          "id": "Personcap_1cnlnf1",
+          "type": "RALph:Personcap",
+          "name": "Capability",
+          "position": {
+            "x": 260,
+            "y": 302,
+            "width": 60,
+            "height": 75
+          },
+          "properties": {
+            "name": "Capability",
+            "type": "RALph:Personcap"
+          }
+        },
+        {
+          "id": "ResourceArc_0igxuih",
+          "type": "RALph:ResourceArc",
+          "name": "ResourceArc_0igxuih",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 100,
+            "height": 80
+          },
+          "properties": {
+            "name": "",
+            "type": "RALph:ResourceArc"
+          }
+        },
+        {
+          "id": "ResourceArc_15ueuyh",
+          "type": "RALph:ResourceArc",
+          "name": "ResourceArc_15ueuyh",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 100,
+            "height": 80
+          },
+          "properties": {
+            "name": "",
+            "type": "RALph:ResourceArc"
+          }
+        },
+        {
+          "id": "ResourceArc_1eryzbh",
+          "type": "RALph:ResourceArc",
+          "name": "ResourceArc_1eryzbh",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 100,
+            "height": 80
+          },
+          "properties": {
+            "name": "",
+            "type": "RALph:ResourceArc"
+          }
+        },
+        {
+          "id": "ResourceArc_16sdqpe",
+          "type": "RALph:ResourceArc",
+          "name": "ResourceArc_16sdqpe",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 100,
+            "height": 80
+          },
+          "properties": {
+            "name": "",
+            "type": "RALph:ResourceArc"
+          }
+        },
+        {
+          "id": "ResourceArc_1lgjsns",
+          "type": "RALph:ResourceArc",
+          "name": "ResourceArc_1lgjsns",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 100,
+            "height": 80
+          },
+          "properties": {
+            "name": "",
+            "type": "RALph:ResourceArc"
+          }
+        },
+        {
+          "id": "ResourceArc_12iitwz",
+          "type": "RALph:ResourceArc",
+          "name": "ResourceArc_12iitwz",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 100,
+            "height": 80
+          },
+          "properties": {
+            "name": "",
+            "type": "RALph:ResourceArc"
+          }
+        },
+        {
+          "id": "negatedAssignment_1e91u75",
+          "type": "RALph:negatedAssignment",
+          "name": "negatedAssignment_1e91u75",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 100,
+            "height": 80
+          },
+          "properties": {
+            "name": "",
+            "type": "RALph:negatedAssignment"
+          }
+        }
+      ],
+      "captureDate": "2025-10-08T10:22:28.551Z"
+    },
+    "metadata": {
+      "diagramName": "mi_diagrama.bpmn",
+      "captureDate": "2025-10-08T10:22:28.551Z"
+    },
+    "formData": {
+      "timestamp": "2025-10-08T10:22:28.551Z",
+      "projectSettings": {
+        "name": "buenas",
+        "description": "",
+        "author": "",
+        "version": "1.0.0"
+      },
+      "ppiFormSettings": {},
+      "rasciFormSettings": {},
+      "userPreferences": {
+        "theme": "default",
+        "language": "es",
+        "panelLayout": "2v",
+        "autoSave": true
+      }
+    }
+  }
+}
